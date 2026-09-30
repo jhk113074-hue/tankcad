@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.3.0</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.3.1</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2950,13 +2950,14 @@ canvas.drag{cursor:grabbing}
   /* ---------- 도면 시트 (A1 가로, 표제란) ---------- */
   const SCALES = [10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 125, 150, 200, 250, 300];
   const SHEET = { w: 841, h: 594, title: 200, margin: 10 };   // 종이 mm (표제란 200mm 최적 확장)
-  function pickScale(L, W, H) {
-    const w_model = L + 150 + Math.max(L + 500, W + 150);
+  function pickScale(L, W, H, isAsm5 = false) {
+    const extraIso = isAsm5 ? Math.max(1200, Math.round((L + W) * 0.65)) : 0;
+    const w_model = L + 150 + Math.max(L + 500, W + 150) + extraIso;
     const h_model = W + 400 + H + 800;
     const avail_w = SHEET.w - SHEET.title - SHEET.margin * 2; // 621 mm
     const avail_h = SHEET.h - SHEET.margin * 2;              // 574 mm
     for (const n of SCALES) {
-      const w_paper = w_model / n + 100;
+      const w_paper = w_model / n + (isAsm5 ? 120 : 100);
       const h_paper = h_model / n + 110;
       if (w_paper <= avail_w - 20 && h_paper <= avail_h - 20) return n;
     }
@@ -3086,15 +3087,18 @@ canvas.drag{cursor:grabbing}
     const totalL = mmap.length, totalW = mmap.width;
 
     // 1. 축척(Scale) 결정 (수동 선택값 우선, 없으면 자동 계산)
-    const N = Number(opt.userScale) || pickScale(totalL, totalW, H);
+    const isAsmSheet = (opt.sheetKind === 'asm');
+    const N = Number(opt.userScale) || pickScale(totalL, totalW, H, isAsmSheet);
     opt._N = N;
     const P = v => v * N;   // 종이 mm → 모델 mm
 
     // 2. 축척 비례 하위 뷰 생성
     const plan = buildPlan(opt, templates);
     const conc = buildConcrete(opt);
-    const front = (sideT && opt.hseg && opt.hseg.length) ? buildElevation(opt, sideT, 'front') : null;
-    const side = (sideT && opt.hseg && opt.hseg.length) ? buildElevation(opt, sideT, 'side') : null;
+    const hs = (opt.hseg && opt.hseg.length) ? opt.hseg : heightSegs(H, opt.b11);
+    opt.hseg = hs;
+    const front = sideT ? buildElevation(opt, sideT, 'front') : null;
+    const side = sideT ? buildElevation(opt, sideT, 'side') : null;
 
     const ents = [], t = opt.title || {};
     const S = SHEET, x0 = S.margin, y0 = S.margin, x1 = S.w - S.margin, y1 = S.h - S.margin;
@@ -3459,24 +3463,43 @@ canvas.drag{cursor:grabbing}
     const row1_h = (EXTC + totalW + dim_bottom_1) / N + TITLE_H;
     const row2_h = front ? ((H + 100 - GRD + dim_bottom_1) / N + TITLE_H) : 0;
 
-    const areaW = tx0 - x0; // 약 631mm
-    const areaH = y1 - y0; // 약 574mm
+    const isAsm5 = (opt.sheetKind === 'asm');
+    const areaW = tx0 - x0; // 약 600mm
+    const areaH = y1 - y0; // 약 564mm
 
-    // 가로 여백 및 간격 균형 배분
-    const total_views_w = col1_w + col2_w;
-    const avail_w = Math.max(0, areaW - total_views_w);
-    let left_margin = Math.max(16, avail_w * 0.28);
-    let right_margin = Math.max(16, avail_w * 0.28);
-    let gap_x = avail_w - left_margin - right_margin;
-    if (gap_x > 50) {
-      const extra = (gap_x - 50) / 2;
-      left_margin += extra;
-      right_margin += extra;
-      gap_x = 50;
+    // 가로 3열(또는 2열) 여백 및 간격 균형 배분
+    let col1_tank_cx, col2_tank_cx, col3_cx, col3_avail_w;
+
+    if (isAsm5) {
+      // 3열 배치 (Col 1: 평면/정면, Col 2: 패드/측면, Col 3: 등각조감도)
+      // Col 3에 최소 130mm 이상의 쾌적한 전용 영역 할당
+      const col3_target_w = Math.max(130, Math.min(200, areaW - col1_w - col2_w - 30));
+      const total_3col_w = col1_w + col2_w + col3_target_w;
+      const rem_w = Math.max(0, areaW - total_3col_w);
+      const gap_x = Math.max(12, Math.min(25, rem_w / 4));
+      const left_margin = Math.max(12, (areaW - total_3col_w - gap_x * 2) / 2);
+
+      col1_tank_cx = x0 + left_margin + (dim_left_1 + totalL / 2) / N;
+      col2_tank_cx = col1_tank_cx + (totalL / 2 + 75) / N + gap_x + (dim_left_1 + len2 / 2) / N;
+
+      const col3_left = col2_tank_cx + (len2 / 2 + 75) / N + gap_x;
+      col3_avail_w = Math.max(100, (tx0 - 12) - col3_left);
+      col3_cx = col3_left + col3_avail_w / 2;
+    } else {
+      const total_views_w = col1_w + col2_w;
+      const avail_w = Math.max(0, areaW - total_views_w);
+      let left_margin = Math.max(16, avail_w * 0.28);
+      let right_margin = Math.max(16, avail_w * 0.28);
+      let gap_x = avail_w - left_margin - right_margin;
+      if (gap_x > 50) {
+        const extra = (gap_x - 50) / 2;
+        left_margin += extra;
+        right_margin += extra;
+        gap_x = 50;
+      }
+      col1_tank_cx = x0 + left_margin + (dim_left_1 + totalL / 2) / N;
+      col2_tank_cx = x0 + left_margin + col1_w + gap_x + (dim_left_1 + len2 / 2) / N;
     }
-
-    const col1_tank_cx = x0 + left_margin + (dim_left_1 + totalL / 2) / N;
-    const col2_tank_cx = x0 + left_margin + col1_w + gap_x + (dim_left_1 + len2 / 2) / N;
 
     // 세로 여백 및 간격 균형 배분
     const total_views_h = row1_h + row2_h;
@@ -3540,26 +3563,20 @@ canvas.drag{cursor:grabbing}
       const isoW_mm = (b_iso[2] - b_iso[0]) / N;
       const isoH_mm = (b_iso[3] - b_iso[1]) / N;
 
-      // Safe right boundary of 우측면도 including dimensions, ladder and leader text
-      const side_rt = col2_tank_cx + (totalW / 2 + dim_left_1 + 250) / N + 15;
-      const iso_avail_w = tx0 - side_rt - 16;
-      const iso_avail_h = Math.max(60, (row1_title_y - (row2_title_y + 12)));
+      const iso_avail_h = Math.max(120, (row1_tank_cy + totalW / (2 * N)) - (row2_title_y + 12));
+      const isoFitScale = Math.min((col3_avail_w * 0.90) / isoW_mm, (iso_avail_h * 0.85) / isoH_mm);
 
-      if (iso_avail_w >= 65) {
-        const isoFitScale = Math.min(0.55, (iso_avail_w * 0.90) / isoW_mm, (iso_avail_h * 0.85) / isoH_mm);
-        const iso_cx = side_rt + 8 + (isoW_mm * isoFitScale) / 2;
-        const iso_cy = (dy2 / N) + (H / (2 * N)) + 12;
-        const isoDx = P(iso_cx) - ((b_iso[0] + b_iso[2]) / 2) * isoFitScale;
-        const isoDy = P(iso_cy) - ((b_iso[1] + b_iso[3]) / 2) * isoFitScale;
+      const iso_cy = (row1_tank_cy + row2_ground_y) / 2 + 10;
+      const isoDx = P(col3_cx) - ((b_iso[0] + b_iso[2]) / 2) * isoFitScale;
+      const isoDy = P(iso_cy) - ((b_iso[1] + b_iso[3]) / 2) * isoFitScale;
 
-        iso.ents.forEach(e => {
-          if (e.t === 'line') ents.push({ ...e, a: [e.a[0] * isoFitScale + isoDx, e.a[1] * isoFitScale + isoDy], b: [e.b[0] * isoFitScale + isoDx, e.b[1] * isoFitScale + isoDy] });
-          else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] * isoFitScale + isoDx, e.c[1] * isoFitScale + isoDy], r: e.r * isoFitScale });
-          else ents.push({ ...e, p: [e.p[0] * isoFitScale + isoDx, e.p[1] * isoFitScale + isoDy], h: e.h * isoFitScale });
-        });
+      iso.ents.forEach(e => {
+        if (e.t === 'line') ents.push({ ...e, a: [e.a[0] * isoFitScale + isoDx, e.a[1] * isoFitScale + isoDy], b: [e.b[0] * isoFitScale + isoDx, e.b[1] * isoFitScale + isoDy] });
+        else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] * isoFitScale + isoDx, e.c[1] * isoFitScale + isoDy], r: e.r * isoFitScale });
+        else ents.push({ ...e, p: [e.p[0] * isoFitScale + isoDx, e.p[1] * isoFitScale + isoDy], h: e.h * isoFitScale });
+      });
 
-        drawViewTitleBubble(iso_cx, row2_title_y, 1, 5, '등  각  조  감  도');
-      }
+      drawViewTitleBubble(col3_cx, row2_title_y, 1, 5, '등  각  조  감  도');
       elev = true;
     }
     const blocks = Object.assign({}, plan.blocks, (front && front.blocks), (side && side.blocks));
