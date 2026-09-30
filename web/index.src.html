@@ -1,0 +1,2450 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YSACC TANK CAD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#f1f5f9; --surface:#ffffff; --surface-sub:#f8fafc; --line:#cbd5e1; --line-sub:#e2e8f0;
+  --fg:#0f172a; --muted:#64748b; --accent:#0284c7; --accent-hover:#0369a1; --accent-fg:#ffffff;
+  --accent-light:#e0f2fe; --warn:#ea580c; --warn-bg:#fff7ed; --success:#16a34a; --success-bg:#f0fdf4;
+  --cv-bg:#0f172a; --cv-grid:#1e293b; --cv-panel:#f8fafc; --cv-detail:#94a3b8;
+  --cv-frame:#fb923c; --cv-dim:#38bdf8; --cv-sheet:#e2e8f0;
+  --shadow-sm:0 1px 2px 0 rgba(0,0,0,0.05);
+  --shadow:0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.06);
+  --font-ui:"IBM Plex Sans KR","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+  --font-num:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --radius:8px;
+}
+:root[data-theme="light"]{
+  --cv-bg:#ffffff; --cv-grid:#f1f5f9; --cv-panel:#0f172a; --cv-detail:#64748b;
+  --cv-frame:#ea580c; --cv-dim:#0284c7; --cv-sheet:#1e293b;
+}
+:root[data-theme="dark"]{
+  --bg:#090d16; --surface:#111827; --surface-sub:#1f2937; --line:#374151; --line-sub:#1f2937;
+  --fg:#f3f4f6; --muted:#9ca3af; --accent:#38bdf8; --accent-hover:#0284c7; --accent-fg:#0b1329;
+  --accent-light:#1e293b; --warn:#fb923c; --warn-bg:#2c1810; --success:#4ade80; --success-bg:#14291e;
+  --cv-bg:#090d16; --cv-grid:#1a2333; --cv-panel:#f1f5f9; --cv-detail:#94a3b8;
+  --cv-frame:#fb923c; --cv-dim:#38bdf8; --cv-sheet:#e2e8f0;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:13px;line-height:1.5;margin:0;padding:12px 16px;min-height:100vh}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:12px;box-shadow:var(--shadow-sm)}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#0284c7,#38bdf8);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;box-shadow:0 2px 4px rgba(2,132,199,0.3)}
+.header-titles h1{margin:0;font-size:18px;font-weight:700;letter-spacing:-0.02em;display:flex;align-items:center;gap:8px}
+.ver-badge{font-size:10px;font-weight:600;padding:2px 6px;border-radius:10px;background:var(--accent-light);color:var(--accent)}
+.header-titles p{margin:0;font-size:11px;color:var(--muted)}
+.header-center{display:flex;align-items:center;gap:10px}
+.spec-pill{display:inline-flex;align-items:center;gap:8px;padding:5px 12px;background:var(--surface-sub);border:1px solid var(--line);border-radius:20px;font-family:var(--font-num);font-size:12px;font-weight:600;color:var(--accent)}
+.spec-pill b{color:var(--fg)}
+.header-right{display:flex;align-items:center;gap:8px}
+
+/* Layout */
+.app-body{display:grid;grid-template-columns:390px minmax(0,1fr);gap:12px;align-items:start;transition:grid-template-columns .2s ease}
+.app-body.collapsed{grid-template-columns:0px minmax(0,1fr)}
+.side{display:flex;flex-direction:column;gap:10px;min-width:0;overflow:hidden}
+.app-body.collapsed .side{display:none}
+
+/* Tabs */
+.tab-nav{display:flex;gap:4px;background:var(--surface);padding:4px;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);margin-bottom:4px}
+.tab-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 4px;font-size:12px;font-weight:600;border:0;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;transition:all .15s}
+.tab-btn:hover{color:var(--fg);background:var(--surface-sub)}
+.tab-btn.active{background:var(--accent);color:var(--accent-fg);box-shadow:0 1px 3px rgba(2,132,199,0.25)}
+
+/* Cards / Sections */
+.box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm)}
+.box h2{font-size:12px;font-weight:700;margin:0 0 10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;justify-content:space-between}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.app-body.show-all .tab-content{display:block;margin-bottom:10px}
+
+/* Form Controls */
+.seg{display:grid;grid-template-columns:78px repeat(5,minmax(0,1fr));gap:5px;align-items:center;margin-bottom:8px}
+.seg label{font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap}
+input[type=number]{-moz-appearance:textfield;appearance:textfield;width:100%;text-align:right;min-width:0;font-family:var(--font-num);font-size:13px;font-weight:500;padding:6px 5px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--fg);transition:border-color .15s}
+input[type=number]:focus,input[type=text]:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-light)}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input.bad{border-color:var(--warn);background:var(--warn-bg)}
+
+.opts-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.opt-card{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface-sub);cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;user-select:none}
+.opt-card:hover{border-color:var(--accent)}
+.opt-card:has(input:checked){border-color:var(--accent);background:var(--accent-light);color:var(--accent)}
+.opt-card input{margin:0;accent-color:var(--accent)}
+
+.rf-pills{display:flex;gap:4px;margin-bottom:10px;background:var(--bg);padding:3px;border-radius:6px;border:1px solid var(--line-sub)}
+.rf-pill{flex:1;text-align:center;padding:5px 4px;font-size:11px;font-weight:600;border-radius:4px;cursor:pointer;color:var(--muted);user-select:none;transition:all .15s}
+.rf-pill:hover{color:var(--fg)}
+.rf-pill:has(input:checked){background:var(--surface);color:var(--accent);box-shadow:var(--shadow-sm)}
+.rf-pill input{display:none}
+
+.tb{display:grid;grid-template-columns:90px minmax(0,1fr);gap:6px 8px;align-items:center;font-size:12px}
+.tb label{color:var(--muted);font-weight:500;white-space:nowrap}
+input[type=text],select{min-width:0;width:100%;font-family:var(--font-ui);font-size:12px;padding:6px 8px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--fg)}
+.hint{font-size:11px;color:var(--muted);margin:4px 0 0}
+.err{font-size:12px;color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn);border-radius:5px;padding:6px 10px;margin-top:8px}
+.err[hidden]{display:none}
+
+/* Table & Key-Value */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:left;padding:5px 4px;border-bottom:1px solid var(--line-sub)}
+th{font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase}
+td.n,th.n{text-align:right;font-family:var(--font-num);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:12px}
+.kv span{color:var(--muted)}
+.kv b{font-family:var(--font-num);font-weight:600;text-align:right;color:var(--fg)}
+
+/* Edit Mode Toolbar & Grid */
+.emode-bar{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:10px}
+.emode-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;border:1px solid var(--line);border-radius:6px;background:var(--surface-sub);color:var(--fg);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;user-select:none;transition:all .15s}
+.emode-chip:hover{border-color:var(--accent)}
+.emode-chip:has(input:checked){background:var(--accent);color:#ffffff !important;border-color:var(--accent);box-shadow:0 1px 3px rgba(2,132,199,0.3)}
+.emode-chip:has(input:checked) *{color:#ffffff !important}
+.emode-chip input{margin:0;accent-color:var(--accent)}
+.emode-chip:has(input:checked) input{accent-color:#ffffff}
+
+/* Tool chip custom active colors when checked */
+.emode-chip:has(input[value="INLET"]:checked){background:#0284c7 !important;border-color:#0284c7 !important}
+.emode-chip:has(input[value="OUTLET"]:checked){background:#059669 !important;border-color:#059669 !important}
+.emode-chip:has(input[value="OVERFLOW"]:checked){background:#d97706 !important;border-color:#d97706 !important}
+.emode-chip:has(input[value="DRAIN"]:checked){background:#475569 !important;border-color:#475569 !important}
+.emode-chip:has(input[value="FIRE"]:checked){background:#dc2626 !important;border-color:#dc2626 !important}
+.emode-chip:has(input[value="del"]:checked){background:#ef4444 !important;border-color:#ef4444 !important}
+
+/* Unselected tool color accents */
+.noz-tool-inlet{color:#0284c7}
+.noz-tool-outlet{color:#059669}
+.noz-tool-overflow{color:#d97706}
+.noz-tool-drain{color:#64748b}
+.noz-tool-fire{color:#dc2626}
+.noz-tool-del{color:#ef4444}
+.btn-sm{padding:4px 10px;font-size:11px;font-weight:600;border-radius:6px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.btn-sm:hover{border-color:var(--warn);color:var(--warn)}
+
+.egrid{display:grid;gap:1px;margin-top:8px;max-width:100%;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.egrid button{position:relative;border:0;background:var(--surface);border-radius:0;padding:0;cursor:pointer;color:var(--fg);overflow:visible;aspect-ratio:1}
+.egrid button:hover{background:color-mix(in srgb,var(--accent) 15%,var(--surface))}
+.egrid button.off{background:repeating-linear-gradient(45deg,transparent 0 4px,var(--line-sub) 4px 5px);color:var(--muted)}
+.egrid button.pil{background:var(--line)}
+.badge-tag{position:absolute;font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;line-height:1.2;pointer-events:none;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.35);z-index:2}
+.badge-manhole{background:#ea580c;color:#fff}
+.badge-vent{background:#0284c7;color:#fff}
+.badge-inlet{background:#0284c7;color:#fff}
+.noz-card{border:1px solid var(--line);border-radius:6px;background:var(--surface-sub);padding:8px 10px;margin-bottom:8px}
+.noz-card-header{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px;font-size:12px;font-weight:600}
+.noz-card-grid{display:grid;grid-template-columns:85px minmax(0,1fr);gap:4px 6px;align-items:center;font-size:11px}
+.noz-card-grid label{color:var(--muted);white-space:nowrap}
+.badge-ladder{position:absolute;background:#16a34a;color:#fff;font-size:9px;font-weight:700;padding:2px 4px;border-radius:3px;pointer-events:none;line-height:1.1;box-shadow:0 1px 3px rgba(0,0,0,.35);white-space:nowrap;z-index:4}
+.ladder-U{top:-7px;left:50%;transform:translateX(-50%)}
+.ladder-D{bottom:-7px;left:50%;transform:translateX(-50%)}
+.ladder-L{left:-7px;top:50%;transform:translateY(-50%)}
+.ladder-R{right:-7px;top:50%;transform:translateY(-50%)}
+.badge-pillar{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#334155;color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;pointer-events:none;z-index:2;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+
+/* Partition Wall Lines and Badges on Grid */
+.egrid button.cell-part-right::after{content:'';position:absolute;top:0;right:-2px;width:4px;height:100%;background:#ea580c;z-index:5;pointer-events:none;box-shadow:0 0 5px rgba(234,88,12,0.8)}
+.egrid button.cell-part-bottom::before{content:'';position:absolute;bottom:-2px;left:0;width:100%;height:4px;background:#ea580c;z-index:5;pointer-events:none;box-shadow:0 0 5px rgba(234,88,12,0.8)}
+.badge-partition{position:absolute;top:-8px;right:-18px;background:#ea580c;color:#fff;font-size:8px;font-weight:800;padding:1px 4px;border-radius:3px;pointer-events:none;z-index:8;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.4)}
+
+/* Visual Nozzle Elevation Editor Markers & Grid */
+.noz-marker{position:absolute;display:inline-flex;align-items:center;justify-content:center;gap:2px;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 5px rgba(0,0,0,0.45);z-index:6;pointer-events:none;transform:translate(-50%,-50%);transition:all .15s;border:1px solid rgba(255,255,255,0.3)}
+.noz-marker.selected{outline:2px solid #38bdf8;box-shadow:0 0 10px #38bdf8;z-index:10;transform:translate(-50%,-50%) scale(1.1)}
+.noz-marker-inlet{background:#0284c7;color:#fff}
+.noz-marker-outlet{background:#059669;color:#fff}
+.noz-marker-overflow{background:#d97706;color:#fff}
+.noz-marker-drain{background:#64748b;color:#fff}
+.noz-marker-fire{background:#dc2626;color:#fff}
+.noz-marker-custom{background:#7c3aed;color:#fff}
+.noz-grid-btn{position:relative;border:0;background:var(--surface);border-radius:0;padding:0;cursor:pointer;color:var(--fg);overflow:visible;box-sizing:border-box}
+.noz-grid-btn:hover{background:color-mix(in srgb,var(--accent) 20%,var(--surface))}
+.noz-grid-btn.comp-border-right{border-right:2px solid #38bdf8 !important}
+
+
+/* Viewport / Main */
+.main{display:flex;flex-direction:column;gap:8px;min-width:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px;box-shadow:var(--shadow-sm)}
+.tool-group{display:inline-flex;align-items:center;gap:4px;padding-right:8px;border-right:1px solid var(--line)}
+.layer-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:4px;background:var(--bg);font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;user-select:none;transition:all .15s}
+.layer-chip:hover{color:var(--fg)}
+.layer-chip:has(input:checked){background:var(--accent-light);color:var(--accent)}
+.layer-chip input{margin:0;accent-color:var(--accent)}
+.sp{flex:1}
+
+button{font-family:inherit;font-size:12px;font-weight:600;padding:6px 11px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button.pri{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);box-shadow:0 1px 3px rgba(2,132,199,0.3)}
+button.pri:hover{background:var(--accent-hover);border-color:var(--accent-hover);color:#fff}
+.icon-btn{padding:5px 8px;font-size:13px}
+
+/* Canvas Viewport */
+.cv-container{position:relative;border:1px solid var(--line);border-radius:var(--radius);background:var(--cv-bg);height:calc(100vh - 150px);min-height:480px;overflow:hidden;touch-action:none;box-shadow:var(--shadow)}
+canvas{display:block;width:100%;height:100%;cursor:grab}
+canvas.drag{cursor:grabbing}
+.cv-hud-top{position:absolute;left:10px;top:10px;display:flex;gap:6px;pointer-events:none}
+.hud-badge{font-family:var(--font-num);font-size:11px;font-weight:600;background:rgba(15,23,42,0.75);color:#f8fafc;padding:3px 8px;border-radius:4px;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.1)}
+.cv-hud-bottom{position:absolute;left:10px;bottom:10px;display:flex;align-items:center;gap:8px;pointer-events:none}
+.coord-badge{font-family:var(--font-num);font-size:11px;font-weight:500;background:rgba(15,23,42,0.75);color:#94a3b8;padding:3px 8px;border-radius:4px;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.1)}
+.coord-badge b{color:#38bdf8}
+.cv-hud-guide{position:absolute;right:10px;bottom:10px;font-size:11px;color:#94a3b8;background:rgba(15,23,42,0.75);padding:3px 8px;border-radius:4px;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.1);pointer-events:none}
+
+.status-bar{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);padding:0 4px}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo-icon">Y</div>
+    <div class="header-titles">
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.2 Web</span></h1>
+      <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
+    </div>
+  </div>
+  <div class="header-center">
+    <div class="spec-pill" id="topSpecBadge">탱크 규격 로딩 중...</div>
+  </div>
+  <div class="header-right">
+    <button type="button" class="icon-btn" id="themeBtn" title="라이트/다크 테마 전환">🌙 다크</button>
+  </div>
+</header>
+
+<div class="app-body" id="appBody">
+  <aside class="side">
+    <nav class="tab-nav">
+      <button type="button" class="tab-btn active" data-tab="tab-specs">📐 사양·치수</button>
+      <button type="button" class="tab-btn" data-tab="tab-edit">✏️ 평면 편집</button>
+      <button type="button" class="tab-btn" data-tab="tab-nozzles">🚰 배관·노즐</button>
+      <button type="button" class="tab-btn" data-tab="tab-sheet">📋 표제란·노트</button>
+      <button type="button" class="tab-btn" data-tab="tab-bom">📊 집계</button>
+      <button type="button" class="tab-btn" data-tab="tab-panels">🧩 판넬 DB</button>
+    </nav>
+
+    <!-- Tab 1: Specs -->
+    <div class="tab-content active" id="tab-specs">
+      <section class="box">
+        <h2>재질 및 보강 방식</h2>
+        <div class="opts-grid">
+          <label class="opt-card"><input type="radio" name="mat" value="SMC" checked> GRP (SMC)</label>
+          <label class="opt-card"><input type="radio" name="mat" value="STS"> STS (스텐)</label>
+        </div>
+        <div class="rf-pills" id="rfBox">
+          <label class="rf-pill"><input type="radio" name="rf" value="0" checked> 외부 보강</label>
+          <label class="rf-pill"><input type="radio" name="rf" value="1"> 내부 앵글</label>
+          <label class="rf-pill"><input type="radio" name="rf" value="2"> 내부 환봉</label>
+        </div>
+
+        <h2 style="margin-top:14px">탱크 치수 입력 (mm)</h2>
+        <div class="seg" id="segW"><label>폭(WIDTH)</label></div>
+        <div class="seg" id="segL"><label>길이(LENGTH)</label></div>
+        <div class="seg" id="segH">
+          <label for="H">높이(HEIGHT)</label>
+          <select id="H" style="grid-column:span 2"></select>
+          <label class="chk" style="grid-column:span 3;font-size:12px;cursor:pointer"><input type="checkbox" id="b11" checked> 1×1 패널 모듈</label>
+        </div>
+        <div class="seg">
+          <label for="frm">프레임</label>
+          <select id="frm" style="grid-column:span 2">
+            <option value="50">50 (SHS)</option>
+            <option value="75" selected>75 (앵글)</option>
+            <option value="125">125 (채널)</option>
+            <option value="150">150 (채널)</option>
+          </select>
+        </div>
+        <p class="hint">💡 폭·길이는 여러 칸에 입력 시 구간별 분할(예: 3000 + 2000)됩니다.</p>
+        <div class="err" id="err" hidden></div>
+      </section>
+    </div>
+
+    <!-- Tab 2: Plan Edit -->
+    <div class="tab-content" id="tab-edit">
+      <section class="box">
+        <h2>평면도 편집 모드</h2>
+        <div class="emode-bar">
+          <label class="emode-chip"><input type="radio" name="emode" value="del" checked><span>❌ 패널 삭제</span></label>
+          <label class="emode-chip"><input type="radio" name="emode" value="han"><span>🔘 맨홀 (손잡이)</span></label>
+          <label class="emode-chip"><input type="radio" name="emode" value="vent"><span>💨 에어벤트</span></label>
+          <label class="emode-chip"><input type="radio" name="emode" value="lad"><span>🪜 사다리</span></label>
+          <label class="emode-chip"><input type="radio" name="emode" value="inlet"><span>💧 급수구(INLET)</span></label>
+          <label class="emode-chip"><input type="radio" name="emode" value="pil"><span>🏛️ 기둥 (삭제칸)</span></label>
+          <button type="button" id="eReset" class="btn-sm">초기화</button>
+        </div>
+        <!-- Compartment Indicator Bar (칸막이 구획 표시 바) -->
+        <div id="planCompHeader" style="display:none;margin-top:6px;margin-bottom:4px;gap:4px"></div>
+        <div id="egrid" class="egrid" aria-label="평면도 패널 격자"></div>
+        <p class="hint">칸을 클릭하여 패널 삭제, 맨홀, 벤트, 사다리, 급수구(INLET)를 지정합니다. (위쪽이 탱크 뒤쪽)</p>
+      </section>
+    </div>
+
+    <!-- Tab: Nozzles & Pipe Sockets (측면뷰 기반 시각적 배치 편집기) -->
+    <div class="tab-content" id="tab-nozzles">
+      <section class="box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <h2>측면 배관·노즐 시각적 편집</h2>
+          <span class="hint" style="margin:0">평면편집 방식 클릭 배치</span>
+        </div>
+        <p class="hint" style="margin-bottom:10px">원하는 노즐 도구를 선택하고 측면뷰의 패널 칸을 클릭하여 배관을 배치합니다.</p>
+
+        <!-- 1. 뷰 선택 탭 (정면 / 우측면 / 배면 / 좌측면 / 상부 평면) -->
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+          <label class="emode-chip"><input type="radio" name="nozViewFace" value="front" checked><span>🏢 정면 (Front)</span></label>
+          <label class="emode-chip"><input type="radio" name="nozViewFace" value="right"><span>🏢 우측면 (Right)</span></label>
+          <label class="emode-chip"><input type="radio" name="nozViewFace" value="rear"><span>🏢 배면 (Rear)</span></label>
+          <label class="emode-chip"><input type="radio" name="nozViewFace" value="left"><span>🏢 좌측면 (Left)</span></label>
+          <label class="emode-chip"><input type="radio" name="nozViewFace" value="top"><span>🏢 상부 (Roof/Top)</span></label>
+        </div>
+
+        <!-- 2. 노즐 배치 도구 툴바 (emode-bar) -->
+        <div class="emode-bar">
+          <label class="emode-chip"><input type="radio" name="nozTool" value="INLET" checked><span class="noz-tool-inlet">💧 INLET (유입구)</span></label>
+          <label class="emode-chip"><input type="radio" name="nozTool" value="OUTLET"><span class="noz-tool-outlet">🚰 OUTLET (유출구)</span></label>
+          <label class="emode-chip"><input type="radio" name="nozTool" value="OVERFLOW"><span class="noz-tool-overflow">🌊 OVERFLOW (월류관)</span></label>
+          <label class="emode-chip"><input type="radio" name="nozTool" value="DRAIN"><span class="noz-tool-drain">⬇️ DRAIN (배수구)</span></label>
+          <label class="emode-chip"><input type="radio" name="nozTool" value="FIRE"><span class="noz-tool-fire">🚒 소방 (FIRE)</span></label>
+          <label class="emode-chip"><input type="radio" name="nozTool" value="select"><span>✏️ 선택/이동</span></label>
+          <label class="emode-chip"><input type="radio" name="nozTool" value="del"><span class="noz-tool-del">❌ 삭제</span></label>
+        </div>
+
+        <!-- 프리셋 바 -->
+        <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;justify-content:space-between">
+          <div style="display:flex;gap:4px">
+            <button type="button" id="nozPresetSingle" class="btn-sm">📦 1구획 기본 (5개)</button>
+            <button type="button" id="nozPresetDouble" class="btn-sm" style="background:#0284c7;color:#fff;border-color:#0284c7">📦 2구획(칸막이) 세트 (10개)</button>
+          </div>
+          <button type="button" id="nozClearAll" class="btn-sm" style="color:#ef4444">전체 비우기</button>
+        </div>
+
+        <!-- 3. 측면뷰 패널 격자 (Visual Elevation View Grid) -->
+        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <b style="font-size:12px;color:var(--fg)" id="nozGridTitle">정면 뷰 (Front Elevation)</b>
+            <span style="font-size:11px;color:var(--muted)" id="nozGridGuide">패널을 클릭하여 노즐을 설치합니다.</span>
+          </div>
+
+          <!-- 상단 패널 열 번호 & 구획 라벨 표시 영역 -->
+          <div id="nozColHeader" style="margin-bottom:4px;overflow-x:hidden"></div>
+
+          <!-- 측면뷰 격자 본체 (좌측 EL 라벨 + 패널 그리드) -->
+          <div style="display:flex;gap:4px">
+            <!-- 좌측 단별 EL 높이 라벨 -->
+            <div id="nozRowLabels" style="display:flex;flex-direction:column;justify-content:space-between;width:58px;font-size:9px;color:var(--muted);text-align:right;padding-right:4px"></div>
+            <!-- 패널 격자 컨테이너 -->
+            <div style="flex:1;overflow-x:auto">
+              <div id="nozGrid" class="egrid" style="margin-top:0"></div>
+              <!-- 하단 베이스 프레임 스키드 / 기초 콘크리트 시각 표시 -->
+              <div id="nozBaseFrame" style="margin-top:2px;display:flex;flex-direction:column;gap:1px">
+                <div style="height:6px;background:#475569;border-radius:1px;position:relative" title="스틸 베이스 프레임 (Base Skid Channel 75/100mm)">
+                  <span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:7px;color:#fff;letter-spacing:0.5px">BASE FRAME</span>
+                </div>
+                <div style="height:10px;background:#334155;border-radius:1px;position:relative" title="기초 콘크리트 패드 (Concrete Pad)">
+                  <span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:7px;color:#94a3b8">CONC. PAD</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. 선택된 노즐 속성 세부 편집 (Selected Nozzle Property Box) -->
+        <div id="nozSelectedPropBox" style="background:var(--surface);border:1px solid var(--accent);border-radius:6px;padding:8px 10px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:12px;font-weight:700;color:var(--accent)" id="nozPropTitle">선택된 노즐 속성 설정</span>
+            <div style="display:flex;gap:4px">
+              <button type="button" id="nozPropDel" class="btn-sm" style="color:#ef4444;padding:2px 6px;font-size:11px">🗑️ 삭제</button>
+            </div>
+          </div>
+          <div class="noz-card-grid" id="nozPropGrid">
+            <label>노즐 번호 / 명칭</label>
+            <div style="display:flex;gap:4px">
+              <input type="text" id="propMark" style="width:42px;font-weight:700;text-align:center;font-size:11px" placeholder="N1">
+              <input type="text" id="propName" style="flex:1;font-weight:600;font-size:11px" placeholder="INLET">
+              <input type="text" id="propDesc" style="flex:1;font-size:11px" placeholder="구획/용도 비고">
+            </div>
+
+            <label>구경 (Size)</label>
+            <select id="propSize">
+              <option value="25A">25A (1")</option>
+              <option value="32A">32A (1-1/4")</option>
+              <option value="40A">40A (1-1/2")</option>
+              <option value="50A">50A (2")</option>
+              <option value="65A">65A (2-1/2")</option>
+              <option value="80A">80A (3")</option>
+              <option value="100A">100A (4")</option>
+              <option value="125A">125A (5")</option>
+              <option value="150A">150A (6")</option>
+              <option value="200A">200A (8")</option>
+              <option value="250A">250A (10")</option>
+              <option value="300A">300A (12")</option>
+            </select>
+
+            <label>연결 타입</label>
+            <select id="propType">
+              <option value="FLANGE">FLANGE 10K (플랜지 타입)</option>
+              <option value="SOCKET">SOCKET (나사식 소켓 타입)</option>
+            </select>
+
+            <label>설치 면 / 위치</label>
+            <div style="display:flex;gap:4px">
+              <select id="propFace" style="flex:1">
+                <option value="front">정면 (Front)</option>
+                <option value="right">우측면 (Right)</option>
+                <option value="rear">배면 (Rear)</option>
+                <option value="left">좌측면 (Left)</option>
+                <option value="top">상부 평면 (Top)</option>
+              </select>
+              <select id="propSeg" style="flex:1"></select>
+            </div>
+
+            <label>패널내 편심(좌우)</label>
+            <select id="propOffset">
+              <option value="0">중앙 (Offset 0)</option>
+              <option value="-250">좌측으로 250mm (-250)</option>
+              <option value="250">우측으로 250mm (+250)</option>
+            </select>
+
+            <label>설치 높이 (EL)</label>
+            <div>
+              <div style="display:flex;gap:4px;align-items:center;margin-bottom:4px">
+                <input type="number" id="propElev" style="text-align:right;flex:1">
+                <span id="propElevUnit" style="font-size:11px;color:var(--muted)">mm</span>
+              </div>
+              <div style="display:flex;gap:3px;flex-wrap:wrap">
+                <button type="button" class="btn-sm btn-elev-preset" data-val="100" style="padding:1px 5px;font-size:10px">바닥 100</button>
+                <button type="button" class="btn-sm btn-elev-preset" data-val="200" style="padding:1px 5px;font-size:10px">소방 200</button>
+                <button type="button" class="btn-sm btn-elev-preset" data-val="300" style="padding:1px 5px;font-size:10px">토출 300</button>
+                <button type="button" class="btn-sm btn-elev-preset" data-mode="top-overflow" style="padding:1px 5px;font-size:10px">월류 H-200</button>
+                <button type="button" class="btn-sm btn-elev-preset" data-mode="top-inlet" style="padding:1px 5px;font-size:10px">유입 H-300</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. 노즐 일람표 미리보기 (NOZZLE SCHEDULE) -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;margin-bottom:6px">
+          <h2>배관 노즐 일람표 (NOZZLE SCHEDULE)</h2>
+          <button type="button" id="nozAddCustomBtn" class="btn-sm" style="background:var(--accent);color:#fff;border-color:#0284c7">➕ 새 노즐 직접 등록</button>
+        </div>
+        <div style="max-height:220px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--bg)">
+          <table style="width:100%;font-size:11px;border-collapse:collapse">
+            <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
+              <tr>
+                <th style="padding:4px 6px">NO.</th>
+                <th style="padding:4px 6px">SERVICE</th>
+                <th style="padding:4px 6px">SIZE</th>
+                <th style="padding:4px 6px">TYPE</th>
+                <th style="padding:4px 6px">ELEV.</th>
+                <th style="padding:4px 6px">LOCATION</th>
+                <th style="padding:4px 6px;text-align:center">선택</th>
+              </tr>
+            </thead>
+            <tbody id="nozPreviewTbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Tab 3: Sheet & Notes -->
+    <div class="tab-content" id="tab-sheet">
+      <section class="box">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
+          <label class="chk" style="font-weight:600;font-size:12px;cursor:pointer"><input type="checkbox" id="sheetOn" checked> A1 도면 시트 표제란 포함</label>
+          <select id="sheetKind" style="width:auto">
+            <option value="asm">조립도 (평면·콘크리트·정면·측면)</option>
+            <option value="frame">프레임도 (스키드·내부 스테이)</option>
+            <option value="detail">상세도 (DETAILS DWG)</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
+          <label for="scaleSel" style="font-weight:600;font-size:12px;color:var(--fg)">도면 축척 (Scale)</label>
+          <select id="scaleSel" style="width:auto;min-width:140px">
+            <option value="auto" selected>⚡ 자동 맞춤 (Auto)</option>
+            <option value="15">1 / 15</option>
+            <option value="20">1 / 20</option>
+            <option value="25">1 / 25</option>
+            <option value="30">1 / 30</option>
+            <option value="40">1 / 40</option>
+            <option value="50">1 / 50</option>
+            <option value="60">1 / 60</option>
+            <option value="75">1 / 75</option>
+            <option value="100">1 / 100</option>
+            <option value="125">1 / 125</option>
+            <option value="150">1 / 150</option>
+            <option value="200">1 / 200</option>
+            <option value="250">1 / 250</option>
+            <option value="300">1 / 300</option>
+          </select>
+        </div>
+
+        <h2 style="margin-top:14px">표제란 정보</h2>
+        <div class="tb">
+          <label for="tCustomer">회사명</label><input type="text" id="tCustomer" placeholder="YSACC CO.,LTD">
+          <label for="tAddress">주소</label><input type="text" id="tAddress" placeholder="201-1, 1251, Garosu-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28420, Republic of Korea">
+          <label for="tTankSize">TANK SIZE</label><input type="text" id="tTankSize" placeholder="자동 생성 (직접 입력 가능)">
+          <label for="tClient">Client</label><input type="text" id="tClient">
+          <label for="tConsultant">Consultant</label><input type="text" id="tConsultant">
+          <label for="tContractor">Main Contractor</label><input type="text" id="tContractor">
+          <label for="tProject">Project</label><input type="text" id="tProject">
+          <label for="tMep">MEP Contractor</label><input type="text" id="tMep">
+          <label for="tTel">TEL</label><input type="text" id="tTel" placeholder="연락처 (선택)">
+          <label for="tDwgNo">DWG NO.</label><input type="text" id="tDwgNo">
+          <label for="tChart">Chart No.</label><input type="text" id="tChart">
+          <label for="tDate">DATE</label><input type="text" id="tDate" placeholder="비우면 오늘 날짜">
+          <label for="tDrawn">DRAWN</label><input type="text" id="tDrawn">
+          <label for="tParts">품명(부품표)</label><textarea id="tParts" rows="2" placeholder="한 줄에 1개씩 입력 (최대 10개)" style="width:100%;font-size:11px;padding:5px"></textarea>
+        </div>
+
+        <details style="margin-top:10px">
+          <summary style="cursor:pointer;font-weight:600;font-size:12px;color:var(--accent)">노트 및 REMARKS (.cht 불러오기)</summary>
+          <div style="margin-top:6px">
+            <button type="button" id="chtBtn" class="btn-sm" style="width:100%;margin-bottom:6px">📁 고객 차트(.cht) 파일 불러오기</button>
+            <input type="file" id="chtFile" accept=".cht,.txt" hidden>
+            <textarea id="tRemarks" rows="2" placeholder="REMARKS (한 줄에 1개씩)" style="width:100%;font-size:11px;margin-bottom:4px"></textarea>
+            <textarea id="tNotes" rows="6" style="width:100%;font-size:11px"></textarea>
+          </div>
+        </details>
+      </section>
+    </div>
+
+    <!-- Tab 4: BOM -->
+    <div class="tab-content" id="tab-bom">
+      <section class="box">
+        <h2>탱크 제원 요약</h2>
+        <div class="kv" id="kv"></div>
+        <h2 style="margin-top:14px">패널 수량 집계 (평면)</h2>
+        <table><thead><tr><th>패널 규격 (폭×길이)</th><th class="n">수량</th></tr></thead><tbody id="cnt"></tbody></table>
+      </section>
+    </div>
+
+    <!-- Tab 5: Panel Database -->
+    <div class="tab-content" id="tab-panels">
+      <section class="box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <h2>탱크 판넬 DB 관리</h2>
+          <button type="button" id="openPanelModal" class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent)">➕ 판넬 등록</button>
+        </div>
+        <p class="hint" style="margin-bottom:10px">탱크 규격별 판넬의 형상(엠보싱, 무늬, 보강)을 등록하고 관리합니다.</p>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+          <div>
+            <label style="font-size:11px;color:var(--muted)">재질 필터</label>
+            <select id="dbFilterMat" style="width:100%;font-size:12px;padding:4px">
+              <option value="ALL">전체 재질</option>
+              <option value="SMC">SMC (GRP)</option>
+              <option value="STS">STS (스텐)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted)">위치 필터</label>
+            <select id="dbFilterCat" style="width:100%;font-size:12px;padding:4px">
+              <option value="ALL">전체 위치</option>
+              <option value="top_bottom">평면 (상·하부)</option>
+              <option value="side">입면 (측면)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="max-height:200px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;margin-bottom:12px;background:var(--bg)">
+          <table style="width:100%;font-size:11px;border-collapse:collapse" id="panelTable">
+            <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
+              <tr>
+                <th style="padding:6px 4px;text-align:left">재질/구분</th>
+                <th style="padding:6px 4px;text-align:left">규격</th>
+                <th style="padding:6px 4px;text-align:left">명칭</th>
+                <th style="padding:6px 4px;text-align:center">관리</th>
+              </tr>
+            </thead>
+            <tbody id="panelTableBody">
+              <tr><td colspan="4" style="text-align:center;padding:12px;color:var(--muted)">판넬 목록을 불러오는 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Panel Preview Canvas Box -->
+        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:11px;font-weight:600;color:var(--fg)" id="previewPanelTitle">선택된 판넬 형상</span>
+            <span style="font-size:10px;color:var(--muted)" id="previewPanelInfo">-</span>
+          </div>
+          <div style="display:flex;justify-content:center;align-items:center;background:#0f172a;border-radius:4px;height:170px;position:relative;overflow:hidden">
+            <canvas id="panelPreviewCv" width="340" height="170" style="width:100%;height:100%"></canvas>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:6px;margin-top:12px">
+          <button type="button" id="syncDbBtn" class="btn-sm" style="flex:1" title="DB의 최신 판넬 형상을 현재 2D 캐드 도면에 즉시 반영">🔄 도면 동기화</button>
+          <button type="button" id="resetDbBtn" class="btn-sm" style="color:#ef4444" title="기본 공장 템플릿으로 복원">초기화</button>
+        </div>
+      </section>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="toolbar">
+      <button type="button" id="toggleSide" title="사이드바 접기/펼치기">◀ 패널</button>
+      <div class="tool-group">
+        <label class="layer-chip"><input type="checkbox" id="lyPanel" checked> 패널</label>
+        <label class="layer-chip"><input type="checkbox" id="lyDetail" checked> 상세</label>
+        <label class="layer-chip"><input type="checkbox" id="lyFrame" checked> 틀</label>
+        <label class="layer-chip"><input type="checkbox" id="lyReinf" checked> 보강재</label>
+        <label class="layer-chip"><input type="checkbox" id="lyWall" checked> 벽</label>
+        <label class="layer-chip"><input type="checkbox" id="lySheet" checked> 시트</label>
+        <label class="layer-chip"><input type="checkbox" id="lyDim" checked> 치수</label>
+      </div>
+      <div class="tool-group">
+        <button type="button" id="fit" title="도면 화면 맞춤">⛶ 맞춤</button>
+        <button type="button" id="zoomIn" title="확대">🔍➕</button>
+        <button type="button" id="zoomOut" title="축소">🔍➖</button>
+      </div>
+      <span class="sp"></span>
+      <button type="button" id="png" title="현재 화면을 PNG 이미지로 저장">📸 PNG</button>
+      <button type="button" id="svg" title="벡터 SVG 도면 다운로드">📐 SVG</button>
+      <button type="button" id="dxfDirect" title="AutoCAD/CADian에서 바로 열리는 DXF 파일 다운로드">💾 DXF (.dxf)</button>
+      <button type="button" id="dwgBtn" class="pri" title="AutoCAD 표준 DWG 바이너리 파일 다운로드">💾 DWG 저장 (.dwg)</button>
+      <button type="button" id="dxf" title="DXF 파일 압축(zip) 다운로드">📦 zip</button>
+    </div>
+
+    <!-- ODA Guide Modal -->
+    <div id="odaModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:24px;max-width:480px;width:90%;box-shadow:var(--shadow)">
+        <h3 style="margin:0 0 10px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px">
+          <span>⚡</span> 원클릭 DWG 다운로드 안내
+        </h3>
+        <p style="margin:0 0 12px;font-size:13px;line-height:1.6;color:var(--fg)">
+          웹에서 <b>.dwg 파일로 즉시 다운로드</b>하려면 로컬 PC에 <b>무료 공식 CAD 변환 도구(ODA File Converter)</b> 1회 설치가 필요합니다.
+        </p>
+        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--muted)">
+          <div style="font-weight:600;color:var(--fg);margin-bottom:4px">💡 비용 안내: 100% 완전 무료 (0원)</div>
+          전 세계 CAD 협회(ODA)의 공식 무료 소프트웨어이며, 유료 결제나 구독료가 전혀 없습니다. 설치 후 웹 화면에서 버튼 한 번으로 평생 무제한 .dwg 다운로드가 가능합니다.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <a id="odaLink" href="https://www.opendesign.com/guestfiles/oda_file_converter" target="_blank" style="text-align:center;padding:9px;background:var(--accent);color:#fff;border-radius:6px;font-weight:600;text-decoration:none;font-size:13px">
+            📥 ODA File Converter 공식 다운로드 (무료)
+          </a>
+          <button type="button" id="modalDxfBtn" style="padding:8px;font-size:12px;justify-content:center">
+            💾 지금은 DXF 파일로 바로 받기 (AutoCAD에서 즉시 열림)
+          </button>
+          <button type="button" id="closeOdaModal" style="padding:6px;font-size:12px;justify-content:center;border:0;background:transparent;color:var(--muted)">
+            닫기
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel Registration Modal -->
+    <div id="panelRegModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;max-width:520px;width:92%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow)">
+        <h3 style="margin:0 0 12px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px">
+          <span>🧩</span> 판넬 등록 및 형상 편집
+        </h3>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <label style="font-size:11px;font-weight:600">재질</label>
+            <select id="modalMat" style="width:100%;padding:5px;font-size:12px">
+              <option value="SMC">SMC (GRP)</option>
+              <option value="STS">STS (스텐)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600">적용 위치</label>
+            <select id="modalCat" style="width:100%;padding:5px;font-size:12px">
+              <option value="top_bottom">평면 (상·하부 패널)</option>
+              <option value="side">입면 (측면 패널)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600">가로 폭 (W mm)</label>
+            <input type="number" id="modalW" value="1000" step="100" style="width:100%;padding:5px;font-size:12px">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600">세로 높이 (H mm)</label>
+            <input type="number" id="modalH" value="1000" step="100" style="width:100%;padding:5px;font-size:12px">
+          </div>
+        </div>
+
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;font-weight:600">판넬 명칭</label>
+          <input type="text" id="modalName" placeholder="예: SMC 1000x1000 신형 다이아몬드형" style="width:100%;padding:5px;font-size:12px">
+        </div>
+
+        <!-- 형상 등록 방식 선택 -->
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;font-weight:600">형상 입력 방식</label>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <button type="button" class="btn-sm active" id="btnSourcePreset" style="flex:1">🎨 기본 프리셋 패턴</button>
+            <button type="button" class="btn-sm" id="btnSourceDxf" style="flex:1">📁 CAD DWG / DXF 업로드</button>
+            <button type="button" class="btn-sm" id="btnSourceJson" style="flex:1">📝 JSON 직접 편집</button>
+          </div>
+        </div>
+
+        <!-- Source 1: Preset Generator -->
+        <div id="boxSourcePreset" style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:12px">
+          <label style="font-size:11px;font-weight:600">패턴 종류 선택</label>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <select id="presetType" style="flex:1;padding:5px;font-size:12px">
+              <option value="diamond">다이아몬드 엠보싱 (표준형)</option>
+              <option value="circle">원형 동심원 엠보싱</option>
+              <option value="cross">X자 대각 보강형</option>
+              <option value="chamfer">외곽 모따기 평판형</option>
+            </select>
+            <button type="button" id="btnApplyPreset" class="btn-sm" style="white-space:nowrap">생성 적용</button>
+          </div>
+        </div>
+
+        <!-- Source 2: DWG / DXF Upload -->
+        <div id="boxSourceDxf" style="display:none;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:12px">
+          <p style="font-size:11px;margin:0 0 6px;color:var(--muted)">AutoCAD/GstarCAD에서 작성한 단일 판넬 <b>DWG 또는 DXF</b> 파일을 선택하세요. 내부 선/원/호가 자동으로 추출됩니다.</p>
+          <input type="file" id="dxfFileInput" accept=".dwg,.dxf" style="font-size:12px;width:100%">
+        </div>
+
+        <!-- Source 3: JSON -->
+        <div id="boxSourceJson" style="display:none;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:12px">
+          <textarea id="modalJson" rows="5" style="width:100%;font-size:11px;font-family:monospace" placeholder="[{ 'k': 'line', 'p': [[0,0],[1000,1000]] }]"></textarea>
+        </div>
+
+        <!-- Modal Mini Preview -->
+        <div style="background:#0f172a;border-radius:6px;height:140px;position:relative;margin-bottom:14px;overflow:hidden;display:flex;align-items:center;justify-content:center">
+          <canvas id="modalPreviewCv" width="400" height="140" style="width:100%;height:100%"></canvas>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button type="button" id="closePanelModal" class="btn-sm">취소</button>
+          <button type="button" id="savePanelBtn" class="pri" style="padding:6px 16px">💾 DB에 저장</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cv-container" id="cv">
+      <canvas id="c"></canvas>
+      <div class="cv-hud-top">
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET</div>
+      </div>
+      <div class="cv-hud-bottom">
+        <div class="coord-badge" id="coord">X: 0  Y: 0</div>
+      </div>
+      <div class="cv-hud-guide">휠: 확대/축소  ·  드래그: 이동  ·  더블클릭: 맞춤</div>
+    </div>
+
+    <div class="status-bar">
+      <div id="status">준비 완료</div>
+      <div>YSACC Tank Engineering System</div>
+    </div>
+  </main>
+</div>
+
+<script>/*__TANK_JS__*/</script>
+<script>
+let TEMPLATES = /*__TEMPLATES__*/;
+let SIDE_T = /*__SIDE_TEMPLATES__*/;
+(function () {
+  const C = window.TankCore;
+  const $ = id => document.getElementById(id);
+  const LEN0 = [5000, 0, 0, 0, 0], WID0 = [3000, 2000, 0, 0, 0];
+  const NOTES = [
+    'Customers are requested to make a base concrete according to the designed specifications and the strength of site.',
+    'The required strength of base concrete must be at least 180Kg/cm2.',
+    'It is recommended to leave a space of 600mm in each direction from repairing and maintenance (as shown in left figure).',
+    'The customer designates the size of sockets for plumbing.',
+    'After the sockets are in place, the plumbing and heat insulation must be done by the customer.',
+    'A warranty card is posted on the tank which specifies the responsibilities of the manufacturer and customer\'s right usage.',
+    'Do not place heavy load or force on the panels during transportation. The parts that are touched with rope or other cargo should be cushioned.',
+    'Be careful not to put any heavy weight on the pipes which are connected to the fittings.',
+    'Pipe installation must be started from the tank side.',
+    'Make the hole at the exact place and be careful not to put unbalanced weight on the fittings.',
+    'Be careful of fire during welding.',
+    'Be careful to keep the inside supporting parts from colliding each other.'];
+  $('tNotes').value = NOTES.join('\n');
+
+  /* Tab Navigation */
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      const target = $(btn.getAttribute('data-tab'));
+      if (target) {
+        target.classList.add('active');
+        if (btn.getAttribute('data-tab') === 'tab-panels') {
+          loadDbPanels();
+        }
+        if (btn.getAttribute('data-tab') === 'tab-nozzles') {
+          updateNozzleUi();
+        }
+      }
+    });
+  });
+
+  /* Theme Toggle */
+  $('themeBtn').addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const nx = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', nx);
+    $('themeBtn').textContent = nx === 'dark' ? '🌙 다크' : '☀️ 라이트';
+    draw();
+  });
+
+  /* Sidebar Toggle */
+  $('toggleSide').addEventListener('click', () => {
+    const body = $('appBody');
+    body.classList.toggle('collapsed');
+    $('toggleSide').textContent = body.classList.contains('collapsed') ? '▶ 패널' : '◀ 패널';
+    setTimeout(fitView, 220);
+  });
+
+  function makeInputs(host, arr, key) {
+    arr.forEach((v, i) => {
+      const inp = document.createElement('input');
+      inp.type = 'number'; inp.id = key + i; inp.min = 0; inp.step = 100; inp.value = v || '';
+      inp.setAttribute('aria-label', host.firstChild.textContent + ' ' + (i + 1));
+      inp.addEventListener('input', schedule);
+      host.appendChild(inp);
+    });
+  }
+  makeInputs($('segW'), WID0, 'W'); makeInputs($('segL'), LEN0, 'L');
+
+  function fillHeights() {
+    const cur = Number($('H').value) || 3000, one = $('b11').checked;
+    const list = one ? [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000] : [1000, 1300, 1500, 1800, 2000, 2300, 2500, 2800, 3000, 3300, 3500, 3800, 4000, 4300, 4500, 4800, 5000];
+    $('H').innerHTML = list.map(v => '<option value="' + v + '">' + v + '</option>').join('');
+    $('H').value = list.includes(cur) ? cur : 3000;
+  }
+  fillHeights();
+  $('H').addEventListener('change', () => {
+    updateNozzleUi();
+    schedule();
+  });
+  $('b11').addEventListener('change', () => { fillHeights(); schedule(); });
+  ['tCustomer', 'tAddress', 'tTankSize', 'tClient', 'tConsultant', 'tContractor', 'tProject', 'tMep', 'tChart', 'tDate', 'tDrawn', 'tNotes', 'tTel', 'tDwgNo', 'tParts', 'tRemarks'].forEach(id => {
+    const el = $(id); if (el) el.addEventListener('input', schedule);
+  });
+  $('sheetOn').addEventListener('change', schedule);
+  $('sheetKind').addEventListener('change', schedule);
+
+  /* CHT File Loader */
+  $('chtBtn').addEventListener('click', () => $('chtFile').click());
+  $('chtFile').addEventListener('change', async ev => {
+    const f = ev.target.files[0]; if (!f) return;
+    try {
+      const buf = await f.arrayBuffer(); let txt;
+      try { txt = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { try { txt = new TextDecoder('euc-kr').decode(buf); } catch (e2) { txt = new TextDecoder().decode(buf); } }
+      const blocks = {}; let cur = null;
+      txt.split(/\r?\n/).forEach(l => {
+        const m = l.match(/^\[([^\]#]*)#(\d+)\]/);
+        if (m) { cur = m[2]; blocks[cur] = []; return; }
+        if (l.trim() === '{' || l.trim() === '}' || /^ver/i.test(l) || cur === null) { if (l.trim() === '}') cur = null; return; }
+        if (l.trim()) blocks[cur].push(l.trim());
+      });
+      if (blocks[0] && blocks[0].length) $('tNotes').value = blocks[0].join('\n');
+      if (blocks[1]) $('tRemarks').value = blocks[1].join('\n');
+      schedule();
+    } catch (e) { alert('차트 파일을 읽지 못했습니다: ' + e.message); }
+  });
+
+  function syncRf() {
+    const sts = document.querySelector('input[name=mat]:checked').value === 'STS';
+    const rfs = document.querySelectorAll('input[name=rf]');
+    if (sts && rfs[0].checked) rfs[1].checked = true;
+    rfs[0].disabled = sts;
+    rfs[0].parentElement.style.opacity = sts ? '0.4' : '1';
+    schedule();
+  }
+  document.querySelectorAll('input[name=mat]').forEach(r => r.addEventListener('change', syncRf));
+  document.querySelectorAll('input[name=rf]').forEach(r => r.addEventListener('change', schedule));
+
+  let plan = null, view = { x: 0, y: 0, s: 1 };
+  let removed = new Set(), pillars = new Set(), marks = {}, ladders = {}, topInletCell = [0, 0], shapeKey = '';
+  let nozzleData = [];
+  let currentNozFace = 'front';
+  let currentNozTool = 'INLET';
+  let selectedNozzleId = null;
+  const iconCache = {};
+  const vals = k => [0, 1, 2, 3, 4].map(i => Number($(k + i).value) || 0).filter(Boolean);
+  const pk = (i, j) => i + ',' + j;
+
+  function getSingleCompNozzles(map, H) {
+    const hVal = H || 3000;
+    return [
+      { id: 'noz_1', mark: 'N1', name: 'INLET', desc: '유입구', size: '100A', type: 'FLANGE', face: 'front', seg: 1, offset: 0, elev: Math.max(100, hVal - 300), use: true, topCell: [0, 0] },
+      { id: 'noz_2', mark: 'N2', name: 'OUTLET', desc: '유출구', size: '150A', type: 'FLANGE', face: 'front', seg: 2, offset: 0, elev: 300, use: true },
+      { id: 'noz_3', mark: 'N3', name: 'OVERFLOW', desc: '월류관', size: '100A', type: 'FLANGE', face: 'right', seg: 1, offset: 0, elev: Math.max(100, hVal - 200), use: true },
+      { id: 'noz_4', mark: 'N4', name: 'DRAIN', desc: '배수구', size: '50A', type: 'SOCKET', face: 'front', seg: 1, offset: -250, elev: 100, use: true },
+      { id: 'noz_5', mark: 'N5', name: 'FIRE', desc: '소방용수', size: '150A', type: 'FLANGE', face: 'front', seg: 3, offset: 0, elev: 200, use: true }
+    ];
+  }
+
+  function getDoubleCompNozzles(map, H) {
+    const hVal = H || 3000;
+    const numCols = map ? map.cols.length : 10;
+    const halfCol = Math.max(1, Math.floor(numCols / 2));
+    const c1_inlet = 1;
+    const c1_outlet = Math.min(2, halfCol);
+    const c1_drain = 1;
+    const c1_fire = Math.min(3, halfCol);
+
+    const c2_inlet = halfCol + 1;
+    const c2_outlet = Math.min(halfCol + 2, numCols);
+    const c2_drain = halfCol + 1;
+    const c2_fire = Math.min(halfCol + 3, numCols);
+
+    return [
+      // 1구획 노즐 세트 (5개)
+      { id: 'noz_1', mark: 'N1', name: 'INLET', desc: '1구획 유입구', size: '100A', type: 'FLANGE', face: 'front', seg: c1_inlet, offset: 0, elev: Math.max(100, hVal - 300), use: true, topCell: [0, 0] },
+      { id: 'noz_2', mark: 'N2', name: 'OUTLET', desc: '1구획 유출구', size: '150A', type: 'FLANGE', face: 'front', seg: c1_outlet, offset: 0, elev: 300, use: true },
+      { id: 'noz_3', mark: 'N3', name: 'OVERFLOW', desc: '1구획 월류관', size: '100A', type: 'FLANGE', face: 'left', seg: 1, offset: 0, elev: Math.max(100, hVal - 200), use: true },
+      { id: 'noz_4', mark: 'N4', name: 'DRAIN', desc: '1구획 배수구', size: '50A', type: 'SOCKET', face: 'front', seg: c1_drain, offset: -250, elev: 100, use: true },
+      { id: 'noz_5', mark: 'N5', name: 'FIRE', desc: '1구획 소방용수', size: '150A', type: 'FLANGE', face: 'front', seg: c1_fire, offset: 0, elev: 200, use: true },
+
+      // 2구획 노즐 세트 (5개)
+      { id: 'noz_6', mark: 'N6', name: 'INLET', desc: '2구획 유입구', size: '100A', type: 'FLANGE', face: 'front', seg: c2_inlet, offset: 0, elev: Math.max(100, hVal - 300), use: true, topCell: [0, Math.min(c2_inlet - 1, (map ? map.cols.length - 1 : 5))] },
+      { id: 'noz_7', mark: 'N7', name: 'OUTLET', desc: '2구획 유출구', size: '150A', type: 'FLANGE', face: 'front', seg: c2_outlet, offset: 0, elev: 300, use: true },
+      { id: 'noz_8', mark: 'N8', name: 'OVERFLOW', desc: '2구획 월류관', size: '100A', type: 'FLANGE', face: 'right', seg: 1, offset: 0, elev: Math.max(100, hVal - 200), use: true },
+      { id: 'noz_9', mark: 'N9', name: 'DRAIN', desc: '2구획 배수구', size: '50A', type: 'SOCKET', face: 'front', seg: c2_drain, offset: -250, elev: 100, use: true },
+      { id: 'noz_10', mark: 'N10', name: 'FIRE', desc: '2구획 소방용수', size: '150A', type: 'FLANGE', face: 'front', seg: c2_fire, offset: 0, elev: 200, use: true }
+    ];
+  }
+
+  function renderSegOptions(face, curSeg, map, L) {
+    if (!map) return '';
+    const isCols = (face === 'front' || face === 'rear');
+    const arr = isCols ? map.cols : map.rows;
+    const xs = isCols ? map.xs : map.ys;
+    const secs = isCols ? (L || []).filter(Boolean) : (vals('W') || []).filter(Boolean);
+
+    const getCompLabel = (pos) => {
+      if (secs.length <= 1) return '';
+      let cum = 0;
+      for (let c = 0; c < secs.length; c++) {
+        cum += secs[c];
+        if (pos < cum) return `[${c + 1}구획] `;
+      }
+      return `[${secs.length}구획] `;
+    };
+
+    return arr.map((len, idx) => {
+      const p1 = xs[idx], p2 = xs[idx + 1];
+      const comp = getCompLabel(p1);
+      const sel = (idx + 1 === Number(curSeg)) ? 'selected' : '';
+      return `<option value="${idx + 1}" ${sel}>${comp}${idx + 1}번 (${p1.toLocaleString()}~${p2.toLocaleString()}mm)</option>`;
+    }).join('');
+  }
+
+  function getCompLabelByCol(colIdx, face) {
+    if (face !== 'front' && face !== 'rear') return '';
+    const L_secs = (vals('L') || []).filter(Boolean);
+    if (L_secs.length <= 1) return '';
+    let map = null;
+    try { map = C.createMap({ length: vals('L'), width: vals('W') }); } catch (e) {}
+    if (!map) return '';
+    const pos = map.xs[colIdx] || 0;
+    let cum = 0;
+    for (let c = 0; c < L_secs.length; c++) {
+      cum += L_secs[c];
+      if (pos < cum) return `[${c + 1}구획]`;
+    }
+    return `[${L_secs.length}구획]`;
+  }
+
+  function renderNozzleElevationGrid(map) {
+    if (!map) {
+      const L = vals('L'), W = vals('W');
+      if (L[0] && W[0]) {
+        try { map = C.createMap({ length: L, width: W }); } catch (e) {}
+      }
+    }
+    if (!map) return;
+
+    const grid = $('nozGrid');
+    const colHeader = $('nozColHeader');
+    const rowLabels = $('nozRowLabels');
+    const title = $('nozGridTitle');
+    const baseFrame = $('nozBaseFrame');
+    if (!grid) return;
+
+    const titles = {
+      front: '정면 뷰 (Front)',
+      right: '우측면 뷰 (Right)',
+      rear: '배면 뷰 (Rear)',
+      left: '좌측면 뷰 (Left)',
+      top: '상부 평면 뷰 (Top Roof)'
+    };
+    if (title) title.textContent = titles[currentNozFace] || '측면 뷰';
+
+    const isTop = (currentNozFace === 'top');
+    if (baseFrame) baseFrame.style.display = isTop ? 'none' : 'flex';
+
+    const H = [Number($('H').value) || 0, 0, 0, 0, 0];
+    const nH = H.reduce((a, b) => a + (b || 0), 0) || 3000;
+    const hs = C.heightSegs(H[0], $('b11').checked) || [1000, 1000, 1000];
+
+    let cols, colXs, totalW;
+    const isCols = (currentNozFace === 'front' || currentNozFace === 'rear' || isTop);
+    if (isCols) {
+      cols = map.cols;
+      colXs = map.xs;
+      totalW = map.length;
+    } else {
+      cols = map.rows;
+      colXs = map.ys;
+      totalW = map.width;
+    }
+
+    let rows;
+    const totalH = isTop ? map.width : nH;
+    if (isTop) {
+      rows = map.rows.slice().reverse();
+    } else {
+      rows = hs.slice().reverse();
+    }
+
+    const wPx = Math.max(220, Math.min(360, (grid.parentElement ? grid.parentElement.clientWidth : 320) || 320));
+    const sc = Math.min((wPx - 10) / totalW, 180 / totalH);
+
+    grid.style.gridTemplateColumns = cols.map(c => Math.max(16, Math.round(c * sc)) + 'px').join(' ');
+    grid.style.gridTemplateRows = rows.map(r => Math.max(14, Math.round(r * sc)) + 'px').join(' ');
+    grid.style.justifyContent = 'start';
+    grid.innerHTML = '';
+
+    const tierIntervals = [];
+    let curY = 0;
+    hs.forEach((hVal, idx) => {
+      tierIntervals.push({ idx, y0: curY, y1: curY + hVal, h: hVal });
+      curY += hVal;
+    });
+
+    if (rowLabels) {
+      if (isTop) {
+        rowLabels.innerHTML = rows.map((r, ri) => {
+          const actualRowIdx = map.rows.length - 1 - ri;
+          return `<div style="height:${Math.max(14, Math.round(r * sc))}px;line-height:${Math.max(14, Math.round(r * sc))}px">${actualRowIdx + 1}행</div>`;
+        }).join('');
+      } else {
+        rowLabels.innerHTML = rows.map((r, ri) => {
+          const tierIdx = hs.length - 1 - ri;
+          const tint = tierIntervals[tierIdx];
+          return `<div style="height:${Math.max(14, Math.round(r * sc))}px;display:flex;flex-direction:column;justify-content:center">
+            <b>${tierIdx + 1}단</b>
+            <span style="font-size:8px;color:var(--muted)">EL+${tint.y0}</span>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    if (colHeader) {
+      const secs = isCols ? (vals('L') || []).filter(Boolean) : (vals('W') || []).filter(Boolean);
+      const getCompTag = (pos) => {
+        if (secs.length <= 1) return '';
+        let cum = 0;
+        for (let c = 0; c < secs.length; c++) {
+          cum += secs[c];
+          if (pos < cum) return `${c + 1}구획 `;
+        }
+        return `${secs.length}구획 `;
+      };
+
+      colHeader.style.display = 'grid';
+      colHeader.style.gridTemplateColumns = cols.map(c => Math.max(16, Math.round(c * sc)) + 'px').join(' ');
+      colHeader.style.gap = '1px';
+      colHeader.style.paddingLeft = '62px';
+      colHeader.innerHTML = cols.map((c, ci) => {
+        const p1 = colXs[ci];
+        const tag = getCompTag(p1);
+        return `<div style="font-size:8px;color:var(--muted);text-align:center;overflow:hidden;white-space:nowrap" title="${tag}${ci + 1}번 (${c}mm)">${tag}${ci + 1}</div>`;
+      }).join('');
+    }
+
+    const isPartitionCol = (ci) => {
+      if (!isCols) return false;
+      const L_secs = (vals('L') || []).filter(Boolean);
+      if (L_secs.length <= 1) return false;
+      let cum = 0;
+      for (let s = 0; s < L_secs.length - 1; s++) {
+        cum += L_secs[s];
+        if (colXs[ci + 1] === cum) return true;
+      }
+      return false;
+    };
+
+    for (let ri = 0; ri < rows.length; ri++) {
+      const tierIdx = isTop ? (map.rows.length - 1 - ri) : (hs.length - 1 - ri);
+      const tierInt = isTop ? null : tierIntervals[tierIdx];
+      const rowHeightMm = rows[ri];
+
+      for (let ci = 0; ci < cols.length; ci++) {
+        const colWidthMm = cols[ci];
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'noz-grid-btn' + (isPartitionCol(ci) ? ' comp-border-right' : '');
+        b.style.width = Math.max(16, Math.round(colWidthMm * sc)) + 'px';
+        b.style.height = Math.max(14, Math.round(rowHeightMm * sc)) + 'px';
+        b.innerHTML = panelIcon(colWidthMm, rowHeightMm, 0);
+
+        let cellNozzles = [];
+        if (isTop) {
+          cellNozzles = nozzleData.filter(n => n.use !== false && n.face === 'top' && n.topCell && n.topCell[0] === tierIdx && n.topCell[1] === ci);
+        } else {
+          cellNozzles = nozzleData.filter(n => {
+            if (n.use === false || n.face !== currentNozFace) return false;
+            if ((Number(n.seg) || 1) !== (ci + 1)) return false;
+            const el = Number(n.elev) || 0;
+            return el >= tierInt.y0 && (tierIdx === hs.length - 1 ? el <= tierInt.y1 : el < tierInt.y1);
+          });
+        }
+
+        cellNozzles.forEach(n => {
+          const marker = document.createElement('div');
+          const svcClass = {
+            INLET: 'noz-marker-inlet',
+            OUTLET: 'noz-marker-outlet',
+            OVERFLOW: 'noz-marker-overflow',
+            DRAIN: 'noz-marker-drain',
+            FIRE: 'noz-marker-fire'
+          }[n.name] || 'noz-marker-custom';
+
+          marker.className = `noz-marker ${svcClass}` + (n.id === selectedNozzleId ? ' selected' : '');
+          marker.title = `[${n.mark}] ${n.name} ${n.size} (${n.type}) ${n.face === 'top' ? 'TOP' : 'EL.+' + n.elev + 'mm'} ${n.desc ? '[' + n.desc + ']' : ''}`;
+
+          let leftPct = 50;
+          if (n.offset === -250) leftPct = 25;
+          else if (n.offset === 250) leftPct = 75;
+
+          let topPct = 50;
+          if (!isTop && tierInt) {
+            const frac = (Number(n.elev || 0) - tierInt.y0) / tierInt.h;
+            topPct = Math.max(15, Math.min(85, Math.round((1 - frac) * 100)));
+          }
+
+          marker.style.left = leftPct + '%';
+          marker.style.top = topPct + '%';
+          marker.innerHTML = `<span>${n.mark}</span>`;
+          b.appendChild(marker);
+        });
+
+        b.addEventListener('click', () => {
+          handleGridCellClick(currentNozFace, ci, tierIdx, tierInt, cellNozzles);
+        });
+
+        grid.appendChild(b);
+      }
+    }
+  }
+
+  function handleGridCellClick(face, colIdx, tierIdx, tierInt, cellNozzles) {
+    const H = [Number($('H').value) || 0, 0, 0, 0, 0];
+    const nH = H.reduce((a, b) => a + (b || 0), 0) || 3000;
+    const tool = document.querySelector('input[name=nozTool]:checked').value;
+
+    if (tool === 'del') {
+      if (cellNozzles.length > 0) {
+        const toDel = cellNozzles[0];
+        nozzleData = nozzleData.filter(n => n.id !== toDel.id);
+        if (selectedNozzleId === toDel.id) selectedNozzleId = null;
+        renderNozzleElevationGrid();
+        updateSelectedPropBox();
+        updatePreviewTbody();
+        schedule();
+      }
+      return;
+    }
+
+    if (tool === 'select') {
+      if (cellNozzles.length > 0) {
+        selectedNozzleId = cellNozzles[0].id;
+      } else if (selectedNozzleId) {
+        const selNoz = nozzleData.find(n => n.id === selectedNozzleId);
+        if (selNoz) {
+          selNoz.face = face;
+          if (face === 'top') {
+            selNoz.topCell = [tierIdx, colIdx];
+            selNoz.elev = 'TOP';
+          } else {
+            selNoz.seg = colIdx + 1;
+            if (tierInt) {
+              selNoz.elev = Math.round((tierInt.y0 + tierInt.y1) / 2);
+            }
+          }
+        }
+      }
+      renderNozzleElevationGrid();
+      updateSelectedPropBox();
+      updatePreviewTbody();
+      schedule();
+      return;
+    }
+
+    const svc = tool;
+    let targetNoz = null;
+    if (selectedNozzleId) {
+      const curr = nozzleData.find(n => n.id === selectedNozzleId);
+      if (curr && curr.name === svc) targetNoz = curr;
+    }
+
+    const compTag = getCompLabelByCol(colIdx, face);
+    if (!targetNoz) {
+      targetNoz = nozzleData.find(n => n.name === svc && n.face === face && n.seg === (colIdx + 1));
+      if (!targetNoz) {
+        targetNoz = nozzleData.find(n => n.name === svc && n.face === face);
+      }
+    }
+
+    let defaultElev = 300;
+    let defaultType = 'FLANGE';
+    let defaultSize = '100A';
+    let defaultOffset = 0;
+
+    if (svc === 'INLET') {
+      defaultElev = face === 'top' ? 'TOP' : Math.max(100, nH - 300);
+      defaultSize = '100A';
+      defaultType = 'FLANGE';
+    } else if (svc === 'OUTLET') {
+      defaultElev = 300;
+      defaultSize = '150A';
+      defaultType = 'FLANGE';
+    } else if (svc === 'OVERFLOW') {
+      defaultElev = Math.max(100, nH - 200);
+      defaultSize = '100A';
+      defaultType = 'FLANGE';
+    } else if (svc === 'DRAIN') {
+      defaultElev = 100;
+      defaultSize = '50A';
+      defaultType = 'SOCKET';
+      defaultOffset = -250;
+    } else if (svc === 'FIRE') {
+      defaultElev = 200;
+      defaultSize = '150A';
+      defaultType = 'FLANGE';
+    }
+
+    if (targetNoz) {
+      targetNoz.face = face;
+      if (face === 'top') {
+        targetNoz.topCell = [tierIdx, colIdx];
+        targetNoz.elev = 'TOP';
+      } else {
+        targetNoz.seg = colIdx + 1;
+        targetNoz.elev = (tierInt && (svc === 'INLET' || svc === 'OVERFLOW') && tierInt.idx === 0) ? (tierInt.y0 + 500) : defaultElev;
+      }
+      targetNoz.use = true;
+      selectedNozzleId = targetNoz.id;
+    } else {
+      const newIdx = nozzleData.length + 1;
+      const newNoz = {
+        id: 'noz_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        mark: 'N' + newIdx,
+        name: svc,
+        desc: compTag ? `${compTag} ${svc}` : '',
+        size: defaultSize,
+        type: defaultType,
+        face: face,
+        seg: colIdx + 1,
+        offset: defaultOffset,
+        elev: face === 'top' ? 'TOP' : defaultElev,
+        topCell: face === 'top' ? [tierIdx, colIdx] : [0, 0],
+        use: true
+      };
+      nozzleData.push(newNoz);
+      selectedNozzleId = newNoz.id;
+    }
+
+    renderNozzleElevationGrid();
+    updateSelectedPropBox();
+    updatePreviewTbody();
+    schedule();
+  }
+
+  function updateSelectedPropBox() {
+    const box = $('nozSelectedPropBox');
+    if (!box) return;
+    const n = nozzleData.find(x => x.id === selectedNozzleId) || nozzleData[0];
+    if (!n) {
+      box.style.display = 'none';
+      return;
+    }
+    box.style.display = 'block';
+    selectedNozzleId = n.id;
+
+    $('nozPropTitle').textContent = `[${n.mark}] ${n.name} 속성 설정`;
+    $('propMark').value = n.mark || '';
+    $('propName').value = n.name || '';
+    $('propDesc').value = n.desc || '';
+    $('propSize').value = n.size || '100A';
+    $('propType').value = n.type || 'FLANGE';
+    $('propFace').value = n.face || 'front';
+    $('propOffset').value = String(n.offset || 0);
+
+    const isTop = (n.face === 'top');
+    $('propElev').value = isTop ? '' : (n.elev || 0);
+    $('propElev').disabled = isTop;
+    $('propElevUnit').textContent = isTop ? 'TOP' : 'mm';
+
+    let m = null;
+    try { m = C.createMap({ length: vals('L'), width: vals('W') }); } catch (e) {}
+    const segSel = $('propSeg');
+    if (segSel && m) {
+      segSel.style.display = isTop ? 'none' : 'block';
+      segSel.innerHTML = renderSegOptions(n.face, n.seg, m, vals('L'));
+    }
+  }
+
+  function selectNozzle(id) {
+    const n = nozzleData.find(x => x.id === id);
+    if (!n) return;
+    selectedNozzleId = n.id;
+    currentNozFace = n.face;
+    const r = document.querySelector(`input[name=nozViewFace][value="${n.face}"]`);
+    if (r) r.checked = true;
+    renderNozzleElevationGrid();
+    updateSelectedPropBox();
+    updatePreviewTbody();
+  }
+
+  function updatePreviewTbody() {
+    const tbody = $('nozPreviewTbody');
+    if (!tbody) return;
+    const faceTextMap = { front: 'FRONT (정면)', rear: 'REAR (배면)', left: 'LEFT (좌측)', right: 'RIGHT (우측)', top: 'TOP (상부)' };
+    tbody.innerHTML = nozzleData.map(n => {
+      if (!n.use) return `<tr style="opacity:0.4"><td>${n.mark}</td><td>${n.name}${n.desc ? ' (' + n.desc + ')' : ''}</td><td colspan="5" style="text-align:center">미사용</td></tr>`;
+      const elev = n.face === 'top' ? 'TOP' : `EL.+${Number(n.elev || 0).toLocaleString()}mm`;
+      const loc = faceTextMap[n.face] || n.face;
+      const typeStr = n.type === 'FLANGE' ? 'FLG 10K' : 'SOCKET';
+      const isSel = (n.id === selectedNozzleId);
+      return `<tr style="cursor:pointer;background:${isSel ? 'rgba(2,132,199,0.18)' : 'transparent'}" onclick="selectNozzle('${n.id}')">
+        <td style="font-weight:700;color:${isSel ? 'var(--accent)' : 'inherit'}">${n.mark}</td>
+        <td><b>${n.name}</b> ${n.desc ? '<span style="font-size:10px;color:var(--muted)">(' + n.desc + ')</span>' : ''}</td>
+        <td><span class="badge-tag" style="position:static;background:#0284c7;color:#fff">${n.size}</span></td>
+        <td>${typeStr}</td>
+        <td>${elev}</td>
+        <td>${loc} ${n.face !== 'top' ? (n.seg + '번') : ''}</td>
+        <td style="text-align:center">
+          <button type="button" class="btn-sm btn-select-noz" data-id="${n.id}" style="padding:1px 5px;font-size:10px">✏️</button>
+          <button type="button" class="btn-sm btn-del-noz" data-id="${n.id}" style="color:#ef4444;padding:1px 4px;font-size:10px">🗑️</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.btn-select-noz').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectNozzle(btn.getAttribute('data-id'));
+      });
+    });
+
+    tbody.querySelectorAll('.btn-del-noz').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        nozzleData = nozzleData.filter(x => x.id !== id);
+        if (selectedNozzleId === id) selectedNozzleId = null;
+        renderNozzleElevationGrid();
+        updateSelectedPropBox();
+        updatePreviewTbody();
+        schedule();
+      });
+    });
+  }
+
+  function updateNozzleUi(map) {
+    if (!map) {
+      const L = vals('L'), W = vals('W');
+      if (L[0] && W[0]) {
+        try { map = C.createMap({ length: L, width: W }); } catch (e) {}
+      }
+    }
+    if (!map) return;
+    if (nozzleData.length === 0) {
+      const isMulti = vals('L').filter(Boolean).length > 1;
+      const H = Number($('H').value) || 3000;
+      nozzleData = isMulti ? getDoubleCompNozzles(map, H) : getSingleCompNozzles(map, H);
+      selectedNozzleId = nozzleData[0] ? nozzleData[0].id : null;
+    }
+    renderNozzleElevationGrid(map);
+    updateSelectedPropBox();
+    updatePreviewTbody();
+  }
+
+  function panelIcon(w, h, mk) {
+    const mat = document.querySelector('input[name=mat]:checked').value, key = mat + w + 'x' + h;
+    if (!mk && iconCache[key]) return iconCache[key];
+    let p = '';
+    C.panelShapes(TEMPLATES, mat, 0, 0, w, h).forEach(e => {
+      if (e.t === 'line') p += `<line x1="${e.a[0]}" y1="${h - e.a[1]}" x2="${e.b[0]}" y2="${h - e.b[1]}"/>`;
+      else if (e.t === 'circle') p += `<circle cx="${e.c[0]}" cy="${h - e.c[1]}" r="${e.r}"/>`;
+    });
+    let mp = '';
+    if (mk & 1) {
+      mp += `<circle cx="500" cy="500" r="300" stroke="#ea580c" stroke-width="26" fill="rgba(234, 88, 12, 0.16)"/>`;
+      mp += `<polygon points="260,105 735,105 888,260 888,735 735,888 262,888 105,735 105,260" stroke="#c2410c" stroke-width="16" fill="none"/>`;
+      mp += `<rect x="310" y="67" width="80" height="43" fill="#ea580c"/><rect x="610" y="67" width="80" height="43" fill="#ea580c"/><rect x="462" y="898" width="76" height="47" fill="#ea580c"/>`;
+    }
+    if (mk & 2) {
+      mp += `<circle cx="500" cy="500" r="200" stroke="#0284c7" stroke-width="26" fill="rgba(2, 132, 199, 0.22)"/>`;
+      mp += `<circle cx="500" cy="500" r="100" stroke="#0284c7" stroke-width="20" fill="#0284c7"/>`;
+      mp += `<line x1="260" y1="500" x2="740" y2="500" stroke="#0284c7" stroke-width="18"/>`;
+      mp += `<line x1="500" y1="260" x2="500" y2="740" stroke="#0284c7" stroke-width="18"/>`;
+    }
+    const svg = `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="1" style="width:100%;height:100%;display:block"><g stroke-opacity=".45" vector-effect="non-scaling-stroke">${p}</g><g vector-effect="non-scaling-stroke">${mp}</g><rect x="0" y="0" width="${w}" height="${h}" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`;
+    return mk ? svg : (iconCache[key] = svg);
+  }
+
+  function renderGrid(map) {
+    const g = $('egrid'), wPx = Math.max(200, g.clientWidth || 320), sc = Math.min(wPx / map.length, 260 / map.width);
+    g.style.gridTemplateColumns = map.cols.map(c => Math.round(c * sc) + 'px').join(' ');
+    g.style.gridTemplateRows = map.rows.slice().reverse().map(r => Math.max(14, Math.round(r * sc)) + 'px').join(' ');
+    g.style.justifyContent = 'start';
+    g.innerHTML = '';
+
+    const L_secs = (vals('L') || []).filter(Boolean);
+    const W_secs = (vals('W') || []).filter(Boolean);
+
+    // 구획 헤더 바 (칸막이 구획 표시)
+    const compHeader = $('planCompHeader');
+    if (compHeader) {
+      if (L_secs.length > 1) {
+        compHeader.style.display = 'flex';
+        compHeader.innerHTML = L_secs.map((len, idx) => {
+          return `<div style="flex:${len};text-align:center;background:rgba(234,88,12,0.12);color:#ea580c;border:1px dashed #ea580c;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            📦 ${idx + 1}구획 (${len.toLocaleString()}mm)
+          </div>`;
+        }).join('<div style="display:flex;align-items:center;color:#ea580c;font-size:9px;font-weight:800;padding:0 2px">⚡칸막이</div>');
+      } else if (W_secs.length > 1) {
+        compHeader.style.display = 'flex';
+        compHeader.innerHTML = W_secs.map((wid, idx) => {
+          return `<div style="flex:${wid};text-align:center;background:rgba(234,88,12,0.12);color:#ea580c;border:1px dashed #ea580c;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            📦 ${idx + 1}구획 (${wid.toLocaleString()}mm)
+          </div>`;
+        }).join('<div style="display:flex;align-items:center;color:#ea580c;font-size:9px;font-weight:800;padding:0 2px">⚡칸막이</div>');
+      } else {
+        compHeader.style.display = 'none';
+      }
+    }
+
+    // 칸막이 위치 판별 함수 (L 또는 W 분할)
+    const isPartitionCol = (j) => {
+      if (L_secs.length <= 1) return false;
+      let cum = 0;
+      for (let s = 0; s < L_secs.length - 1; s++) {
+        cum += L_secs[s];
+        if (map.xs[j + 1] === cum) return true;
+      }
+      return false;
+    };
+
+    const isPartitionRow = (i) => {
+      if (W_secs.length <= 1) return false;
+      let cum = 0;
+      for (let s = 0; s < W_secs.length - 1; s++) {
+        cum += W_secs[s];
+        if (map.ys[i] === cum) return true;
+      }
+      return false;
+    };
+
+    for (let i = map.rows.length - 1; i >= 0; i--) for (let j = 0; j < map.cols.length; j++) {
+      const key = pk(i, j), off = removed.has(key), pil = pillars.has(key), mk = marks[key] || 0;
+      const isPartRight = isPartitionCol(j);
+      const isPartBottom = isPartitionRow(i);
+
+      const b = document.createElement('button'); b.type = 'button';
+      b.title = map.cols[j] + ' × ' + map.rows[i] + (off ? ' (삭제됨)' : (mk ? ' (부속품 설치됨)' : ''));
+      let btnCls = off ? (pil ? 'off pil' : 'off') : '';
+      if (isPartRight) btnCls += ' cell-part-right';
+      if (isPartBottom) btnCls += ' cell-part-bottom';
+      b.className = btnCls.trim();
+      b.innerHTML = off ? (pil ? '<svg viewBox="0 0 10 10" preserveAspectRatio="none" style="width:100%;height:100%" stroke="currentColor" fill="none" stroke-width="1" vector-effect="non-scaling-stroke"><rect x="2" y="2" width="6" height="6"/><path d="M2 2L8 8M2 8L8 2"/></svg><span class="badge-pillar">기둥</span>' : '') : panelIcon(map.cols[j], map.rows[i], mk);
+
+      if (isPartRight && i === map.rows.length - 1) {
+        const pBadge = document.createElement('span');
+        pBadge.className = 'badge-partition';
+        pBadge.textContent = '⚡칸막이';
+        b.appendChild(pBadge);
+      }
+
+      b.addEventListener('click', () => {
+        const mode = document.querySelector('input[name=emode]:checked').value;
+        if (mode === 'pil' && !removed.has(key)) return;
+        if (mode === 'del') {
+          if (removed.has(key)) { removed.delete(key); pillars.delete(key); }
+          else if (map.rows.length * map.cols.length - removed.size > 1) { removed.add(key); delete marks[key]; delete ladders[key]; }
+        } else if (mode === 'lad') {
+          const ex = C.exposedSides(map, i, j), cur = ladders[key], seq = [undefined, ...ex], nx = seq[(seq.indexOf(cur) + 1) % seq.length];
+          if (nx) ladders[key] = nx; else delete ladders[key];
+        } else if (mode === 'inlet') {
+          if (!removed.has(key)) {
+            // 구획 인덱스 판별
+            let compIdx = 1, totalComps = 1;
+            if (L_secs.length > 1) {
+              totalComps = L_secs.length;
+              const cx = (map.xs[j] + map.xs[j + 1]) / 2;
+              let cum = 0;
+              for (let c = 0; c < L_secs.length; c++) {
+                cum += L_secs[c];
+                if (cx < cum) { compIdx = c + 1; break; }
+              }
+            } else if (W_secs.length > 1) {
+              totalComps = W_secs.length;
+              const cy = (map.ys[i] + map.ys[i + 1]) / 2;
+              let cum = 0;
+              for (let c = 0; c < W_secs.length; c++) {
+                cum += W_secs[c];
+                if (cy < cum) { compIdx = c + 1; break; }
+              }
+            }
+
+            // 현재 클릭한 칸에 이미 INLET이 있으면 토글 제거
+            const existInThisCell = nozzleData.find(n => n.name === 'INLET' && n.face === 'top' && n.use !== false && n.topCell && n.topCell[0] === i && n.topCell[1] === j);
+            if (existInThisCell) {
+              nozzleData = nozzleData.filter(n => n.id !== existInThisCell.id);
+              if (selectedNozzleId === existInThisCell.id) selectedNozzleId = null;
+            } else {
+              // 해당 구획의 기존 INLET 찾기
+              let compInlet = nozzleData.find(n => {
+                if (n.name !== 'INLET' || n.use === false) return false;
+                if (n.compIdx === compIdx) return true;
+                if (n.desc && n.desc.includes(`${compIdx}구획`)) return true;
+                if (totalComps > 1 && n.face === 'top' && n.topCell) {
+                  const cx = (map.xs[n.topCell[1]] + map.xs[n.topCell[1] + 1]) / 2;
+                  let cum = 0;
+                  for (let c = 0; c < L_secs.length; c++) {
+                    cum += L_secs[c];
+                    if (cx < cum) return (c + 1) === compIdx;
+                  }
+                }
+                return false;
+              });
+
+              if (!compInlet && totalComps === 1) {
+                compInlet = nozzleData.find(n => n.name === 'INLET' && n.use !== false);
+              }
+
+              if (compInlet) {
+                compInlet.face = 'top';
+                compInlet.topCell = [i, j];
+                compInlet.elev = 'TOP';
+                compInlet.seg = j + 1;
+                compInlet.compIdx = compIdx;
+                compInlet.desc = totalComps > 1 ? `${compIdx}구획 유입구` : '상부 유입구';
+                compInlet.use = true;
+                selectedNozzleId = compInlet.id;
+              } else {
+                let markNum = 1;
+                while (nozzleData.some(n => n.mark === 'N' + markNum)) {
+                  markNum++;
+                }
+                const newNoz = {
+                  id: 'noz_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                  mark: 'N' + markNum,
+                  name: 'INLET',
+                  desc: totalComps > 1 ? `${compIdx}구획 유입구` : '상부 유입구',
+                  size: '100A',
+                  type: 'FLANGE',
+                  face: 'top',
+                  seg: j + 1,
+                  offset: 0,
+                  elev: 'TOP',
+                  topCell: [i, j],
+                  compIdx: compIdx,
+                  use: true
+                };
+                nozzleData.push(newNoz);
+                selectedNozzleId = newNoz.id;
+              }
+            }
+            renderNozzleElevationGrid(map);
+            updateSelectedPropBox();
+            updatePreviewTbody();
+          }
+        } else if (mode === 'han' || mode === 'vent') {
+          if (!removed.has(key) && map.cols[j] === 1000 && map.rows[i] === 1000) { const bit = mode === 'han' ? 1 : 2; marks[key] = (marks[key] || 0) ^ bit; if (!marks[key]) delete marks[key]; }
+        } else if (removed.has(key)) { pillars.has(key) ? pillars.delete(key) : pillars.add(key); }
+        rebuild(false);
+      });
+      if (!off && mk) {
+        if (mk & 1) {
+          const tag = document.createElement('span'); tag.className = 'badge-tag badge-manhole';
+          tag.textContent = '맨홀';
+          tag.style.cssText = (mk & 2) ? 'top:2px;left:50%;transform:translateX(-50%)' : 'top:50%;left:50%;transform:translate(-50%,-50%)';
+          b.appendChild(tag);
+        }
+        if (mk & 2) {
+          const tag = document.createElement('span'); tag.className = 'badge-tag badge-vent';
+          tag.textContent = 'VENT';
+          tag.style.cssText = (mk & 1) ? 'bottom:2px;left:50%;transform:translateX(-50%)' : 'top:50%;left:50%;transform:translate(-50%,-50%)';
+          b.appendChild(tag);
+        }
+      }
+      if (!off) {
+        const topNozs = nozzleData.filter(n => n.use !== false && n.face === 'top' && n.topCell && n.topCell[0] === i && n.topCell[1] === j);
+        topNozs.forEach(tn => {
+          const tag = document.createElement('span'); tag.className = 'badge-tag badge-inlet';
+          tag.textContent = `${tn.mark} ${tn.size}`;
+          tag.style.cssText = 'top:50%;left:50%;transform:translate(-50%,-50%);z-index:3';
+          b.appendChild(tag);
+        });
+      }
+      if (ladders[key] && !off) {
+        const sd = ladders[key];
+        const a = document.createElement('span'); a.className = 'badge-ladder ladder-' + sd;
+        a.textContent = { U: '▲사다리', D: '▼사다리', L: '◀사다리', R: '▶사다리' }[sd];
+        b.appendChild(a);
+        const borderProp = { U: 'borderTop', D: 'borderBottom', L: 'borderLeft', R: 'borderRight' }[sd];
+        b.style[borderProp] = '3px solid #16a34a';
+      }
+      g.appendChild(b);
+    }
+  }
+
+  document.querySelectorAll('input[name=mat]').forEach(r => r.addEventListener('change', () => { Object.keys(iconCache).forEach(k => delete iconCache[k]); }));
+  $('eReset').addEventListener('click', () => { removed = new Set(); pillars = new Set(); marks = {}; ladders = {}; topInletCell = [0, 0]; rebuild(false); });
+
+  const cv = $('c'), ctx = cv.getContext('2d');
+  const LY = { PANEL: 'lyPanel', PANEL_DETAIL: 'lyDetail', FRAME: 'lyFrame', REINF: 'lyReinf', WALL: 'lyWall', DIM: 'lyDim', SHEET: 'lySheet' };
+  const layerOn = e => $(LY[e.layer]).checked;
+  Object.values(LY).forEach(id => $(id).addEventListener('change', draw));
+  $('frm').addEventListener('change', () => schedule());
+  $('scaleSel').addEventListener('change', () => schedule());
+
+  // Visual Nozzle Editor Listeners
+  document.querySelectorAll('input[name=nozViewFace]').forEach(r => {
+    r.addEventListener('change', () => {
+      currentNozFace = r.value;
+      renderNozzleElevationGrid();
+      updateSelectedPropBox();
+    });
+  });
+
+  document.querySelectorAll('input[name=nozTool]').forEach(r => {
+    r.addEventListener('change', () => {
+      currentNozTool = r.value;
+    });
+  });
+
+  $('nozPresetSingle').addEventListener('click', () => {
+    const H = Number($('H').value) || 3000;
+    let m = null;
+    try { m = C.createMap({ length: vals('L'), width: vals('W') }); } catch (e) {}
+    nozzleData = getSingleCompNozzles(m, H);
+    selectedNozzleId = nozzleData[0] ? nozzleData[0].id : null;
+    renderNozzleElevationGrid(m);
+    updateSelectedPropBox();
+    updatePreviewTbody();
+    schedule();
+  });
+
+  $('nozPresetDouble').addEventListener('click', () => {
+    const H = Number($('H').value) || 3000;
+    let m = null;
+    try { m = C.createMap({ length: vals('L'), width: vals('W') }); } catch (e) {}
+    nozzleData = getDoubleCompNozzles(m, H);
+    selectedNozzleId = nozzleData[0] ? nozzleData[0].id : null;
+    renderNozzleElevationGrid(m);
+    updateSelectedPropBox();
+    updatePreviewTbody();
+    schedule();
+  });
+
+  $('nozClearAll').addEventListener('click', () => {
+    nozzleData = [];
+    selectedNozzleId = null;
+    renderNozzleElevationGrid();
+    updateSelectedPropBox();
+    updatePreviewTbody();
+    schedule();
+  });
+
+  $('nozAddCustomBtn').addEventListener('click', () => {
+    const nextIdx = nozzleData.length + 1;
+    const newNoz = {
+      id: 'noz_' + Date.now(),
+      mark: 'N' + nextIdx,
+      name: 'NOZZLE',
+      desc: '',
+      size: '100A',
+      type: 'FLANGE',
+      face: currentNozFace,
+      seg: 1,
+      offset: 0,
+      elev: (currentNozFace === 'top') ? 'TOP' : 500,
+      topCell: [0, 0],
+      use: true
+    };
+    nozzleData.push(newNoz);
+    selectedNozzleId = newNoz.id;
+    renderNozzleElevationGrid();
+    updateSelectedPropBox();
+    updatePreviewTbody();
+    schedule();
+  });
+
+  $('nozPropDel').addEventListener('click', () => {
+    if (!selectedNozzleId) return;
+    nozzleData = nozzleData.filter(x => x.id !== selectedNozzleId);
+    selectedNozzleId = nozzleData[0] ? nozzleData[0].id : null;
+    renderNozzleElevationGrid();
+    updateSelectedPropBox();
+    updatePreviewTbody();
+    schedule();
+  });
+
+  ['propMark', 'propName', 'propDesc', 'propSize', 'propType', 'propFace', 'propSeg', 'propOffset', 'propElev'].forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener('change', () => {
+      const n = nozzleData.find(x => x.id === selectedNozzleId);
+      if (!n) return;
+      if (id === 'propMark') n.mark = el.value.trim();
+      else if (id === 'propName') n.name = el.value.trim().toUpperCase();
+      else if (id === 'propDesc') n.desc = el.value.trim();
+      else if (id === 'propSize') n.size = el.value;
+      else if (id === 'propType') n.type = el.value;
+      else if (id === 'propFace') {
+        n.face = el.value;
+        if (n.face === 'top') { n.elev = 'TOP'; if (!n.topCell) n.topCell = [0, 0]; }
+        else if (n.elev === 'TOP') n.elev = 300;
+        currentNozFace = n.face;
+        const r = document.querySelector(`input[name=nozViewFace][value="${n.face}"]`);
+        if (r) r.checked = true;
+      }
+      else if (id === 'propSeg') n.seg = Number(el.value) || 1;
+      else if (id === 'propOffset') n.offset = Number(el.value) || 0;
+      else if (id === 'propElev') n.elev = Number(el.value) || 0;
+
+      renderNozzleElevationGrid();
+      updateSelectedPropBox();
+      updatePreviewTbody();
+      schedule();
+    });
+  });
+
+  $('propMark').addEventListener('input', () => {
+    const n = nozzleData.find(x => x.id === selectedNozzleId);
+    if (n) { n.mark = $('propMark').value.trim(); renderNozzleElevationGrid(); updatePreviewTbody(); schedule(); }
+  });
+  $('propName').addEventListener('input', () => {
+    const n = nozzleData.find(x => x.id === selectedNozzleId);
+    if (n) { n.name = $('propName').value.trim().toUpperCase(); renderNozzleElevationGrid(); updatePreviewTbody(); schedule(); }
+  });
+  $('propDesc').addEventListener('input', () => {
+    const n = nozzleData.find(x => x.id === selectedNozzleId);
+    if (n) { n.desc = $('propDesc').value.trim(); updatePreviewTbody(); schedule(); }
+  });
+  $('propElev').addEventListener('input', () => {
+    const n = nozzleData.find(x => x.id === selectedNozzleId);
+    if (n && n.face !== 'top') { n.elev = Number($('propElev').value) || 0; renderNozzleElevationGrid(); updatePreviewTbody(); schedule(); }
+  });
+
+  document.querySelectorAll('.btn-elev-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const n = nozzleData.find(x => x.id === selectedNozzleId);
+      if (!n || n.face === 'top') return;
+      const H = [Number($('H').value) || 0, 0, 0, 0, 0];
+      const nH = H.reduce((a, b) => a + (b || 0), 0) || 3000;
+      const v = btn.getAttribute('data-val');
+      const m = btn.getAttribute('data-mode');
+      if (v) n.elev = Number(v);
+      else if (m === 'top-overflow') n.elev = Math.max(100, nH - 200);
+      else if (m === 'top-inlet') n.elev = Math.max(100, nH - 300);
+      $('propElev').value = n.elev;
+      renderNozzleElevationGrid();
+      updatePreviewTbody();
+      schedule();
+    });
+  });
+
+  let timer = 0;
+  function schedule() { clearTimeout(timer); timer = setTimeout(() => { rebuild(true); }, 100); }
+
+  function rebuild(fit) {
+    const L = vals('L'), W = vals('W'), H = [Number($('H').value) || 0, 0, 0, 0, 0];
+    let msg = [];
+    [['폭(WIDTH)', W, 'W'], ['길이(LENGTH)', L, 'L']].forEach(([nm, arr, k]) => arr.forEach((v, i) => {
+      const e = C.checkSegment(v), el = $(k + i);
+      el.classList.toggle('bad', !!e);
+      if (e) msg.push(nm + ' ' + (i + 1) + '번 칸: ' + e);
+    }));
+    if (!W[0] || !L[0]) msg.push('폭과 길이의 첫 칸을 입력하세요');
+    const err = $('err'); err.hidden = !msg.length; err.textContent = msg.join(' / ');
+    if (msg.length) return;
+    try {
+      const m0 = C.createMap({ length: L, width: W });
+      const key = m0.cols.join('+') + '|' + m0.rows.join('+');
+      if (key !== shapeKey) { shapeKey = key; removed = new Set(); pillars = new Set(); marks = {}; ladders = {}; }
+      renderGrid(m0);
+      updateNozzleUi(m0);
+      const opt = {
+        length: L, width: W, height: H, hseg: C.heightSegs(H[0], $('b11').checked), removed: [...removed].map(k => k.split(',').map(Number)), marks: Object.assign({}, marks), ladders: Object.assign({}, ladders), pillars: [...pillars].map(k => k.split(',').map(Number)), frame: Number($('frm').value), material: document.querySelector('input[name=mat]:checked').value,
+        rf: Number(document.querySelector('input[name=rf]:checked').value),
+        userScale: $('scaleSel').value === 'auto' ? null : Number($('scaleSel').value),
+        nozzles: nozzleData.filter(n => n.use !== false),
+        notes: $('tNotes').value.split('\n').map(x => x.trim()).filter(Boolean),
+        remarks: $('tRemarks').value.split('\n').map(x => x.trim()).filter(Boolean),
+        title: { customer: $('tCustomer').value, address: $('tAddress').value, tankSize: $('tTankSize').value, client: $('tClient').value, consultant: $('tConsultant').value,
+                 contractor: $('tContractor').value, project: $('tProject').value, mep: $('tMep').value, chartNo: $('tChart').value, date: $('tDate').value, drawn: $('tDrawn').value, tel: $('tTel').value, dwgNo: $('tDwgNo').value, parts: $('tParts').value.split('\n').map(x => x.trim()).filter(Boolean).slice(0, 10) }
+      };
+      const sheet = $('sheetOn').checked;
+      opt.sheetKind = $('sheetKind').value;
+      plan = sheet ? C.buildSheet(opt, TEMPLATES, SIDE_T) : C.buildPlan(opt, TEMPLATES);
+      plan.sheet = sheet;
+
+      const kindText = { asm: '조립도 (종합)', frame: '프레임도 (하부/내부)', detail: '상세도 (DETAILS)' }[opt.sheetKind] || '도면';
+      $('viewBadge').textContent = sheet ? `A1 ${kindText} (1/${plan.scale})` : '평면도 모델 뷰';
+    } catch (e) { err.hidden = false; err.textContent = e.message; return; }
+    summary(plan, L, W, H);
+    if (fit) fitView(); else draw();
+  }
+
+  function summary(p, L, W, H) {
+    const m = p.map, cnt = {};
+    m.rows.forEach(r => m.cols.forEach(c => { const k = c + ' × ' + r; cnt[k] = (cnt[k] || 0) + 1; }));
+    const anyRemoved = m.removed && m.removed.size > 0;
+    const total = m.rows.length * m.cols.length - (m.removed ? m.removed.size : 0);
+    const h = H.reduce((a, b) => a + b, 0);
+    const fmt = n => n.toLocaleString('ko-KR');
+
+    let activeAreaMm2 = 0;
+    m.rows.forEach((rh, i) => {
+      m.cols.forEach((cw, j) => {
+        if (!m.removed.has(i + ',' + j)) {
+          activeAreaMm2 += cw * rh;
+        }
+      });
+    });
+    const activeAreaM2 = activeAreaMm2 / 1e6;
+    const ton = (activeAreaMm2 * h / 1e9).toFixed(1);
+    const specText = `${fmt(m.width)}W × ${fmt(m.length)}L × ${fmt(h)}H mm` + (anyRemoved ? ' (이형)' : '');
+
+    $('topSpecBadge').innerHTML = `<b>${specText}</b> · ${ton} Ton (${document.querySelector('input[name=mat]:checked').value})`;
+
+    const dimStr = p.tank ? p.tank.dimStr : specText;
+    $('kv').innerHTML =
+      '<span>탱크 규격 (폭 × 길이)</span><b>' + fmt(m.width) + ' × ' + fmt(m.length) + ' mm' + (anyRemoved ? ' (이형)' : '') + '</b>' +
+      '<span>높이</span><b>' + (h ? fmt(h) + ' mm' : '-') + '</b>' +
+      '<span>표제란 규격</span><b>' + dimStr + '</b>' +
+      '<span>설계 용량</span><b>' + ton + ' Ton</b>' +
+      (p.scale ? '<span>도면 축척</span><b>1 : ' + p.scale + '</b>' : '') +
+      '<span>바닥 면적</span><b>' + activeAreaM2.toFixed(2) + ' m²' + (anyRemoved ? ` (패널 ${total}장)` : '') + '</b>' +
+      (h ? '<span>유효 체적</span><b>' + ton + ' m³</b>' : '') +
+      '<span>폭 분할 (W)</span><b>' + m.rows.join(' + ') + '</b>' +
+      '<span>길이 분할 (L)</span><b>' + m.cols.join(' + ') + '</b>' +
+      '<span>평면 패널 수</span><b>' + total + ' 장' + (anyRemoved ? ` (${m.removed.size}장 삭제)` : '') + '</b>';
+    $('cnt').innerHTML = Object.entries(cnt).sort().map(([k, v]) => '<tr><td>' + k + ' mm</td><td class="n">' + v + '</td></tr>').join('');
+  }
+
+  /* Canvas Viewport */
+  function size() {
+    const r = $('cv').getBoundingClientRect(), d = window.devicePixelRatio || 1;
+    cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d);
+    return { w: r.width, h: r.height, d };
+  }
+  function bounds() {
+    let a = [1e18, 1e18, -1e18, -1e18];
+    const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
+    plan.ents.forEach(e => {
+      if (e.t === 'insert') {
+        const blk = blocks[e.block];
+        if (blk) {
+          blk.forEach(be => {
+            const pts = be.t === 'line' ? [[be.a[0] + e.p[0], be.a[1] + e.p[1]], [be.b[0] + e.p[0], be.b[1] + e.p[1]]] : (be.t === 'circle' || be.t === 'arc') ? [[be.c[0] + e.p[0] - be.r, be.c[1] + e.p[1] - be.r], [be.c[0] + e.p[0] + be.r, be.c[1] + e.p[1] + be.r]] : [];
+            pts.forEach(p => { a[0] = Math.min(a[0], p[0]); a[1] = Math.min(a[1], p[1]); a[2] = Math.max(a[2], p[0]); a[3] = Math.max(a[3], p[1]); });
+          });
+        } else if (e.w && e.h) {
+          a[0] = Math.min(a[0], e.p[0]); a[1] = Math.min(a[1], e.p[1]);
+          a[2] = Math.max(a[2], e.p[0] + e.w); a[3] = Math.max(a[3], e.p[1] + e.h);
+        }
+      } else {
+        const pts = e.t === 'line' ? [e.a, e.b] : (e.t === 'circle' || e.t === 'arc') ? [[e.c[0] - e.r, e.c[1] - e.r], [e.c[0] + e.r, e.c[1] + e.r]] : [e.p];
+        pts.forEach(p => { a[0] = Math.min(a[0], p[0]); a[1] = Math.min(a[1], p[1]); a[2] = Math.max(a[2], p[0]); a[3] = Math.max(a[3], p[1]); });
+      }
+    });
+    return a;
+  }
+  function fitView() {
+    if (!plan) return;
+    const z = size(), b = bounds(), pad = 40;
+    const s = Math.min((z.w - pad * 2) / (b[2] - b[0]), (z.h - pad * 2) / (b[3] - b[1]));
+    view = { s, x: z.w / 2 - s * (b[0] + b[2]) / 2, y: z.h / 2 + s * (b[1] + b[3]) / 2 };
+    draw();
+  }
+  const tx = x => view.x + x * view.s, ty = y => view.y - y * view.s;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  function draw() {
+    if (!plan) return;
+    const z = size(); ctx.setTransform(z.d, 0, 0, z.d, 0, 0);
+    ctx.fillStyle = css('--cv-bg'); ctx.fillRect(0, 0, z.w, z.h);
+
+    const col = { PANEL: css('--cv-panel'), PANEL_DETAIL: css('--cv-detail'), FRAME: css('--cv-frame'), REINF: css('--cv-panel'), WALL: css('--cv-frame'), DIM: css('--cv-dim'), SHEET: css('--cv-sheet') };
+    const lw = { PANEL: 1.4, PANEL_DETAIL: 0.9, FRAME: 1.6, REINF: 1.2, WALL: 1, DIM: 1, SHEET: 1.3 };
+    const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
+
+    ['PANEL_DETAIL', 'PANEL', 'WALL', 'REINF', 'FRAME', 'DIM', 'SHEET'].forEach(layer => {
+      ctx.strokeStyle = col[layer]; ctx.fillStyle = col[layer]; ctx.lineWidth = lw[layer]; ctx.beginPath();
+      const texts = [];
+      const renderEnt = (e, ox = 0, oy = 0) => {
+        if (e.layer !== layer || !layerOn(e)) return;
+        if (e.t === 'line') { ctx.moveTo(tx(e.a[0] + ox), ty(e.a[1] + oy)); ctx.lineTo(tx(e.b[0] + ox), ty(e.b[1] + oy)); }
+        else if (e.t === 'circle') { ctx.moveTo(tx(e.c[0] + ox) + e.r * view.s, ty(e.c[1] + oy)); ctx.arc(tx(e.c[0] + ox), ty(e.c[1] + oy), e.r * view.s, 0, 7); }
+        else if (e.t === 'arc') { const r = e.r * view.s, cx = tx(e.c[0] + ox), cy = ty(e.c[1] + oy), a0 = e.a0 * Math.PI / 180, a1 = e.a1 * Math.PI / 180; ctx.moveTo(cx + r * Math.cos(a0), cy - r * Math.sin(a0)); ctx.arc(cx, cy, r, -a0, -a1, true); }
+        else if (e.t === 'text') texts.push(e);
+      };
+      plan.ents.forEach(e => {
+        if (!layerOn(e)) return;
+        if (e.t === 'insert') {
+          const blk = blocks[e.block];
+          if (blk) blk.forEach(be => renderEnt(be, e.p[0], e.p[1]));
+        } else {
+          renderEnt(e);
+        }
+      });
+      ctx.stroke();
+      texts.forEach(e => {
+        const px = Math.max(3, e.h * view.s); if (px < 3) return;
+        const fontFam = (e.layer === 'SHEET') ? '"Malgun Gothic", "Noto Sans KR", sans-serif' : css('--font-num');
+        const isBold = (e.layer === 'SHEET' && e.h >= 5.5 * plan.scale) ? 'bold ' : '';
+        ctx.font = isBold + px + 'px ' + fontFam;
+        ctx.textAlign = e.align === 'left' ? 'left' : e.align === 'right' ? 'right' : 'center';
+        ctx.textBaseline = e.valign === 'middle' ? 'middle' : 'alphabetic';
+        ctx.save(); ctx.translate(tx(e.p[0]), ty(e.p[1])); ctx.rotate(-e.rot * Math.PI / 180); ctx.fillText(e.s, 0, 0); ctx.restore();
+      });
+    });
+    $('status').textContent = '배율 ' + (view.s * 1000).toFixed(0) + '%  ·  판넬 블럭 ' + plan.ents.filter(e => e.t === 'insert').length + '개 / 선 ' + plan.ents.filter(e => e.t === 'line').length.toLocaleString('ko-KR') + '개';
+  }
+
+  /* Zoom & Pan Controls */
+  cv.addEventListener('wheel', ev => {
+    ev.preventDefault();
+    const r = cv.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top, k = Math.exp(-ev.deltaY * 0.0015);
+    view.x = mx - (mx - view.x) * k; view.y = my - (my - view.y) * k; view.s *= k; draw();
+  }, { passive: false });
+
+  const ptrs = new Map();
+  cv.addEventListener('pointerdown', ev => { cv.setPointerCapture(ev.pointerId); ptrs.set(ev.pointerId, [ev.clientX, ev.clientY]); cv.classList.add('drag'); });
+  cv.addEventListener('pointermove', ev => {
+    const r = cv.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
+    const modelX = Math.round((x - view.x) / view.s), modelY = Math.round((view.y - y) / view.s);
+    $('coord').innerHTML = `X: <b>${modelX.toLocaleString()}</b>  Y: <b>${modelY.toLocaleString()}</b> mm`;
+    if (!ptrs.has(ev.pointerId)) return;
+    const p = ptrs.get(ev.pointerId);
+    if (ptrs.size === 2) {
+      const o = [...ptrs.entries()].find(([id]) => id !== ev.pointerId)[1];
+      const d0 = Math.hypot(p[0] - o[0], p[1] - o[1]), d1 = Math.hypot(ev.clientX - o[0], ev.clientY - o[1]);
+      if (d0 > 0) { const k = d1 / d0, cx = (o[0] + ev.clientX) / 2 - r.left, cy = (o[1] + ev.clientY) / 2 - r.top; view.x = cx - (cx - view.x) * k; view.y = cy - (cy - view.y) * k; view.s *= k; }
+    } else { view.x += ev.clientX - p[0]; view.y += ev.clientY - p[1]; }
+    ptrs.set(ev.pointerId, [ev.clientX, ev.clientY]); draw();
+  });
+  const up = ev => { ptrs.delete(ev.pointerId); if (!ptrs.size) cv.classList.remove('drag'); };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('dblclick', fitView);
+
+  $('fit').addEventListener('click', fitView);
+  $('zoomIn').addEventListener('click', () => { const z = size(); view.x = z.w / 2 - (z.w / 2 - view.x) * 1.3; view.y = z.h / 2 - (z.h / 2 - view.y) * 1.3; view.s *= 1.3; draw(); });
+  $('zoomOut').addEventListener('click', () => { const z = size(); view.x = z.w / 2 - (z.w / 2 - view.x) / 1.3; view.y = z.h / 2 - (z.h / 2 - view.y) / 1.3; view.s /= 1.3; draw(); });
+  window.addEventListener('resize', fitView);
+
+  /* Universal File Downloader (Claude Artifact + Standard Browser) */
+  const crcT = (() => { const t = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = b => { let c = ~0; for (let i = 0; i < b.length; i++) c = crcT[(c ^ b[i]) & 255] ^ (c >>> 8); return ~c >>> 0; };
+  function zipStore(name, text) {
+    const nm = new TextEncoder().encode(name), d = new TextEncoder().encode(text), crc = crc32(d);
+    const u16 = v => [v & 255, v >> 8 & 255], u32 = v => [v & 255, v >> 8 & 255, v >> 16 & 255, v >>> 24];
+    const lh = [0x50, 0x4b, 3, 4, ...u16(20), ...u16(0x800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(crc), ...u32(d.length), ...u32(d.length), ...u16(nm.length), ...u16(0)];
+    const cd = [0x50, 0x4b, 1, 2, ...u16(20), ...u16(20), ...u16(0x800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(crc), ...u32(d.length), ...u32(d.length), ...u16(nm.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(0)];
+    const off = lh.length + nm.length + d.length, cdl = cd.length + nm.length;
+    const end = [0x50, 0x4b, 5, 6, ...u16(0), ...u16(0), ...u16(1), ...u16(1), ...u32(cdl), ...u32(off), ...u16(0)];
+    return new Blob([new Uint8Array(lh), nm, d, new Uint8Array(cd), nm, new Uint8Array(end)], { type: 'application/zip' });
+  }
+  const stamp = () => { const m = plan.map; return 'YSACC_TANK_' + m.length + 'x' + m.width; };
+
+  async function save(filename, data) {
+    const st = $('status');
+    try {
+      if (window.claude && typeof claude.use === 'function') {
+        const dl = await claude.use('downloads');
+        if (dl) { await dl.save({ filename, data }); st.textContent = filename + ' 저장 완료'; return; }
+      }
+    } catch (e) {}
+    try {
+      const blob = (data instanceof Blob) ? data : new Blob([data], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      st.textContent = filename + ' 다운로드 완료';
+    } catch (err) { st.textContent = '저장 실패: ' + err.message; }
+  }
+
+  /* ODA Guide Modal Controls */
+  const showOdaGuide = url => {
+    if (url) $('odaLink').href = url;
+    $('odaModal').style.display = 'flex';
+  };
+  $('closeOdaModal').addEventListener('click', () => { $('odaModal').style.display = 'none'; });
+  $('modalDxfBtn').addEventListener('click', () => {
+    $('odaModal').style.display = 'none';
+    if (plan) save(stamp() + '.dxf', C.toDxf(plan.ents, plan.blocks));
+  });
+
+  /* DWG Direct Conversion & Download */
+  $('dwgBtn').addEventListener('click', async () => {
+    if (!plan) return;
+    const st = $('status');
+    st.textContent = 'DWG 변환 중...';
+    try {
+      const dxfContent = C.toDxf(plan.ents, plan.blocks);
+      const filename = stamp();
+      const apiUrl = (location.protocol === 'file:' || !location.port || location.port !== '8000') ? 'http://localhost:8000/api/convert-dwg' : '/api/convert-dwg';
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: filename + '.dwg', dxf: dxfContent })
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        save(filename + '.dwg', blob);
+        st.textContent = filename + '.dwg 다운로드 완료';
+      } else {
+        const data = await res.json().catch(() => ({}));
+        if (data.error === 'ODA_NOT_INSTALLED') {
+          showOdaGuide(data.download_url);
+          st.textContent = 'DWG 변환기 설치가 필요합니다.';
+        } else {
+          alert('DWG 변환 실패: ' + (data.message || res.statusText));
+          st.textContent = 'DWG 변환 실패';
+        }
+      }
+    } catch (e) {
+      showOdaGuide();
+      st.textContent = 'DWG 변환기 연결 대기 (DXF 저장을 권장합니다)';
+    }
+  });
+
+  $('dxfDirect').addEventListener('click', () => { if (plan) save(stamp() + '.dxf', C.toDxf(plan.ents, plan.blocks)); });
+  $('dxf').addEventListener('click', () => { if (plan) save(stamp() + '.zip', zipStore(stamp() + '.dxf', C.toDxf(plan.ents, plan.blocks))); });
+
+  $('svg').addEventListener('click', () => {
+    if (!plan) return;
+    const b = bounds(), pad = plan.sheet ? 0 : 200, col = { PANEL: '#111', PANEL_DETAIL: '#888', FRAME: '#c2410c', REINF: '#111', WALL: '#c2410c', DIM: '#0b6b7a', SHEET: '#111' };
+    const f = n => Math.round(n * 10) / 10; let s = '';
+    const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
+    const renderSvgEnt = (e, ox = 0, oy = 0) => {
+      const c = col[e.layer];
+      if (e.t === 'line') s += `<line x1="${f(e.a[0] + ox)}" y1="${f(-(e.a[1] + oy))}" x2="${f(e.b[0] + ox)}" y2="${f(-(e.b[1] + oy))}" stroke="${c}"/>`;
+      else if (e.t === 'arc') { const r = e.r, p = a => [f(e.c[0] + ox + r * Math.cos(a * Math.PI / 180)), f(-(e.c[1] + oy + r * Math.sin(a * Math.PI / 180)))], A = p(e.a0), B = p(e.a1), sw = (((e.a1 - e.a0) % 360) + 360) % 360; s += `<path d="M${A[0]} ${A[1]} A${r} ${r} 0 ${sw > 180 ? 1 : 0} 0 ${B[0]} ${B[1]}" stroke="${c}" fill="none"/>`; }
+      else if (e.t === 'circle') s += `<circle cx="${f(e.c[0] + ox)}" cy="${f(-(e.c[1] + oy))}" r="${e.r}" stroke="${c}" fill="none"/>`;
+      else if (e.t === 'text') s += `<text x="${f(e.p[0] + ox)}" y="${f(-(e.p[1] + oy))}" font-size="${e.h}" fill="${c}" text-anchor="${e.align === 'left' ? 'start' : e.align === 'right' ? 'end' : 'middle'}" dominant-baseline="${e.valign === 'middle' ? 'central' : 'auto'}" font-family="monospace" transform="rotate(${-e.rot} ${f(e.p[0] + ox)} ${f(-(e.p[1] + oy))})">${e.s}</text>`;
+    };
+    plan.ents.forEach(e => {
+      if (e.t === 'insert') {
+        const blk = blocks[e.block];
+        if (blk) blk.forEach(be => renderSvgEnt(be, e.p[0], e.p[1]));
+      } else {
+        renderSvgEnt(e);
+      }
+    });
+    const w = b[2] - b[0] + pad * 2, h = b[3] - b[1] + pad * 2;
+    const out = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${f(b[0] - pad)} ${f(-b[3] - pad)} ${f(w)} ${f(h)}" width="1600" height="${f(1600 * h / w)}"><rect x="${f(b[0] - pad)}" y="${f(-b[3] - pad)}" width="${f(w)}" height="${f(h)}" fill="#fff"/><g stroke-width="4">${s}</g></svg>`;
+    save(stamp() + '.svg', out);
+  });
+
+  $('png').addEventListener('click', () => {
+    if (!cv) return;
+    cv.toBlob(blob => {
+      if (blob) save(stamp() + '.png', blob);
+    }, 'image/png');
+  });
+
+  /* ==============================================================
+     Panel Database (SQLite) Management & Dynamic Template Sync
+     ============================================================== */
+  let dbPanelsList = [];
+  let selectedPanel = null;
+  let modalEntities = [];
+
+  const API_BASE = (location.protocol === 'file:' || !location.port || location.port !== '8000') ? 'http://localhost:8000' : '';
+
+  function renderSinglePanel(targetCv, w, h, ents) {
+    if (!targetCv) return;
+    const pctx = targetCv.getContext('2d');
+    const cw = targetCv.width, ch = targetCv.height;
+    pctx.clearRect(0, 0, cw, ch);
+    pctx.fillStyle = '#0f172a';
+    pctx.fillRect(0, 0, cw, ch);
+
+    if (!w || !h) return;
+    const pad = 16;
+    const scale = Math.min((cw - pad * 2) / w, (ch - pad * 2) / h);
+    const ox = (cw - w * scale) / 2;
+    const oy = (ch - h * scale) / 2;
+
+    pctx.strokeStyle = '#38bdf8';
+    pctx.lineWidth = 2;
+    pctx.strokeRect(ox, oy, w * scale, h * scale);
+
+    pctx.fillStyle = '#94a3b8';
+    pctx.font = '10px monospace';
+    pctx.textAlign = 'center';
+    pctx.textBaseline = 'top';
+    pctx.fillText(`${w} mm`, cw / 2, oy + h * scale + 2);
+    pctx.textAlign = 'right';
+    pctx.textBaseline = 'middle';
+    pctx.fillText(`${h}`, ox - 2, ch / 2);
+
+    pctx.strokeStyle = '#f8fafc';
+    pctx.fillStyle = 'rgba(56, 189, 248, 0.08)';
+    pctx.lineWidth = 1.2;
+
+    const tx = x => ox + x * scale;
+    const ty = y => oy + (h - y) * scale;
+
+    if (!ents || !ents.length) {
+      pctx.fillStyle = '#64748b';
+      pctx.font = '12px sans-serif';
+      pctx.textAlign = 'center';
+      pctx.textBaseline = 'middle';
+      pctx.fillText('(평판 패널 / 내부 무늬 없음)', cw / 2, ch / 2);
+      return;
+    }
+
+    (ents || []).forEach(e => {
+      pctx.beginPath();
+      if (e.k === 'line') {
+        pctx.moveTo(tx(e.p[0][0]), ty(e.p[0][1]));
+        pctx.lineTo(tx(e.p[1][0]), ty(e.p[1][1]));
+      } else if (e.k === 'circle') {
+        pctx.arc(tx(e.c[0]), ty(e.c[1]), e.r * scale, 0, Math.PI * 2);
+      } else if (e.k === 'arc') {
+        if (e.s && e.e) {
+          const sa = Math.atan2(-(e.s[1] - e.c[1]), e.s[0] - e.c[0]);
+          const ea = Math.atan2(-(e.e[1] - e.c[1]), e.e[0] - e.c[0]);
+          pctx.arc(tx(e.c[0]), ty(e.c[1]), e.r * scale, sa, ea, true);
+        } else {
+          pctx.arc(tx(e.c[0]), ty(e.c[1]), e.r * scale, 0, Math.PI * 2);
+        }
+      } else if (e.k === 'poly') {
+        if (e.p && e.p.length > 1) {
+          pctx.moveTo(tx(e.p[0][0]), ty(e.p[0][1]));
+          for (let i = 1; i < e.p.length; i++) pctx.lineTo(tx(e.p[i][0]), ty(e.p[i][1]));
+          if (e.c !== false) {
+            pctx.closePath();
+            pctx.fill();
+          }
+        }
+      }
+      pctx.stroke();
+    });
+  }
+
+  async function loadDbPanels() {
+    try {
+      const mat = $('dbFilterMat').value;
+      const cat = $('dbFilterCat').value;
+      const res = await fetch(`${API_BASE}/api/panels?material=${mat}&category=${cat}`);
+      if (!res.ok) throw new Error('API 응답 실패');
+      const data = await res.json();
+      dbPanelsList = data.panels || [];
+      renderPanelTable(dbPanelsList);
+      if (dbPanelsList.length > 0) {
+        selectPanel(dbPanelsList[0].id);
+      }
+    } catch (err) {
+      $('panelTableBody').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:12px;color:#f87171">서버 DB 연결 대기 중 (server.py 실행 필요)</td></tr>';
+    }
+  }
+
+  function renderPanelTable(panels) {
+    const tbody = $('panelTableBody');
+    if (!panels.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:12px;color:var(--muted)">등록된 판넬이 없습니다.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = panels.map(p => `
+      <tr data-id="${p.id}" style="cursor:pointer;border-bottom:1px solid var(--line-sub)">
+        <td style="padding:6px 4px"><b>${p.material}</b> <span style="font-size:10px;color:var(--muted)">(${p.category === 'top_bottom' ? '평면' : '입면'})</span></td>
+        <td style="padding:6px 4px;font-family:var(--font-num)">${p.size_key}</td>
+        <td style="padding:6px 4px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.name}">${p.name}</td>
+        <td style="padding:6px 4px;text-align:center;white-space:nowrap">
+          <button type="button" class="btn-sm btn-panel-edit" data-id="${p.id}" style="padding:2px 5px;font-size:10px">수정</button>
+          ${!p.is_default ? `<button type="button" class="btn-sm btn-panel-del" data-id="${p.id}" style="padding:2px 5px;font-size:10px;color:#ef4444">삭제</button>` : ''}
+        </td>
+      </tr>
+    `).join('');
+
+    tbody.querySelectorAll('tr').forEach(tr => {
+      tr.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        selectPanel(Number(tr.getAttribute('data-id')));
+      });
+    });
+
+    tbody.querySelectorAll('.btn-panel-edit').forEach(btn => {
+      btn.addEventListener('click', () => editPanel(Number(btn.getAttribute('data-id'))));
+    });
+
+    tbody.querySelectorAll('.btn-panel-del').forEach(btn => {
+      btn.addEventListener('click', () => deletePanel(Number(btn.getAttribute('data-id'))));
+    });
+  }
+
+  async function selectPanel(pid) {
+    $('panelTableBody').querySelectorAll('tr').forEach(tr => {
+      tr.style.background = (tr.getAttribute('data-id') == pid) ? 'var(--accent-light)' : 'transparent';
+    });
+    try {
+      const res = await fetch(`${API_BASE}/api/panels/${pid}`);
+      const data = await res.json();
+      if (!data.panel) return;
+      selectedPanel = data.panel;
+      $('previewPanelTitle').textContent = selectedPanel.name || `${selectedPanel.material} ${selectedPanel.size_key}`;
+      $('previewPanelInfo').textContent = `${selectedPanel.width} × ${selectedPanel.height} mm (${selectedPanel.entities ? selectedPanel.entities.length : 0}개 도형)`;
+      renderSinglePanel($('panelPreviewCv'), selectedPanel.width, selectedPanel.height, selectedPanel.entities);
+    } catch (e) {}
+  }
+
+  async function syncTemplatesFromDb(silent = false) {
+    const st = $('status');
+    if (!silent) st.textContent = '판넬 DB 동기화 중...';
+    try {
+      const res = await fetch(`${API_BASE}/api/panels/templates`);
+      if (!res.ok) throw new Error('API 오류');
+      const data = await res.json();
+      if (data.panel_templates) TEMPLATES = data.panel_templates;
+      if (data.side_templates) SIDE_T = data.side_templates;
+      rebuild(false);
+      if (!silent) {
+        st.textContent = '판넬 DB가 캐드 엔진에 동기화되었습니다.';
+        alert('✅ DB에 등록된 판넬 형상이 캐드 화면에 즉시 적용되었습니다!');
+      }
+    } catch (e) {
+      if (!silent) {
+        st.textContent = '동기화 실패: ' + e.message;
+        alert('⚠️ DB 동기화 실패 (server.py 실행을 확인하세요)');
+      }
+    }
+  }
+
+  function generatePresetEntities(type, w, h) {
+    const ents = [];
+    if (type === 'diamond') {
+      ents.push({ k: 'poly', p: [[Math.round(w * 0.5), Math.round(h * 0.15)], [Math.round(w * 0.85), Math.round(h * 0.5)], [Math.round(w * 0.5), Math.round(h * 0.85)], [Math.round(w * 0.15), Math.round(h * 0.5)]] });
+      ents.push({ k: 'line', p: [[0, Math.round(h * 0.15)], [Math.round(w * 0.15), 0]] });
+      ents.push({ k: 'line', p: [[Math.round(w * 0.85), 0], [w, Math.round(h * 0.15)]] });
+      ents.push({ k: 'line', p: [[w, Math.round(h * 0.85)], [Math.round(w * 0.85), h]] });
+      ents.push({ k: 'line', p: [[Math.round(w * 0.15), h], [0, Math.round(h * 0.85)]] });
+      ents.push({ k: 'circle', c: [Math.round(w / 2), Math.round(h / 2)], r: Math.round(Math.min(w, h) * 0.12) });
+    } else if (type === 'circle') {
+      const minD = Math.min(w, h);
+      ents.push({ k: 'circle', c: [Math.round(w / 2), Math.round(h / 2)], r: Math.round(minD * 0.38) });
+      ents.push({ k: 'circle', c: [Math.round(w / 2), Math.round(h / 2)], r: Math.round(minD * 0.22) });
+      ents.push({ k: 'circle', c: [Math.round(w / 2), Math.round(h / 2)], r: Math.round(minD * 0.08) });
+      ents.push({ k: 'line', p: [[0, 0], [Math.round(w * 0.25), Math.round(h * 0.25)]] });
+      ents.push({ k: 'line', p: [[w, 0], [Math.round(w * 0.75), Math.round(h * 0.25)]] });
+      ents.push({ k: 'line', p: [[w, h], [Math.round(w * 0.75), Math.round(h * 0.75)]] });
+      ents.push({ k: 'line', p: [[0, h], [Math.round(w * 0.25), Math.round(h * 0.75)]] });
+    } else if (type === 'cross') {
+      ents.push({ k: 'poly', p: [[Math.round(w * 0.1), Math.round(h * 0.1)], [Math.round(w * 0.9), Math.round(h * 0.1)], [Math.round(w * 0.9), Math.round(h * 0.9)], [Math.round(w * 0.1), Math.round(h * 0.9)]] });
+      ents.push({ k: 'line', p: [[Math.round(w * 0.1), Math.round(h * 0.1)], [Math.round(w * 0.9), Math.round(h * 0.9)]] });
+      ents.push({ k: 'line', p: [[Math.round(w * 0.1), Math.round(h * 0.9)], [Math.round(w * 0.9), Math.round(h * 0.1)]] });
+    } else if (type === 'chamfer') {
+      const off = Math.round(Math.min(w, h) * 0.08);
+      ents.push({ k: 'poly', p: [[off, off], [w - off, off], [w - off, h - off], [off, h - off]] });
+      ents.push({ k: 'line', p: [[0, 0], [off, off]] });
+      ents.push({ k: 'line', p: [[w, 0], [w - off, off]] });
+      ents.push({ k: 'line', p: [[w, h], [w - off, h - off]] });
+      ents.push({ k: 'line', p: [[0, h], [off, h - off]] });
+    }
+    return ents;
+  }
+
+  function openPanelModal(isEdit = false) {
+    $('panelRegModal').style.display = 'flex';
+    if (!isEdit) {
+      modalEntities = generatePresetEntities('diamond', Number($('modalW').value) || 1000, Number($('modalH').value) || 1000);
+      $('modalJson').value = JSON.stringify(modalEntities, null, 2);
+    }
+    setTimeout(updateModalPreview, 50);
+  }
+
+  function updateModalPreview() {
+    const w = Number($('modalW').value) || 1000;
+    const h = Number($('modalH').value) || 1000;
+    renderSinglePanel($('modalPreviewCv'), w, h, modalEntities);
+  }
+
+  $('openPanelModal').addEventListener('click', () => openPanelModal(false));
+  $('closePanelModal').addEventListener('click', () => $('panelRegModal').style.display = 'none');
+
+  $('dbFilterMat').addEventListener('change', loadDbPanels);
+  $('dbFilterCat').addEventListener('change', loadDbPanels);
+  $('syncDbBtn').addEventListener('click', syncTemplatesFromDb);
+  $('resetDbBtn').addEventListener('click', async () => {
+    if (confirm('판넬 DB를 최초 공장 표준 템플릿으로 초기화하시겠습니까? 사용자 추가 판넬은 삭제됩니다.')) {
+      await fetch(`${API_BASE}/api/panels/reset`, { method: 'POST' });
+      await loadDbPanels();
+      await syncTemplatesFromDb();
+    }
+  });
+
+  const sourceBoxes = { preset: $('boxSourcePreset'), dxf: $('boxSourceDxf'), json: $('boxSourceJson') };
+  const sourceBtns = { preset: $('btnSourcePreset'), dxf: $('btnSourceDxf'), json: $('btnSourceJson') };
+
+  function switchSource(name) {
+    Object.keys(sourceBoxes).forEach(k => {
+      sourceBoxes[k].style.display = (k === name) ? 'block' : 'none';
+      sourceBtns[k].classList.toggle('active', k === name);
+    });
+  }
+  $('btnSourcePreset').addEventListener('click', () => switchSource('preset'));
+  $('btnSourceDxf').addEventListener('click', () => switchSource('dxf'));
+  $('btnSourceJson').addEventListener('click', () => switchSource('json'));
+
+  $('btnApplyPreset').addEventListener('click', () => {
+    const w = Number($('modalW').value) || 1000;
+    const h = Number($('modalH').value) || 1000;
+    modalEntities = generatePresetEntities($('presetType').value, w, h);
+    $('modalJson').value = JSON.stringify(modalEntities, null, 2);
+    updateModalPreview();
+  });
+
+  $('dxfFileInput').addEventListener('change', async (ev) => {
+    const file = ev.target.files[0];
+    if (!file) return;
+    const isDwg = file.name.toLowerCase().endsWith('.dwg');
+    const reader = new FileReader();
+
+    if (isDwg) {
+      reader.onload = async () => {
+        try {
+          const base64Data = reader.result.split(',')[1];
+          const res = await fetch(`${API_BASE}/api/panels/import-dwg`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              dwg_base64: base64Data,
+              filename: file.name,
+              width: Number($('modalW').value) || 1000,
+              height: Number($('modalH').value) || 1000
+            })
+          });
+          const data = await res.json();
+          if (data.success && data.entities) {
+            modalEntities = data.entities;
+            $('modalJson').value = JSON.stringify(modalEntities, null, 2);
+            updateModalPreview();
+            alert(`✅ CAD DWG에서 ${data.count}개의 판넬 형상을 성공적으로 추출했습니다!`);
+          } else {
+            alert('DWG 변환 실패: ' + (data.error || '오류 발생'));
+          }
+        } catch (err) { alert('서버 전송 오류: ' + err.message); }
+      };
+      reader.readAsDataURL(file);
+    } else {
+      reader.onload = async () => {
+        const dxfText = reader.result;
+        try {
+          const res = await fetch(`${API_BASE}/api/panels/import-dxf`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              dxf: dxfText,
+              width: Number($('modalW').value) || 1000,
+              height: Number($('modalH').value) || 1000
+            })
+          });
+          const data = await res.json();
+          if (data.success && data.entities) {
+            modalEntities = data.entities;
+            $('modalJson').value = JSON.stringify(modalEntities, null, 2);
+            updateModalPreview();
+            alert(`✅ CAD DXF에서 ${data.count}개의 판넬 형상을 추출했습니다!`);
+          } else {
+            alert('DXF 파싱 실패: ' + (data.error || '오류 발생'));
+          }
+        } catch (err) { alert('서버 전송 오류: ' + err.message); }
+      };
+      reader.readAsText(file);
+    }
+  });
+
+  $('modalJson').addEventListener('input', () => {
+    try {
+      modalEntities = JSON.parse($('modalJson').value);
+      updateModalPreview();
+    } catch (e) {}
+  });
+
+  ['modalW', 'modalH'].forEach(id => $(id).addEventListener('input', updateModalPreview));
+
+  $('savePanelBtn').addEventListener('click', async () => {
+    const mat = $('modalMat').value;
+    const cat = $('modalCat').value;
+    const width = Number($('modalW').value) || 1000;
+    const height = Number($('modalH').value) || 1000;
+    const name = $('modalName').value.trim() || `${mat} ${width}x${height} 판넬`;
+    const payload = { material: mat, category: cat, width, height, name, entities: modalEntities };
+
+    try {
+      const res = await fetch(`${API_BASE}/api/panels`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        $('panelRegModal').style.display = 'none';
+        alert('✅ 판넬이 DB에 성공적으로 저장되었습니다!');
+        await loadDbPanels();
+        await syncTemplatesFromDb();
+      } else {
+        alert('저장 실패: ' + data.error);
+      }
+    } catch (err) { alert('DB 저장 오류: ' + err.message); }
+  });
+
+  async function editPanel(pid) {
+    try {
+      const res = await fetch(`${API_BASE}/api/panels/${pid}`);
+      const data = await res.json();
+      if (!data.panel) return;
+      const p = data.panel;
+      $('modalMat').value = p.material;
+      $('modalCat').value = p.category;
+      $('modalW').value = p.width;
+      $('modalH').value = p.height;
+      $('modalName').value = p.name;
+      modalEntities = (p.entities && p.entities.length) ? p.entities : generatePresetEntities('chamfer', p.width, p.height);
+      $('modalJson').value = JSON.stringify(modalEntities, null, 2);
+      openPanelModal(true);
+      switchSource('json');
+      setTimeout(updateModalPreview, 60);
+    } catch (e) {}
+  }
+
+  async function deletePanel(pid) {
+    if (!confirm('이 판넬을 DB에서 삭제하시겠습니까?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/panels/${pid}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        await loadDbPanels();
+        await syncTemplatesFromDb();
+      } else { alert('삭제 실패: ' + data.error); }
+    } catch (e) { alert('삭제 오류: ' + e.message); }
+  }
+
+  // 초기 시작 시 DB에서 판넬 목록 및 최신 템플릿 로드
+  (async function init() {
+    await loadDbPanels();
+    await syncTemplatesFromDb(true);
+    rebuild(true);
+  })();
+})();
+</script>
+</body>
+</html>

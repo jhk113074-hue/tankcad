@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  tankcad:
+    build: .
+    container_name: ysacc-tankcad
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./tank_panels.db:/app/tank_panels.db
+    restart: unless-stopped
