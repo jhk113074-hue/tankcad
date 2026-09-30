@@ -476,6 +476,21 @@
 - [ ] **입면도(정면/측면) 내 부속품 반영**: 맨홀 사다리의 입면도 뷰(내/외부 사다리 5,6,7,8번 형상)와 매핑
 - [ ] **기초 콘크리트 패드 상세**: 패드 크기, 앵커 볼트 위치 및 단면 상세도 고도화
 - [x] **노즐 및 배관 소켓(Inlet, Outlet, Drain, Overflow) 배치 도구**: 사용자가 원하는 패널 위치에 소켓 구경 및 위치 지정 기능 (완료)
+- [x] **Git 저장소 초기화 및 다중 배포 환경 구축**: GitHub Pages 자동 배포, Vercel 설정, Docker/docker-compose 및 DEPLOY.md 작성 (완료)
 - [ ] **BOM(부품 집계표) 연동**: 패널 수량 외에 볼트, 환봉, 스테이, 프레임 중량 집계
+
+### [2026-09-30 22:08] Git 초기화 및 배포(Deploy) 인프라 구축
+
+#### 1. Git 버전 관리 체계 수립
+- `git init -b main` 실행 및 전역 `safe.directory E:/tankcad` 등록으로 권한 이슈 해결.
+- `.gitignore` 작성: Python 캐시, 로그, 임시 파일, 대용량 테스트 DXF/DWG 산출물 제외.
+- 초기 커밋(`acc8e42`) 생성 완료.
+
+#### 2. 배포(Deploy) 옵션 3종 지원 구성
+- **GitHub Pages 자동 배포**: `.github/workflows/deploy.yml` 작성. GitHub에 푸시 시 클릭 없이 바로 무료 정적 웹사이트 호스팅.
+- **Vercel 지원**: `vercel.json` 및 루트 `index.html` 리다이렉트 생성으로 커스텀 도메인 및 글로벌 CDN 배포 지원.
+- **Docker / 풀스택 배포**: `Dockerfile`, `docker-compose.yml`, `requirements.txt` 작성으로 클라우드 서버(Ubuntu, AWS, VPS)에서 ODA 기반 DWG 변환 백엔드(`server.py`)를 포함한 원클릭 컨테이너 구동 지원.
+- **상세 가이드**: [DEPLOY.md](file:///e:/tankcad/DEPLOY.md) 문서 작성.
+
 
 
