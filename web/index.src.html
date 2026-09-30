@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.2.7</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.2.8</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -729,6 +729,7 @@ canvas.drag{cursor:grabbing}
         <button type="button" id="zoomOut" title="축소">🔍➖</button>
       </div>
       <span class="sp"></span>
+      <button type="button" id="copyShareUrl" title="현재 도면 및 설정이 저장된 URL 링크를 복사합니다">🔗 공유 링크</button>
       <button type="button" id="png" title="현재 화면을 PNG 이미지로 저장">📸 PNG</button>
       <button type="button" id="svg" title="벡터 SVG 도면 다운로드">📐 SVG</button>
       <button type="button" id="dxfDirect" title="AutoCAD/CADian에서 바로 열리는 DXF 파일 다운로드">💾 DXF (.dxf)</button>
@@ -2037,6 +2038,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
+    syncStateToStorageAndUrl();
   }
 
   function summary(p, L, W, H) {
@@ -2074,6 +2076,233 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       '<span>길이 분할 (L)</span><b>' + m.cols.join(' + ') + '</b>' +
       '<span>평면 패널 수</span><b>' + total + ' 장' + (anyRemoved ? ` (${m.removed.size}장 삭제)` : '') + '</b>';
     $('cnt').innerHTML = Object.entries(cnt).sort().map(([k, v]) => '<tr><td>' + k + ' mm</td><td class="n">' + v + '</td></tr>').join('');
+  }
+
+  /* Persistence & URL Synchronization */
+  const STORAGE_KEY = 'ysacc_tankcad_state_v1';
+  let isRestoringState = false;
+
+  function encodeState(obj) {
+    try {
+      const str = JSON.stringify(obj);
+      const bytes = new TextEncoder().encode(str);
+      let bin = '';
+      bytes.forEach(b => { bin += String.fromCharCode(b); });
+      return btoa(bin);
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function decodeState(b64) {
+    try {
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const str = new TextDecoder().decode(bytes);
+      return JSON.parse(str);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function getAppState() {
+    return {
+      L: [0, 1, 2, 3, 4].map(i => Number($('L' + i).value) || 0),
+      W: [0, 1, 2, 3, 4].map(i => Number($('W' + i).value) || 0),
+      H: Number($('H').value) || 3000,
+      b11: $('b11').checked,
+      mat: document.querySelector('input[name=mat]:checked') ? document.querySelector('input[name=mat]:checked').value : 'GRP',
+      rf: document.querySelector('input[name=rf]:checked') ? Number(document.querySelector('input[name=rf]:checked').value) : 1,
+      frm: Number($('frm').value) || 75,
+      scale: $('scaleSel').value,
+      sheetOn: $('sheetOn').checked,
+      sheetKind: $('sheetKind').value,
+      useNozzles: $('pipeFeatureToggle') ? $('pipeFeatureToggle').checked : true,
+      removed: [...removed],
+      pillars: [...pillars],
+      marks: Object.assign({}, marks),
+      ladders: Object.assign({}, ladders),
+      sidePanels: Object.assign({}, sidePanelTypes),
+      nozzles: nozzleData.map(n => Object.assign({}, n)),
+      title: {
+        customer: $('tCustomer').value,
+        address: $('tAddress').value,
+        tankSize: $('tTankSize').value,
+        client: $('tClient').value,
+        consultant: $('tConsultant').value,
+        contractor: $('tContractor').value,
+        project: $('tProject').value,
+        mep: $('tMep').value,
+        chartNo: $('tChart').value,
+        date: $('tDate').value,
+        drawn: $('tDrawn').value,
+        tel: $('tTel').value,
+        dwgNo: $('tDwgNo').value,
+        notes: $('tNotes').value,
+        remarks: $('tRemarks').value,
+        parts: $('tParts').value
+      }
+    };
+  }
+
+  function applyAppState(st) {
+    if (!st || typeof st !== 'object') return false;
+    isRestoringState = true;
+
+    try {
+      if (Array.isArray(st.L)) {
+        st.L.forEach((v, i) => { const el = $('L' + i); if (el) el.value = v || ''; });
+      }
+      if (Array.isArray(st.W)) {
+        st.W.forEach((v, i) => { const el = $('W' + i); if (el) el.value = v || ''; });
+      }
+      if (typeof st.b11 === 'boolean') {
+        $('b11').checked = st.b11;
+      }
+      fillHeights();
+      if (st.H) {
+        $('H').value = String(st.H);
+      }
+      if (st.mat) {
+        const r = document.querySelector(`input[name=mat][value="${st.mat}"]`);
+        if (r) r.checked = true;
+      }
+      if (st.rf !== undefined) {
+        const r = document.querySelector(`input[name=rf][value="${st.rf}"]`);
+        if (r) r.checked = true;
+      }
+      if (st.frm) {
+        $('frm').value = String(st.frm);
+      }
+      if (st.scale) $('scaleSel').value = st.scale;
+      if (typeof st.sheetOn === 'boolean') $('sheetOn').checked = st.sheetOn;
+      if (st.sheetKind) $('sheetKind').value = st.sheetKind;
+
+      if (typeof st.useNozzles === 'boolean') {
+        if ($('pipeFeatureToggle')) $('pipeFeatureToggle').checked = st.useNozzles;
+        if ($('lyNozzle')) $('lyNozzle').checked = st.useNozzles;
+        const txt = $('pipeToggleText');
+        if (txt) txt.textContent = st.useNozzles ? '💧 배관 ON' : '💧 배관 OFF';
+      }
+
+      if (Array.isArray(st.removed)) removed = new Set(st.removed);
+      if (Array.isArray(st.pillars)) pillars = new Set(st.pillars);
+      if (st.marks && typeof st.marks === 'object') marks = Object.assign({}, st.marks);
+      if (st.ladders && typeof st.ladders === 'object') ladders = Object.assign({}, st.ladders);
+      if (st.sidePanels && typeof st.sidePanels === 'object') sidePanelTypes = Object.assign({}, st.sidePanels);
+
+      if (Array.isArray(st.nozzles) && st.nozzles.length > 0) {
+        nozzleData = st.nozzles.map(n => Object.assign({}, n));
+        selectedNozzleId = nozzleData[0] ? nozzleData[0].id : null;
+      }
+
+      if (st.title && typeof st.title === 'object') {
+        const t = st.title;
+        if (t.customer !== undefined) $('tCustomer').value = t.customer;
+        if (t.address !== undefined) $('tAddress').value = t.address;
+        if (t.tankSize !== undefined) $('tTankSize').value = t.tankSize;
+        if (t.client !== undefined) $('tClient').value = t.client;
+        if (t.consultant !== undefined) $('tConsultant').value = t.consultant;
+        if (t.contractor !== undefined) $('tContractor').value = t.contractor;
+        if (t.project !== undefined) $('tProject').value = t.project;
+        if (t.mep !== undefined) $('tMep').value = t.mep;
+        if (t.chartNo !== undefined) $('tChart').value = t.chartNo;
+        if (t.date !== undefined) $('tDate').value = t.date;
+        if (t.drawn !== undefined) $('tDrawn').value = t.drawn;
+        if (t.tel !== undefined) $('tTel').value = t.tel;
+        if (t.dwgNo !== undefined) $('tDwgNo').value = t.dwgNo;
+        if (t.notes !== undefined) $('tNotes').value = t.notes;
+        if (t.remarks !== undefined) $('tRemarks').value = t.remarks;
+        if (t.parts !== undefined) $('tParts').value = t.parts;
+      }
+
+      try {
+        const mL = vals('L'), mW = vals('W');
+        if (mL[0] && mW[0]) {
+          const m = C.createMap({ length: mL, width: mW });
+          shapeKey = m.cols.join('+') + '|' + m.rows.join('+');
+        }
+      } catch (e) {}
+    } finally {
+      isRestoringState = false;
+    }
+    return true;
+  }
+
+  function syncStateToStorageAndUrl() {
+    if (isRestoringState) return;
+    try {
+      const st = getAppState();
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(st));
+      } catch (e) {}
+
+      const params = new URLSearchParams();
+      const L_vals = st.L.filter(Boolean);
+      const W_vals = st.W.filter(Boolean);
+      if (L_vals.length) params.set('L', L_vals.join(','));
+      if (W_vals.length) params.set('W', W_vals.join(','));
+      if (st.H) params.set('H', st.H);
+      if (st.mat && st.mat !== 'GRP') params.set('mat', st.mat);
+      if (st.rf && st.rf !== 1) params.set('rf', st.rf);
+      if (st.frm && st.frm !== 75) params.set('frm', st.frm);
+      if (st.b11) params.set('b11', '1');
+      if (!st.useNozzles) params.set('pipes', '0');
+
+      const b64 = encodeState(st);
+      const queryStr = params.toString() ? ('?' + params.toString()) : '';
+      const hashStr = b64 ? ('#s=' + b64) : '';
+      const newUrl = (queryStr || hashStr) ? (window.location.pathname + queryStr + hashStr) : window.location.pathname;
+
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', newUrl);
+      }
+    } catch (e) {}
+  }
+
+  function restoreAppState() {
+    try {
+      // 1. Try URL Hash state first (#s=...)
+      if (window.location.hash && window.location.hash.startsWith('#s=')) {
+        const hashData = window.location.hash.slice(3);
+        const decoded = decodeState(hashData);
+        if (decoded && applyAppState(decoded)) return true;
+      }
+
+      // 2. Try URL Query parameters (?L=...&W=...&H=...)
+      if (window.location.search) {
+        const sp = new URLSearchParams(window.location.search);
+        if (sp.has('L') || sp.has('W') || sp.has('H')) {
+          const lStr = sp.get('L') || '';
+          const wStr = sp.get('W') || '';
+          const lArr = lStr.split(',').map(Number);
+          const wArr = wStr.split(',').map(Number);
+          while (lArr.length < 5) lArr.push(0);
+          while (wArr.length < 5) wArr.push(0);
+
+          const stFromQuery = {
+            L: lArr,
+            W: wArr,
+            H: Number(sp.get('H')) || 3000,
+            b11: sp.get('b11') === '1',
+            mat: sp.get('mat') || 'GRP',
+            rf: sp.has('rf') ? Number(sp.get('rf')) : 1,
+            frm: sp.has('frm') ? Number(sp.get('frm')) : 75,
+            useNozzles: sp.get('pipes') !== '0'
+          };
+          if (applyAppState(stFromQuery)) return true;
+        }
+      }
+
+      // 3. Try LocalStorage
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && applyAppState(parsed)) return true;
+      }
+    } catch (e) {}
+    return false;
   }
 
   /* Canvas Viewport */
@@ -2264,6 +2493,18 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     } catch (e) {
       showOdaGuide();
       st.textContent = 'DWG 변환기 연결 대기 (DXF 저장을 권장합니다)';
+    }
+  });
+
+  $('copyShareUrl').addEventListener('click', async () => {
+    try {
+      syncStateToStorageAndUrl();
+      await navigator.clipboard.writeText(window.location.href);
+      const orig = $('copyShareUrl').textContent;
+      $('copyShareUrl').textContent = '✅ 복사 완료!';
+      setTimeout(() => { $('copyShareUrl').textContent = orig; }, 1800);
+    } catch (e) {
+      prompt('도면 공유 링크를 복사하세요 (Ctrl+C):', window.location.href);
     }
   });
 
@@ -2680,10 +2921,11 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     } catch (e) { alert('삭제 오류: ' + e.message); }
   }
 
-  // 초기 시작 시 DB에서 판넬 목록 및 최신 템플릿 로드
+  // 초기 시작 시 DB에서 판넬 목록 및 최신 템플릿 로드 후 저장된 상태 복원
   (async function init() {
     await loadDbPanels();
     await syncTemplatesFromDb(true);
+    restoreAppState();
     rebuild(true);
   })();
 })();

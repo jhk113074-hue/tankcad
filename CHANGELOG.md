@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.8] - 2026-09-30
+
+### Added & Improved
+- **마지막 도면 상태 자동 기억 및 복원 (Persistence with LocalStorage)**:
+  - 브라우저를 닫거나 새로고침하더라도 직전에 작업하던 모든 파라미터(길이/폭/높이 분할, 재질, 보강 방식, 패널 종류 변경, 노즐 배치, 표제란 입력값 등)를 `localStorage`에 자동 저장하고 완벽하게 복원.
+- **실시간 URL 양방향 동기화 (URL State Synchronization)**:
+  - 도면 값이 변경될 때마다 브라우저 주소창의 URL(Query string 및 Hash)이 실시간으로 자동 갱신(`history.replaceState`).
+  - URL 파라미터(`?L=...&W=...&H=...`) 또는 인코딩된 상태 해시(`#s=...`)를 통해 도면을 즉시 복원 가능.
+  - 상단 툴바에 **`🔗 공유 링크`** 버튼 추가: 원클릭으로 현재 작업 중인 도면의 전체 구성이 담긴 URL을 클립보드에 복사하여 동료나 고객에게 그대로 공유 가능.
+
+---
+
 ## [1.2.7] - 2026-09-30
 
 ### Added & Improved
