@@ -68,11 +68,22 @@ def main():
     print(f"[+] Rebuilt web/index.html and root index.html")
 
     print(f"\n[OK] Version successfully bumped to v{new_ver}!")
-    print(f"Next steps:")
-    print(f"    git add .")
-    print(f"    git commit -m \"chore(release): v{new_ver}\"")
-    print(f"    git tag v{new_ver}")
-    print(f"    git push origin main --tags")
+
+    if "--push" in sys.argv or "-p" in sys.argv:
+        print(f"[*] Committing and pushing to GitHub (main, gh-pages, tag v{new_ver})...")
+        subprocess.run(["git", "add", "."], check=True)
+        subprocess.run(["git", "commit", "-m", f"chore(release): v{new_ver}"], check=True)
+        subprocess.run(["git", "tag", f"v{new_ver}"], check=True)
+        subprocess.run(["git", "push", "origin", "main", "--tags"], check=True)
+        subprocess.run(["git", "push", "origin", "main:gh-pages"], check=True)
+        print(f"[OK] Pushed to GitHub successfully!")
+    else:
+        print(f"Next steps:")
+        print(f"    git add .")
+        print(f"    git commit -m \"chore(release): v{new_ver}\"")
+        print(f"    git tag v{new_ver}")
+        print(f"    git push origin main --tags")
+        print(f"    git push origin main:gh-pages")
 
 if __name__ == "__main__":
     main()
