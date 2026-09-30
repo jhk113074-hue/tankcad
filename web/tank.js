@@ -253,6 +253,7 @@
     return { r, rf: Math.round(r * 1.8), pcd: Math.round(r * 1.5), holes: 8, hr: 10, flgThick: 20, sockR: Math.round(r * 1.25), sockLen: 75, neckLen: 140 };
   }
   function getNozzleList(opt) {
+    if (opt.useNozzles === false) return [];
     const raw = opt.nozzles;
     if (!raw) return [];
     const list = [];
