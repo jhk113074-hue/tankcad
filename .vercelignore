@@ -1,12 +1,12 @@
-# Vercel build exclusions (prevent Vercel from treating server.py as a Serverless Function)
-server.py
-db.py
-build.py
-transpile_panels.py
-transpile_side.py
-Dockerfile
-docker-compose.yml
+# Vercel build exclusions
+*.py
+*.pyc
 requirements.txt
 tank_panels.db
+Dockerfile
+docker-compose.yml
 *.bat
 verify/
+CLAUDE.md
+PROJECT_LOG.md
+DEPLOY.md
