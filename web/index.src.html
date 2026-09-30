@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.2.9</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.3.0</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2031,11 +2031,18 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       };
       const sheet = $('sheetOn').checked;
       opt.sheetKind = $('sheetKind').value;
-      plan = sheet ? C.buildSheet(opt, TEMPLATES, SIDE_T) : C.buildPlan(opt, TEMPLATES);
+      if (sheet) {
+        plan = C.buildSheet(opt, TEMPLATES, SIDE_T);
+      } else if (opt.sheetKind === 'iso') {
+        const iso = C.buildIsometric(opt, TEMPLATES, SIDE_T);
+        plan = { map: C.createMap(opt), ents: iso.ents, blocks: {}, scale: 25, elev: false };
+      } else {
+        plan = C.buildPlan(opt, TEMPLATES);
+      }
       plan.sheet = sheet;
 
       const kindText = { asm: '조립도 (종합)', iso: '등각 조감도 (3D ISO)', frame: '프레임도 (하부/내부)', detail: '상세도 (DETAILS)' }[opt.sheetKind] || '도면';
-      $('viewBadge').textContent = sheet ? `A1 ${kindText} (1/${plan.scale})` : '평면도 모델 뷰';
+      $('viewBadge').textContent = sheet ? `A1 ${kindText} (1/${plan.scale})` : (opt.sheetKind === 'iso' ? '3D 등각 모델 뷰' : '평면도 모델 뷰');
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();

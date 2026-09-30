@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.2.9</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.3.0</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2318,9 +2318,60 @@ canvas.drag{cursor:grabbing}
       poly(pts, layer || 'PANEL_DETAIL', true);
     };
 
+    const projectTemplateEntities = (tList, plane, originX, originY, originZ, defaultLayer = 'PANEL_DETAIL') => {
+      if (!tList || !tList.length) return;
+      tList.forEach(s => {
+        if (s.k === 'line') {
+          const p1 = s.p[0], p2 = s.p[1];
+          let pt1, pt2;
+          if (plane === 'XZ') {
+            pt1 = toIso(originX + p1[0], 0, originZ + p1[1]);
+            pt2 = toIso(originX + p2[0], 0, originZ + p2[1]);
+          } else if (plane === 'YZ') {
+            pt1 = toIso(originX, originY + p1[0], originZ + p1[1]);
+            pt2 = toIso(originX, originY + p2[0], originZ + p2[1]);
+          } else { // 'XY'
+            pt1 = toIso(originX + p1[0], originY + p1[1], originZ);
+            pt2 = toIso(originX + p2[0], originY + p2[1], originZ);
+          }
+          ln(pt1, pt2, defaultLayer);
+        } else if (s.k === 'poly') {
+          const pts = s.p.map(p => {
+            if (plane === 'XZ') return toIso(originX + p[0], 0, originZ + p[1]);
+            if (plane === 'YZ') return toIso(originX, originY + p[0], originZ + p[1]);
+            return toIso(originX + p[0], originY + p[1], originZ);
+          });
+          poly(pts, defaultLayer, s.c !== false);
+        } else if (s.k === 'circle') {
+          if (plane === 'XZ') isoCircle(originX + s.c[0], 0, originZ + s.c[1], s.r, 'XZ', defaultLayer);
+          else if (plane === 'YZ') isoCircle(originX, originY + s.c[0], originZ + s.c[1], s.r, 'YZ', defaultLayer);
+          else isoCircle(originX + s.c[0], originY + s.c[1], originZ, s.r, 'XY', defaultLayer);
+        } else if (s.k === 'arc') {
+          const cx = s.c[0], cy = s.c[1], r = s.r;
+          const a0 = Math.atan2(s.s[1] - cy, s.s[0] - cx);
+          let a1 = Math.atan2(s.e[1] - cy, s.e[0] - cx);
+          let da = a1 - a0;
+          while (da < 0) da += Math.PI * 2;
+          const segs = Math.max(4, Math.min(10, Math.round((r * da) / 40)));
+          const pts = [];
+          for (let k = 0; k <= segs; k++) {
+            const ang = a0 + (da * k) / segs;
+            const px = cx + r * Math.cos(ang), py = cy + r * Math.sin(ang);
+            if (plane === 'XZ') pts.push(toIso(originX + px, 0, originZ + py));
+            else if (plane === 'YZ') pts.push(toIso(originX, originY + px, originZ + py));
+            else pts.push(toIso(originX + px, originY + py, originZ));
+          }
+          poly(pts, defaultLayer, false);
+        }
+      });
+    };
+
     const zs = [0];
     let curZ = 0;
     hs.forEach(h => { curZ += h; zs.push(curZ); });
+    const mat = (opt.material === 'STS') ? 'STS' : 'SMC';
+    const sideTemplates = (sideT && (sideT[mat] || sideT.SMC)) || {};
+    const ceilTemplates = (templates && (templates[mat] || templates.SMC)) || {};
     const sidePanels = opt.sidePanels || {};
 
     // 1. 기초 콘크리트 패드 (Concrete Pad Beams) & 베이스 찬넬 프레임
@@ -2346,138 +2397,259 @@ canvas.drag{cursor:grabbing}
 
     // 2. 정면 패널 (Front Wall: Y = 0)
     for (let j = 0; j < map.cols.length; j++) {
-      const x0 = map.xs[j], x1 = map.xs[j + 1];
+      const x0 = map.xs[j], w = map.cols[j];
       for (let k = 0; k < hs.length; k++) {
-        const z0 = zs[k], z1 = zs[k + 1];
+        const z0 = zs[k], h = hs[k];
         const p1 = toIso(x0, 0, z0);
-        const p2 = toIso(x1, 0, z0);
-        const p3 = toIso(x1, 0, z1);
-        const p4 = toIso(x0, 0, z1);
+        const p2 = toIso(x0 + w, 0, z0);
+        const p3 = toIso(x0 + w, 0, z0 + h);
+        const p4 = toIso(x0, 0, z0 + h);
         poly([p1, p2, p3, p4], 'PANEL', true);
 
-        const mx = 45;
-        const i1 = toIso(x0 + mx, 0, z0 + mx);
-        const i2 = toIso(x1 - mx, 0, z0 + mx);
-        const i3 = toIso(x1 - mx, 0, z1 - mx);
-        const i4 = toIso(x0 + mx, 0, z1 - mx);
-        poly([i1, i2, i3, i4], 'PANEL_DETAIL', true);
-
-        const pKey = `front_${j}_${k}`;
-        const pType = sidePanels[pKey] || 'std';
-        const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+        const pType = sidePanels[`front,${k},${j}`] || sidePanels[`front_${k}_${j}`] || sidePanels[`front,${j},${k}`] || sidePanels[`front_${j}_${k}`] || 'std';
+        const cx = x0 + w / 2, cz = z0 + h / 2;
 
         if (pType === 'flat' || pType === 'flat-1x1') {
-          poly([toIso(x0 + 75, 0, z0 + 75), toIso(x1 - 75, 0, z0 + 75), toIso(x1 - 75, 0, z1 - 75), toIso(x0 + 75, 0, z1 - 75)], 'PANEL_DETAIL', true);
-        } else if (pType === 'flat-half2') {
-          poly([toIso(cx - 20, 0, z0 + mx), toIso(cx + 20, 0, z0 + mx), toIso(cx + 20, 0, z1 - mx), toIso(cx - 20, 0, z1 - mx)], 'PANEL', true);
-          poly([toIso(x0 + mx, 0, z0 + mx), toIso(cx - 20, 0, z0 + mx), toIso(cx - 20, 0, z1 - mx), toIso(x0 + mx, 0, z1 - mx)], 'PANEL_DETAIL', true);
-          poly([toIso(cx + 20, 0, z0 + mx), toIso(x1 - mx, 0, z0 + mx), toIso(cx + 20, 0, z1 - mx), toIso(x1 - mx, 0, z1 - mx)], 'PANEL_DETAIL', true);
-        } else if (pType === 'fitting') {
-          isoCircle(cx, 0, cz, 280, 'XZ', 'FRAME');
-          isoCircle(cx, 0, cz, 220, 'XZ', 'PANEL_DETAIL');
-          isoCircle(cx, 0, cz, 120, 'XZ', 'FRAME');
+          const m = 25;
+          poly([toIso(x0 + m, 0, z0 + m), toIso(x0 + w - m, 0, z0 + m), toIso(x0 + w - m, 0, z0 + h - m), toIso(x0 + m, 0, z0 + h - m)], 'PANEL_DETAIL', true);
+        } else if (pType === 'flat-half2' || pType === 'flat-0.5x2') {
+          const hw = Math.round(w / 2), m = 20;
+          ln(toIso(x0 + hw, 0, z0), toIso(x0 + hw, 0, z0 + h), 'PANEL');
+          ln(toIso(x0 + hw - 8, 0, z0), toIso(x0 + hw - 8, 0, z0 + h), 'PANEL_DETAIL');
+          ln(toIso(x0 + hw + 8, 0, z0), toIso(x0 + hw + 8, 0, z0 + h), 'PANEL_DETAIL');
+          poly([toIso(x0 + m, 0, z0 + m), toIso(x0 + hw - m, 0, z0 + m), toIso(x0 + hw - m, 0, z0 + h - m), toIso(x0 + m, 0, z0 + h - m)], 'PANEL_DETAIL', true);
+          poly([toIso(x0 + hw + m, 0, z0 + m), toIso(x0 + w - m, 0, z0 + m), toIso(x0 + w - m, 0, z0 + h - m), toIso(x0 + hw + m, 0, z0 + h - m)], 'PANEL_DETAIL', true);
+        } else if (pType === 'fitting' || pType === 'large') {
+          const minD = Math.min(w, h);
+          isoCircle(cx, 0, cz, Math.round(minD * 0.35), 'XZ', 'FRAME');
+          isoCircle(cx, 0, cz, Math.round(minD * 0.22), 'XZ', 'PANEL_DETAIL');
+          isoCircle(cx, 0, cz, Math.round(minD * 0.12), 'XZ', 'FRAME');
+          const rHole = Math.round(minD * 0.285);
+          for (let deg = 0; deg < 360; deg += 45) {
+            const rad = deg * Math.PI / 180;
+            isoCircle(cx + rHole * Math.cos(rad), 0, cz + rHole * Math.sin(rad), 10, 'XZ', 'PANEL_DETAIL', 8);
+          }
         } else {
-          const rx = (x1 - x0) * 0.22, rz = (z1 - z0) * 0.22;
-          const mTop = toIso(cx, 0, cz + rz);
-          const mRt = toIso(cx + rx, 0, cz);
-          const mBot = toIso(cx, 0, cz - rz);
-          const mLt = toIso(cx - rx, 0, cz);
-          poly([mTop, mRt, mBot, mLt], 'PANEL_DETAIL', true);
-          ln(i1, mLt, 'PANEL_DETAIL');
-          ln(i2, mRt, 'PANEL_DETAIL');
-          ln(i3, mRt, 'PANEL_DETAIL');
-          ln(i4, mLt, 'PANEL_DETAIL');
-          ln(mTop, toIso(cx, 0, z1 - mx), 'PANEL_DETAIL');
-          ln(mBot, toIso(cx, 0, z0 + mx), 'PANEL_DETAIL');
+          // Standard pressed panel: use real template geometry
+          const rawT = sideTemplates[w + 'x' + h];
+          if (rawT && rawT.length > 0) {
+            projectTemplateEntities(rawT, 'XZ', x0, 0, z0, 'PANEL_DETAIL');
+          } else {
+            const m = 40;
+            poly([toIso(x0 + m, 0, z0 + m), toIso(x0 + w - m, 0, z0 + m), toIso(x0 + w - m, 0, z0 + h - m), toIso(x0 + m, 0, z0 + h - m)], 'PANEL_DETAIL', true);
+            const rx = (w - 2 * m) * 0.28, rz = (h - 2 * m) * 0.28;
+            poly([toIso(cx, 0, cz + rz), toIso(cx + rx, 0, cz), toIso(cx, 0, cz - rz), toIso(cx - rx, 0, cz)], 'PANEL_DETAIL', true);
+            ln(toIso(x0 + m, 0, z0 + m), toIso(cx - rx, 0, cz), 'PANEL_DETAIL');
+            ln(toIso(x0 + w - m, 0, z0 + m), toIso(cx + rx, 0, cz), 'PANEL_DETAIL');
+            ln(toIso(x0 + w - m, 0, z0 + h - m), toIso(cx + rx, 0, cz), 'PANEL_DETAIL');
+            ln(toIso(x0 + m, 0, z0 + h - m), toIso(cx - rx, 0, cz), 'PANEL_DETAIL');
+          }
         }
       }
     }
 
     // 3. 우측면 패널 (Right Wall: X = totalL)
     for (let i = 0; i < map.rows.length; i++) {
-      const y0 = map.ys[i], y1 = map.ys[i + 1];
+      const y0 = map.ys[i], w = map.rows[i];
       for (let k = 0; k < hs.length; k++) {
-        const z0 = zs[k], z1 = zs[k + 1];
+        const z0 = zs[k], h = hs[k];
         const p1 = toIso(totalL, y0, z0);
-        const p2 = toIso(totalL, y1, z0);
-        const p3 = toIso(totalL, y1, z1);
-        const p4 = toIso(totalL, y0, z1);
+        const p2 = toIso(totalL, y0 + w, z0);
+        const p3 = toIso(totalL, y0 + w, z0 + h);
+        const p4 = toIso(totalL, y0, z0 + h);
         poly([p1, p2, p3, p4], 'PANEL', true);
 
-        const my = 45;
-        const i1 = toIso(totalL, y0 + my, z0 + my);
-        const i2 = toIso(totalL, y1 - my, z0 + my);
-        const i3 = toIso(totalL, y1 - my, z1 - my);
-        const i4 = toIso(totalL, y0 + my, z1 - my);
-        poly([i1, i2, i3, i4], 'PANEL_DETAIL', true);
-
-        const pKey = `right_${i}_${k}`;
-        const pType = sidePanels[pKey] || 'std';
-        const cy = (y0 + y1) / 2, cz = (z0 + z1) / 2;
+        const pType = sidePanels[`side,${k},${i}`] || sidePanels[`right,${k},${i}`] || sidePanels[`side_${k}_${i}`] || sidePanels[`right_${k}_${i}`] || 'std';
+        const cy = y0 + w / 2, cz = z0 + h / 2;
 
         if (pType === 'flat' || pType === 'flat-1x1') {
-          poly([toIso(totalL, y0 + 75, z0 + 75), toIso(totalL, y1 - 75, z0 + 75), toIso(totalL, y1 - 75, z1 - 75), toIso(totalL, y0 + 75, z1 - 75)], 'PANEL_DETAIL', true);
-        } else if (pType === 'flat-half2') {
-          poly([toIso(totalL, cy - 20, z0 + my), toIso(totalL, cy + 20, z0 + my), toIso(totalL, cy + 20, z1 - my), toIso(totalL, cy - 20, z1 - my)], 'PANEL', true);
-          poly([toIso(totalL, y0 + my, z0 + my), toIso(totalL, cy - 20, z0 + my), toIso(totalL, cy - 20, z1 - my), toIso(totalL, y0 + my, z1 - my)], 'PANEL_DETAIL', true);
-          poly([toIso(totalL, cy + 20, z0 + my), toIso(totalL, y1 - my, z0 + my), toIso(totalL, y1 - my, z1 - my), toIso(totalL, cy + 20, z1 - my)], 'PANEL_DETAIL', true);
-        } else if (pType === 'fitting') {
-          isoCircle(totalL, cy, cz, 280, 'YZ', 'FRAME');
-          isoCircle(totalL, cy, cz, 220, 'YZ', 'PANEL_DETAIL');
-          isoCircle(totalL, cy, cz, 120, 'YZ', 'FRAME');
+          const m = 25;
+          poly([toIso(totalL, y0 + m, z0 + m), toIso(totalL, y0 + w - m, z0 + m), toIso(totalL, y0 + w - m, z0 + h - m), toIso(totalL, y0 + m, z0 + h - m)], 'PANEL_DETAIL', true);
+        } else if (pType === 'flat-half2' || pType === 'flat-0.5x2') {
+          const hw = Math.round(w / 2), m = 20;
+          ln(toIso(totalL, y0 + hw, z0), toIso(totalL, y0 + hw, z0 + h), 'PANEL');
+          ln(toIso(totalL, y0 + hw - 8, z0), toIso(totalL, y0 + hw - 8, z0 + h), 'PANEL_DETAIL');
+          ln(toIso(totalL, y0 + hw + 8, z0), toIso(totalL, y0 + hw + 8, z0 + h), 'PANEL_DETAIL');
+          poly([toIso(totalL, y0 + m, z0 + m), toIso(totalL, y0 + hw - m, z0 + m), toIso(totalL, y0 + hw - m, z0 + h - m), toIso(totalL, y0 + m, z0 + h - m)], 'PANEL_DETAIL', true);
+          poly([toIso(totalL, y0 + hw + m, z0 + m), toIso(totalL, y0 + w - m, z0 + m), toIso(totalL, y0 + w - m, z0 + h - m), toIso(totalL, y0 + hw + m, z0 + h - m)], 'PANEL_DETAIL', true);
+        } else if (pType === 'fitting' || pType === 'large') {
+          const minD = Math.min(w, h);
+          isoCircle(totalL, cy, cz, Math.round(minD * 0.35), 'YZ', 'FRAME');
+          isoCircle(totalL, cy, cz, Math.round(minD * 0.22), 'YZ', 'PANEL_DETAIL');
+          isoCircle(totalL, cy, cz, Math.round(minD * 0.12), 'YZ', 'FRAME');
+          const rHole = Math.round(minD * 0.285);
+          for (let deg = 0; deg < 360; deg += 45) {
+            const rad = deg * Math.PI / 180;
+            isoCircle(totalL, cy + rHole * Math.cos(rad), cz + rHole * Math.sin(rad), 10, 'YZ', 'PANEL_DETAIL', 8);
+          }
         } else {
-          const ry = (y1 - y0) * 0.22, rz = (z1 - z0) * 0.22;
-          const mTop = toIso(totalL, cy, cz + rz);
-          const mRt = toIso(totalL, cy + ry, cz);
-          const mBot = toIso(totalL, cy, cz - rz);
-          const mLt = toIso(totalL, cy - ry, cz);
-          poly([mTop, mRt, mBot, mLt], 'PANEL_DETAIL', true);
-          ln(i1, mLt, 'PANEL_DETAIL');
-          ln(i2, mRt, 'PANEL_DETAIL');
-          ln(i3, mRt, 'PANEL_DETAIL');
-          ln(i4, mLt, 'PANEL_DETAIL');
-          ln(mTop, toIso(totalL, cy, z1 - my), 'PANEL_DETAIL');
-          ln(mBot, toIso(totalL, cy, z0 + my), 'PANEL_DETAIL');
+          // Standard pressed panel: use real template geometry
+          const rawT = sideTemplates[w + 'x' + h];
+          if (rawT && rawT.length > 0) {
+            projectTemplateEntities(rawT, 'YZ', totalL, y0, z0, 'PANEL_DETAIL');
+          } else {
+            const m = 40;
+            poly([toIso(totalL, y0 + m, z0 + m), toIso(totalL, y0 + w - m, z0 + m), toIso(totalL, y0 + w - m, z0 + h - m), toIso(totalL, y0 + m, z0 + h - m)], 'PANEL_DETAIL', true);
+            const ry = (w - 2 * m) * 0.28, rz = (h - 2 * m) * 0.28;
+            poly([toIso(totalL, cy, cz + rz), toIso(totalL, cy + ry, cz), toIso(totalL, cy, cz - rz), toIso(totalL, cy - ry, cz)], 'PANEL_DETAIL', true);
+            ln(toIso(totalL, y0 + m, z0 + m), toIso(totalL, cy - ry, cz), 'PANEL_DETAIL');
+            ln(toIso(totalL, y0 + w - m, z0 + m), toIso(totalL, cy + ry, cz), 'PANEL_DETAIL');
+            ln(toIso(totalL, y0 + w - m, z0 + h - m), toIso(totalL, cy + ry, cz), 'PANEL_DETAIL');
+            ln(toIso(totalL, y0 + m, z0 + h - m), toIso(totalL, cy - ry, cz), 'PANEL_DETAIL');
+          }
         }
       }
     }
 
     // 4. 상부 지붕 패널 (Top Roof: Z = H)
     for (let i = 0; i < map.rows.length; i++) {
-      const y0 = map.ys[i], y1 = map.ys[i + 1];
+      const y0 = map.ys[i], h = map.rows[i];
       for (let j = 0; j < map.cols.length; j++) {
-        const x0 = map.xs[j], x1 = map.xs[j + 1];
+        const x0 = map.xs[j], w = map.cols[j];
         const key = i + ',' + j;
         if (map.removed && map.removed.has(key)) continue;
 
         const p1 = toIso(x0, y0, H);
-        const p2 = toIso(x1, y0, H);
-        const p3 = toIso(x1, y1, H);
-        const p4 = toIso(x0, y1, H);
+        const p2 = toIso(x0 + w, y0, H);
+        const p3 = toIso(x0 + w, y0 + h, H);
+        const p4 = toIso(x0, y0 + h, H);
         poly([p1, p2, p3, p4], 'PANEL', true);
-        ln(p1, p3, 'PANEL_DETAIL');
 
-        const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
-        const mk = (opt.marks || {})[key] || 0;
-
-        if (mk & 1) {
-          isoCircle(cx, cy, H, 300, 'XY', 'FRAME');
-          isoCircle(cx, cy, H + 60, 'XY', 'FRAME');
-          isoCircle(cx, cy, H + 80, 'XY', 'PANEL_DETAIL');
-          ents.push({ t: 'text', p: toIso(cx, cy, H + 120), h: textH * 0.8, s: 'MANHOLE 600', align: 'center', rot: 0, layer: 'DIM' });
-        }
-        if (mk & 2) {
-          const vx = (mk & 1) ? cx + 250 : cx;
-          const vy = (mk & 1) ? cy + 250 : cy;
-          ln(toIso(vx, vy, H), toIso(vx, vy, H + 220), 'FRAME');
-          isoCircle(vx, vy, H + 220, 60, 'XY', 'FRAME');
-          isoCircle(vx, vy, H + 260, 100, 'XY', 'FRAME');
-          ents.push({ t: 'text', p: toIso(vx, vy, H + 320), h: textH * 0.75, s: 'VENT 100A', align: 'center', rot: 0, layer: 'DIM' });
+        // Project CeilLT roof template geometry
+        const rawT = ceilTemplates[w + 'x' + h];
+        if (rawT && rawT.length > 0) {
+          projectTemplateEntities(rawT, 'XY', x0, y0, H, 'PANEL_DETAIL');
+        } else {
+          const m = 35;
+          poly([toIso(x0 + m, y0 + m, H), toIso(x0 + w - m, y0 + m, H), toIso(x0 + w - m, y0 + h - m, H), toIso(x0 + m, y0 + h - m, H)], 'PANEL_DETAIL', true);
+          ln(toIso(x0 + m, y0 + m, H), toIso(x0 + w - m, y0 + h - m, H), 'PANEL_DETAIL');
+          ln(toIso(x0 + w - m, y0 + m, H), toIso(x0 + m, y0 + h - m, H), 'PANEL_DETAIL');
         }
       }
     }
 
-    // 5. 외부 보강 찬넬 (Vertical Channels & Main Corner Angle)
+    // 5. 맨홀 및 환기구 (Manhole & Air Vent on Roof)
+    const marks = Object.assign({}, opt.marks);
+    if (Object.keys(marks).length === 0) {
+      // Default to cell (0, 0) if no marks explicitly assigned
+      marks['0,0'] = 3; // 1 (manhole) + 2 (air vent)
+    }
+    Object.entries(marks).forEach(([k, mk]) => {
+      const [i, j] = k.split(',').map(Number);
+      if (!map.has(i, j)) return;
+      const x0 = map.xs[j], y0 = map.ys[i];
+      const cx = x0 + map.cols[j] / 2, cy = y0 + map.rows[i] / 2;
+
+      if (mk & 1) { // 3D MANHOLE
+        const neckH = 180;
+        isoCircle(cx, cy, H, 300, 'XY', 'FRAME');
+        isoCircle(cx, cy, H + neckH, 300, 'XY', 'FRAME');
+        ln(toIso(cx - 300, cy, H), toIso(cx - 300, cy, H + neckH), 'FRAME');
+        ln(toIso(cx + 300, cy, H), toIso(cx + 300, cy, H + neckH), 'FRAME');
+        ln(toIso(cx, cy - 300, H), toIso(cx, cy - 300, H + neckH), 'FRAME');
+        ln(toIso(cx, cy + 300, H), toIso(cx, cy + 300, H + neckH), 'FRAME');
+        isoCircle(cx, cy, H + neckH, 330, 'XY', 'FRAME');
+        isoCircle(cx, cy, H + neckH, 260, 'XY', 'PANEL_DETAIL');
+        poly([toIso(cx - 70, cy, H + neckH), toIso(cx - 70, cy, H + neckH + 50), toIso(cx + 70, cy, H + neckH + 50), toIso(cx + 70, cy, H + neckH)], 'FRAME');
+        const pStart = toIso(cx, cy, H + neckH + 50);
+        const pEnd = [pStart[0] + Math.round(textH * 3.5), pStart[1] + Math.round(textH * 2.0)];
+        drawLeader(ents, pStart, [pEnd[0] - textH * 1.5, pEnd[1]], pEnd, ['MANHOLE Ø600'], textH * 0.85, 'left', 'DIM');
+      }
+
+      if (mk & 2) { // 3D AIR VENT
+        const ventX = (mk & 1) ? cx + 280 : cx;
+        const ventY = (mk & 1) ? cy + 280 : cy;
+        const pipeH = 350;
+        ln(toIso(ventX - 40, ventY, H), toIso(ventX - 40, ventY, H + pipeH), 'FRAME');
+        ln(toIso(ventX + 40, ventY, H), toIso(ventX + 40, ventY, H + pipeH), 'FRAME');
+        isoCircle(ventX, ventY, H + pipeH, 90, 'XY', 'FRAME');
+        isoCircle(ventX, ventY, H + pipeH + 45, 110, 'XY', 'FRAME');
+        isoCircle(ventX, ventY, H + pipeH + 75, 40, 'XY', 'FRAME');
+        const pStart = toIso(ventX, ventY, H + pipeH + 75);
+        const pEnd = [pStart[0] - Math.round(textH * 3.5), pStart[1] + Math.round(textH * 1.8)];
+        drawLeader(ents, pStart, [pEnd[0] + textH * 1.5, pEnd[1]], pEnd, ['AIR VENT 100A'], textH * 0.85, 'right', 'DIM');
+      }
+    });
+
+    // 6. 외부 사다리 (External Ladder with Cage & Top Safety Rails)
+    let lads = ladderList(opt, map);
+    if (!lads || lads.length === 0) {
+      const colIdx = Math.min(1, map.cols.length - 1);
+      const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2;
+      lads = [{ sd: 'D', idx: 2, x: cx, y: 0 }];
+    }
+    lads.forEach(l => {
+      const ladW = 450;
+      if (l.sd === 'D') {
+        const lx = l.x;
+        const x1 = lx - ladW / 2, x2 = lx + ladW / 2;
+        const yOff = -120;
+        ln(toIso(x1, yOff, 0), toIso(x1, yOff, H + 850), 'FRAME');
+        ln(toIso(x2, yOff, 0), toIso(x2, yOff, H + 850), 'FRAME');
+        poly([toIso(x1, yOff, H + 850), toIso(x1, yOff / 2, H + 900), toIso(x1, 0, H + 850), toIso(x1, 50, H)], 'FRAME');
+        poly([toIso(x2, yOff, H + 850), toIso(x2, yOff / 2, H + 900), toIso(x2, 0, H + 850), toIso(x2, 50, H)], 'FRAME');
+        for (let rz = 300; rz <= H; rz += 300) {
+          ln(toIso(x1, yOff, rz), toIso(x2, yOff, rz), 'FRAME');
+        }
+        [300, Math.round(H / 2), H].forEach(bz => {
+          ln(toIso(x1, 0, bz), toIso(x1, yOff, bz), 'FRAME');
+          ln(toIso(x2, 0, bz), toIso(x2, yOff, bz), 'FRAME');
+        });
+        if (H >= 3000) {
+          for (let cz = 2200; cz <= H + 500; cz += 800) {
+            const pts = [];
+            for (let a = 0; a <= 8; a++) {
+              const ang = Math.PI - (a * Math.PI) / 8;
+              const hx = lx + (ladW / 2 + 100) * Math.cos(ang);
+              const hy = yOff - 300 * Math.sin(ang);
+              pts.push(toIso(hx, hy, cz));
+            }
+            poly(pts, 'FRAME');
+          }
+          for (let s = -1; s <= 1; s++) {
+            ln(toIso(lx + s * 160, yOff - 300, 2200), toIso(lx + s * 160, yOff - 300, H + 500), 'FRAME');
+          }
+        }
+        const pStart = toIso(lx, yOff, H + 400);
+        const pEnd = [pStart[0] - Math.round(textH * 3.5), pStart[1] + Math.round(textH * 1.5)];
+        drawLeader(ents, pStart, [pEnd[0] + textH * 1.5, pEnd[1]], pEnd, ['EXTERNAL LADDER', (H >= 3000 ? '(W/ SAFETY CAGE)' : '')].filter(Boolean), textH * 0.8, 'right', 'DIM');
+      } else if (l.sd === 'R') {
+        const ly = l.y;
+        const y1 = ly - ladW / 2, y2 = ly + ladW / 2;
+        const xOff = totalL + 120;
+        ln(toIso(xOff, y1, 0), toIso(xOff, y1, H + 850), 'FRAME');
+        ln(toIso(xOff, y2, 0), toIso(xOff, y2, H + 850), 'FRAME');
+        poly([toIso(xOff, y1, H + 850), toIso(xOff - 60, y1, H + 900), toIso(totalL, y1, H + 850), toIso(totalL - 50, y1, H)], 'FRAME');
+        poly([toIso(xOff, y2, H + 850), toIso(xOff - 60, y2, H + 900), toIso(totalL, y2, H + 850), toIso(totalL - 50, y2, H)], 'FRAME');
+        for (let rz = 300; rz <= H; rz += 300) {
+          ln(toIso(xOff, y1, rz), toIso(xOff, y2, rz), 'FRAME');
+        }
+        [300, Math.round(H / 2), H].forEach(bz => {
+          ln(toIso(totalL, y1, bz), toIso(xOff, y1, bz), 'FRAME');
+          ln(toIso(totalL, y2, bz), toIso(xOff, y2, bz), 'FRAME');
+        });
+        if (H >= 3000) {
+          for (let cz = 2200; cz <= H + 500; cz += 800) {
+            const pts = [];
+            for (let a = 0; a <= 8; a++) {
+              const ang = (a * Math.PI) / 8 - Math.PI / 2;
+              const hx = xOff + 300 * Math.cos(ang);
+              const hy = ly + (ladW / 2 + 100) * Math.sin(ang);
+              pts.push(toIso(hx, hy, cz));
+            }
+            poly(pts, 'FRAME');
+          }
+          for (let s = -1; s <= 1; s++) {
+            ln(toIso(xOff + 300, ly + s * 160, 2200), toIso(xOff + 300, ly + s * 160, H + 500), 'FRAME');
+          }
+        }
+        const pStart = toIso(xOff, ly, H + 400);
+        const pEnd = [pStart[0] + Math.round(textH * 3.5), pStart[1] + Math.round(textH * 1.5)];
+        drawLeader(ents, pStart, [pEnd[0] - textH * 1.5, pEnd[1]], pEnd, ['EXTERNAL LADDER', (H >= 3000 ? '(W/ SAFETY CAGE)' : '')].filter(Boolean), textH * 0.8, 'left', 'DIM');
+      }
+    });
+
+    // 7. 외부 코너 및 결속 보강 앵글
     ln(toIso(totalL, 0, -th), toIso(totalL, 0, H), 'FRAME');
     for (let j = 1; j < map.cols.length; j++) {
       const vx = map.xs[j];
@@ -2488,7 +2660,7 @@ canvas.drag{cursor:grabbing}
       ln(toIso(totalL, vy, 0), toIso(totalL, vy, H), 'REINF');
     }
 
-    // 6. 배관 노즐 (Piping Nozzles)
+    // 8. 배관 노즐 (Nozzles)
     if (opt.useNozzles !== false) {
       const nozzles = getNozzleList(opt);
       nozzles.forEach(n => {
@@ -2517,8 +2689,8 @@ canvas.drag{cursor:grabbing}
           const pEnd = [pStart[0] + Math.round(textH * 3.5), pStart[1] + Math.round(textH * 1.8)];
           drawLeader(ents, pStart, [pEnd[0] - textH * 1.5, pEnd[1]], pEnd, [markLabel, `(EL.+${elev})`], textH * 0.85, 'left', 'DIM');
         } else if (n.face === 'top') {
-          const colIdx = Math.max(0, Math.min(n.topCell[1], map.cols.length - 1));
-          const rowIdx = Math.max(0, Math.min(n.topCell[0], map.rows.length - 1));
+          const colIdx = Math.max(0, Math.min((n.topCell && n.topCell[1]) || 0, map.cols.length - 1));
+          const rowIdx = Math.max(0, Math.min((n.topCell && n.topCell[0]) || 0, map.rows.length - 1));
           const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + (n.offset || 0);
           const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2;
           const stubLen = 160;
@@ -2532,30 +2704,7 @@ canvas.drag{cursor:grabbing}
       });
     }
 
-    // 7. 외부 사다리 (Ladder)
-    const lads = ladderList(opt, map);
-    lads.forEach(l => {
-      const ladW = 450;
-      if (l.sd === 'D') {
-        const lx = l.x;
-        const l1 = toIso(lx - ladW / 2, -60, 0), l2 = toIso(lx - ladW / 2, -60, H + 800);
-        const r1 = toIso(lx + ladW / 2, -60, 0), r2 = toIso(lx + ladW / 2, -60, H + 800);
-        ln(l1, l2, 'FRAME'); ln(r1, r2, 'FRAME');
-        for (let rz = 300; rz <= H; rz += 300) {
-          ln(toIso(lx - ladW / 2, -60, rz), toIso(lx + ladW / 2, -60, rz), 'FRAME');
-        }
-      } else if (l.sd === 'R') {
-        const ly = l.y;
-        const l1 = toIso(totalL + 60, ly - ladW / 2, 0), l2 = toIso(totalL + 60, ly - ladW / 2, H + 800);
-        const r1 = toIso(totalL + 60, ly + ladW / 2, 0), r2 = toIso(totalL + 60, ly + ladW / 2, H + 800);
-        ln(l1, l2, 'FRAME'); ln(r1, r2, 'FRAME');
-        for (let rz = 300; rz <= H; rz += 300) {
-          ln(toIso(totalL + 60, ly - ladW / 2, rz), toIso(totalL + 60, ly + ladW / 2, rz), 'FRAME');
-        }
-      }
-    });
-
-    // 8. 3D 등각 치수선 (L, W, H)
+    // 9. 3D 등각 치수선 (L, W, H)
     const dimGap = Math.round(14.0 * N);
     const dL0 = toIso(0, -PAD_OV - dimGap, -th);
     const dL1 = toIso(totalL, -PAD_OV - dimGap, -th);
@@ -3278,7 +3427,7 @@ canvas.drag{cursor:grabbing}
       const areaW = tx0 - x0;
       const areaH = y1 - y0;
       const viewW = (b[2] - b[0]) / N, viewH = (b[3] - b[1]) / N;
-      const fitScale = Math.min(1.0, (areaW * 0.85) / viewW, (areaH * 0.75) / viewH);
+      const fitScale = Math.min((areaW * 0.88) / viewW, (areaH * 0.78) / viewH);
       const cx = x0 + areaW * 0.5;
       const cy = y0 + areaH * 0.52;
       const centerDx = P(cx) - ((b[0] + b[2]) / 2) * fitScale;
@@ -3291,8 +3440,9 @@ canvas.drag{cursor:grabbing}
       });
 
       const titleY = y0 + 35;
-      drawViewTitleBubble(cx, titleY, 1, 1, '등  각  조  감  도 (3D ISOMETRIC VIEW)');
-      return { map: mmap, ents, scale: Math.round(N / fitScale), elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
+      const effScale = Math.max(5, Math.round(N / fitScale));
+      drawViewTitleBubble(cx, titleY, 1, 1, `등  각  조  감  도 (3D ISOMETRIC DWG)  [SCALE 1 : ${effScale}]`);
+      return { map: mmap, ents, scale: effScale, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
     }
 
     // 4대 뷰 투영 정렬(Orthographic Alignment) 및 중심 여백 균형 배치
@@ -3390,23 +3540,26 @@ canvas.drag{cursor:grabbing}
       const isoW_mm = (b_iso[2] - b_iso[0]) / N;
       const isoH_mm = (b_iso[3] - b_iso[1]) / N;
 
-      const side_rt = col2_tank_cx + (totalW / 2) / N;
-      const iso_avail_w = Math.max(60, tx0 - side_rt - 16);
+      // Safe right boundary of 우측면도 including dimensions, ladder and leader text
+      const side_rt = col2_tank_cx + (totalW / 2 + dim_left_1 + 250) / N + 15;
+      const iso_avail_w = tx0 - side_rt - 16;
       const iso_avail_h = Math.max(60, (row1_title_y - (row2_title_y + 12)));
-      const isoFitScale = Math.min(0.65, (iso_avail_w * 0.90) / isoW_mm, (iso_avail_h * 0.85) / isoH_mm);
 
-      const iso_cx = Math.min(tx0 - (isoW_mm * isoFitScale) / 2 - 10, side_rt + 15 + (isoW_mm * isoFitScale) / 2);
-      const iso_cy = (dy2 / N) + (H / (2 * N)) + 12;
-      const isoDx = P(iso_cx) - ((b_iso[0] + b_iso[2]) / 2) * isoFitScale;
-      const isoDy = P(iso_cy) - ((b_iso[1] + b_iso[3]) / 2) * isoFitScale;
+      if (iso_avail_w >= 65) {
+        const isoFitScale = Math.min(0.55, (iso_avail_w * 0.90) / isoW_mm, (iso_avail_h * 0.85) / isoH_mm);
+        const iso_cx = side_rt + 8 + (isoW_mm * isoFitScale) / 2;
+        const iso_cy = (dy2 / N) + (H / (2 * N)) + 12;
+        const isoDx = P(iso_cx) - ((b_iso[0] + b_iso[2]) / 2) * isoFitScale;
+        const isoDy = P(iso_cy) - ((b_iso[1] + b_iso[3]) / 2) * isoFitScale;
 
-      iso.ents.forEach(e => {
-        if (e.t === 'line') ents.push({ ...e, a: [e.a[0] * isoFitScale + isoDx, e.a[1] * isoFitScale + isoDy], b: [e.b[0] * isoFitScale + isoDx, e.b[1] * isoFitScale + isoDy] });
-        else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] * isoFitScale + isoDx, e.c[1] * isoFitScale + isoDy], r: e.r * isoFitScale });
-        else ents.push({ ...e, p: [e.p[0] * isoFitScale + isoDx, e.p[1] * isoFitScale + isoDy], h: e.h * isoFitScale });
-      });
+        iso.ents.forEach(e => {
+          if (e.t === 'line') ents.push({ ...e, a: [e.a[0] * isoFitScale + isoDx, e.a[1] * isoFitScale + isoDy], b: [e.b[0] * isoFitScale + isoDx, e.b[1] * isoFitScale + isoDy] });
+          else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] * isoFitScale + isoDx, e.c[1] * isoFitScale + isoDy], r: e.r * isoFitScale });
+          else ents.push({ ...e, p: [e.p[0] * isoFitScale + isoDx, e.p[1] * isoFitScale + isoDy], h: e.h * isoFitScale });
+        });
 
-      drawViewTitleBubble(iso_cx, row2_title_y, 1, 5, '등  각  조  감  도');
+        drawViewTitleBubble(iso_cx, row2_title_y, 1, 5, '등  각  조  감  도');
+      }
       elev = true;
     }
     const blocks = Object.assign({}, plan.blocks, (front && front.blocks), (side && side.blocks));
@@ -4721,11 +4874,18 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       };
       const sheet = $('sheetOn').checked;
       opt.sheetKind = $('sheetKind').value;
-      plan = sheet ? C.buildSheet(opt, TEMPLATES, SIDE_T) : C.buildPlan(opt, TEMPLATES);
+      if (sheet) {
+        plan = C.buildSheet(opt, TEMPLATES, SIDE_T);
+      } else if (opt.sheetKind === 'iso') {
+        const iso = C.buildIsometric(opt, TEMPLATES, SIDE_T);
+        plan = { map: C.createMap(opt), ents: iso.ents, blocks: {}, scale: 25, elev: false };
+      } else {
+        plan = C.buildPlan(opt, TEMPLATES);
+      }
       plan.sheet = sheet;
 
       const kindText = { asm: '조립도 (종합)', iso: '등각 조감도 (3D ISO)', frame: '프레임도 (하부/내부)', detail: '상세도 (DETAILS)' }[opt.sheetKind] || '도면';
-      $('viewBadge').textContent = sheet ? `A1 ${kindText} (1/${plan.scale})` : '평면도 모델 뷰';
+      $('viewBadge').textContent = sheet ? `A1 ${kindText} (1/${plan.scale})` : (opt.sheetKind === 'iso' ? '3D 등각 모델 뷰' : '평면도 모델 뷰');
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
