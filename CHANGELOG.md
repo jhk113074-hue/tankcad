@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1] - 2026-09-30
+
+### Added
+- **Streamlined Side Elevation Editing (측면편집)**:
+  - Renamed tab to `📐 측면편집` and redesigned into a clean, intuitive single-screen interface matching the Plan Editor.
+  - Side panel type switching: Standard embossed (`기본`), Flat (`평판`), and Large-Bore (`대구경`) panels on elevation grids.
+  - 2D CAD and DXF export support for flat plate relief and circular reinforced large-bore boss openings.
+  - Compact 1-line mini inspector bar for instant editing of nozzle size, connection type, and EL.
+  - Collapsible Nozzle Schedule table accordion to eliminate clutter and scrolling.
+- **Partition and Multi-compartment Support**:
+  - Independent INLET placement per compartment on multi-compartment tanks.
+  - Visual partition wall markers on both Plan Editor and Elevation grids.
+- **Dimension Restoration**:
+  - Restored expected dimension order and default inputs (Row 1: 길이/LENGTH 5000, Row 2: 폭/WIDTH 3000+2000).
+
+---
+
 ## [1.2.0] - 2026-09-30
 
 ### Added

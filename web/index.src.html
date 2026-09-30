@@ -166,6 +166,10 @@ tr:last-child td{border-bottom:0}
 .noz-grid-btn{position:relative;border:0;background:var(--surface);border-radius:0;padding:0;cursor:pointer;color:var(--fg);overflow:visible;box-sizing:border-box}
 .noz-grid-btn:hover{background:color-mix(in srgb,var(--accent) 20%,var(--surface))}
 .noz-grid-btn.comp-border-right{border-right:2px solid #38bdf8 !important}
+.noz-grid-btn.p-flat{background:rgba(2,132,199,0.08) !important;outline:1.5px solid #0284c7;outline-offset:-1.5px}
+.noz-grid-btn.p-large{background:rgba(16,185,129,0.08) !important;outline:1.5px solid #10b981;outline-offset:-1.5px}
+.panel-badge-flat{position:absolute;top:2px;right:2px;font-size:8px;line-height:1;padding:1px 3px;background:#0284c7;color:#fff;border-radius:2px;font-weight:700;pointer-events:none;z-index:4}
+.panel-badge-large{position:absolute;top:2px;right:2px;font-size:8px;line-height:1;padding:1px 3px;background:#10b981;color:#fff;border-radius:2px;font-weight:700;pointer-events:none;z-index:4}
 
 
 /* Viewport / Main */
@@ -204,7 +208,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.2.0</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.2.1</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -221,7 +225,7 @@ canvas.drag{cursor:grabbing}
     <nav class="tab-nav">
       <button type="button" class="tab-btn active" data-tab="tab-specs">📐 사양·치수</button>
       <button type="button" class="tab-btn" data-tab="tab-edit">✏️ 평면 편집</button>
-      <button type="button" class="tab-btn" data-tab="tab-nozzles">🚰 배관·노즐</button>
+      <button type="button" class="tab-btn" data-tab="tab-nozzles">📐 측면편집</button>
       <button type="button" class="tab-btn" data-tab="tab-sheet">📋 표제란·노트</button>
       <button type="button" class="tab-btn" data-tab="tab-bom">📊 집계</button>
       <button type="button" class="tab-btn" data-tab="tab-panels">🧩 판넬 DB</button>
@@ -242,8 +246,8 @@ canvas.drag{cursor:grabbing}
         </div>
 
         <h2 style="margin-top:14px">탱크 치수 입력 (mm)</h2>
-        <div class="seg" id="segW"><label>폭(WIDTH)</label></div>
         <div class="seg" id="segL"><label>길이(LENGTH)</label></div>
+        <div class="seg" id="segW"><label>폭(WIDTH)</label></div>
         <div class="seg" id="segH">
           <label for="H">높이(HEIGHT)</label>
           <select id="H" style="grid-column:span 2"></select>
@@ -283,49 +287,55 @@ canvas.drag{cursor:grabbing}
       </section>
     </div>
 
-    <!-- Tab: Nozzles & Pipe Sockets (측면뷰 기반 시각적 배치 편집기) -->
+    <!-- Tab: Side Elevation & Nozzles (측면 편집) -->
     <div class="tab-content" id="tab-nozzles">
       <section class="box">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2>측면 배관·노즐 시각적 편집</h2>
-          <span class="hint" style="margin:0">평면편집 방식 클릭 배치</span>
+          <h2 style="margin:0">📐 측면 편집 (판넬 및 배관)</h2>
+          <span class="hint" style="margin:0">평면편집 방식 클릭 설정</span>
         </div>
-        <p class="hint" style="margin-bottom:10px">원하는 노즐 도구를 선택하고 측면뷰의 패널 칸을 클릭하여 배관을 배치합니다.</p>
+        <p class="hint" style="margin-bottom:8px">도구를 선택하고 측면 격자를 클릭하여 <b>판넬 종류 변경</b>(기본/평판/대구경) 및 <b>배관 노즐</b>을 배치합니다.</p>
 
-        <!-- 1. 뷰 선택 탭 (정면 / 우측면 / 배면 / 좌측면 / 상부 평면) -->
-        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+        <!-- 1. 뷰 선택 탭 (정면 / 우측면 / 배면 / 좌측면) -->
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
           <label class="emode-chip"><input type="radio" name="nozViewFace" value="front" checked><span>🏢 정면 (Front)</span></label>
           <label class="emode-chip"><input type="radio" name="nozViewFace" value="right"><span>🏢 우측면 (Right)</span></label>
           <label class="emode-chip"><input type="radio" name="nozViewFace" value="rear"><span>🏢 배면 (Rear)</span></label>
           <label class="emode-chip"><input type="radio" name="nozViewFace" value="left"><span>🏢 좌측면 (Left)</span></label>
-          <label class="emode-chip"><input type="radio" name="nozViewFace" value="top"><span>🏢 상부 (Roof/Top)</span></label>
         </div>
 
-        <!-- 2. 노즐 배치 도구 툴바 (emode-bar) -->
-        <div class="emode-bar">
-          <label class="emode-chip"><input type="radio" name="nozTool" value="INLET" checked><span class="noz-tool-inlet">💧 INLET (유입구)</span></label>
-          <label class="emode-chip"><input type="radio" name="nozTool" value="OUTLET"><span class="noz-tool-outlet">🚰 OUTLET (유출구)</span></label>
-          <label class="emode-chip"><input type="radio" name="nozTool" value="OVERFLOW"><span class="noz-tool-overflow">🌊 OVERFLOW (월류관)</span></label>
-          <label class="emode-chip"><input type="radio" name="nozTool" value="DRAIN"><span class="noz-tool-drain">⬇️ DRAIN (배수구)</span></label>
-          <label class="emode-chip"><input type="radio" name="nozTool" value="FIRE"><span class="noz-tool-fire">🚒 소방 (FIRE)</span></label>
-          <label class="emode-chip"><input type="radio" name="nozTool" value="select"><span>✏️ 선택/이동</span></label>
-          <label class="emode-chip"><input type="radio" name="nozTool" value="del"><span class="noz-tool-del">❌ 삭제</span></label>
+        <!-- 2. 직관적인 도구 툴바 (emode-bar) -->
+        <div class="emode-bar" style="margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;width:100%">
+            <span style="font-size:11px;font-weight:700;color:var(--muted);margin-right:2px">판넬:</span>
+            <label class="emode-chip"><input type="radio" name="nozTool" value="panel-std" checked><span>🔲 기본</span></label>
+            <label class="emode-chip"><input type="radio" name="nozTool" value="panel-flat"><span>⬜ 평판</span></label>
+            <label class="emode-chip"><input type="radio" name="nozTool" value="panel-large"><span>⭕ 대구경</span></label>
+
+            <span style="font-size:11px;font-weight:700;color:var(--muted);margin-left:6px;margin-right:2px">배관:</span>
+            <label class="emode-chip"><input type="radio" name="nozTool" value="INLET"><span class="noz-tool-inlet">💧 유입</span></label>
+            <label class="emode-chip"><input type="radio" name="nozTool" value="OUTLET"><span class="noz-tool-outlet">🚰 유출</span></label>
+            <label class="emode-chip"><input type="radio" name="nozTool" value="OVERFLOW"><span class="noz-tool-overflow">🌊 월류</span></label>
+            <label class="emode-chip"><input type="radio" name="nozTool" value="DRAIN"><span class="noz-tool-drain">⬇️ 배수</span></label>
+            <label class="emode-chip"><input type="radio" name="nozTool" value="FIRE"><span class="noz-tool-fire">🚒 소방</span></label>
+            <label class="emode-chip"><input type="radio" name="nozTool" value="del"><span class="noz-tool-del">❌ 삭제</span></label>
+          </div>
         </div>
 
-        <!-- 프리셋 바 -->
-        <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;justify-content:space-between">
+        <!-- 3. 빠른 프리셋 & 전체 초기화 -->
+        <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;justify-content:space-between">
           <div style="display:flex;gap:4px">
-            <button type="button" id="nozPresetSingle" class="btn-sm">📦 1구획 기본 (5개)</button>
-            <button type="button" id="nozPresetDouble" class="btn-sm" style="background:#0284c7;color:#fff;border-color:#0284c7">📦 2구획(칸막이) 세트 (10개)</button>
+            <button type="button" id="nozPresetSingle" class="btn-sm">⚡ 1구획 기본배관</button>
+            <button type="button" id="nozPresetDouble" class="btn-sm" style="background:#0284c7;color:#fff;border-color:#0284c7">⚡ 2구획(칸막이) 기본배관</button>
           </div>
           <button type="button" id="nozClearAll" class="btn-sm" style="color:#ef4444">전체 비우기</button>
         </div>
 
-        <!-- 3. 측면뷰 패널 격자 (Visual Elevation View Grid) -->
-        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:12px">
+        <!-- 4. 측면뷰 패널 격자 (Visual Elevation View Grid) -->
+        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:6px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <b style="font-size:12px;color:var(--fg)" id="nozGridTitle">정면 뷰 (Front Elevation)</b>
-            <span style="font-size:11px;color:var(--muted)" id="nozGridGuide">패널을 클릭하여 노즐을 설치합니다.</span>
+            <span style="font-size:11px;color:var(--muted)" id="nozGridGuide">칸 클릭 시 판넬 전환 / 노즐 배치</span>
           </div>
 
           <!-- 상단 패널 열 번호 & 구획 라벨 표시 영역 -->
@@ -351,101 +361,72 @@ canvas.drag{cursor:grabbing}
           </div>
         </div>
 
-        <!-- 4. 선택된 노즐 속성 세부 편집 (Selected Nozzle Property Box) -->
-        <div id="nozSelectedPropBox" style="background:var(--surface);border:1px solid var(--accent);border-radius:6px;padding:8px 10px;margin-bottom:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <span style="font-size:12px;font-weight:700;color:var(--accent)" id="nozPropTitle">선택된 노즐 속성 설정</span>
-            <div style="display:flex;gap:4px">
-              <button type="button" id="nozPropDel" class="btn-sm" style="color:#ef4444;padding:2px 6px;font-size:11px">🗑️ 삭제</button>
+        <!-- 5. 컴팩트 미니 인스펙터 바 (노즐 선택 시 슬림 1열 표시) -->
+        <div id="nozMiniBar" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:var(--surface);border:1.5px solid var(--accent);border-radius:6px;margin-bottom:10px;font-size:11px;flex-wrap:wrap">
+          <span id="miniMark" style="font-weight:800;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 6px;border-radius:4px">N1</span>
+          <b id="miniName">INLET</b>
+          <span style="color:var(--muted)">|</span>
+          <label>구경:
+            <select id="miniSize" style="font-size:11px;padding:2px 4px">
+              <option value="25A">25A</option>
+              <option value="32A">32A</option>
+              <option value="40A">40A</option>
+              <option value="50A">50A</option>
+              <option value="65A">65A</option>
+              <option value="80A">80A</option>
+              <option value="100A">100A</option>
+              <option value="125A">125A</option>
+              <option value="150A">150A</option>
+              <option value="200A">200A</option>
+              <option value="250A">250A</option>
+              <option value="300A">300A</option>
+            </select>
+          </label>
+          <label>타입:
+            <select id="miniType" style="font-size:11px;padding:2px 4px">
+              <option value="FLANGE">FLANGE 10K</option>
+              <option value="SOCKET">SOCKET</option>
+            </select>
+          </label>
+          <label>EL:
+            <input type="number" id="miniElev" style="width:60px;font-size:11px;padding:2px 4px;text-align:right"> mm
+          </label>
+          <button type="button" id="miniDel" class="btn-sm" style="color:#ef4444;padding:2px 8px;font-size:11px;margin-left:auto">🗑️ 삭제</button>
+        </div>
+        <div id="nozMiniBarEmpty" style="padding:6px 10px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:6px;margin-bottom:10px;font-size:11px;color:var(--muted);text-align:center">
+          💡 도구를 선택하고 격자 칸을 클릭하면 판넬 종류 변경(기본/평판/대구경) 및 노즐이 배치됩니다.
+        </div>
+
+        <!-- 6. 노즐 일람표 아코디언 드롭다운 (상세보기) -->
+        <details style="border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+          <summary style="cursor:pointer;padding:8px 10px;font-size:11px;font-weight:700;color:var(--fg);display:flex;align-items:center;justify-content:space-between">
+            <span id="nozSchedSummaryTitle">📋 배관 노즐 일람표 (NOZZLE SCHEDULE)</span>
+            <span style="font-size:10px;color:var(--muted);font-weight:normal">펼치기 / 접기 ▼</span>
+          </summary>
+          <div style="padding:8px;border-top:1px solid var(--line)">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
+              <button type="button" id="nozAddCustomBtn" class="btn-sm" style="background:var(--accent);color:#fff;border-color:#0284c7">➕ 새 노즐 직접 등록</button>
+            </div>
+            <div style="max-height:180px;overflow-y:auto;border:1px solid var(--line);border-radius:4px;background:var(--bg)">
+              <table style="width:100%;font-size:11px;border-collapse:collapse">
+                <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
+                  <tr>
+                    <th style="padding:4px 6px">NO.</th>
+                    <th style="padding:4px 6px">SERVICE</th>
+                    <th style="padding:4px 6px">SIZE</th>
+                    <th style="padding:4px 6px">TYPE</th>
+                    <th style="padding:4px 6px">ELEV.</th>
+                    <th style="padding:4px 6px">LOCATION</th>
+                    <th style="padding:4px 6px;text-align:center">선택</th>
+                  </tr>
+                </thead>
+                <tbody id="nozPreviewTbody"></tbody>
+              </table>
             </div>
           </div>
-          <div class="noz-card-grid" id="nozPropGrid">
-            <label>노즐 번호 / 명칭</label>
-            <div style="display:flex;gap:4px">
-              <input type="text" id="propMark" style="width:42px;font-weight:700;text-align:center;font-size:11px" placeholder="N1">
-              <input type="text" id="propName" style="flex:1;font-weight:600;font-size:11px" placeholder="INLET">
-              <input type="text" id="propDesc" style="flex:1;font-size:11px" placeholder="구획/용도 비고">
-            </div>
-
-            <label>구경 (Size)</label>
-            <select id="propSize">
-              <option value="25A">25A (1")</option>
-              <option value="32A">32A (1-1/4")</option>
-              <option value="40A">40A (1-1/2")</option>
-              <option value="50A">50A (2")</option>
-              <option value="65A">65A (2-1/2")</option>
-              <option value="80A">80A (3")</option>
-              <option value="100A">100A (4")</option>
-              <option value="125A">125A (5")</option>
-              <option value="150A">150A (6")</option>
-              <option value="200A">200A (8")</option>
-              <option value="250A">250A (10")</option>
-              <option value="300A">300A (12")</option>
-            </select>
-
-            <label>연결 타입</label>
-            <select id="propType">
-              <option value="FLANGE">FLANGE 10K (플랜지 타입)</option>
-              <option value="SOCKET">SOCKET (나사식 소켓 타입)</option>
-            </select>
-
-            <label>설치 면 / 위치</label>
-            <div style="display:flex;gap:4px">
-              <select id="propFace" style="flex:1">
-                <option value="front">정면 (Front)</option>
-                <option value="right">우측면 (Right)</option>
-                <option value="rear">배면 (Rear)</option>
-                <option value="left">좌측면 (Left)</option>
-                <option value="top">상부 평면 (Top)</option>
-              </select>
-              <select id="propSeg" style="flex:1"></select>
-            </div>
-
-            <label>패널내 편심(좌우)</label>
-            <select id="propOffset">
-              <option value="0">중앙 (Offset 0)</option>
-              <option value="-250">좌측으로 250mm (-250)</option>
-              <option value="250">우측으로 250mm (+250)</option>
-            </select>
-
-            <label>설치 높이 (EL)</label>
-            <div>
-              <div style="display:flex;gap:4px;align-items:center;margin-bottom:4px">
-                <input type="number" id="propElev" style="text-align:right;flex:1">
-                <span id="propElevUnit" style="font-size:11px;color:var(--muted)">mm</span>
-              </div>
-              <div style="display:flex;gap:3px;flex-wrap:wrap">
-                <button type="button" class="btn-sm btn-elev-preset" data-val="100" style="padding:1px 5px;font-size:10px">바닥 100</button>
-                <button type="button" class="btn-sm btn-elev-preset" data-val="200" style="padding:1px 5px;font-size:10px">소방 200</button>
-                <button type="button" class="btn-sm btn-elev-preset" data-val="300" style="padding:1px 5px;font-size:10px">토출 300</button>
-                <button type="button" class="btn-sm btn-elev-preset" data-mode="top-overflow" style="padding:1px 5px;font-size:10px">월류 H-200</button>
-                <button type="button" class="btn-sm btn-elev-preset" data-mode="top-inlet" style="padding:1px 5px;font-size:10px">유입 H-300</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 5. 노즐 일람표 미리보기 (NOZZLE SCHEDULE) -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;margin-bottom:6px">
-          <h2>배관 노즐 일람표 (NOZZLE SCHEDULE)</h2>
-          <button type="button" id="nozAddCustomBtn" class="btn-sm" style="background:var(--accent);color:#fff;border-color:#0284c7">➕ 새 노즐 직접 등록</button>
-        </div>
-        <div style="max-height:220px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--bg)">
-          <table style="width:100%;font-size:11px;border-collapse:collapse">
-            <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
-              <tr>
-                <th style="padding:4px 6px">NO.</th>
-                <th style="padding:4px 6px">SERVICE</th>
-                <th style="padding:4px 6px">SIZE</th>
-                <th style="padding:4px 6px">TYPE</th>
-                <th style="padding:4px 6px">ELEV.</th>
-                <th style="padding:4px 6px">LOCATION</th>
-                <th style="padding:4px 6px;text-align:center">선택</th>
-              </tr>
-            </thead>
-            <tbody id="nozPreviewTbody"></tbody>
-          </table>
-        </div>
+        </details>
+      </section>
+    </div>
       </section>
     </div>
 
@@ -806,7 +787,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       host.appendChild(inp);
     });
   }
-  makeInputs($('segW'), WID0, 'W'); makeInputs($('segL'), LEN0, 'L');
+  makeInputs($('segL'), LEN0, 'L'); makeInputs($('segW'), WID0, 'W');
 
   function fillHeights() {
     const cur = Number($('H').value) || 3000, one = $('b11').checked;
@@ -860,8 +841,9 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   let plan = null, view = { x: 0, y: 0, s: 1 };
   let removed = new Set(), pillars = new Set(), marks = {}, ladders = {}, topInletCell = [0, 0], shapeKey = '';
   let nozzleData = [];
+  let sidePanelTypes = {};
   let currentNozFace = 'front';
-  let currentNozTool = 'INLET';
+  let currentNozTool = 'panel-std';
   let selectedNozzleId = null;
   const iconCache = {};
   const vals = k => [0, 1, 2, 3, 4].map(i => Number($(k + i).value) || 0).filter(Boolean);
@@ -1077,12 +1059,21 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
       for (let ci = 0; ci < cols.length; ci++) {
         const colWidthMm = cols[ci];
+        const pKey = `${currentNozFace},${tierIdx},${ci}`;
+        const pType = sidePanelTypes[pKey] || 'std';
+
         const b = document.createElement('button');
         b.type = 'button';
-        b.className = 'noz-grid-btn' + (isPartitionCol(ci) ? ' comp-border-right' : '');
+        b.className = 'noz-grid-btn' + (isPartitionCol(ci) ? ' comp-border-right' : '') + (pType === 'flat' ? ' p-flat' : pType === 'large' ? ' p-large' : '');
         b.style.width = Math.max(16, Math.round(colWidthMm * sc)) + 'px';
         b.style.height = Math.max(14, Math.round(rowHeightMm * sc)) + 'px';
-        b.innerHTML = panelIcon(colWidthMm, rowHeightMm, 0);
+        b.innerHTML = panelIcon(colWidthMm, rowHeightMm, 0, pType);
+
+        if (pType === 'flat') {
+          b.insertAdjacentHTML('beforeend', '<span class="panel-badge-flat">평판</span>');
+        } else if (pType === 'large') {
+          b.insertAdjacentHTML('beforeend', '<span class="panel-badge-large">대구경</span>');
+        }
 
         let cellNozzles = [];
         if (isTop) {
@@ -1137,68 +1128,56 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   function handleGridCellClick(face, colIdx, tierIdx, tierInt, cellNozzles) {
     const H = [Number($('H').value) || 0, 0, 0, 0, 0];
     const nH = H.reduce((a, b) => a + (b || 0), 0) || 3000;
-    const tool = document.querySelector('input[name=nozTool]:checked').value;
+    const tool = (document.querySelector('input[name=nozTool]:checked') || {}).value || 'panel-std';
+    const pKey = `${face},${tierIdx},${colIdx}`;
 
+    // 1. Panel Tools: panel-std, panel-flat, panel-large
+    if (tool === 'panel-std' || tool === 'panel-flat' || tool === 'panel-large') {
+      const targetType = (tool === 'panel-flat') ? 'flat' : (tool === 'panel-large') ? 'large' : 'std';
+      if (sidePanelTypes[pKey] === targetType) {
+        delete sidePanelTypes[pKey];
+      } else {
+        sidePanelTypes[pKey] = targetType;
+      }
+      renderNozzleElevationGrid();
+      schedule();
+      return;
+    }
+
+    // 2. Delete Tool: del
     if (tool === 'del') {
       if (cellNozzles.length > 0) {
         const toDel = cellNozzles[0];
         nozzleData = nozzleData.filter(n => n.id !== toDel.id);
         if (selectedNozzleId === toDel.id) selectedNozzleId = null;
-        renderNozzleElevationGrid();
-        updateSelectedPropBox();
-        updatePreviewTbody();
-        schedule();
-      }
-      return;
-    }
-
-    if (tool === 'select') {
-      if (cellNozzles.length > 0) {
-        selectedNozzleId = cellNozzles[0].id;
-      } else if (selectedNozzleId) {
-        const selNoz = nozzleData.find(n => n.id === selectedNozzleId);
-        if (selNoz) {
-          selNoz.face = face;
-          if (face === 'top') {
-            selNoz.topCell = [tierIdx, colIdx];
-            selNoz.elev = 'TOP';
-          } else {
-            selNoz.seg = colIdx + 1;
-            if (tierInt) {
-              selNoz.elev = Math.round((tierInt.y0 + tierInt.y1) / 2);
-            }
-          }
-        }
+      } else if (sidePanelTypes[pKey]) {
+        delete sidePanelTypes[pKey];
       }
       renderNozzleElevationGrid();
-      updateSelectedPropBox();
+      updateMiniInspector();
       updatePreviewTbody();
       schedule();
       return;
     }
 
+    // 3. Nozzle Tools (INLET, OUTLET, OVERFLOW, DRAIN, FIRE)
+    // If clicked on cell with existing nozzle, select it!
+    if (cellNozzles.length > 0) {
+      selectedNozzleId = cellNozzles[0].id;
+      renderNozzleElevationGrid();
+      updateMiniInspector();
+      return;
+    }
+
     const svc = tool;
-    let targetNoz = null;
-    if (selectedNozzleId) {
-      const curr = nozzleData.find(n => n.id === selectedNozzleId);
-      if (curr && curr.name === svc) targetNoz = curr;
-    }
-
     const compTag = getCompLabelByCol(colIdx, face);
-    if (!targetNoz) {
-      targetNoz = nozzleData.find(n => n.name === svc && n.face === face && n.seg === (colIdx + 1));
-      if (!targetNoz) {
-        targetNoz = nozzleData.find(n => n.name === svc && n.face === face);
-      }
-    }
-
     let defaultElev = 300;
     let defaultType = 'FLANGE';
     let defaultSize = '100A';
     let defaultOffset = 0;
 
     if (svc === 'INLET') {
-      defaultElev = face === 'top' ? 'TOP' : Math.max(100, nH - 300);
+      defaultElev = (tierInt && tierInt.idx === 0) ? (tierInt.y0 + 500) : Math.max(100, nH - 300);
       defaultSize = '100A';
       defaultType = 'FLANGE';
     } else if (svc === 'OUTLET') {
@@ -1220,15 +1199,15 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       defaultType = 'FLANGE';
     }
 
+    let targetNoz = nozzleData.find(n => n.name === svc && n.face === face && n.seg === (colIdx + 1));
+    if (!targetNoz) {
+      targetNoz = nozzleData.find(n => n.name === svc && n.face === face);
+    }
+
     if (targetNoz) {
       targetNoz.face = face;
-      if (face === 'top') {
-        targetNoz.topCell = [tierIdx, colIdx];
-        targetNoz.elev = 'TOP';
-      } else {
-        targetNoz.seg = colIdx + 1;
-        targetNoz.elev = (tierInt && (svc === 'INLET' || svc === 'OVERFLOW') && tierInt.idx === 0) ? (tierInt.y0 + 500) : defaultElev;
-      }
+      targetNoz.seg = colIdx + 1;
+      targetNoz.elev = (tierInt && (svc === 'INLET' || svc === 'OVERFLOW') && tierInt.idx === 0) ? (tierInt.y0 + 500) : defaultElev;
       targetNoz.use = true;
       selectedNozzleId = targetNoz.id;
     } else {
@@ -1243,8 +1222,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         face: face,
         seg: colIdx + 1,
         offset: defaultOffset,
-        elev: face === 'top' ? 'TOP' : defaultElev,
-        topCell: face === 'top' ? [tierIdx, colIdx] : [0, 0],
+        elev: defaultElev,
+        topCell: [0, 0],
         use: true
       };
       nozzleData.push(newNoz);
@@ -1252,43 +1231,29 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     }
 
     renderNozzleElevationGrid();
-    updateSelectedPropBox();
+    updateMiniInspector();
     updatePreviewTbody();
     schedule();
   }
 
-  function updateSelectedPropBox() {
-    const box = $('nozSelectedPropBox');
-    if (!box) return;
-    const n = nozzleData.find(x => x.id === selectedNozzleId) || nozzleData[0];
+  function updateMiniInspector() {
+    const bar = $('nozMiniBar');
+    const empty = $('nozMiniBarEmpty');
+    if (!bar) return;
+    const n = nozzleData.find(x => x.id === selectedNozzleId);
     if (!n) {
-      box.style.display = 'none';
+      bar.style.display = 'none';
+      if (empty) empty.style.display = 'block';
       return;
     }
-    box.style.display = 'block';
-    selectedNozzleId = n.id;
+    bar.style.display = 'flex';
+    if (empty) empty.style.display = 'none';
 
-    $('nozPropTitle').textContent = `[${n.mark}] ${n.name} 속성 설정`;
-    $('propMark').value = n.mark || '';
-    $('propName').value = n.name || '';
-    $('propDesc').value = n.desc || '';
-    $('propSize').value = n.size || '100A';
-    $('propType').value = n.type || 'FLANGE';
-    $('propFace').value = n.face || 'front';
-    $('propOffset').value = String(n.offset || 0);
-
-    const isTop = (n.face === 'top');
-    $('propElev').value = isTop ? '' : (n.elev || 0);
-    $('propElev').disabled = isTop;
-    $('propElevUnit').textContent = isTop ? 'TOP' : 'mm';
-
-    let m = null;
-    try { m = C.createMap({ length: vals('L'), width: vals('W') }); } catch (e) {}
-    const segSel = $('propSeg');
-    if (segSel && m) {
-      segSel.style.display = isTop ? 'none' : 'block';
-      segSel.innerHTML = renderSegOptions(n.face, n.seg, m, vals('L'));
-    }
+    $('miniMark').textContent = n.mark;
+    $('miniName').textContent = n.name + (n.desc ? ` (${n.desc})` : '');
+    $('miniSize').value = n.size || '100A';
+    $('miniType').value = n.type || 'FLANGE';
+    $('miniElev').value = (typeof n.elev === 'number') ? n.elev : 300;
   }
 
   function selectNozzle(id) {
@@ -1299,17 +1264,22 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const r = document.querySelector(`input[name=nozViewFace][value="${n.face}"]`);
     if (r) r.checked = true;
     renderNozzleElevationGrid();
-    updateSelectedPropBox();
+    updateMiniInspector();
     updatePreviewTbody();
   }
 
   function updatePreviewTbody() {
     const tbody = $('nozPreviewTbody');
     if (!tbody) return;
-    const faceTextMap = { front: 'FRONT (정면)', rear: 'REAR (배면)', left: 'LEFT (좌측)', right: 'RIGHT (우측)', top: 'TOP (상부)' };
+    const sumTitle = $('nozSchedSummaryTitle');
+    if (sumTitle) {
+      const activeCnt = nozzleData.filter(n => n.use !== false).length;
+      sumTitle.textContent = `📋 배관 노즐 일람표 (NOZZLE SCHEDULE - 총 ${activeCnt}개)`;
+    }
+    const faceTextMap = { front: 'FRONT (정면)', rear: 'REAR (배면)', left: 'LEFT (좌측)', right: 'RIGHT (우측)' };
     tbody.innerHTML = nozzleData.map(n => {
       if (!n.use) return `<tr style="opacity:0.4"><td>${n.mark}</td><td>${n.name}${n.desc ? ' (' + n.desc + ')' : ''}</td><td colspan="5" style="text-align:center">미사용</td></tr>`;
-      const elev = n.face === 'top' ? 'TOP' : `EL.+${Number(n.elev || 0).toLocaleString()}mm`;
+      const elev = `EL.+${Number(n.elev || 0).toLocaleString()}mm`;
       const loc = faceTextMap[n.face] || n.face;
       const typeStr = n.type === 'FLANGE' ? 'FLG 10K' : 'SOCKET';
       const isSel = (n.id === selectedNozzleId);
@@ -1319,7 +1289,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         <td><span class="badge-tag" style="position:static;background:#0284c7;color:#fff">${n.size}</span></td>
         <td>${typeStr}</td>
         <td>${elev}</td>
-        <td>${loc} ${n.face !== 'top' ? (n.seg + '번') : ''}</td>
+        <td>${loc} ${n.seg ? (n.seg + '번') : ''}</td>
         <td style="text-align:center">
           <button type="button" class="btn-sm btn-select-noz" data-id="${n.id}" style="padding:1px 5px;font-size:10px">✏️</button>
           <button type="button" class="btn-sm btn-del-noz" data-id="${n.id}" style="color:#ef4444;padding:1px 4px;font-size:10px">🗑️</button>
@@ -1341,7 +1311,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         nozzleData = nozzleData.filter(x => x.id !== id);
         if (selectedNozzleId === id) selectedNozzleId = null;
         renderNozzleElevationGrid();
-        updateSelectedPropBox();
+        updateMiniInspector();
         updatePreviewTbody();
         schedule();
       });
@@ -1363,11 +1333,26 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       selectedNozzleId = nozzleData[0] ? nozzleData[0].id : null;
     }
     renderNozzleElevationGrid(map);
-    updateSelectedPropBox();
+    updateMiniInspector();
     updatePreviewTbody();
   }
 
-  function panelIcon(w, h, mk) {
+  function panelIcon(w, h, mk, pType) {
+    if (pType === 'flat') {
+      return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="1" style="width:100%;height:100%;display:block">
+        <rect x="0" y="0" width="${w}" height="${h}" fill="rgba(2,132,199,0.06)" stroke="var(--line)" stroke-width="1.6"/>
+        <rect x="${Math.round(w*0.06)}" y="${Math.round(h*0.06)}" width="${Math.round(w*0.88)}" height="${Math.round(h*0.88)}" stroke="#0284c7" stroke-width="1.2" stroke-dasharray="3 2" fill="none"/>
+      </svg>`;
+    }
+    if (pType === 'large') {
+      const minD = Math.min(w, h);
+      return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="1" style="width:100%;height:100%;display:block">
+        <rect x="0" y="0" width="${w}" height="${h}" fill="rgba(16,185,129,0.06)" stroke="var(--line)" stroke-width="1.6"/>
+        <circle cx="${w/2}" cy="${h/2}" r="${Math.round(minD * 0.38)}" stroke="#10b981" stroke-width="2"/>
+        <circle cx="${w/2}" cy="${h/2}" r="${Math.round(minD * 0.24)}" stroke="#10b981" stroke-width="1.5"/>
+        <circle cx="${w/2}" cy="${h/2}" r="${Math.round(minD * 0.12)}" fill="#10b981" fill-opacity="0.3" stroke="#10b981" stroke-width="1"/>
+      </svg>`;
+    }
     const mat = document.querySelector('input[name=mat]:checked').value, key = mat + w + 'x' + h;
     if (!mk && iconCache[key]) return iconCache[key];
     let p = '';
@@ -1630,7 +1615,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     nozzleData = getSingleCompNozzles(m, H);
     selectedNozzleId = nozzleData[0] ? nozzleData[0].id : null;
     renderNozzleElevationGrid(m);
-    updateSelectedPropBox();
+    updateMiniInspector();
     updatePreviewTbody();
     schedule();
   });
@@ -1642,16 +1627,17 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     nozzleData = getDoubleCompNozzles(m, H);
     selectedNozzleId = nozzleData[0] ? nozzleData[0].id : null;
     renderNozzleElevationGrid(m);
-    updateSelectedPropBox();
+    updateMiniInspector();
     updatePreviewTbody();
     schedule();
   });
 
   $('nozClearAll').addEventListener('click', () => {
     nozzleData = [];
+    sidePanelTypes = {};
     selectedNozzleId = null;
     renderNozzleElevationGrid();
-    updateSelectedPropBox();
+    updateMiniInspector();
     updatePreviewTbody();
     schedule();
   });
@@ -1668,90 +1654,46 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       face: currentNozFace,
       seg: 1,
       offset: 0,
-      elev: (currentNozFace === 'top') ? 'TOP' : 500,
+      elev: 500,
       topCell: [0, 0],
       use: true
     };
     nozzleData.push(newNoz);
     selectedNozzleId = newNoz.id;
     renderNozzleElevationGrid();
-    updateSelectedPropBox();
+    updateMiniInspector();
     updatePreviewTbody();
     schedule();
   });
 
-  $('nozPropDel').addEventListener('click', () => {
-    if (!selectedNozzleId) return;
-    nozzleData = nozzleData.filter(x => x.id !== selectedNozzleId);
-    selectedNozzleId = nozzleData[0] ? nozzleData[0].id : null;
-    renderNozzleElevationGrid();
-    updateSelectedPropBox();
-    updatePreviewTbody();
-    schedule();
+  $('miniSize').addEventListener('change', e => {
+    const n = nozzleData.find(x => x.id === selectedNozzleId);
+    if (n) { n.size = e.target.value; updatePreviewTbody(); schedule(); }
   });
-
-  ['propMark', 'propName', 'propDesc', 'propSize', 'propType', 'propFace', 'propSeg', 'propOffset', 'propElev'].forEach(id => {
-    const el = $(id);
-    if (!el) return;
-    el.addEventListener('change', () => {
-      const n = nozzleData.find(x => x.id === selectedNozzleId);
-      if (!n) return;
-      if (id === 'propMark') n.mark = el.value.trim();
-      else if (id === 'propName') n.name = el.value.trim().toUpperCase();
-      else if (id === 'propDesc') n.desc = el.value.trim();
-      else if (id === 'propSize') n.size = el.value;
-      else if (id === 'propType') n.type = el.value;
-      else if (id === 'propFace') {
-        n.face = el.value;
-        if (n.face === 'top') { n.elev = 'TOP'; if (!n.topCell) n.topCell = [0, 0]; }
-        else if (n.elev === 'TOP') n.elev = 300;
-        currentNozFace = n.face;
-        const r = document.querySelector(`input[name=nozViewFace][value="${n.face}"]`);
-        if (r) r.checked = true;
-      }
-      else if (id === 'propSeg') n.seg = Number(el.value) || 1;
-      else if (id === 'propOffset') n.offset = Number(el.value) || 0;
-      else if (id === 'propElev') n.elev = Number(el.value) || 0;
-
+  $('miniType').addEventListener('change', e => {
+    const n = nozzleData.find(x => x.id === selectedNozzleId);
+    if (n) { n.type = e.target.value; updatePreviewTbody(); schedule(); }
+  });
+  $('miniElev').addEventListener('input', e => {
+    const n = nozzleData.find(x => x.id === selectedNozzleId);
+    if (n) { n.elev = Number(e.target.value) || 0; renderNozzleElevationGrid(); updatePreviewTbody(); schedule(); }
+  });
+  $('miniDel').addEventListener('click', () => {
+    if (selectedNozzleId) {
+      nozzleData = nozzleData.filter(x => x.id !== selectedNozzleId);
+      selectedNozzleId = null;
       renderNozzleElevationGrid();
-      updateSelectedPropBox();
+      updateMiniInspector();
       updatePreviewTbody();
       schedule();
-    });
+    }
   });
 
-  $('propMark').addEventListener('input', () => {
-    const n = nozzleData.find(x => x.id === selectedNozzleId);
-    if (n) { n.mark = $('propMark').value.trim(); renderNozzleElevationGrid(); updatePreviewTbody(); schedule(); }
-  });
-  $('propName').addEventListener('input', () => {
-    const n = nozzleData.find(x => x.id === selectedNozzleId);
-    if (n) { n.name = $('propName').value.trim().toUpperCase(); renderNozzleElevationGrid(); updatePreviewTbody(); schedule(); }
-  });
-  $('propDesc').addEventListener('input', () => {
-    const n = nozzleData.find(x => x.id === selectedNozzleId);
-    if (n) { n.desc = $('propDesc').value.trim(); updatePreviewTbody(); schedule(); }
-  });
-  $('propElev').addEventListener('input', () => {
-    const n = nozzleData.find(x => x.id === selectedNozzleId);
-    if (n && n.face !== 'top') { n.elev = Number($('propElev').value) || 0; renderNozzleElevationGrid(); updatePreviewTbody(); schedule(); }
-  });
-
-  document.querySelectorAll('.btn-elev-preset').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const n = nozzleData.find(x => x.id === selectedNozzleId);
-      if (!n || n.face === 'top') return;
-      const H = [Number($('H').value) || 0, 0, 0, 0, 0];
-      const nH = H.reduce((a, b) => a + (b || 0), 0) || 3000;
-      const v = btn.getAttribute('data-val');
-      const m = btn.getAttribute('data-mode');
-      if (v) n.elev = Number(v);
-      else if (m === 'top-overflow') n.elev = Math.max(100, nH - 200);
-      else if (m === 'top-inlet') n.elev = Math.max(100, nH - 300);
-      $('propElev').value = n.elev;
+  document.querySelectorAll('input[name=nozViewFace]').forEach(r => {
+    r.addEventListener('change', e => {
+      currentNozFace = e.target.value;
       renderNozzleElevationGrid();
-      updatePreviewTbody();
-      schedule();
+      updateMiniInspector();
     });
   });
 
@@ -1761,7 +1703,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   function rebuild(fit) {
     const L = vals('L'), W = vals('W'), H = [Number($('H').value) || 0, 0, 0, 0, 0];
     let msg = [];
-    [['폭(WIDTH)', W, 'W'], ['길이(LENGTH)', L, 'L']].forEach(([nm, arr, k]) => arr.forEach((v, i) => {
+    [['길이(LENGTH)', L, 'L'], ['폭(WIDTH)', W, 'W']].forEach(([nm, arr, k]) => arr.forEach((v, i) => {
       const e = C.checkSegment(v), el = $(k + i);
       el.classList.toggle('bad', !!e);
       if (e) msg.push(nm + ' ' + (i + 1) + '번 칸: ' + e);
@@ -1772,13 +1714,14 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     try {
       const m0 = C.createMap({ length: L, width: W });
       const key = m0.cols.join('+') + '|' + m0.rows.join('+');
-      if (key !== shapeKey) { shapeKey = key; removed = new Set(); pillars = new Set(); marks = {}; ladders = {}; }
+      if (key !== shapeKey) { shapeKey = key; removed = new Set(); pillars = new Set(); marks = {}; ladders = {}; sidePanelTypes = {}; }
       renderGrid(m0);
       updateNozzleUi(m0);
       const opt = {
         length: L, width: W, height: H, hseg: C.heightSegs(H[0], $('b11').checked), removed: [...removed].map(k => k.split(',').map(Number)), marks: Object.assign({}, marks), ladders: Object.assign({}, ladders), pillars: [...pillars].map(k => k.split(',').map(Number)), frame: Number($('frm').value), material: document.querySelector('input[name=mat]:checked').value,
         rf: Number(document.querySelector('input[name=rf]:checked').value),
         userScale: $('scaleSel').value === 'auto' ? null : Number($('scaleSel').value),
+        sidePanels: Object.assign({}, sidePanelTypes),
         nozzles: nozzleData.filter(n => n.use !== false),
         notes: $('tNotes').value.split('\n').map(x => x.trim()).filter(Boolean),
         remarks: $('tRemarks').value.split('\n').map(x => x.trim()).filter(Boolean),

@@ -904,8 +904,9 @@
     const internal = (opt.rf || 0) !== 0, sts = opt.material === 'STS';
     const mat = sts ? 'STS' : 'SMC';
 
-    const getSideBlock = (w, h) => {
-      const blkName = `PANEL_SIDE_${mat}_${w}x${h}`;
+    const getSideBlock = (w, h, pType) => {
+      const type = pType || 'std';
+      const blkName = `PANEL_SIDE_${mat}_${w}x${h}_${type}`;
       if (!blocks[blkName]) {
         const bEnts = [
           { t: 'line', a: [0, 0], b: [w, 0], layer: 'PANEL' },
@@ -913,28 +914,51 @@
           { t: 'line', a: [w, h], b: [0, h], layer: 'PANEL' },
           { t: 'line', a: [0, h], b: [0, 0], layer: 'PANEL' }
         ];
-        const mTemplates = sideT[mat] || {};
-        const t = mTemplates[w + 'x' + h] || [];
-        t.forEach(s => {
-          if (s.k === 'line') bEnts.push({ t: 'line', a: s.p[0], b: s.p[1], layer: 'PANEL_DETAIL' });
-          else if (s.k === 'poly') {
-            for (let k = 0; k + 1 < s.p.length; k++) bEnts.push({ t: 'line', a: s.p[k], b: s.p[k + 1], layer: 'PANEL_DETAIL' });
-            if (s.c !== false) bEnts.push({ t: 'line', a: s.p[s.p.length - 1], b: s.p[0], layer: 'PANEL_DETAIL' });
+        if (type === 'flat') {
+          // Flat panel (평판 판넬): smooth plate, offset margin line
+          const m = 25;
+          bEnts.push({ t: 'line', a: [m, m], b: [w - m, m], layer: 'PANEL_DETAIL' });
+          bEnts.push({ t: 'line', a: [w - m, m], b: [w - m, h - m], layer: 'PANEL_DETAIL' });
+          bEnts.push({ t: 'line', a: [w - m, h - m], b: [m, h - m], layer: 'PANEL_DETAIL' });
+          bEnts.push({ t: 'line', a: [m, h - m], b: [m, m], layer: 'PANEL_DETAIL' });
+        } else if (type === 'large') {
+          // Large bore panel (대구경 판넬): concentric reinforced circular boss for large piping/flange
+          const cx = w / 2, cy = h / 2, minD = Math.min(w, h);
+          bEnts.push({ t: 'circle', c: [cx, cy], r: Math.round(minD * 0.35), layer: 'PANEL_DETAIL' });
+          bEnts.push({ t: 'circle', c: [cx, cy], r: Math.round(minD * 0.22), layer: 'PANEL_DETAIL' });
+          bEnts.push({ t: 'circle', c: [cx, cy], r: Math.round(minD * 0.12), layer: 'PANEL_DETAIL' });
+          const rHole = Math.round(minD * 0.285);
+          for (let deg = 0; deg < 360; deg += 45) {
+            const rad = deg * Math.PI / 180;
+            bEnts.push({ t: 'circle', c: [Math.round(cx + rHole * Math.cos(rad)), Math.round(cy + rHole * Math.sin(rad))], r: 10, layer: 'PANEL_DETAIL' });
           }
-          else if (s.k === 'circle') bEnts.push({ t: 'circle', c: s.c, r: s.r, layer: 'PANEL_DETAIL' });
-          else if (s.k === 'arc') {
-            const d = (p) => Math.atan2(p[1] - s.c[1], p[0] - s.c[0]) * 180 / Math.PI;
-            bEnts.push({ t: 'arc', c: s.c, r: s.r, a0: d(s.s), a1: d(s.e), layer: 'PANEL_DETAIL' });
-          }
-        });
+        } else {
+          const mTemplates = sideT[mat] || {};
+          const t = mTemplates[w + 'x' + h] || [];
+          t.forEach(s => {
+            if (s.k === 'line') bEnts.push({ t: 'line', a: s.p[0], b: s.p[1], layer: 'PANEL_DETAIL' });
+            else if (s.k === 'poly') {
+              for (let k = 0; k + 1 < s.p.length; k++) bEnts.push({ t: 'line', a: s.p[k], b: s.p[k + 1], layer: 'PANEL_DETAIL' });
+              if (s.c !== false) bEnts.push({ t: 'line', a: s.p[s.p.length - 1], b: s.p[0], layer: 'PANEL_DETAIL' });
+            }
+            else if (s.k === 'circle') bEnts.push({ t: 'circle', c: s.c, r: s.r, layer: 'PANEL_DETAIL' });
+            else if (s.k === 'arc') {
+              const d = (p) => Math.atan2(p[1] - s.c[1], p[0] - s.c[0]) * 180 / Math.PI;
+              bEnts.push({ t: 'arc', c: s.c, r: s.r, a0: d(s.s), a1: d(s.e), layer: 'PANEL_DETAIL' });
+            }
+          });
+        }
         blocks[blkName] = bEnts;
       }
       return blkName;
     };
 
     // CSideLT: 패널 블럭 삽입
-    function panel(x, y, w, h) {
-      const blkName = getSideBlock(w, h);
+    function panel(x, y, w, h, colIdx, tierIdx) {
+      const pKey1 = `${view},${tierIdx},${colIdx}`;
+      const pKey2 = `${view === 'side' ? 'right' : view},${tierIdx},${colIdx}`;
+      const pType = (opt.sidePanels && (opt.sidePanels[pKey1] || opt.sidePanels[pKey2])) || 'std';
+      const blkName = getSideBlock(w, h, pType);
       ents.push({ t: 'insert', block: blkName, p: [x, y], w, h, layer: 'PANEL' });
     }
     // CPlateLT::SMC_OutBo (0x10000 상 / 0x20000 중 / 0x30000 하)
@@ -1004,12 +1028,12 @@
         ln([baseX, 0], [baseX + nLen, 0]); ln([baseX, nH], [baseX + nLen, nH]);
         ln([baseX, 0], [baseX, nH]); ln([baseX + nLen, 0], [baseX + nLen, nH]);
         let y0 = 0;
-        hs.forEach(hh => {
+        hs.forEach((hh, i) => {
           const tall = !(hh === 500 || hh === 1000 || hh === 1300);
           for (let j = 0; j < cnt; j++) {
             if (tall && j === sp && pLen[j] === 1300) {
-              panel(xj[j], y0, 1300, hh - 1000); panel(xj[j], y0 + hh - 1000, 1300, 1000); ln([xj[j], y0 + hh - 1000], [xj[j] + 1300, y0 + hh - 1000]);
-            } else panel(xj[j], y0, pLen[j], hh);
+              panel(xj[j], y0, 1300, hh - 1000, gIdx + j, i); panel(xj[j], y0 + hh - 1000, 1300, 1000, gIdx + j, i); ln([xj[j], y0 + hh - 1000], [xj[j] + 1300, y0 + hh - 1000]);
+            } else panel(xj[j], y0, pLen[j], hh, gIdx + j, i);
           }
           y0 += hh;
         });
@@ -1047,8 +1071,8 @@
           const tall = !(hh === 500 || hh === 1000 || hh === 1300), last = i === hsN - 1;
           for (let j = 0; j < cnt; j++) {
             if (tall && j === sp && pLen[j] === 1300) {
-              panel(xj[j], y, 1300, hh - 1000); ln([xj[j], y + hh - 1000], [xj[j] + 1300, y + hh - 1000]); panel(xj[j], y + hh - 1000, 1300, 1000);
-            } else panel(xj[j], y, pLen[j], hh);
+              panel(xj[j], y, 1300, hh - 1000, gIdx + j, i); ln([xj[j], y + hh - 1000], [xj[j] + 1300, y + hh - 1000]); panel(xj[j], y + hh - 1000, 1300, 1000, gIdx + j, i);
+            } else panel(xj[j], y, pLen[j], hh, gIdx + j, i);
           }
           if (i > 0) {                               // 단 사이 가로 이음선 + 격자판
             for (let j = 0; j < cnt; j++) ln([xj[j] + (j > 0 ? HX : 0) , y], [xj[j + 1] - (j < cnt - 1 ? HX : 0), y]);
@@ -1077,8 +1101,8 @@
         if (i > 0) ln([baseX, y], [baseX + (cnt > 1 ? pLen[0] - MX : pLen[0]), y]);
         for (let j = 0; j < cnt; j++) {
           if (tall && j === sp && pLen[j] === 1300) {     // 높이 1500/2000 의 1300 패널: (h-1000) + 1000 로 분할
-            panel(xj[j], y, 1300, hh - 1000); ln([xj[j], y + hh - 1000], [xj[j] + 1300, y + hh - 1000]); panel(xj[j], y + hh - 1000, 1300, 1000);
-          } else panel(xj[j], y, pLen[j], hh);
+            panel(xj[j], y, 1300, hh - 1000, gIdx + j, i); ln([xj[j], y + hh - 1000], [xj[j] + 1300, y + hh - 1000]); panel(xj[j], y + hh - 1000, 1300, 1000, gIdx + j, i);
+          } else panel(xj[j], y, pLen[j], hh, gIdx + j, i);
           if (j < cnt - 1) {
             const x = xj[j + 1];
             plate(x, y, i === 0 ? 'bot' : 'mid');
