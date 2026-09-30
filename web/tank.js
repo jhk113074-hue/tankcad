@@ -914,15 +914,34 @@
           { t: 'line', a: [w, h], b: [0, h], layer: 'PANEL' },
           { t: 'line', a: [0, h], b: [0, 0], layer: 'PANEL' }
         ];
-        if (type === 'flat') {
-          // Flat panel (평판 판넬): smooth plate, offset margin line
+        if (type === 'flat' || type === 'flat-1x1') {
+          // 1x1m Flat panel (1x1m 평판 판넬): smooth plate, offset margin line
           const m = 25;
           bEnts.push({ t: 'line', a: [m, m], b: [w - m, m], layer: 'PANEL_DETAIL' });
           bEnts.push({ t: 'line', a: [w - m, m], b: [w - m, h - m], layer: 'PANEL_DETAIL' });
           bEnts.push({ t: 'line', a: [w - m, h - m], b: [m, h - m], layer: 'PANEL_DETAIL' });
           bEnts.push({ t: 'line', a: [m, h - m], b: [m, m], layer: 'PANEL_DETAIL' });
-        } else if (type === 'large') {
-          // Large bore panel (대구경 판넬): concentric reinforced circular boss for large piping/flange
+        } else if (type === 'flat-half2' || type === 'flat-0.5x2') {
+          // Two 0.5x1m flat panels (0.5x1m 평판 2장): center dividing vertical seam and two 0.5m plates
+          const hw = Math.round(w / 2);
+          const m = 20;
+          // Center dividing joint line on PANEL layer
+          bEnts.push({ t: 'line', a: [hw, 0], b: [hw, h], layer: 'PANEL' });
+          // Left 0.5m panel margin
+          bEnts.push({ t: 'line', a: [m, m], b: [hw - m, m], layer: 'PANEL_DETAIL' });
+          bEnts.push({ t: 'line', a: [hw - m, m], b: [hw - m, h - m], layer: 'PANEL_DETAIL' });
+          bEnts.push({ t: 'line', a: [hw - m, h - m], b: [m, h - m], layer: 'PANEL_DETAIL' });
+          bEnts.push({ t: 'line', a: [m, h - m], b: [m, m], layer: 'PANEL_DETAIL' });
+          // Right 0.5m panel margin
+          bEnts.push({ t: 'line', a: [hw + m, m], b: [w - m, m], layer: 'PANEL_DETAIL' });
+          bEnts.push({ t: 'line', a: [w - m, m], b: [w - m, h - m], layer: 'PANEL_DETAIL' });
+          bEnts.push({ t: 'line', a: [w - m, h - m], b: [hw + m, h - m], layer: 'PANEL_DETAIL' });
+          bEnts.push({ t: 'line', a: [hw + m, h - m], b: [hw + m, m], layer: 'PANEL_DETAIL' });
+          // Flange bolt joint lines at center
+          bEnts.push({ t: 'line', a: [hw - 8, 0], b: [hw - 8, h], layer: 'PANEL_DETAIL' });
+          bEnts.push({ t: 'line', a: [hw + 8, 0], b: [hw + 8, h], layer: 'PANEL_DETAIL' });
+        } else if (type === 'fitting' || type === 'large') {
+          // Fitting panel (피팅 판넬): concentric reinforced circular boss for large piping/flange
           const cx = w / 2, cy = h / 2, minD = Math.min(w, h);
           bEnts.push({ t: 'circle', c: [cx, cy], r: Math.round(minD * 0.35), layer: 'PANEL_DETAIL' });
           bEnts.push({ t: 'circle', c: [cx, cy], r: Math.round(minD * 0.22), layer: 'PANEL_DETAIL' });

@@ -102,34 +102,32 @@ tr:last-child td{border-bottom:0}
 .kv span{color:var(--muted)}
 .kv b{font-family:var(--font-num);font-weight:600;text-align:right;color:var(--fg)}
 
-/* Edit Mode Toolbar & Grid */
-.emode-bar{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:10px}
+/* Plan Edit Mode Toolbar & Grid */
+.plan-tool-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+.plan-tool-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.plan-tool-chip{display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 4px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid var(--line);background:var(--surface-sub);color:var(--fg);cursor:pointer;user-select:none;transition:all .15s ease;text-align:center;white-space:nowrap}
+.plan-tool-chip input{display:none}
+.plan-tool-chip:hover{border-color:var(--accent);color:var(--accent)}
+.plan-tool-chip:has(input:checked){color:#ffffff !important;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,0.25)}
+.plan-tool-chip:has(input[value="del"]:checked){background:#ef4444 !important;border-color:#ef4444 !important}
+.plan-tool-chip:has(input[value="han"]:checked){background:#ea580c !important;border-color:#ea580c !important}
+.plan-tool-chip:has(input[value="vent"]:checked){background:#0284c7 !important;border-color:#0284c7 !important}
+.plan-tool-chip:has(input[value="lad"]:checked){background:#16a34a !important;border-color:#16a34a !important}
+.plan-tool-chip:has(input[value="inlet"]:checked){background:#2563eb !important;border-color:#2563eb !important}
+.plan-tool-chip:has(input[value="pil"]:checked){background:#475569 !important;border-color:#475569 !important}
+
+/* Legacy fallback support */
+.emode-bar{display:none}
 .emode-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;border:1px solid var(--line);border-radius:6px;background:var(--surface-sub);color:var(--fg);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;user-select:none;transition:all .15s}
-.emode-chip:hover{border-color:var(--accent)}
-.emode-chip:has(input:checked){background:var(--accent);color:#ffffff !important;border-color:var(--accent);box-shadow:0 1px 3px rgba(2,132,199,0.3)}
-.emode-chip:has(input:checked) *{color:#ffffff !important}
-.emode-chip input{margin:0;accent-color:var(--accent)}
-.emode-chip:has(input:checked) input{accent-color:#ffffff}
+.emode-chip input{display:none}
 
-/* Tool chip custom active colors when checked */
-.emode-chip:has(input[value="INLET"]:checked){background:#0284c7 !important;border-color:#0284c7 !important}
-.emode-chip:has(input[value="OUTLET"]:checked){background:#059669 !important;border-color:#059669 !important}
-.emode-chip:has(input[value="OVERFLOW"]:checked){background:#d97706 !important;border-color:#d97706 !important}
-.emode-chip:has(input[value="DRAIN"]:checked){background:#475569 !important;border-color:#475569 !important}
-.emode-chip:has(input[value="FIRE"]:checked){background:#dc2626 !important;border-color:#dc2626 !important}
-.emode-chip:has(input[value="del"]:checked){background:#ef4444 !important;border-color:#ef4444 !important}
-
-/* Unselected tool color accents */
-.noz-tool-inlet{color:#0284c7}
-.noz-tool-outlet{color:#059669}
-.noz-tool-overflow{color:#d97706}
-.noz-tool-drain{color:#64748b}
-.noz-tool-fire{color:#dc2626}
-.noz-tool-del{color:#ef4444}
 .btn-sm{padding:4px 10px;font-size:11px;font-weight:600;border-radius:6px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
 .btn-sm:hover{border-color:var(--warn);color:var(--warn)}
 
-.egrid{display:grid;gap:1px;margin-top:8px;max-width:100%;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.plan-grid-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:6px;box-shadow:var(--shadow-sm)}
+.plan-grid-wrap{display:flex;justify-content:center;overflow-x:auto;padding:2px 0}
+
+.egrid{display:grid;gap:1px;margin-top:4px;max-width:100%;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
 .egrid button{position:relative;border:0;background:var(--surface);border-radius:0;padding:0;cursor:pointer;color:var(--fg);overflow:visible;aspect-ratio:1}
 .egrid button:hover{background:color-mix(in srgb,var(--accent) 15%,var(--surface))}
 .egrid button.off{background:repeating-linear-gradient(45deg,transparent 0 4px,var(--line-sub) 4px 5px);color:var(--muted)}
@@ -152,7 +150,7 @@ tr:last-child td{border-bottom:0}
 /* Partition Wall Lines and Badges on Grid */
 .egrid button.cell-part-right::after{content:'';position:absolute;top:0;right:-2px;width:4px;height:100%;background:#ea580c;z-index:5;pointer-events:none;box-shadow:0 0 5px rgba(234,88,12,0.8)}
 .egrid button.cell-part-bottom::before{content:'';position:absolute;bottom:-2px;left:0;width:100%;height:4px;background:#ea580c;z-index:5;pointer-events:none;box-shadow:0 0 5px rgba(234,88,12,0.8)}
-.badge-partition{position:absolute;top:-8px;right:-18px;background:#ea580c;color:#fff;font-size:8px;font-weight:800;padding:1px 4px;border-radius:3px;pointer-events:none;z-index:8;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.4)}
+.badge-partition{position:absolute;top:2px;right:-14px;background:#ea580c;color:#fff;font-size:8px;font-weight:800;padding:1px 4px;border-radius:3px;pointer-events:none;z-index:8;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.4)}
 
 /* Visual Nozzle Elevation Editor Markers & Grid */
 .noz-marker{position:absolute;display:inline-flex;align-items:center;justify-content:center;gap:2px;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 5px rgba(0,0,0,0.45);z-index:6;pointer-events:none;transform:translate(-50%,-50%);transition:all .15s;border:1px solid rgba(255,255,255,0.3)}
@@ -166,10 +164,12 @@ tr:last-child td{border-bottom:0}
 .noz-grid-btn{position:relative;border:0;background:var(--surface);border-radius:0;padding:0;cursor:pointer;color:var(--fg);overflow:visible;box-sizing:border-box}
 .noz-grid-btn:hover{background:color-mix(in srgb,var(--accent) 20%,var(--surface))}
 .noz-grid-btn.comp-border-right{border-right:2px solid #38bdf8 !important}
-.noz-grid-btn.p-flat{background:rgba(2,132,199,0.08) !important;outline:1.5px solid #0284c7;outline-offset:-1.5px}
-.noz-grid-btn.p-large{background:rgba(16,185,129,0.08) !important;outline:1.5px solid #10b981;outline-offset:-1.5px}
+.noz-grid-btn.p-flat-1x1, .noz-grid-btn.p-flat{background:rgba(2,132,199,0.08) !important;outline:1.5px solid #0284c7;outline-offset:-1.5px}
+.noz-grid-btn.p-flat-half2{background:rgba(124,58,237,0.08) !important;outline:1.5px solid #7c3aed;outline-offset:-1.5px}
+.noz-grid-btn.p-fitting, .noz-grid-btn.p-large{background:rgba(16,185,129,0.08) !important;outline:1.5px solid #10b981;outline-offset:-1.5px}
 .panel-badge-flat{position:absolute;top:2px;right:2px;font-size:8px;line-height:1;padding:1px 3px;background:#0284c7;color:#fff;border-radius:2px;font-weight:700;pointer-events:none;z-index:4}
-.panel-badge-large{position:absolute;top:2px;right:2px;font-size:8px;line-height:1;padding:1px 3px;background:#10b981;color:#fff;border-radius:2px;font-weight:700;pointer-events:none;z-index:4}
+.panel-badge-half2{position:absolute;top:2px;right:2px;font-size:8px;line-height:1;padding:1px 3px;background:#7c3aed;color:#fff;border-radius:2px;font-weight:700;pointer-events:none;z-index:4}
+.panel-badge-fitting{position:absolute;top:2px;right:2px;font-size:8px;line-height:1;padding:1px 3px;background:#10b981;color:#fff;border-radius:2px;font-weight:700;pointer-events:none;z-index:4}
 
 /* Modern Side Elevation Edit UI */
 .face-seg-control{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px;margin-bottom:10px}
@@ -186,7 +186,10 @@ tr:last-child td{border-bottom:0}
 .side-tool-chip input{display:none}
 .side-tool-chip:hover{border-color:var(--accent);color:var(--accent)}
 .side-tool-chip:has(input:checked){background:var(--accent);border-color:var(--accent);color:#fff !important;font-weight:700;box-shadow:0 1px 4px rgba(2,132,199,0.3)}
+.side-tool-chip:has(input[value="panel-flat-1x1"]:checked),
 .side-tool-chip:has(input[value="panel-flat"]:checked){background:#0284c7 !important;border-color:#0284c7 !important}
+.side-tool-chip:has(input[value="panel-flat-half2"]:checked){background:#7c3aed !important;border-color:#7c3aed !important}
+.side-tool-chip:has(input[value="panel-fitting"]:checked),
 .side-tool-chip:has(input[value="panel-large"]:checked){background:#10b981 !important;border-color:#10b981 !important}
 .side-tool-chip:has(input[value="OUTLET"]:checked){background:#059669 !important;border-color:#059669 !important}
 .side-tool-chip:has(input[value="OVERFLOW"]:checked){background:#d97706 !important;border-color:#d97706 !important}
@@ -264,7 +267,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.2.3</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.2.4</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -323,23 +326,36 @@ canvas.drag{cursor:grabbing}
       </section>
     </div>
 
-    <!-- Tab 2: Plan Edit -->
+    <!-- Tab 2: Plan Edit (평면도 편집 모드) -->
     <div class="tab-content" id="tab-edit">
       <section class="box">
-        <h2>평면도 편집 모드</h2>
-        <div class="emode-bar">
-          <label class="emode-chip"><input type="radio" name="emode" value="del" checked><span>❌ 패널 삭제</span></label>
-          <label class="emode-chip"><input type="radio" name="emode" value="han"><span>🔘 맨홀 (손잡이)</span></label>
-          <label class="emode-chip"><input type="radio" name="emode" value="vent"><span>💨 에어벤트</span></label>
-          <label class="emode-chip"><input type="radio" name="emode" value="lad"><span>🪜 사다리</span></label>
-          <label class="emode-chip"><input type="radio" name="emode" value="inlet"><span>💧 급수구(INLET)</span></label>
-          <label class="emode-chip"><input type="radio" name="emode" value="pil"><span>🏛️ 기둥 (삭제칸)</span></label>
-          <button type="button" id="eReset" class="btn-sm">초기화</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <h2 style="margin:0">📐 평면도 편집 모드</h2>
+          <button type="button" id="eReset" class="btn-preset danger" style="padding:3px 8px;font-size:11px">🔄 편집 초기화</button>
         </div>
-        <!-- Compartment Indicator Bar (칸막이 구획 표시 바) -->
-        <div id="planCompHeader" style="display:none;margin-top:6px;margin-bottom:4px;gap:4px"></div>
-        <div id="egrid" class="egrid" aria-label="평면도 패널 격자"></div>
-        <p class="hint">칸을 클릭하여 패널 삭제, 맨홀, 벤트, 사다리, 급수구(INLET)를 지정합니다. (위쪽이 탱크 뒤쪽)</p>
+        <p class="hint" style="margin-bottom:8px">도구를 선택하고 평면 격자를 클릭하여 <b>패널 삭제</b>, <b>맨홀</b>, <b>벤트</b>, <b>사다리</b>, <b>급수구</b>를 지정합니다. (위쪽: 탱크 배면)</p>
+
+        <!-- 정돈된 평면도 도구 팔레트 카드 -->
+        <div class="plan-tool-card">
+          <div class="plan-tool-grid">
+            <label class="plan-tool-chip"><input type="radio" name="emode" value="del" checked><span>❌ 패널 삭제</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode" value="han"><span>🔘 맨홀 (손잡이)</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode" value="vent"><span>💨 에어벤트</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode" value="lad"><span>🪜 사다리</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode" value="inlet"><span>💧 급수구(INLET)</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode" value="pil"><span>🏛️ 기둥 (삭제칸)</span></label>
+          </div>
+        </div>
+
+        <!-- 평면도 패널 격자 카드 -->
+        <div class="plan-grid-card">
+          <!-- 칸막이 구획 표시 바 -->
+          <div id="planCompHeader" style="display:none;margin-bottom:8px;gap:6px"></div>
+          <div class="plan-grid-wrap">
+            <div id="egrid" class="egrid" aria-label="평면도 패널 격자"></div>
+          </div>
+        </div>
+        <p class="hint" style="margin-top:6px">💡 칸막이가 있는 경우 각 구획별로 급수구(INLET)를 별도 설치할 수 있습니다.</p>
       </section>
     </div>
 
@@ -350,7 +366,7 @@ canvas.drag{cursor:grabbing}
           <h2 style="margin:0">📐 측면 편집 (판넬 및 배관)</h2>
           <span class="hint" style="margin:0">평면편집 방식 클릭 설정</span>
         </div>
-        <p class="hint" style="margin-bottom:8px">도구를 선택하고 측면 격자를 클릭하여 <b>판넬 종류 변경</b>(기본/평판/대구경) 및 <b>배관 노즐</b>을 배치합니다.</p>
+        <p class="hint" style="margin-bottom:8px">도구를 선택하고 측면 격자를 클릭하여 <b>판넬 종류 변경</b>(기본/1x1m평판/0.5x1m평판2장/피팅판넬) 및 <b>배관 노즐</b>을 배치합니다.</p>
 
         <!-- 1. 뷰 선택 세그먼트 (정면 / 우측면 / 배면 / 좌측면) -->
         <div class="face-seg-control">
@@ -366,8 +382,9 @@ canvas.drag{cursor:grabbing}
             <span class="side-tool-label">판넬</span>
             <div class="side-tool-chips">
               <label class="side-tool-chip"><input type="radio" name="nozTool" value="panel-std" checked><span>🔲 기본</span></label>
-              <label class="side-tool-chip"><input type="radio" name="nozTool" value="panel-flat"><span>⬜ 평판</span></label>
-              <label class="side-tool-chip"><input type="radio" name="nozTool" value="panel-large"><span>⭕ 대구경</span></label>
+              <label class="side-tool-chip"><input type="radio" name="nozTool" value="panel-flat-1x1"><span>⬜ 1x1m평판</span></label>
+              <label class="side-tool-chip"><input type="radio" name="nozTool" value="panel-flat-half2"><span>🪟 0.5x1m평판2장</span></label>
+              <label class="side-tool-chip"><input type="radio" name="nozTool" value="panel-fitting"><span>⭕ 피팅판넬</span></label>
             </div>
           </div>
           <div class="side-tool-row">
@@ -1142,15 +1159,22 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
         const b = document.createElement('button');
         b.type = 'button';
-        b.className = 'noz-grid-btn' + (isPartitionCol(ci) ? ' comp-border-right' : '') + (pType === 'flat' ? ' p-flat' : pType === 'large' ? ' p-large' : '');
+        let pClass = '';
+        if (pType === 'flat' || pType === 'flat-1x1') pClass = ' p-flat-1x1';
+        else if (pType === 'flat-half2' || pType === 'flat-0.5x2') pClass = ' p-flat-half2';
+        else if (pType === 'fitting' || pType === 'large') pClass = ' p-fitting';
+
+        b.className = 'noz-grid-btn' + (isPartitionCol(ci) ? ' comp-border-right' : '') + pClass;
         b.style.width = Math.max(16, Math.round(colWidthMm * sc)) + 'px';
         b.style.height = Math.max(14, Math.round(rowHeightMm * sc)) + 'px';
         b.innerHTML = panelIcon(colWidthMm, rowHeightMm, 0, pType);
 
-        if (pType === 'flat') {
-          b.insertAdjacentHTML('beforeend', '<span class="panel-badge-flat">평판</span>');
-        } else if (pType === 'large') {
-          b.insertAdjacentHTML('beforeend', '<span class="panel-badge-large">대구경</span>');
+        if (pType === 'flat' || pType === 'flat-1x1') {
+          b.insertAdjacentHTML('beforeend', '<span class="panel-badge-flat">1×1평판</span>');
+        } else if (pType === 'flat-half2' || pType === 'flat-0.5x2') {
+          b.insertAdjacentHTML('beforeend', '<span class="panel-badge-half2">0.5×1m 2장</span>');
+        } else if (pType === 'fitting' || pType === 'large') {
+          b.insertAdjacentHTML('beforeend', '<span class="panel-badge-fitting">피팅</span>');
         }
 
         let cellNozzles = [];
@@ -1209,10 +1233,18 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const tool = (document.querySelector('input[name=nozTool]:checked') || {}).value || 'panel-std';
     const pKey = `${face},${tierIdx},${colIdx}`;
 
-    // 1. Panel Tools: panel-std, panel-flat, panel-large
-    if (tool === 'panel-std' || tool === 'panel-flat' || tool === 'panel-large') {
-      const targetType = (tool === 'panel-flat') ? 'flat' : (tool === 'panel-large') ? 'large' : 'std';
-      if (sidePanelTypes[pKey] === targetType) {
+    // 1. Panel Tools: panel-std, panel-flat-1x1, panel-flat-half2, panel-fitting (and legacy)
+    if (tool.startsWith('panel-')) {
+      const typeMap = {
+        'panel-std': 'std',
+        'panel-flat-1x1': 'flat-1x1',
+        'panel-flat': 'flat-1x1',
+        'panel-flat-half2': 'flat-half2',
+        'panel-fitting': 'fitting',
+        'panel-large': 'fitting'
+      };
+      const targetType = typeMap[tool] || 'std';
+      if (targetType === 'std' || sidePanelTypes[pKey] === targetType) {
         delete sidePanelTypes[pKey];
       } else {
         sidePanelTypes[pKey] = targetType;
@@ -1416,13 +1448,22 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   }
 
   function panelIcon(w, h, mk, pType) {
-    if (pType === 'flat') {
+    if (pType === 'flat' || pType === 'flat-1x1') {
       return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="1" style="width:100%;height:100%;display:block">
         <rect x="0" y="0" width="${w}" height="${h}" fill="rgba(2,132,199,0.06)" stroke="var(--line)" stroke-width="1.6"/>
         <rect x="${Math.round(w*0.06)}" y="${Math.round(h*0.06)}" width="${Math.round(w*0.88)}" height="${Math.round(h*0.88)}" stroke="#0284c7" stroke-width="1.2" stroke-dasharray="3 2" fill="none"/>
       </svg>`;
     }
-    if (pType === 'large') {
+    if (pType === 'flat-half2' || pType === 'flat-0.5x2') {
+      const hw = Math.round(w / 2);
+      return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="1" style="width:100%;height:100%;display:block">
+        <rect x="0" y="0" width="${w}" height="${h}" fill="rgba(124,58,237,0.06)" stroke="var(--line)" stroke-width="1.6"/>
+        <line x1="${hw}" y1="0" x2="${hw}" y2="${h}" stroke="#7c3aed" stroke-width="1.6"/>
+        <rect x="${Math.round(w*0.04)}" y="${Math.round(h*0.06)}" width="${Math.round(hw - w*0.08)}" height="${Math.round(h*0.88)}" stroke="#7c3aed" stroke-width="1" stroke-dasharray="2 2" fill="none"/>
+        <rect x="${Math.round(hw + w*0.04)}" y="${Math.round(h*0.06)}" width="${Math.round(hw - w*0.08)}" height="${Math.round(h*0.88)}" stroke="#7c3aed" stroke-width="1" stroke-dasharray="2 2" fill="none"/>
+      </svg>`;
+    }
+    if (pType === 'fitting' || pType === 'large') {
       const minD = Math.min(w, h);
       return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="1" style="width:100%;height:100%;display:block">
         <rect x="0" y="0" width="${w}" height="${h}" fill="rgba(16,185,129,0.06)" stroke="var(--line)" stroke-width="1.6"/>
@@ -1470,17 +1511,17 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       if (L_secs.length > 1) {
         compHeader.style.display = 'flex';
         compHeader.innerHTML = L_secs.map((len, idx) => {
-          return `<div style="flex:${len};text-align:center;background:rgba(234,88,12,0.12);color:#ea580c;border:1px dashed #ea580c;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          return `<div style="flex:${len};text-align:center;background:rgba(2,132,199,0.08);color:var(--fg);border:1px solid rgba(2,132,199,0.3);border-radius:6px;padding:4px 6px;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
             📦 ${idx + 1}구획 (${len.toLocaleString()}mm)
           </div>`;
-        }).join('<div style="display:flex;align-items:center;color:#ea580c;font-size:9px;font-weight:800;padding:0 2px">⚡칸막이</div>');
+        }).join('<div style="display:flex;align-items:center;color:#ea580c;font-size:9px;font-weight:800;padding:0 3px">⚡칸막이</div>');
       } else if (W_secs.length > 1) {
         compHeader.style.display = 'flex';
         compHeader.innerHTML = W_secs.map((wid, idx) => {
-          return `<div style="flex:${wid};text-align:center;background:rgba(234,88,12,0.12);color:#ea580c;border:1px dashed #ea580c;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          return `<div style="flex:${wid};text-align:center;background:rgba(2,132,199,0.08);color:var(--fg);border:1px solid rgba(2,132,199,0.3);border-radius:6px;padding:4px 6px;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
             📦 ${idx + 1}구획 (${wid.toLocaleString()}mm)
           </div>`;
-        }).join('<div style="display:flex;align-items:center;color:#ea580c;font-size:9px;font-weight:800;padding:0 2px">⚡칸막이</div>');
+        }).join('<div style="display:flex;align-items:center;color:#ea580c;font-size:9px;font-weight:800;padding:0 3px">⚡칸막이</div>');
       } else {
         compHeader.style.display = 'none';
       }
