@@ -171,6 +171,62 @@ tr:last-child td{border-bottom:0}
 .panel-badge-flat{position:absolute;top:2px;right:2px;font-size:8px;line-height:1;padding:1px 3px;background:#0284c7;color:#fff;border-radius:2px;font-weight:700;pointer-events:none;z-index:4}
 .panel-badge-large{position:absolute;top:2px;right:2px;font-size:8px;line-height:1;padding:1px 3px;background:#10b981;color:#fff;border-radius:2px;font-weight:700;pointer-events:none;z-index:4}
 
+/* Modern Side Elevation Edit UI */
+.face-seg-control{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px;margin-bottom:10px}
+.face-seg-btn{display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 2px;font-size:11px;font-weight:600;color:var(--muted);border-radius:6px;cursor:pointer;user-select:none;transition:all .15s ease}
+.face-seg-btn input{display:none}
+.face-seg-btn:hover{color:var(--fg);background:rgba(255,255,255,0.06)}
+.face-seg-btn:has(input:checked){background:var(--accent);color:#fff !important;font-weight:700;box-shadow:0 1px 4px rgba(2,132,199,0.35)}
+
+.side-tool-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px}
+.side-tool-row{display:flex;align-items:center;gap:6px}
+.side-tool-label{font-size:11px;font-weight:700;color:var(--muted);width:38px;flex-shrink:0}
+.side-tool-chips{display:flex;flex-wrap:wrap;gap:4px;flex:1}
+.side-tool-chip{display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid var(--line);background:var(--surface-sub);color:var(--fg);cursor:pointer;user-select:none;transition:all .15s ease}
+.side-tool-chip input{display:none}
+.side-tool-chip:hover{border-color:var(--accent);color:var(--accent)}
+.side-tool-chip:has(input:checked){background:var(--accent);border-color:var(--accent);color:#fff !important;font-weight:700;box-shadow:0 1px 4px rgba(2,132,199,0.3)}
+.side-tool-chip:has(input[value="panel-flat"]:checked){background:#0284c7 !important;border-color:#0284c7 !important}
+.side-tool-chip:has(input[value="panel-large"]:checked){background:#10b981 !important;border-color:#10b981 !important}
+.side-tool-chip:has(input[value="OUTLET"]:checked){background:#059669 !important;border-color:#059669 !important}
+.side-tool-chip:has(input[value="OVERFLOW"]:checked){background:#d97706 !important;border-color:#d97706 !important}
+.side-tool-chip:has(input[value="DRAIN"]:checked){background:#64748b !important;border-color:#64748b !important}
+.side-tool-chip:has(input[value="FIRE"]:checked){background:#dc2626 !important;border-color:#dc2626 !important}
+.side-tool-chip:has(input[value="del"]:checked){background:#ef4444 !important;border-color:#ef4444 !important}
+
+.preset-action-bar{display:flex;gap:5px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.preset-action-bar .btn-group{display:flex;gap:4px}
+.btn-preset{padding:4px 9px;font-size:11px;font-weight:600;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;transition:all .15s ease}
+.btn-preset:hover{border-color:var(--accent);color:var(--accent)}
+.btn-preset.primary{background:rgba(2,132,199,0.1);border-color:#0284c7;color:#0284c7}
+.btn-preset.primary:hover{background:#0284c7;color:#fff}
+.btn-preset.danger{color:#ef4444}
+.btn-preset.danger:hover{background:rgba(239,68,68,0.1);border-color:#ef4444}
+
+.elev-grid-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+.elev-grid-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid var(--line-sub)}
+
+.noz-inspector-card{background:var(--surface);border:1.5px solid var(--accent);border-radius:8px;padding:10px;margin-bottom:10px;box-shadow:0 2px 8px rgba(2,132,199,0.15);display:flex;flex-direction:column;gap:8px}
+.noz-insp-header{display:flex;justify-content:space-between;align-items:center}
+.noz-insp-badge{display:flex;align-items:center;gap:6px}
+.noz-mark-tag{font-size:11px;font-weight:800;color:#fff;background:var(--accent);padding:2px 7px;border-radius:4px}
+.noz-insp-fields{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:6px}
+.noz-field{display:flex;flex-direction:column;gap:3px}
+.noz-field label{font-size:10px;font-weight:700;color:var(--muted)}
+.noz-field select, .noz-field input{height:28px;font-size:11px;padding:2px 6px;border-radius:5px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.input-unit-wrap{display:flex;align-items:center;gap:3px}
+.input-unit-wrap input{flex:1;text-align:right}
+.input-unit-wrap span{font-size:10px;color:var(--muted)}
+.noz-el-presets{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding-top:6px;border-top:1px dashed var(--line)}
+.el-hint{font-size:10px;color:var(--muted);margin-right:2px}
+.btn-el-quick{padding:2px 6px;font-size:10px;font-weight:600;border-radius:4px;border:1px solid var(--line);background:var(--surface-sub);color:var(--muted);cursor:pointer;transition:all .15s}
+.btn-el-quick:hover{border-color:var(--accent);color:var(--accent)}
+
+.noz-inspector-empty{padding:10px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:8px;margin-bottom:10px;font-size:11px;color:var(--muted);text-align:center;line-height:1.5}
+
+.noz-sched-details{border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.noz-sched-summary{cursor:pointer;padding:8px 12px;font-size:11px;font-weight:700;color:var(--fg);display:flex;align-items:center;justify-content:space-between;background:var(--surface-sub);user-select:none}
+
 
 /* Viewport / Main */
 .main{display:flex;flex-direction:column;gap:8px;min-width:0}
@@ -208,7 +264,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.2.2</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.2.3</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -296,46 +352,51 @@ canvas.drag{cursor:grabbing}
         </div>
         <p class="hint" style="margin-bottom:8px">도구를 선택하고 측면 격자를 클릭하여 <b>판넬 종류 변경</b>(기본/평판/대구경) 및 <b>배관 노즐</b>을 배치합니다.</p>
 
-        <!-- 1. 뷰 선택 탭 (정면 / 우측면 / 배면 / 좌측면) -->
-        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
-          <label class="emode-chip"><input type="radio" name="nozViewFace" value="front" checked><span>🏢 정면 (Front)</span></label>
-          <label class="emode-chip"><input type="radio" name="nozViewFace" value="right"><span>🏢 우측면 (Right)</span></label>
-          <label class="emode-chip"><input type="radio" name="nozViewFace" value="rear"><span>🏢 배면 (Rear)</span></label>
-          <label class="emode-chip"><input type="radio" name="nozViewFace" value="left"><span>🏢 좌측면 (Left)</span></label>
+        <!-- 1. 뷰 선택 세그먼트 (정면 / 우측면 / 배면 / 좌측면) -->
+        <div class="face-seg-control">
+          <label class="face-seg-btn"><input type="radio" name="nozViewFace" value="front" checked><span>🏢 정면 (Front)</span></label>
+          <label class="face-seg-btn"><input type="radio" name="nozViewFace" value="right"><span>🏢 우측면 (Right)</span></label>
+          <label class="face-seg-btn"><input type="radio" name="nozViewFace" value="rear"><span>🏢 배면 (Rear)</span></label>
+          <label class="face-seg-btn"><input type="radio" name="nozViewFace" value="left"><span>🏢 좌측면 (Left)</span></label>
         </div>
 
-        <!-- 2. 직관적인 도구 툴바 (emode-bar) -->
-        <div class="emode-bar" style="margin-bottom:8px">
-          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;width:100%">
-            <span style="font-size:11px;font-weight:700;color:var(--muted);margin-right:2px">판넬:</span>
-            <label class="emode-chip"><input type="radio" name="nozTool" value="panel-std" checked><span>🔲 기본</span></label>
-            <label class="emode-chip"><input type="radio" name="nozTool" value="panel-flat"><span>⬜ 평판</span></label>
-            <label class="emode-chip"><input type="radio" name="nozTool" value="panel-large"><span>⭕ 대구경</span></label>
-
-            <span style="font-size:11px;font-weight:700;color:var(--muted);margin-left:6px;margin-right:2px">배관:</span>
-            <label class="emode-chip"><input type="radio" name="nozTool" value="INLET"><span class="noz-tool-inlet">💧 유입</span></label>
-            <label class="emode-chip"><input type="radio" name="nozTool" value="OUTLET"><span class="noz-tool-outlet">🚰 유출</span></label>
-            <label class="emode-chip"><input type="radio" name="nozTool" value="OVERFLOW"><span class="noz-tool-overflow">🌊 월류</span></label>
-            <label class="emode-chip"><input type="radio" name="nozTool" value="DRAIN"><span class="noz-tool-drain">⬇️ 배수</span></label>
-            <label class="emode-chip"><input type="radio" name="nozTool" value="FIRE"><span class="noz-tool-fire">🚒 소방</span></label>
-            <label class="emode-chip"><input type="radio" name="nozTool" value="del"><span class="noz-tool-del">❌ 삭제</span></label>
+        <!-- 2. 직관적인 도구 팔레트 (판넬 종류 & 배관 노즐 분리 카드) -->
+        <div class="side-tool-card">
+          <div class="side-tool-row">
+            <span class="side-tool-label">판넬</span>
+            <div class="side-tool-chips">
+              <label class="side-tool-chip"><input type="radio" name="nozTool" value="panel-std" checked><span>🔲 기본</span></label>
+              <label class="side-tool-chip"><input type="radio" name="nozTool" value="panel-flat"><span>⬜ 평판</span></label>
+              <label class="side-tool-chip"><input type="radio" name="nozTool" value="panel-large"><span>⭕ 대구경</span></label>
+            </div>
+          </div>
+          <div class="side-tool-row">
+            <span class="side-tool-label">배관</span>
+            <div class="side-tool-chips">
+              <label class="side-tool-chip"><input type="radio" name="nozTool" value="INLET"><span class="noz-tool-inlet">💧 유입</span></label>
+              <label class="side-tool-chip"><input type="radio" name="nozTool" value="OUTLET"><span class="noz-tool-outlet">🚰 유출</span></label>
+              <label class="side-tool-chip"><input type="radio" name="nozTool" value="OVERFLOW"><span class="noz-tool-overflow">🌊 월류</span></label>
+              <label class="side-tool-chip"><input type="radio" name="nozTool" value="DRAIN"><span class="noz-tool-drain">⬇️ 배수</span></label>
+              <label class="side-tool-chip"><input type="radio" name="nozTool" value="FIRE"><span class="noz-tool-fire">🚒 소방</span></label>
+              <label class="side-tool-chip"><input type="radio" name="nozTool" value="del"><span class="noz-tool-del">❌ 삭제</span></label>
+            </div>
           </div>
         </div>
 
-        <!-- 3. 빠른 프리셋 & 전체 초기화 -->
-        <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;justify-content:space-between">
-          <div style="display:flex;gap:4px">
-            <button type="button" id="nozPresetSingle" class="btn-sm">⚡ 1구획 기본배관</button>
-            <button type="button" id="nozPresetDouble" class="btn-sm" style="background:#0284c7;color:#fff;border-color:#0284c7">⚡ 2구획(칸막이) 기본배관</button>
+        <!-- 3. 빠른 프리셋 & 전체 비우기 -->
+        <div class="preset-action-bar">
+          <div class="btn-group">
+            <button type="button" id="nozPresetSingle" class="btn-preset">⚡ 1구획 기본배관</button>
+            <button type="button" id="nozPresetDouble" class="btn-preset primary">⚡ 2구획(칸막이) 기본배관</button>
           </div>
-          <button type="button" id="nozClearAll" class="btn-sm" style="color:#ef4444">전체 비우기</button>
+          <button type="button" id="nozClearAll" class="btn-preset danger">전체 비우기</button>
         </div>
 
-        <!-- 4. 측면뷰 패널 격자 (Visual Elevation View Grid) -->
-        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:6px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <b style="font-size:12px;color:var(--fg)" id="nozGridTitle">정면 뷰 (Front Elevation)</b>
-            <span style="font-size:11px;color:var(--muted)" id="nozGridGuide">칸 클릭 시 판넬 전환 / 노즐 배치</span>
+        <!-- 4. 측면뷰 패널 격자 카드 (Elev Grid Card) -->
+        <div class="elev-grid-card">
+          <div class="elev-grid-header">
+            <b style="font-size:12px;color:var(--fg)" id="nozGridTitle">🏢 정면 뷰 (Front Elevation)</b>
+            <span style="font-size:10px;color:var(--muted)">💡 칸 클릭 시 판넬 전환 / 노즐 배치</span>
           </div>
 
           <!-- 상단 패널 열 번호 & 구획 라벨 표시 영역 -->
@@ -361,45 +422,64 @@ canvas.drag{cursor:grabbing}
           </div>
         </div>
 
-        <!-- 5. 컴팩트 미니 인스펙터 바 (노즐 선택 시 슬림 1열 표시) -->
-        <div id="nozMiniBar" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:var(--surface);border:1.5px solid var(--accent);border-radius:6px;margin-bottom:10px;font-size:11px;flex-wrap:wrap">
-          <span id="miniMark" style="font-weight:800;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 6px;border-radius:4px">N1</span>
-          <b id="miniName">INLET</b>
-          <span style="color:var(--muted)">|</span>
-          <label>구경:
-            <select id="miniSize" style="font-size:11px;padding:2px 4px">
-              <option value="25A">25A</option>
-              <option value="32A">32A</option>
-              <option value="40A">40A</option>
-              <option value="50A">50A</option>
-              <option value="65A">65A</option>
-              <option value="80A">80A</option>
-              <option value="100A">100A</option>
-              <option value="125A">125A</option>
-              <option value="150A">150A</option>
-              <option value="200A">200A</option>
-              <option value="250A">250A</option>
-              <option value="300A">300A</option>
-            </select>
-          </label>
-          <label>타입:
-            <select id="miniType" style="font-size:11px;padding:2px 4px">
-              <option value="FLANGE">FLANGE 10K</option>
-              <option value="SOCKET">SOCKET</option>
-            </select>
-          </label>
-          <label>EL:
-            <input type="number" id="miniElev" style="width:60px;font-size:11px;padding:2px 4px;text-align:right"> mm
-          </label>
-          <button type="button" id="miniDel" class="btn-sm" style="color:#ef4444;padding:2px 8px;font-size:11px;margin-left:auto">🗑️ 삭제</button>
+        <!-- 5. 고도화된 노즐 속성 인스펙터 카드 -->
+        <div id="nozMiniBar" class="noz-inspector-card" style="display:none">
+          <div class="noz-insp-header">
+            <div class="noz-insp-badge">
+              <span id="miniMark" class="noz-mark-tag">N1</span>
+              <b id="miniName" style="font-size:12px;color:var(--fg)">INLET (유입구)</b>
+            </div>
+            <button type="button" id="miniDel" class="btn-preset danger" style="padding:2px 8px;font-size:11px">🗑️ 노즐 삭제</button>
+          </div>
+          <div class="noz-insp-fields">
+            <div class="noz-field">
+              <label>구경 (Size)</label>
+              <select id="miniSize">
+                <option value="25A">25A (1")</option>
+                <option value="32A">32A (1-1/4")</option>
+                <option value="40A">40A (1-1/2")</option>
+                <option value="50A">50A (2")</option>
+                <option value="65A">65A (2-1/2")</option>
+                <option value="80A">80A (3")</option>
+                <option value="100A">100A (4")</option>
+                <option value="125A">125A (5")</option>
+                <option value="150A">150A (6")</option>
+                <option value="200A">200A (8")</option>
+                <option value="250A">250A (10")</option>
+                <option value="300A">300A (12")</option>
+              </select>
+            </div>
+            <div class="noz-field">
+              <label>연결 타입</label>
+              <select id="miniType">
+                <option value="FLANGE">FLANGE 10K</option>
+                <option value="SOCKET">SOCKET (나사식)</option>
+              </select>
+            </div>
+            <div class="noz-field">
+              <label>설치 높이 (EL)</label>
+              <div class="input-unit-wrap">
+                <input type="number" id="miniElev">
+                <span>mm</span>
+              </div>
+            </div>
+          </div>
+          <div class="noz-el-presets">
+            <span class="el-hint">빠른 EL:</span>
+            <button type="button" class="btn-el-quick" data-val="100">바닥 100</button>
+            <button type="button" class="btn-el-quick" data-val="200">소방 200</button>
+            <button type="button" class="btn-el-quick" data-val="300">토출 300</button>
+            <button type="button" class="btn-el-quick" data-mode="top-overflow">월류 H-200</button>
+            <button type="button" class="btn-el-quick" data-mode="top-inlet">유입 H-300</button>
+          </div>
         </div>
-        <div id="nozMiniBarEmpty" style="padding:6px 10px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:6px;margin-bottom:10px;font-size:11px;color:var(--muted);text-align:center">
+        <div id="nozMiniBarEmpty" class="noz-inspector-empty">
           💡 도구를 선택하고 격자 칸을 클릭하면 판넬 종류 변경(기본/평판/대구경) 및 노즐이 배치됩니다.
         </div>
 
         <!-- 6. 노즐 일람표 아코디언 드롭다운 (상세보기) -->
-        <details style="border:1px solid var(--line);border-radius:6px;background:var(--surface)">
-          <summary style="cursor:pointer;padding:8px 10px;font-size:11px;font-weight:700;color:var(--fg);display:flex;align-items:center;justify-content:space-between">
+        <details class="noz-sched-details">
+          <summary class="noz-sched-summary">
             <span id="nozSchedSummaryTitle">📋 배관 노즐 일람표 (NOZZLE SCHEDULE)</span>
             <span style="font-size:10px;color:var(--muted);font-weight:normal">펼치기 / 접기 ▼</span>
           </summary>
@@ -1685,6 +1765,29 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       updatePreviewTbody();
       schedule();
     }
+  });
+
+  document.querySelectorAll('.btn-el-quick').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const n = nozzleData.find(x => x.id === selectedNozzleId);
+      if (!n) return;
+      const H = Number($('H').value) || 3000;
+      const mode = btn.getAttribute('data-mode');
+      const val = btn.getAttribute('data-val');
+      let newElev = 300;
+      if (mode === 'top-overflow') {
+        newElev = Math.max(100, H - 200);
+      } else if (mode === 'top-inlet') {
+        newElev = Math.max(100, H - 300);
+      } else if (val) {
+        newElev = Number(val);
+      }
+      n.elev = newElev;
+      $('miniElev').value = newElev;
+      renderNozzleElevationGrid();
+      updatePreviewTbody();
+      schedule();
+    });
   });
 
   document.querySelectorAll('input[name=nozViewFace]').forEach(r => {
