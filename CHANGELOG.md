@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.9] - 2026-10-01
+
+### Added & Improved
+- **3D 등각 조감도 (3D Isometric Axonometric View) 전격 탑재**:
+  - 평면도, 콘크리트 패드도, 정면도, 측면도 등 기존 2D 뷰 데이터를 기반으로 3D 공간 좌표를 표준 30° 축측 등각 투영(Isometric Projection)하여 입체 도면 생성.
+  - 패널 프레임 외곽, 볼트 플랜지 격자선, 다이아몬드/직사각형 엠보싱 리브(Rib), 지붕 상부 맨홀 및 통기구(Vent), 콘크리트 기초 패드, 하부 베이스 프레임 스키드(Channel Skid), 사다리(Ladder) 및 배관 노즐(Nozzle) 돌출 파이프/플랜지 형상까지 3D 입체 투영으로 완벽 묘사.
+- **A1 종합 조립도(ASM DWG) 및 전용 3D 등각도(ISO DWG) 지원**:
+  - **옵션 2 완벽 반영**: A1 종합 조립도 시트 우측 하단에 `VIEW 5: 등각 조감도 (3D ISOMETRIC VIEW)` 자동 배치.
+  - A1 도면 시트 종류에 `등각 조감도 (3D ISOMETRIC DWG)` 단독 전체 시트 옵션 추가: 큼직한 축척으로 3D 조감도만을 돋보이게 단독 출력/도면화 가능.
+  - 도면 뷰 타이틀 버블 및 가로/세로/높이 입체 치수선(Isometric Dimensions) 자동 표기.
+
+---
+
 ## [1.2.8] - 2026-09-30
 
 ### Added & Improved

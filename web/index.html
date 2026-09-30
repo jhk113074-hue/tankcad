@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.2.8</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.2.9</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -581,7 +581,8 @@ canvas.drag{cursor:grabbing}
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
           <label class="chk" style="font-weight:600;font-size:12px;cursor:pointer"><input type="checkbox" id="sheetOn" checked> A1 도면 시트 표제란 포함</label>
           <select id="sheetKind" style="width:auto">
-            <option value="asm">조립도 (평면·콘크리트·정면·측면)</option>
+            <option value="asm">조립도 (평면·콘크리트·정면·측면·3D등각)</option>
+            <option value="iso">등각 조감도 (3D ISOMETRIC DWG)</option>
             <option value="frame">프레임도 (스키드·내부 스테이)</option>
             <option value="detail">상세도 (DETAILS DWG)</option>
           </select>
@@ -2281,6 +2282,305 @@ canvas.drag{cursor:grabbing}
     return { ents, textH, blocks };
   }
 
+  /* ---------- 3D 등각 조감도 생성 (3D ISOMETRIC VIEW, TankIsometric) ---------- */
+  function buildIsometric(opt, templates, sideT) {
+    const map = createMap(opt);
+    const totalL = map.length, totalW = map.width;
+    const H = (opt.height || []).reduce((a, b) => a + (b || 0), 0) || 3000;
+    const hs = heightSegs(H, opt.b11) || [1000, 1000, 1000];
+    const N = opt._N || 25;
+    const textH = Math.round(3.0 * N);
+    const ents = [];
+    const ln = (a, b, layer) => ents.push({ t: 'line', a, b, layer: layer || 'PANEL' });
+    const poly = (pts, layer, close) => {
+      for (let i = 0; i < pts.length - 1; i++) ln(pts[i], pts[i + 1], layer);
+      if (close && pts.length > 2) ln(pts[pts.length - 1], pts[0], layer);
+    };
+
+    const COS30 = 0.8660254037844386;
+    const SIN30 = 0.5;
+    const toIso = (x, y, z) => [
+      (x + y - totalL) * COS30,
+      ((totalL - x) + y) * SIN30 + z
+    ];
+
+    const isoCircle = (cx, cy, cz, r, plane, layer, segs = 16) => {
+      const pts = [];
+      for (let i = 0; i < segs; i++) {
+        const ang = (i * 2 * Math.PI) / segs;
+        const c = r * Math.cos(ang), s = r * Math.sin(ang);
+        let pt;
+        if (plane === 'XY') pt = toIso(cx + c, cy + s, cz);
+        else if (plane === 'XZ') pt = toIso(cx + c, cy, cz + s);
+        else pt = toIso(cx, cy + c, cz + s);
+        pts.push(pt);
+      }
+      poly(pts, layer || 'PANEL_DETAIL', true);
+    };
+
+    const zs = [0];
+    let curZ = 0;
+    hs.forEach(h => { curZ += h; zs.push(curZ); });
+    const sidePanels = opt.sidePanels || {};
+
+    // 1. 기초 콘크리트 패드 (Concrete Pad Beams) & 베이스 찬넬 프레임
+    const PAD_OV = 200;
+    const GRD = -600, th = 100;
+    const strips = concStrips(map.cols);
+
+    strips.forEach(([px, pw]) => {
+      const p1 = toIso(px, -PAD_OV, -th);
+      const p2 = toIso(px + pw, -PAD_OV, -th);
+      const p3 = toIso(px + pw, -PAD_OV, GRD);
+      const p4 = toIso(px, -PAD_OV, GRD);
+      poly([p1, p2, p3, p4], 'PANEL', true);
+
+      const p1_top = toIso(px, 0, -th);
+      const p2_top = toIso(px + pw, 0, -th);
+      poly([p1, p2, p2_top, p1_top], 'PANEL_DETAIL', true);
+    });
+
+    // 베이스 스틸 프레임 (Skid Channel 100mm)
+    poly([toIso(0, 0, 0), toIso(totalL, 0, 0), toIso(totalL, 0, -th), toIso(0, 0, -th)], 'FRAME', true);
+    poly([toIso(totalL, 0, 0), toIso(totalL, totalW, 0), toIso(totalL, totalW, -th), toIso(totalL, 0, -th)], 'FRAME', true);
+
+    // 2. 정면 패널 (Front Wall: Y = 0)
+    for (let j = 0; j < map.cols.length; j++) {
+      const x0 = map.xs[j], x1 = map.xs[j + 1];
+      for (let k = 0; k < hs.length; k++) {
+        const z0 = zs[k], z1 = zs[k + 1];
+        const p1 = toIso(x0, 0, z0);
+        const p2 = toIso(x1, 0, z0);
+        const p3 = toIso(x1, 0, z1);
+        const p4 = toIso(x0, 0, z1);
+        poly([p1, p2, p3, p4], 'PANEL', true);
+
+        const mx = 45;
+        const i1 = toIso(x0 + mx, 0, z0 + mx);
+        const i2 = toIso(x1 - mx, 0, z0 + mx);
+        const i3 = toIso(x1 - mx, 0, z1 - mx);
+        const i4 = toIso(x0 + mx, 0, z1 - mx);
+        poly([i1, i2, i3, i4], 'PANEL_DETAIL', true);
+
+        const pKey = `front_${j}_${k}`;
+        const pType = sidePanels[pKey] || 'std';
+        const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+
+        if (pType === 'flat' || pType === 'flat-1x1') {
+          poly([toIso(x0 + 75, 0, z0 + 75), toIso(x1 - 75, 0, z0 + 75), toIso(x1 - 75, 0, z1 - 75), toIso(x0 + 75, 0, z1 - 75)], 'PANEL_DETAIL', true);
+        } else if (pType === 'flat-half2') {
+          poly([toIso(cx - 20, 0, z0 + mx), toIso(cx + 20, 0, z0 + mx), toIso(cx + 20, 0, z1 - mx), toIso(cx - 20, 0, z1 - mx)], 'PANEL', true);
+          poly([toIso(x0 + mx, 0, z0 + mx), toIso(cx - 20, 0, z0 + mx), toIso(cx - 20, 0, z1 - mx), toIso(x0 + mx, 0, z1 - mx)], 'PANEL_DETAIL', true);
+          poly([toIso(cx + 20, 0, z0 + mx), toIso(x1 - mx, 0, z0 + mx), toIso(cx + 20, 0, z1 - mx), toIso(x1 - mx, 0, z1 - mx)], 'PANEL_DETAIL', true);
+        } else if (pType === 'fitting') {
+          isoCircle(cx, 0, cz, 280, 'XZ', 'FRAME');
+          isoCircle(cx, 0, cz, 220, 'XZ', 'PANEL_DETAIL');
+          isoCircle(cx, 0, cz, 120, 'XZ', 'FRAME');
+        } else {
+          const rx = (x1 - x0) * 0.22, rz = (z1 - z0) * 0.22;
+          const mTop = toIso(cx, 0, cz + rz);
+          const mRt = toIso(cx + rx, 0, cz);
+          const mBot = toIso(cx, 0, cz - rz);
+          const mLt = toIso(cx - rx, 0, cz);
+          poly([mTop, mRt, mBot, mLt], 'PANEL_DETAIL', true);
+          ln(i1, mLt, 'PANEL_DETAIL');
+          ln(i2, mRt, 'PANEL_DETAIL');
+          ln(i3, mRt, 'PANEL_DETAIL');
+          ln(i4, mLt, 'PANEL_DETAIL');
+          ln(mTop, toIso(cx, 0, z1 - mx), 'PANEL_DETAIL');
+          ln(mBot, toIso(cx, 0, z0 + mx), 'PANEL_DETAIL');
+        }
+      }
+    }
+
+    // 3. 우측면 패널 (Right Wall: X = totalL)
+    for (let i = 0; i < map.rows.length; i++) {
+      const y0 = map.ys[i], y1 = map.ys[i + 1];
+      for (let k = 0; k < hs.length; k++) {
+        const z0 = zs[k], z1 = zs[k + 1];
+        const p1 = toIso(totalL, y0, z0);
+        const p2 = toIso(totalL, y1, z0);
+        const p3 = toIso(totalL, y1, z1);
+        const p4 = toIso(totalL, y0, z1);
+        poly([p1, p2, p3, p4], 'PANEL', true);
+
+        const my = 45;
+        const i1 = toIso(totalL, y0 + my, z0 + my);
+        const i2 = toIso(totalL, y1 - my, z0 + my);
+        const i3 = toIso(totalL, y1 - my, z1 - my);
+        const i4 = toIso(totalL, y0 + my, z1 - my);
+        poly([i1, i2, i3, i4], 'PANEL_DETAIL', true);
+
+        const pKey = `right_${i}_${k}`;
+        const pType = sidePanels[pKey] || 'std';
+        const cy = (y0 + y1) / 2, cz = (z0 + z1) / 2;
+
+        if (pType === 'flat' || pType === 'flat-1x1') {
+          poly([toIso(totalL, y0 + 75, z0 + 75), toIso(totalL, y1 - 75, z0 + 75), toIso(totalL, y1 - 75, z1 - 75), toIso(totalL, y0 + 75, z1 - 75)], 'PANEL_DETAIL', true);
+        } else if (pType === 'flat-half2') {
+          poly([toIso(totalL, cy - 20, z0 + my), toIso(totalL, cy + 20, z0 + my), toIso(totalL, cy + 20, z1 - my), toIso(totalL, cy - 20, z1 - my)], 'PANEL', true);
+          poly([toIso(totalL, y0 + my, z0 + my), toIso(totalL, cy - 20, z0 + my), toIso(totalL, cy - 20, z1 - my), toIso(totalL, y0 + my, z1 - my)], 'PANEL_DETAIL', true);
+          poly([toIso(totalL, cy + 20, z0 + my), toIso(totalL, y1 - my, z0 + my), toIso(totalL, y1 - my, z1 - my), toIso(totalL, cy + 20, z1 - my)], 'PANEL_DETAIL', true);
+        } else if (pType === 'fitting') {
+          isoCircle(totalL, cy, cz, 280, 'YZ', 'FRAME');
+          isoCircle(totalL, cy, cz, 220, 'YZ', 'PANEL_DETAIL');
+          isoCircle(totalL, cy, cz, 120, 'YZ', 'FRAME');
+        } else {
+          const ry = (y1 - y0) * 0.22, rz = (z1 - z0) * 0.22;
+          const mTop = toIso(totalL, cy, cz + rz);
+          const mRt = toIso(totalL, cy + ry, cz);
+          const mBot = toIso(totalL, cy, cz - rz);
+          const mLt = toIso(totalL, cy - ry, cz);
+          poly([mTop, mRt, mBot, mLt], 'PANEL_DETAIL', true);
+          ln(i1, mLt, 'PANEL_DETAIL');
+          ln(i2, mRt, 'PANEL_DETAIL');
+          ln(i3, mRt, 'PANEL_DETAIL');
+          ln(i4, mLt, 'PANEL_DETAIL');
+          ln(mTop, toIso(totalL, cy, z1 - my), 'PANEL_DETAIL');
+          ln(mBot, toIso(totalL, cy, z0 + my), 'PANEL_DETAIL');
+        }
+      }
+    }
+
+    // 4. 상부 지붕 패널 (Top Roof: Z = H)
+    for (let i = 0; i < map.rows.length; i++) {
+      const y0 = map.ys[i], y1 = map.ys[i + 1];
+      for (let j = 0; j < map.cols.length; j++) {
+        const x0 = map.xs[j], x1 = map.xs[j + 1];
+        const key = i + ',' + j;
+        if (map.removed && map.removed.has(key)) continue;
+
+        const p1 = toIso(x0, y0, H);
+        const p2 = toIso(x1, y0, H);
+        const p3 = toIso(x1, y1, H);
+        const p4 = toIso(x0, y1, H);
+        poly([p1, p2, p3, p4], 'PANEL', true);
+        ln(p1, p3, 'PANEL_DETAIL');
+
+        const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+        const mk = (opt.marks || {})[key] || 0;
+
+        if (mk & 1) {
+          isoCircle(cx, cy, H, 300, 'XY', 'FRAME');
+          isoCircle(cx, cy, H + 60, 'XY', 'FRAME');
+          isoCircle(cx, cy, H + 80, 'XY', 'PANEL_DETAIL');
+          ents.push({ t: 'text', p: toIso(cx, cy, H + 120), h: textH * 0.8, s: 'MANHOLE 600', align: 'center', rot: 0, layer: 'DIM' });
+        }
+        if (mk & 2) {
+          const vx = (mk & 1) ? cx + 250 : cx;
+          const vy = (mk & 1) ? cy + 250 : cy;
+          ln(toIso(vx, vy, H), toIso(vx, vy, H + 220), 'FRAME');
+          isoCircle(vx, vy, H + 220, 60, 'XY', 'FRAME');
+          isoCircle(vx, vy, H + 260, 100, 'XY', 'FRAME');
+          ents.push({ t: 'text', p: toIso(vx, vy, H + 320), h: textH * 0.75, s: 'VENT 100A', align: 'center', rot: 0, layer: 'DIM' });
+        }
+      }
+    }
+
+    // 5. 외부 보강 찬넬 (Vertical Channels & Main Corner Angle)
+    ln(toIso(totalL, 0, -th), toIso(totalL, 0, H), 'FRAME');
+    for (let j = 1; j < map.cols.length; j++) {
+      const vx = map.xs[j];
+      ln(toIso(vx, 0, 0), toIso(vx, 0, H), 'REINF');
+    }
+    for (let i = 1; i < map.rows.length; i++) {
+      const vy = map.ys[i];
+      ln(toIso(totalL, vy, 0), toIso(totalL, vy, H), 'REINF');
+    }
+
+    // 6. 배관 노즐 (Piping Nozzles)
+    if (opt.useNozzles !== false) {
+      const nozzles = getNozzleList(opt);
+      nozzles.forEach(n => {
+        const spec = getNozzleSpec(n.size);
+        const elev = typeof n.elev === 'number' ? n.elev : 300;
+        const markLabel = `[${n.mark}] ${n.name} ${n.size}`;
+
+        if (n.face === 'front') {
+          const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
+          const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + (n.offset || 0);
+          const stubLen = 140;
+          ln(toIso(cx, 0, elev), toIso(cx, -stubLen, elev), 'FRAME');
+          isoCircle(cx, -stubLen, elev, spec.rf, 'XZ', 'FRAME');
+          isoCircle(cx, -stubLen, elev, spec.r, 'XZ', 'FRAME');
+          const pStart = toIso(cx, -stubLen, elev);
+          const pEnd = [pStart[0] - Math.round(textH * 3.5), pStart[1] + Math.round(textH * 1.8)];
+          drawLeader(ents, pStart, [pEnd[0] + textH * 1.5, pEnd[1]], pEnd, [markLabel, `(EL.+${elev})`], textH * 0.85, 'right', 'DIM');
+        } else if (n.face === 'right') {
+          const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
+          const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2 + (n.offset || 0);
+          const stubLen = 140;
+          ln(toIso(totalL, cy, elev), toIso(totalL + stubLen, cy, elev), 'FRAME');
+          isoCircle(totalL + stubLen, cy, elev, spec.rf, 'YZ', 'FRAME');
+          isoCircle(totalL + stubLen, cy, elev, spec.r, 'YZ', 'FRAME');
+          const pStart = toIso(totalL + stubLen, cy, elev);
+          const pEnd = [pStart[0] + Math.round(textH * 3.5), pStart[1] + Math.round(textH * 1.8)];
+          drawLeader(ents, pStart, [pEnd[0] - textH * 1.5, pEnd[1]], pEnd, [markLabel, `(EL.+${elev})`], textH * 0.85, 'left', 'DIM');
+        } else if (n.face === 'top') {
+          const colIdx = Math.max(0, Math.min(n.topCell[1], map.cols.length - 1));
+          const rowIdx = Math.max(0, Math.min(n.topCell[0], map.rows.length - 1));
+          const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + (n.offset || 0);
+          const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2;
+          const stubLen = 160;
+          ln(toIso(cx, cy, H), toIso(cx, cy, H + stubLen), 'FRAME');
+          isoCircle(cx, cy, H + stubLen, spec.rf, 'XY', 'FRAME');
+          isoCircle(cx, cy, H + stubLen, spec.r, 'XY', 'FRAME');
+          const pStart = toIso(cx, cy, H + stubLen);
+          const pEnd = [pStart[0] + Math.round(textH * 3.5), pStart[1] + Math.round(textH * 2.0)];
+          drawLeader(ents, pStart, [pEnd[0] - textH * 1.5, pEnd[1]], pEnd, [markLabel, '(TOP INLET)'], textH * 0.85, 'left', 'DIM');
+        }
+      });
+    }
+
+    // 7. 외부 사다리 (Ladder)
+    const lads = ladderList(opt, map);
+    lads.forEach(l => {
+      const ladW = 450;
+      if (l.sd === 'D') {
+        const lx = l.x;
+        const l1 = toIso(lx - ladW / 2, -60, 0), l2 = toIso(lx - ladW / 2, -60, H + 800);
+        const r1 = toIso(lx + ladW / 2, -60, 0), r2 = toIso(lx + ladW / 2, -60, H + 800);
+        ln(l1, l2, 'FRAME'); ln(r1, r2, 'FRAME');
+        for (let rz = 300; rz <= H; rz += 300) {
+          ln(toIso(lx - ladW / 2, -60, rz), toIso(lx + ladW / 2, -60, rz), 'FRAME');
+        }
+      } else if (l.sd === 'R') {
+        const ly = l.y;
+        const l1 = toIso(totalL + 60, ly - ladW / 2, 0), l2 = toIso(totalL + 60, ly - ladW / 2, H + 800);
+        const r1 = toIso(totalL + 60, ly + ladW / 2, 0), r2 = toIso(totalL + 60, ly + ladW / 2, H + 800);
+        ln(l1, l2, 'FRAME'); ln(r1, r2, 'FRAME');
+        for (let rz = 300; rz <= H; rz += 300) {
+          ln(toIso(totalL + 60, ly - ladW / 2, rz), toIso(totalL + 60, ly + ladW / 2, rz), 'FRAME');
+        }
+      }
+    });
+
+    // 8. 3D 등각 치수선 (L, W, H)
+    const dimGap = Math.round(14.0 * N);
+    const dL0 = toIso(0, -PAD_OV - dimGap, -th);
+    const dL1 = toIso(totalL, -PAD_OV - dimGap, -th);
+    ln(toIso(0, -PAD_OV, -th), dL0, 'DIM');
+    ln(toIso(totalL, -PAD_OV, -th), dL1, 'DIM');
+    ln(dL0, dL1, 'DIM');
+    ents.push({ t: 'text', p: [(dL0[0] + dL1[0]) / 2, (dL0[1] + dL1[1]) / 2 - textH * 0.9], h: textH, s: String(totalL) + ' (L)', align: 'center', rot: -30, layer: 'DIM' });
+
+    const dW0 = toIso(totalL + dimGap, 0, -th);
+    const dW1 = toIso(totalL + dimGap, totalW, -th);
+    ln(toIso(totalL, 0, -th), dW0, 'DIM');
+    ln(toIso(totalL, totalW, -th), dW1, 'DIM');
+    ln(dW0, dW1, 'DIM');
+    ents.push({ t: 'text', p: [(dW0[0] + dW1[0]) / 2, (dW0[1] + dW1[1]) / 2 - textH * 0.9], h: textH, s: String(totalW) + ' (W)', align: 'center', rot: 30, layer: 'DIM' });
+
+    const dH_base = toIso(totalL + dimGap * 0.7, -dimGap * 0.7, 0);
+    const dH_top = toIso(totalL + dimGap * 0.7, -dimGap * 0.7, H);
+    ln(toIso(totalL, 0, 0), dH_base, 'DIM');
+    ln(toIso(totalL, 0, H), dH_top, 'DIM');
+    ln(dH_base, dH_top, 'DIM');
+    ents.push({ t: 'text', p: [(dH_base[0] + dH_top[0]) / 2 + textH * 1.2, (dH_base[1] + dH_top[1]) / 2], h: textH, s: String(H) + ' (H)', align: 'left', rot: 90, layer: 'DIM' });
+
+    return { ents, textH, totalL, totalW, H };
+  }
+
   /* ---------- FRAME 도면: 기초 프레임(STEEL SKID, TankBaseFrame) / 내부 스테이(INTERNAL STAY, TankInSTAY) ---------- */
   function frameGeom(opt) {
     const map = createMap(opt);
@@ -2917,6 +3217,37 @@ canvas.drag{cursor:grabbing}
       ny -= lines.length * noteLineH + noteGap;
     });
 
+    // 뷰 타이틀 기호 (T 1/1 원형 마크, 이중 밑줄 및 한글 뷰 명칭)
+    const drawViewTitleBubble = (tank_cx, title_y, sheetNo, viewNo, titleText) => {
+      const R = 6.0;
+      const lineW = 75;
+      const gap = 1.0;
+      const bx = tank_cx - lineW / 2;
+      const by = title_y;
+
+      // 1. 원형 기호
+      circle([bx, by], R);
+
+      // 2. 원형 내부 수평 분할선 및 우측 상단 밑줄 (연속선)
+      line([bx - R, by], [bx + R + lineW, by]);
+
+      // 3. 원형 내부 하단 수직 분할선
+      line([bx, by], [bx, by - R]);
+
+      // 4. 이중 밑줄 중 하단 평행선 (원 우측 둘레에서 시작)
+      const dx_circ = Math.sqrt(Math.max(0, R * R - gap * gap));
+      line([bx + dx_circ, by - gap], [bx + R + lineW, by - gap]);
+
+      // 5. 원 내부 표식: 상단 T, 하단 좌측 시트번호(1), 하단 우측 뷰번호(1~5)
+      text(bx, by + R * 0.44, 3.4, 'T', 'center', 0, 'middle');
+      text(bx - R * 0.48, by - R * 0.48, 2.5, String(sheetNo), 'center', 0, 'middle');
+      text(bx + R * 0.48, by - R * 0.48, 2.5, String(viewNo), 'center', 0, 'middle');
+
+      // 6. 이중 밑줄 위 한글 뷰 명칭 (가운데 정렬)
+      const textX = bx + R + lineW / 2;
+      text(textX, by + 3.6, 5.0, titleText, 'center', 0, 'middle');
+    };
+
     if (opt.sheetKind === 'detail') {
       ents.push(...buildDetails(opt, N, P, x0, y0, tx0, y1));
       return { map: mmap, ents, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
@@ -2940,6 +3271,28 @@ canvas.drag{cursor:grabbing}
       placeFrame(buildSkid(opt).ents, 0.32, 0.26, 'STEEL SKID DRAWING');
       placeFrame(buildSkidCross(opt).ents, 0.78, 0.26, 'FRAME CROSS DWG');
       return { map: mmap, ents, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
+    }
+    if (opt.sheetKind === 'iso') {
+      const iso = buildIsometric(opt, templates, sideT);
+      const b = bb(iso.ents);
+      const areaW = tx0 - x0;
+      const areaH = y1 - y0;
+      const viewW = (b[2] - b[0]) / N, viewH = (b[3] - b[1]) / N;
+      const fitScale = Math.min(1.0, (areaW * 0.85) / viewW, (areaH * 0.75) / viewH);
+      const cx = x0 + areaW * 0.5;
+      const cy = y0 + areaH * 0.52;
+      const centerDx = P(cx) - ((b[0] + b[2]) / 2) * fitScale;
+      const centerDy = P(cy) - ((b[1] + b[3]) / 2) * fitScale;
+
+      iso.ents.forEach(e => {
+        if (e.t === 'line') ents.push({ ...e, a: [e.a[0] * fitScale + centerDx, e.a[1] * fitScale + centerDy], b: [e.b[0] * fitScale + centerDx, e.b[1] * fitScale + centerDy] });
+        else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] * fitScale + centerDx, e.c[1] * fitScale + centerDy], r: e.r * fitScale });
+        else ents.push({ ...e, p: [e.p[0] * fitScale + centerDx, e.p[1] * fitScale + centerDy], h: e.h * fitScale });
+      });
+
+      const titleY = y0 + 35;
+      drawViewTitleBubble(cx, titleY, 1, 1, '등  각  조  감  도 (3D ISOMETRIC VIEW)');
+      return { map: mmap, ents, scale: Math.round(N / fitScale), elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
     }
 
     // 4대 뷰 투영 정렬(Orthographic Alignment) 및 중심 여백 균형 배치
@@ -3014,37 +3367,6 @@ canvas.drag{cursor:grabbing}
     translateEnts(plan.ents, dx1, dy1);
     translateEnts(conc.ents, dx2_conc, dy1);
 
-    // 뷰 타이틀 기호 (T 1/1 원형 마크, 이중 밑줄 및 한글 뷰 명칭)
-    const drawViewTitleBubble = (tank_cx, title_y, sheetNo, viewNo, titleText) => {
-      const R = 6.0;
-      const lineW = 75;
-      const gap = 1.0;
-      const bx = tank_cx - lineW / 2;
-      const by = title_y;
-
-      // 1. 원형 기호
-      circle([bx, by], R);
-
-      // 2. 원형 내부 수평 분할선 및 우측 상단 밑줄 (연속선)
-      line([bx - R, by], [bx + R + lineW, by]);
-
-      // 3. 원형 내부 하단 수직 분할선
-      line([bx, by], [bx, by - R]);
-
-      // 4. 이중 밑줄 중 하단 평행선 (원 우측 둘레에서 시작)
-      const dx_circ = Math.sqrt(Math.max(0, R * R - gap * gap));
-      line([bx + dx_circ, by - gap], [bx + R + lineW, by - gap]);
-
-      // 5. 원 내부 표식: 상단 T, 하단 좌측 시트번호(1), 하단 우측 뷰번호(1~4)
-      text(bx, by + R * 0.44, 3.4, 'T', 'center', 0, 'middle');
-      text(bx - R * 0.48, by - R * 0.48, 2.5, String(sheetNo), 'center', 0, 'middle');
-      text(bx + R * 0.48, by - R * 0.48, 2.5, String(viewNo), 'center', 0, 'middle');
-
-      // 6. 이중 밑줄 위 한글 뷰 명칭 (가운데 정렬)
-      const textX = bx + R + lineW / 2;
-      text(textX, by + 3.6, 5.0, titleText, 'center', 0, 'middle');
-    };
-
     // 1행 뷰 타이틀 (평면도 & 기초패드도) - 치수선과 절대 겹치지 않게 동일한 Y 선상에 수평 정렬
     const dimGap2 = Math.round(18.0 * N);
     const row1_title_y = (dy1 - PAD_OVERHANG - dimGap2) / N - 14.0;
@@ -3061,6 +3383,30 @@ canvas.drag{cursor:grabbing}
       const row2_title_y = (dy2 + GRD - dim_bottom_1) / N - 14.0;
       drawViewTitleBubble(col1_tank_cx, row2_title_y, 1, 3, '정  면  도');
       drawViewTitleBubble(col2_tank_cx, row2_title_y, 1, 4, '우  측  면  도');
+
+      // 5. 등각 조감도 (View 5: 3D ISOMETRIC VIEW) 배치
+      const iso = buildIsometric(opt, templates, sideT);
+      const b_iso = bb(iso.ents);
+      const isoW_mm = (b_iso[2] - b_iso[0]) / N;
+      const isoH_mm = (b_iso[3] - b_iso[1]) / N;
+
+      const side_rt = col2_tank_cx + (totalW / 2) / N;
+      const iso_avail_w = Math.max(60, tx0 - side_rt - 16);
+      const iso_avail_h = Math.max(60, (row1_title_y - (row2_title_y + 12)));
+      const isoFitScale = Math.min(0.65, (iso_avail_w * 0.90) / isoW_mm, (iso_avail_h * 0.85) / isoH_mm);
+
+      const iso_cx = Math.min(tx0 - (isoW_mm * isoFitScale) / 2 - 10, side_rt + 15 + (isoW_mm * isoFitScale) / 2);
+      const iso_cy = (dy2 / N) + (H / (2 * N)) + 12;
+      const isoDx = P(iso_cx) - ((b_iso[0] + b_iso[2]) / 2) * isoFitScale;
+      const isoDy = P(iso_cy) - ((b_iso[1] + b_iso[3]) / 2) * isoFitScale;
+
+      iso.ents.forEach(e => {
+        if (e.t === 'line') ents.push({ ...e, a: [e.a[0] * isoFitScale + isoDx, e.a[1] * isoFitScale + isoDy], b: [e.b[0] * isoFitScale + isoDx, e.b[1] * isoFitScale + isoDy] });
+        else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] * isoFitScale + isoDx, e.c[1] * isoFitScale + isoDy], r: e.r * isoFitScale });
+        else ents.push({ ...e, p: [e.p[0] * isoFitScale + isoDx, e.p[1] * isoFitScale + isoDy], h: e.h * isoFitScale });
+      });
+
+      drawViewTitleBubble(iso_cx, row2_title_y, 1, 5, '등  각  조  감  도');
       elev = true;
     }
     const blocks = Object.assign({}, plan.blocks, (front && front.blocks), (side && side.blocks));
@@ -3208,7 +3554,7 @@ canvas.drag{cursor:grabbing}
     return o.join('\r\n') + '\r\n';
   }
 
-  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME };
+  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TankCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -4378,7 +4724,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       plan = sheet ? C.buildSheet(opt, TEMPLATES, SIDE_T) : C.buildPlan(opt, TEMPLATES);
       plan.sheet = sheet;
 
-      const kindText = { asm: '조립도 (종합)', frame: '프레임도 (하부/내부)', detail: '상세도 (DETAILS)' }[opt.sheetKind] || '도면';
+      const kindText = { asm: '조립도 (종합)', iso: '등각 조감도 (3D ISO)', frame: '프레임도 (하부/내부)', detail: '상세도 (DETAILS)' }[opt.sheetKind] || '도면';
       $('viewBadge').textContent = sheet ? `A1 ${kindText} (1/${plan.scale})` : '평면도 모델 뷰';
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);

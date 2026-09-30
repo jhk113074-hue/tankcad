@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.2.8</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.2.9</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -581,7 +581,8 @@ canvas.drag{cursor:grabbing}
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
           <label class="chk" style="font-weight:600;font-size:12px;cursor:pointer"><input type="checkbox" id="sheetOn" checked> A1 도면 시트 표제란 포함</label>
           <select id="sheetKind" style="width:auto">
-            <option value="asm">조립도 (평면·콘크리트·정면·측면)</option>
+            <option value="asm">조립도 (평면·콘크리트·정면·측면·3D등각)</option>
+            <option value="iso">등각 조감도 (3D ISOMETRIC DWG)</option>
             <option value="frame">프레임도 (스키드·내부 스테이)</option>
             <option value="detail">상세도 (DETAILS DWG)</option>
           </select>
@@ -2033,7 +2034,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       plan = sheet ? C.buildSheet(opt, TEMPLATES, SIDE_T) : C.buildPlan(opt, TEMPLATES);
       plan.sheet = sheet;
 
-      const kindText = { asm: '조립도 (종합)', frame: '프레임도 (하부/내부)', detail: '상세도 (DETAILS)' }[opt.sheetKind] || '도면';
+      const kindText = { asm: '조립도 (종합)', iso: '등각 조감도 (3D ISO)', frame: '프레임도 (하부/내부)', detail: '상세도 (DETAILS)' }[opt.sheetKind] || '도면';
       $('viewBadge').textContent = sheet ? `A1 ${kindText} (1/${plan.scale})` : '평면도 모델 뷰';
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
