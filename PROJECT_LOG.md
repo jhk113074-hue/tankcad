@@ -492,5 +492,14 @@
 - **Docker / 풀스택 배포**: `Dockerfile`, `docker-compose.yml`, `requirements.txt` 작성으로 클라우드 서버(Ubuntu, AWS, VPS)에서 ODA 기반 DWG 변환 백엔드(`server.py`)를 포함한 원클릭 컨테이너 구동 지원.
 - **상세 가이드**: [DEPLOY.md](file:///e:/tankcad/DEPLOY.md) 문서 작성.
 
+### [2026-09-30 22:25] 시맨틱 버전 관리 체계(v1.2.0) 및 CHANGELOG 수립
+
+#### 1. 버전 관리 일원화
+- `package.json`, 헤더 배지(`web/index.src.html`), 번들 HTML의 버전을 **`v1.2.0`**으로 일치화.
+- 표준 변경 이력 문서 [CHANGELOG.md](file:///e:/tankcad/CHANGELOG.md) 작성 (Keep a Changelog 규격: v1.0.0, v1.1.0, v1.2.0 내역 수록).
+- 자동 버전 업 도구 [bump_version.py](file:///e:/tankcad/bump_version.py) 구축 (`python bump_version.py patch|minor|major` 명령으로 버전 동기화 및 자동 빌드).
+- Git 태그 `v1.2.0` 발행 및 GitHub 원격 태그 푸시.
+
+
 
 
