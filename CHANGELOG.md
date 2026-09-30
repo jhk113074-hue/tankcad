@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.7] - 2026-09-30
+
+### Added & Improved
+- **콘크리트 패드 평면도(CONCRETE PAD PLAN) 전체 치수 연속 표시 (Pad Sizes & Gap Dimensions)**:
+  - 첫 번째 패드부터 마지막 패드까지 누락 없이 모든 콘크리트 패드의 크기(폭: 400, 350, 350, ... 400)를 상단 치수선에 표시.
+  - 패드 사이의 모든 순간격(Clear Gap: 625, 650, 650, ... 625) 치수를 상단 치수선에 연속 체인(Chain Dimension)으로 표기.
+  - 기존 폭 중복 필터링(`seen[w]`)으로 인해 1, 2번째 패드만 나오고 나머지 패드 및 간격이 표시되지 않던 문제 완전 해결.
+  - 하단 치수선에는 각 패드의 중심간격(C.T.C Pitch 1000mm) 및 전체 패드 외곽 치수를 함께 제공하여 시공 및 검측에 최적화.
+
+---
+
 ## [1.2.6] - 2026-09-30
 
 ### Added & Improved

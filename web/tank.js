@@ -865,14 +865,33 @@
       }
     }
 
-    const seen = {};
     const topY = Math.max(...pieces.map(p => p.y1));
+    const botY = Math.min(...pieces.map(p => p.y0));
+
+    // 상단 치수선: 첫 번째 패드부터 마지막 패드까지 모든 패드의 크기(폭) 및 패드 간격치수(순간격) 연속 표시
+    for (let i = 0; i < strips.length; i++) {
+      const [x, w] = strips[i];
+      // 1. 패드 폭 치수 (400, 350, 350, ...)
+      dimLinear(ents, [x, topY], [x + w, topY], topY + dimGap1, false, String(w), textH, 'DIM');
+      // 2. 패드 사이 간격치수 (625, 650, 650, ...)
+      if (i < strips.length - 1) {
+        const nextX = strips[i + 1][0];
+        const gap = Math.round(nextX - (x + w));
+        if (gap > 0) {
+          dimLinear(ents, [x + w, topY], [nextX, topY], topY + dimGap1, false, String(gap), textH, 'DIM');
+        }
+      }
+    }
+
+    // 하단 치수선: 패드 중심간 간격 (C.T.C Pitch) 및 패드 전체 외곽 치수
     strips.forEach(([x, w], i) => {
-      if (!seen[w]) { seen[w] = 1; dimLinear(ents, [x, topY], [x + w, topY], topY + dimGap1, false, String(w), textH, 'DIM'); }
-      if (i) { const pa = strips[i - 1]; dimLinear(ents, [pa[0] + pa[1] / 2, -PAD_OVERHANG], [x + w / 2, -PAD_OVERHANG], -PAD_OVERHANG - dimGap1, false, String(Math.round((x + w / 2) - (pa[0] + pa[1] / 2))), textH, 'DIM'); }
+      if (i) {
+        const pa = strips[i - 1];
+        dimLinear(ents, [pa[0] + pa[1] / 2, botY], [x + w / 2, botY], botY - dimGap1, false, String(Math.round((x + w / 2) - (pa[0] + pa[1] / 2))), textH, 'DIM');
+      }
     });
     const lf = strips[0][0], rt = strips[strips.length - 1][0] + strips[strips.length - 1][1];
-    dimLinear(ents, [lf, -PAD_OVERHANG], [rt, -PAD_OVERHANG], -PAD_OVERHANG - dimGap2, false, String(rt - lf), textH, 'DIM');
+    dimLinear(ents, [lf, botY], [rt, botY], botY - dimGap2, false, String(rt - lf), textH, 'DIM');
     return { ents, textH };
   }
 
