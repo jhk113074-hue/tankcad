@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.4</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.5</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2043,7 +2043,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       renderGrid(m0);
       updateNozzleUi(m0);
       const opt = {
-        length: L, width: W, height: H, hseg: C.heightSegs(H[0], $('b11').checked), removed: [...removed].map(k => k.split(',').map(Number)), marks: Object.assign({}, marks), ladders: Object.assign({}, ladders), pillars: [...pillars].map(k => k.split(',').map(Number)), frame: Number($('frm').value), material: document.querySelector('input[name=mat]:checked').value,
+        length: L, width: W, height: H, hseg: C.heightSegs(H[0], $('b11').checked), b11: $('b11').checked, removed: [...removed].map(k => k.split(',').map(Number)), marks: Object.assign({}, marks), ladders: Object.assign({}, ladders), pillars: [...pillars].map(k => k.split(',').map(Number)), frame: Number($('frm').value), material: document.querySelector('input[name=mat]:checked').value,
         rf: Number(document.querySelector('input[name=rf]:checked').value),
         userScale: $('scaleSel').value === 'auto' ? null : Number($('scaleSel').value),
         sidePanels: Object.assign({}, sidePanelTypes),

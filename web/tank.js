@@ -1418,7 +1418,7 @@
     const map = createMap(opt);
     const totalL = map.length, totalW = map.width;
     const H = (opt.height || []).reduce((a, b) => a + (b || 0), 0) || 3000;
-    const hs = heightSegs(H, opt.b11) || [1000, 1000, 1000];
+    const hs = (opt.hseg && opt.hseg.length) ? opt.hseg.slice() : (heightSegs(H, opt.b11) || [1000, 1000, 1000]);
     const N = opt._N || 25;
     const textH = Math.round(3.0 * N);
     const ents = [];
@@ -1866,6 +1866,16 @@
           ln(toIso(x0, y0 - FD, 0), toIso(x1, y0 - FD, 0), 'FRAME', fDepth);
           ln(toIso(x0, y0 - FD, -FT), toIso(x1, y0 - FD, -FT), 'FRAME', fDepth);
 
+          // 상부 플랜지 (75mm 폭, 10mm 두께)
+          const topDepthF = getDepth((x0 + x1) / 2, y0 - FD / 2, H);
+          ln(toIso(x0, y0 - FD, H), toIso(x1, y0 - FD, H), 'FRAME', topDepthF);
+          ln(toIso(x0, y0 - FD, H - FT), toIso(x1, y0 - FD, H - FT), 'FRAME', topDepthF);
+          ln(toIso(x0, y0, H - FT), toIso(x1, y0, H - FT), 'PANEL_DETAIL', topDepthF);
+          ln(toIso(x0, y0, H), toIso(x0, y0 - FD, H), 'FRAME', topDepthF);
+          ln(toIso(x1, y0, H), toIso(x1, y0 - FD, H), 'FRAME', topDepthF);
+          ln(toIso(x0, y0 - FD, H - FT), toIso(x0, y0 - FD, H), 'FRAME', topDepthF);
+          ln(toIso(x1, y0 - FD, H - FT), toIso(x1, y0 - FD, H), 'FRAME', topDepthF);
+
           // 종 플랜지 림
           if (map.has(i, j + 1) && !map.has(i - 1, j + 1)) {
             const x = x1;
@@ -1916,6 +1926,16 @@
           ln(toIso(xWall + FD, y0, 0), toIso(xWall + FD, y1, 0), 'FRAME', fDepth);
           ln(toIso(xWall + FD, y0, -FT), toIso(xWall + FD, y1, -FT), 'FRAME', fDepth);
 
+          // 상부 플랜지 (75mm 폭, 10mm 두께)
+          const topDepthR = getDepth(xWall + FD / 2, (y0 + y1) / 2, H);
+          ln(toIso(xWall + FD, y0, H), toIso(xWall + FD, y1, H), 'FRAME', topDepthR);
+          ln(toIso(xWall + FD, y0, H - FT), toIso(xWall + FD, y1, H - FT), 'FRAME', topDepthR);
+          ln(toIso(xWall, y0, H - FT), toIso(xWall, y1, H - FT), 'PANEL_DETAIL', topDepthR);
+          ln(toIso(xWall, y0, H), toIso(xWall + FD, y0, H), 'FRAME', topDepthR);
+          ln(toIso(xWall, y1, H), toIso(xWall + FD, y1, H), 'FRAME', topDepthR);
+          ln(toIso(xWall + FD, y0, H - FT), toIso(xWall + FD, y0, H), 'FRAME', topDepthR);
+          ln(toIso(xWall + FD, y1, H - FT), toIso(xWall + FD, y1, H), 'FRAME', topDepthR);
+
           // 종 플랜지 림
           if (map.has(i + 1, j) && !map.has(i + 1, j + 1)) {
             const y = y1;
@@ -1944,6 +1964,40 @@
         }
       }
 
+      // (1-B) 후면 벽체 상부 플랜지 (중정/노출)
+      for (let i = 0; i < map.rows.length; i++) {
+        const yWall = map.ys[i + 1];
+        for (let j = 0; j < map.cols.length; j++) {
+          if (!map.has(i, j) || map.has(i + 1, j)) continue;
+          const x0 = map.xs[j], x1 = map.xs[j + 1];
+          const topDepthB = getDepth((x0 + x1) / 2, yWall + FD / 2, H);
+          ln(toIso(x0, yWall + FD, H), toIso(x1, yWall + FD, H), 'FRAME', topDepthB);
+          ln(toIso(x0, yWall + FD, H - FT), toIso(x1, yWall + FD, H - FT), 'FRAME', topDepthB);
+          ln(toIso(x0, yWall, H - FT), toIso(x1, yWall, H - FT), 'PANEL_DETAIL', topDepthB);
+          ln(toIso(x0, yWall, H), toIso(x0, yWall + FD, H), 'FRAME', topDepthB);
+          ln(toIso(x1, yWall, H), toIso(x1, yWall + FD, H), 'FRAME', topDepthB);
+          ln(toIso(x0, yWall + FD, H - FT), toIso(x0, yWall + FD, H), 'FRAME', topDepthB);
+          ln(toIso(x1, yWall + FD, H - FT), toIso(x1, yWall + FD, H), 'FRAME', topDepthB);
+        }
+      }
+
+      // (2-B) 좌측 벽체 상부 플랜지 (중정/노출)
+      for (let i = 0; i < map.rows.length; i++) {
+        const y0 = map.ys[i], y1 = map.ys[i + 1];
+        for (let j = 0; j < map.cols.length; j++) {
+          if (!map.has(i, j) || map.has(i, j - 1)) continue;
+          const xWall = map.xs[j];
+          const topDepthL = getDepth(xWall - FD / 2, (y0 + y1) / 2, H);
+          ln(toIso(xWall - FD, y0, H), toIso(xWall - FD, y1, H), 'FRAME', topDepthL);
+          ln(toIso(xWall - FD, y0, H - FT), toIso(xWall - FD, y1, H - FT), 'FRAME', topDepthL);
+          ln(toIso(xWall, y0, H - FT), toIso(xWall, y1, H - FT), 'PANEL_DETAIL', topDepthL);
+          ln(toIso(xWall, y0, H), toIso(xWall - FD, y0, H), 'FRAME', topDepthL);
+          ln(toIso(xWall, y1, H), toIso(xWall - FD, y1, H), 'FRAME', topDepthL);
+          ln(toIso(xWall - FD, y0, H - FT), toIso(xWall - FD, y0, H), 'FRAME', topDepthL);
+          ln(toIso(xWall - FD, y1, H - FT), toIso(xWall - FD, y1, H), 'FRAME', topDepthL);
+        }
+      }
+
       // (3) 외곽 돌출 코너 플랜지 (Convex Outer Corners)
       for (let i = 0; i < map.rows.length; i++) {
         for (let j = 0; j < map.cols.length; j++) {
@@ -1963,6 +2017,8 @@
             ln(toIso(xC, yC - FD, 0), toIso(xC + FD, yC, 0), 'PANEL', cDepth);
             ln(toIso(xC, yC - FD, H), toIso(xC + FD, yC, H), 'PANEL', cDepth);
             ln(toIso(xC, yC - FD, -FT), toIso(xC + FD, yC, -FT), 'FRAME', cDepth);
+            ln(toIso(xC, yC - FD, H - FT), toIso(xC + FD, yC - FD, H - FT), 'FRAME', cDepth);
+            ln(toIso(xC + FD, yC - FD, H - FT), toIso(xC + FD, yC, H - FT), 'FRAME', cDepth);
             for (let k = 1; k < hs.length; k++) {
               const z = zs[k];
               ln(toIso(xC, yC - FD, z), toIso(xC, yC, z), 'FRAME', cDepth);
