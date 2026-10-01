@@ -292,7 +292,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.14</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.15</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -3573,6 +3573,56 @@ canvas.drag{cursor:grabbing}
     });
     return [isFinite(minX) ? minX : 0, isFinite(minY) ? minY : 0, isFinite(maxX) ? maxX : 1000, isFinite(maxY) ? maxY : 1000];
   }
+  function estimateTextWidth(str, h, widthFactor = 0.85) {
+    let w = 0;
+    for (const ch of String(str || '')) {
+      const code = ch.codePointAt(0);
+      if (code > 0x7f) {
+        w += 1.0 * h * widthFactor;
+      } else if (code === 32) {
+        w += 0.45 * h * widthFactor;
+      } else if ('.,:;!\'|/\\'.includes(ch)) {
+        w += 0.3 * h * widthFactor;
+      } else if ('ijlIt[]()1'.includes(ch)) {
+        w += 0.4 * h * widthFactor;
+      } else if ('MW@#%'.includes(ch)) {
+        w += 0.85 * h * widthFactor;
+      } else if (code >= 65 && code <= 90) {
+        w += 0.65 * h * widthFactor;
+      } else if (code >= 48 && code <= 57) {
+        w += 0.6 * h * widthFactor;
+      } else {
+        w += 0.55 * h * widthFactor;
+      }
+    }
+    return w;
+  }
+  function wrapTextByWidth(str, maxW, fontH) {
+    const out = [];
+    let cur = '';
+    const words = String(str || '').split(/\s+/);
+    for (let i = 0; i < words.length; i++) {
+      const w = words[i];
+      if (!w) continue;
+      const cand = cur ? (cur + ' ' + w) : w;
+      if (cur && estimateTextWidth(cand, fontH) > maxW) {
+        out.push(cur);
+        cur = w;
+      } else {
+        cur = cand;
+      }
+      while (estimateTextWidth(cur, fontH) > maxW && cur.length > 1) {
+        let cut = cur.length - 1;
+        while (cut > 1 && estimateTextWidth(cur.slice(0, cut), fontH) > maxW) {
+          cut--;
+        }
+        out.push(cur.slice(0, cut));
+        cur = cur.slice(cut);
+      }
+    }
+    if (cur) out.push(cur);
+    return out.length ? out : [''];
+  }
   function wrapText(str, maxChars) {
     const out = []; let cur = '';
     str.split(/\s+/).forEach(w => {
@@ -3935,8 +3985,14 @@ canvas.drag{cursor:grabbing}
       line([tableX1, nozTableTop], [tableX1, yy]);
     }
 
-    // 노트 (Remarks) - 상부 여백 최적화 및 글씨 크기 확대(4.8mm)로 시인성/가독성 극대화
-    const allNotes = (opt.notes && opt.notes.length) ? opt.notes : (opt.remarks || []);
+    // 노트 (Remarks) - 가로 전체 폭 및 세로 가용 높이 최적화로 빈 공간 없이 균형 배치 (현재 폰트 4.8mm 유지)
+    let allNotes = [];
+    if (opt.notes && opt.notes.length) allNotes.push(...opt.notes);
+    if (opt.remarks && opt.remarks.length) {
+      opt.remarks.forEach(r => { if (!allNotes.includes(r)) allNotes.push(r); });
+    }
+    if (!allNotes.length) allNotes = ['No special remarks.'];
+
     let ny = y - 8;
     text(tx0 + 8, ny, 6.5, '<Remarks>', 'left');
     line([tx0 + 8, ny - 3], [tx0 + 85, ny - 3]);
@@ -3944,22 +4000,28 @@ canvas.drag{cursor:grabbing}
 
     const bottomLimit = Math.max(partsTop, nozTableTop) > ty ? (Math.max(partsTop, nozTableTop) + 10) : (ty + 10);
     const availNotesH = ny - bottomLimit;
-    const noteLineH = 7.5;
     const noteFontH = 4.8;
+    const textStartX = tx0 + 18;
+    const maxTextW = (x1 - 8) - textStartX; // ~174mm (표제란 200mm 폭 전체 활용)
 
-    // 전체 라인 수 계산 (폭 46글자 기준 줄바꿈)
-    const wrappedNotes = allNotes.map(n => wrapText(n, 46));
+    // 전체 라인 수 계산 (가로 폭에 맞춘 동적 줄바꿈으로 오른쪽 빈공간 해소)
+    const wrappedNotes = allNotes.map(n => wrapTextByWidth(n, maxTextW - 4, noteFontH));
     let totalLines = 0;
     wrappedNotes.forEach(lines => totalLines += lines.length);
 
-    // 가용 높이에 맞춘 동적 간격(gap) 산출 (최대 9.5mm)
-    const freeSpace = availNotesH - (totalLines * noteLineH);
-    const noteGap = allNotes.length > 1 ? Math.min(9.5, Math.max(4.0, freeSpace / (allNotes.length - 1))) : 6.0;
+    // 가용 높이에 맞춘 동적 라인 높이 및 간격(gap) 최적화로 하단 빈공간 해소
+    let noteLineH = 8.0;
+    const minGap = 3.5;
+    if (availNotesH < (totalLines * noteLineH + (allNotes.length - 1) * minGap)) {
+      noteLineH = Math.max(6.2, (availNotesH - (allNotes.length - 1) * minGap) / Math.max(1, totalLines));
+    }
+    const freeSpace = Math.max(0, availNotesH - (totalLines * noteLineH));
+    const noteGap = allNotes.length > 1 ? Math.min(14.0, Math.max(minGap, freeSpace / (allNotes.length - 1))) : 6.0;
 
     wrappedNotes.forEach((lines, i) => {
       text(tx0 + 8, ny, noteFontH, String(i + 1), 'left');
       lines.forEach((l, li) => {
-        text(tx0 + 20, ny - li * noteLineH, noteFontH, l, 'left');
+        text(textStartX, ny - li * noteLineH, noteFontH, l, 'left');
       });
       ny -= lines.length * noteLineH + noteGap;
     });
@@ -4186,30 +4248,6 @@ canvas.drag{cursor:grabbing}
   /* ---------- DXF (AutoCAD R12 ASCII, mm) ---------- */
   const LAYERS = { PANEL: 7, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7 };
   const dxfText = str => Array.from(str).map(ch => { const c = ch.codePointAt(0); return c < 128 ? ch : '\\U+' + c.toString(16).toUpperCase().padStart(4, '0'); }).join('');
-  function estimateTextWidth(str, h, widthFactor = 0.85) {
-    let w = 0;
-    for (const ch of String(str || '')) {
-      const code = ch.codePointAt(0);
-      if (code > 0x7f) {
-        w += 1.0 * h * widthFactor;
-      } else if (code === 32) {
-        w += 0.45 * h * widthFactor;
-      } else if ('.,:;!\'|/\\'.includes(ch)) {
-        w += 0.3 * h * widthFactor;
-      } else if ('ijlIt[]()1'.includes(ch)) {
-        w += 0.4 * h * widthFactor;
-      } else if ('MW@#%'.includes(ch)) {
-        w += 0.85 * h * widthFactor;
-      } else if (code >= 65 && code <= 90) {
-        w += 0.65 * h * widthFactor;
-      } else if (code >= 48 && code <= 57) {
-        w += 0.6 * h * widthFactor;
-      } else {
-        w += 0.55 * h * widthFactor;
-      }
-    }
-    return w;
-  }
 
   function toDxf(ents, blocks) {
     const o = [];

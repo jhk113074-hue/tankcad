@@ -5,6 +5,22 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.15] - 2026-10-02
+
+### Enhanced & Optimized Layout (도면 Remarks 영역 공간 최적화 및 빈 공간 해소)
+- **도면 공통 노트(Remarks) 영역 공간 최적화 ("이 공간 최적화해서 잘보이면서 빈공간없이 채워지게 해주세요. 현재 폰트 사이즈로" 완벽 해결)**:
+  - **가로 폭 최적화 (오른쪽 빈 공간 해소)**:
+    - 기존에 46글자로 협소하게 고정되어 있던 하드코딩 줄바꿈을 해제하고, 표제란 200mm 전체 폭에 맞춘 지능형 폭 기반 줄바꿈(`wrapTextByWidth`, 가용 폭 ~174mm)을 적용.
+    - 문장이 4~5단어 단위로 부자연스럽게 잘리던 문제를 해결하여 1~2줄로 자연스럽게 흐르도록 개선, 우측에 버려지던 약 40~45%의 넓은 빈 공간을 깔끔하게 해소.
+  - **세로 높이 및 간격 최적화 (하단 빈 공간 해소)**:
+    - 요청하신 **현재 폰트 크기(4.8mm)**를 그대로 유지하면서, 폰트 높이에 가장 이상적인 줄간격(8.0mm)과 상·하부 가용 높이(`availNotesH`) 전체를 균등 분할하는 동적 항목 간격(`noteGap`, 최대 14mm) 알고리즘 구축.
+    - 1번부터 12번까지의 특기사항 항목이 상단 `<Remarks>` 라인부터 하단 한계선까지 고르게 채워지도록 최적화.
+  - **배관/부품표 유무에 따른 반응형 높이 적응**:
+    - 배관 노즐 일람표나 부품표의 유무에 따라 가용 높이가 변하더라도 글자가 겹치지 않고 자연스럽게 확장·압축되도록 동적 적응 레이아웃 적용.
+    - 2D 웹 캔버스, DXF CAD 내보내기, SVG 내보내기 100% 동일하게 반영.
+
+---
+
 ## [1.5.14] - 2026-10-02
 
 ### Reorganized & Enhanced UI (표제란 환경설정 메뉴 통합 및 3개 세부 탭 분리 고도화)
