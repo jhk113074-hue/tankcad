@@ -5,6 +5,17 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.8] - 2026-10-02
+
+### Fixed & Enhanced (새로고침 및 재접속 시 이전 마지막 작업 치수 및 설정 자동 유지 복원)
+- **이전 마지막 입력값 유지 및 복원 정상화 ("이 값은 왜 이전 마지막 값을 가지고 가지 않나요?" 완벽 해결)**:
+  - 페이지 초기 로딩 시 `syncTemplatesFromDb`가 비동기 실행되면서 기본 HTML 폼 값(`5000`, `3000+2000`, `3000`)으로 `rebuild(false)`를 먼저 호출하고, 이 과정에서 `localStorage`와 URL을 기본값으로 덮어써버려 사용자가 직전에 작업하던 마지막 치수(`restoreAppState`)가 소실되던 치명적 순서 버그 수정.
+  - 앱 시작 시(`init`) 최우선으로 `restoreAppState()`를 즉각 동기 실행하여 사용자가 마지막으로 입력했던 길이(`L`), 폭(`W`), 높이(`H`), 1×1 모듈(`b11`), 재질(`mat`), 보강방식(`rf`), 프레임(`frm`) 및 표제란 정보를 안전하게 복원하도록 조치.
+  - 폭(`W`)과 길이(`L`)의 5개 입력 필드 전체(0~4번 칸)를 명시적으로 순회하여, 이전 작업 값이 단일 구획(예: 3000 1칸)일 경우 2번 칸의 잔여 기본값(2000)이 남아있지 않고 정확히 빈칸으로 비워지도록 복원 정밀도 개선.
+  - 재질(`mat`) 복원 시 보강 방식(`syncRf`) 동기화 함수를 함께 호출하여 STS 선택 시 외부 보강 비활성화 등 연동 상태가 완벽히 재현되도록 보완.
+
+---
+
 ## [1.5.7] - 2026-10-02
 
 ### Fixed & Enhanced (3D ISOMETRIC 최상단 수직 플랜지 은선 차폐 방지 및 디폴트 화면 사다리/배관 미정의 상태 유지)

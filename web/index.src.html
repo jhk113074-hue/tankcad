@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.7</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.8</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2183,10 +2183,16 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
     try {
       if (Array.isArray(st.L)) {
-        st.L.forEach((v, i) => { const el = $('L' + i); if (el) el.value = v || ''; });
+        for (let i = 0; i < 5; i++) {
+          const el = $('L' + i);
+          if (el) el.value = (st.L[i] && Number(st.L[i]) > 0) ? String(st.L[i]) : '';
+        }
       }
       if (Array.isArray(st.W)) {
-        st.W.forEach((v, i) => { const el = $('W' + i); if (el) el.value = v || ''; });
+        for (let i = 0; i < 5; i++) {
+          const el = $('W' + i);
+          if (el) el.value = (st.W[i] && Number(st.W[i]) > 0) ? String(st.W[i]) : '';
+        }
       }
       if (typeof st.b11 === 'boolean') {
         $('b11').checked = st.b11;
@@ -2203,6 +2209,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         const r = document.querySelector(`input[name=rf][value="${st.rf}"]`);
         if (r) r.checked = true;
       }
+      syncRf();
       if (st.frm) {
         $('frm').value = String(st.frm);
       }
@@ -2949,10 +2956,9 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
     // 항상 localStorage에 등록된 사용자 정의 판넬을 최우선으로 활성 템플릿에 병합
     applyActiveTemplates();
-    rebuild(false);
-    draw();
-
     if (!silent) {
+      rebuild(false);
+      draw();
       st.textContent = '판넬 DB가 캐드 화면에 동기화되었습니다.';
       alert('✅ 판넬 형상이 캐드 도면(평면도, 입면도, 3D 등각도)에 즉시 적용되었습니다!');
     }
@@ -3718,11 +3724,11 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     draw();
   }
 
-  // 초기 시작 시 DB에서 판넬 목록 및 최신 템플릿 로드 후 저장된 상태 복원
+  // 초기 시작 시 저장된 이전 상태를 최우선 복원한 후 DB 판넬 및 템플릿 로드
   (async function init() {
+    restoreAppState();
     await loadDbPanels();
     await syncTemplatesFromDb(true);
-    restoreAppState();
     rebuild(true);
   })();
 })();
