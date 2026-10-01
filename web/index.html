@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.0</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.1</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2404,210 +2404,239 @@ canvas.drag{cursor:grabbing}
     const PAD_OV = 200;
     const GRD = -600, th = 100;
     const strips = concStrips(map.cols);
+    const nR = map.rows.length;
     const lastStrip = strips[strips.length - 1];
     const XR = lastStrip ? (lastStrip[0] + lastStrip[1]) : (totalL + PAD_OV);
-    const Y_rear = totalW + PAD_OV;
 
-    // 지면 기준선 (Ground Level GL Line at Z = GRD)
-    ln(toIso(strips[0][0] - 150, -PAD_OV, GRD), toIso(XR + 150, -PAD_OV, GRD), 'PANEL_DETAIL');
-    ln(toIso(XR, -PAD_OV, GRD), toIso(XR, Y_rear + 150, GRD), 'PANEL_DETAIL');
+    const hasTankAtRow = (idx, r) => {
+      if (idx < 0) return map.has(r, map.cols.length - 1);
+      if (idx === 0) return map.has(r, 0);
+      return map.has(r, idx) || map.has(r, idx - 1);
+    };
 
-    strips.forEach(([px, pw], sIdx) => {
-      const isLast = (sIdx === strips.length - 1);
-      const rightX = px + pw;
-
-      // 1) 전면부 직사각형 (Front Face: Y = -PAD_OV)
-      const p1 = toIso(px, -PAD_OV, -th);
-      const p2 = toIso(rightX, -PAD_OV, -th);
-      const p3 = toIso(rightX, -PAD_OV, GRD);
-      const p4 = toIso(px, -PAD_OV, GRD);
-      poly([p1, p2, p3, p4], 'PANEL', true);
-
-      // 2) 전면 돌출부 상부면 (Top Face of Front Overhang: Y = -PAD_OV ~ 0)
-      const p1_top = toIso(px, 0, -th);
-      const p2_top = toIso(rightX, 0, -th);
-      poly([p1, p2, p2_top, p1_top], 'PANEL', true);
-
-      // 3) 전면 돌출부 앙카 플레이트 & 볼트 (Anchor Clamp Plate at Z = -th)
-      const cx = px + pw / 2;
-      const acW = Math.min(35, pw / 4);
-      poly([
-        toIso(cx - acW, -130, -th),
-        toIso(cx + acW, -130, -th),
-        toIso(cx + acW, -50, -th),
-        toIso(cx - acW, -50, -th)
-      ], 'FRAME', true);
-      isoCircle(cx, -90, -th, 12, 'XY', 'FRAME');
-      ln(toIso(cx, -90, -th), toIso(cx, -90, -th + 30), 'FRAME');
-
-      // 4) 우측면 (Right Side Face at X = rightX)
-      if (!isLast) {
-        // 중간 패드: 전면 돌출 구간 (Y = -PAD_OV ~ 0)의 우측 측면
-        const r1 = p2;
-        const r2 = p2_top;
-        const r3 = toIso(rightX, 0, GRD);
-        const r4 = p3;
-        poly([r1, r2, r3, r4], 'PANEL', true);
-      } else {
-        // 우측 최외곽 패드: 탱크 전면에서 후면 끝단까지 전 구간 (Y = -PAD_OV ~ totalW + PAD_OV) 완전 노출
-        const r1 = p2;
-        const r2 = toIso(rightX, Y_rear, -th);
-        const r3 = toIso(rightX, Y_rear, GRD);
-        const r4 = p3;
-        poly([r1, r2, r3, r4], 'PANEL', true);
-
-        // 우측 패드 상단 노출면 (Y = 0 ~ totalW)
-        ln(toIso(totalL, 0, -th), toIso(totalL, totalW, -th), 'PANEL');
-        ln(toIso(rightX, 0, -th), toIso(rightX, totalW, -th), 'PANEL');
-        ln(toIso(totalL, totalW, -th), toIso(rightX, totalW, -th), 'PANEL');
-
-        // 후면 돌출 구간 상부면 (Y = totalW ~ Y_rear)
-        poly([
-          toIso(px, totalW, -th),
-          toIso(rightX, totalW, -th),
-          toIso(rightX, Y_rear, -th),
-          toIso(px, Y_rear, -th)
-        ], 'PANEL', true);
-
-        // 후면 패드 마감 단면 (Rear End Face at Y = Y_rear)
-        poly([
-          toIso(px, Y_rear, -th),
-          toIso(rightX, Y_rear, -th),
-          toIso(rightX, Y_rear, GRD),
-          toIso(px, Y_rear, GRD)
-        ], 'PANEL', true);
-
-        // 우측면 앙카 클립 (열마다 배치)
-        for (let rIdx = 0; rIdx < map.rows.length; rIdx++) {
-          const cy = (map.ys[rIdx] + map.ys[rIdx + 1]) / 2;
-          poly([
-            toIso(totalL + 40, cy - 35, -th),
-            toIso(totalL + 120, cy - 35, -th),
-            toIso(totalL + 120, cy + 35, -th),
-            toIso(totalL + 40, cy + 35, -th)
-          ], 'FRAME', true);
-          isoCircle(totalL + 80, cy, -th, 12, 'XY', 'FRAME');
-          ln(toIso(totalL + 80, cy, -th), toIso(totalL + 80, cy, -th + 30), 'FRAME');
+    const runsForStrip = idx => {
+      const out = [];
+      let st = -1;
+      for (let i = 0; i <= nR; i++) {
+        const h = i < nR && hasTankAtRow(idx, i);
+        if (h && st < 0) st = i;
+        if (!h && st >= 0) {
+          out.push([map.ys[st], map.ys[i]]);
+          st = -1;
         }
       }
+      return out;
+    };
+
+    // 지면 기준선 (Ground Level GL Line at Z = GRD)
+    ln(toIso(strips[0][0] - 150, -PAD_OV, GRD), toIso(totalL + 150, -PAD_OV, GRD), 'PANEL_DETAIL');
+    ln(toIso(totalL, -PAD_OV, GRD), toIso(totalL, totalW + 150, GRD), 'PANEL_DETAIL');
+
+    // 각 패드 보(piece) 렌더링
+    strips.forEach(([px, pw, idx], sIdx) => {
+      const rightX = px + pw;
+      const runs = runsForStrip(idx);
+
+      runs.forEach(([y0, y1]) => {
+        const yStart = y0 - PAD_OV;
+        const yEnd = y1 + PAD_OV;
+
+        // 1) 전면부 직사각형 (Front Face)
+        const p1 = toIso(px, yStart, -th);
+        const p2 = toIso(rightX, yStart, -th);
+        const p3 = toIso(rightX, yStart, GRD);
+        const p4 = toIso(px, yStart, GRD);
+        poly([p1, p2, p3, p4], 'PANEL', true);
+
+        // 2) 전면 돌출부 상부면 (Top Face of Front Overhang: Y = yStart ~ y0)
+        const p1_top = toIso(px, y0, -th);
+        const p2_top = toIso(rightX, y0, -th);
+        poly([p1, p2, p2_top, p1_top], 'PANEL', true);
+
+        // 3) 전면 돌출부 앙카 플레이트 & 볼트
+        const cx = px + pw / 2;
+        const acW = Math.min(35, pw / 4);
+        poly([
+          toIso(cx - acW, yStart + 70, -th),
+          toIso(cx + acW, yStart + 70, -th),
+          toIso(cx + acW, yStart + 150, -th),
+          toIso(cx - acW, yStart + 150, -th)
+        ], 'FRAME', true);
+        isoCircle(cx, yStart + 110, -th, 12, 'XY', 'FRAME');
+        ln(toIso(cx, yStart + 110, -th), toIso(cx, yStart + 110, -th + 30), 'FRAME');
+
+        // 4) 전면 돌출 구간 우측 측면 (Y = yStart ~ y0)
+        const r1 = p2;
+        const r2 = p2_top;
+        const r3 = toIso(rightX, y0, GRD);
+        const r4 = p3;
+        poly([r1, r2, r3, r4], 'PANEL', true);
+
+        // 5) 탱크 구간 (Y = y0 ~ y1) 우측 측면이 외부에 노출되는지 검사
+        for (let r = 0; r < nR; r++) {
+          if (map.ys[r] >= y0 && map.ys[r + 1] <= y1) {
+            const isRightmostAtR = (sIdx === strips.length - 1) || !hasTankAtRow(idx + 1, r);
+            if (isRightmostAtR) {
+              const segY0 = map.ys[r], segY1 = map.ys[r + 1];
+              poly([
+                toIso(rightX, segY0, -th),
+                toIso(rightX, segY1, -th),
+                toIso(rightX, segY1, GRD),
+                toIso(rightX, segY0, GRD)
+              ], 'PANEL', true);
+              ln(toIso(px, segY0, -th), toIso(px, segY1, -th), 'PANEL_DETAIL');
+              ln(toIso(rightX, segY0, -th), toIso(rightX, segY1, -th), 'PANEL');
+            }
+          }
+        }
+
+        // 6) 후면 돌출 구간 (Y = y1 ~ yEnd) 및 후면 단면
+        const b1 = toIso(px, yEnd, -th);
+        const b2 = toIso(rightX, yEnd, -th);
+        const b3 = toIso(rightX, yEnd, GRD);
+        const b4 = toIso(px, yEnd, GRD);
+        poly([b1, b2, b3, b4], 'PANEL', true);
+        poly([toIso(px, y1, -th), toIso(rightX, y1, -th), b2, b1], 'PANEL', true);
+        poly([toIso(rightX, y1, -th), b2, b3, toIso(rightX, y1, GRD)], 'PANEL', true);
+      });
     });
 
     // 베이스 스틸 프레임 (Skid Channel 100mm)
-    // 전면 베이스 찬넬
-    poly([toIso(0, 0, 0), toIso(totalL, 0, 0), toIso(totalL, 0, -th), toIso(0, 0, -th)], 'FRAME', true);
-    ln(toIso(0, 0, -th + 15), toIso(totalL, 0, -th + 15), 'PANEL_DETAIL');
-    ln(toIso(0, 0, -15), toIso(totalL, 0, -15), 'PANEL_DETAIL');
+    // 1) 전면 노출 벽체 하부 찬넬
+    for (let i = 0; i < map.rows.length; i++) {
+      const y0 = map.ys[i];
+      for (let j = 0; j < map.cols.length; j++) {
+        if (!map.has(i, j) || map.has(i - 1, j)) continue;
+        const x0 = map.xs[j], x1 = map.xs[j + 1];
+        poly([toIso(x0, y0, 0), toIso(x1, y0, 0), toIso(x1, y0, -th), toIso(x0, y0, -th)], 'FRAME', true);
+        ln(toIso(x0, y0, -th + 15), toIso(x1, y0, -th + 15), 'PANEL_DETAIL');
+        ln(toIso(x0, y0, -15), toIso(x1, y0, -15), 'PANEL_DETAIL');
+      }
+    }
 
-    // 우측 베이스 찬넬
-    poly([toIso(totalL, 0, 0), toIso(totalL, totalW, 0), toIso(totalL, totalW, -th), toIso(totalL, 0, -th)], 'FRAME', true);
-    ln(toIso(totalL, 0, -th + 15), toIso(totalL, totalW, -th + 15), 'PANEL_DETAIL');
-    ln(toIso(totalL, 0, -15), toIso(totalL, totalW, -15), 'PANEL_DETAIL');
+    // 2) 우측 노출 벽체 하부 찬넬
+    for (let i = 0; i < map.rows.length; i++) {
+      const y0 = map.ys[i], y1 = map.ys[i + 1];
+      for (let j = 0; j < map.cols.length; j++) {
+        if (!map.has(i, j) || map.has(i, j + 1)) continue;
+        const xWall = map.xs[j + 1];
+        poly([toIso(xWall, y0, 0), toIso(xWall, y1, 0), toIso(xWall, y1, -th), toIso(xWall, y0, -th)], 'FRAME', true);
+        ln(toIso(xWall, y0, -th + 15), toIso(xWall, y1, -th + 15), 'PANEL_DETAIL');
+        ln(toIso(xWall, y0, -15), toIso(xWall, y1, -15), 'PANEL_DETAIL');
+      }
+    }
 
-    // 2. 정면 패널 (Front Wall: Y = 0)
-    for (let j = 0; j < map.cols.length; j++) {
-      const x0 = map.xs[j], w = map.cols[j];
-      for (let k = 0; k < hs.length; k++) {
-        const z0 = zs[k], h = hs[k];
-        const p1 = toIso(x0, 0, z0);
-        const p2 = toIso(x0 + w, 0, z0);
-        const p3 = toIso(x0 + w, 0, z0 + h);
-        const p4 = toIso(x0, 0, z0 + h);
-        poly([p1, p2, p3, p4], 'PANEL', true);
+    // 2. 전면 노출 패널 (Front-Facing Walls: normal -Y, 'D')
+    for (let i = 0; i < map.rows.length; i++) {
+      const y0 = map.ys[i];
+      for (let j = 0; j < map.cols.length; j++) {
+        if (!map.has(i, j) || map.has(i - 1, j)) continue;
+        const x0 = map.xs[j], w = map.cols[j];
+        for (let k = 0; k < hs.length; k++) {
+          const z0 = zs[k], h = hs[k];
+          const p1 = toIso(x0, y0, z0);
+          const p2 = toIso(x0 + w, y0, z0);
+          const p3 = toIso(x0 + w, y0 + h);
+          const p4 = toIso(x0, y0 + h);
+          poly([p1, p2, p3, p4], 'PANEL', true);
 
-        const pType = sidePanels[`front,${k},${j}`] || sidePanels[`front_${k}_${j}`] || sidePanels[`front,${j},${k}`] || sidePanels[`front_${j}_${k}`] || 'std';
-        const cx = x0 + w / 2, cz = z0 + h / 2;
+          const pType = sidePanels[`front,${k},${j}`] || sidePanels[`front_${k}_${j}`] || sidePanels[`front,${j},${k}`] || sidePanels[`front_${j}_${k}`] || 'std';
+          const cx = x0 + w / 2, cz = z0 + h / 2;
 
-        if (pType === 'flat' || pType === 'flat-1x1') {
-          const m = 25;
-          poly([toIso(x0 + m, 0, z0 + m), toIso(x0 + w - m, 0, z0 + m), toIso(x0 + w - m, 0, z0 + h - m), toIso(x0 + m, 0, z0 + h - m)], 'PANEL_DETAIL', true);
-        } else if (pType === 'flat-half2' || pType === 'flat-0.5x2') {
-          const hw = Math.round(w / 2), m = 20;
-          ln(toIso(x0 + hw, 0, z0), toIso(x0 + hw, 0, z0 + h), 'PANEL');
-          ln(toIso(x0 + hw - 8, 0, z0), toIso(x0 + hw - 8, 0, z0 + h), 'PANEL_DETAIL');
-          ln(toIso(x0 + hw + 8, 0, z0), toIso(x0 + hw + 8, 0, z0 + h), 'PANEL_DETAIL');
-          poly([toIso(x0 + m, 0, z0 + m), toIso(x0 + hw - m, 0, z0 + m), toIso(x0 + hw - m, 0, z0 + h - m), toIso(x0 + m, 0, z0 + h - m)], 'PANEL_DETAIL', true);
-          poly([toIso(x0 + hw + m, 0, z0 + m), toIso(x0 + w - m, 0, z0 + m), toIso(x0 + w - m, 0, z0 + h - m), toIso(x0 + hw + m, 0, z0 + h - m)], 'PANEL_DETAIL', true);
-        } else if (pType === 'fitting' || pType === 'large') {
-          const minD = Math.min(w, h);
-          isoCircle(cx, 0, cz, Math.round(minD * 0.35), 'XZ', 'FRAME');
-          isoCircle(cx, 0, cz, Math.round(minD * 0.22), 'XZ', 'PANEL_DETAIL');
-          isoCircle(cx, 0, cz, Math.round(minD * 0.12), 'XZ', 'FRAME');
-          const rHole = Math.round(minD * 0.285);
-          for (let deg = 0; deg < 360; deg += 45) {
-            const rad = deg * Math.PI / 180;
-            isoCircle(cx + rHole * Math.cos(rad), 0, cz + rHole * Math.sin(rad), 10, 'XZ', 'PANEL_DETAIL', 8);
-          }
-        } else {
-          // Standard pressed panel: use real template geometry
-          const rawT = sideTemplates[w + 'x' + h];
-          if (rawT && rawT.length > 0) {
-            const fm = 75;
-            poly([toIso(x0 + fm, 0, z0 + fm), toIso(x0 + w - fm, 0, z0 + fm), toIso(x0 + w - fm, 0, z0 + h - fm), toIso(x0 + fm, 0, z0 + h - fm)], 'PANEL_DETAIL', true);
-            projectTemplateEntities(rawT, 'XZ', x0, 0, z0, 'PANEL_DETAIL');
+          if (pType === 'flat' || pType === 'flat-1x1') {
+            const m = 25;
+            poly([toIso(x0 + m, y0, z0 + m), toIso(x0 + w - m, y0, z0 + m), toIso(x0 + w - m, y0, z0 + h - m), toIso(x0 + m, y0, z0 + h - m)], 'PANEL_DETAIL', true);
+          } else if (pType === 'flat-half2' || pType === 'flat-0.5x2') {
+            const hw = Math.round(w / 2), m = 20;
+            ln(toIso(x0 + hw, y0, z0), toIso(x0 + hw, y0, z0 + h), 'PANEL');
+            ln(toIso(x0 + hw - 8, y0, z0), toIso(x0 + hw - 8, y0, z0 + h), 'PANEL_DETAIL');
+            ln(toIso(x0 + hw + 8, y0, z0), toIso(x0 + hw + 8, y0, z0 + h), 'PANEL_DETAIL');
+            poly([toIso(x0 + m, y0, z0 + m), toIso(x0 + hw - m, y0, z0 + m), toIso(x0 + hw - m, y0, z0 + h - m), toIso(x0 + m, y0, z0 + h - m)], 'PANEL_DETAIL', true);
+            poly([toIso(x0 + hw + m, y0, z0 + m), toIso(x0 + w - m, y0, z0 + m), toIso(x0 + w - m, y0, z0 + h - m), toIso(x0 + hw + m, y0, z0 + h - m)], 'PANEL_DETAIL', true);
+          } else if (pType === 'fitting' || pType === 'large') {
+            const minD = Math.min(w, h);
+            isoCircle(cx, y0, cz, Math.round(minD * 0.35), 'XZ', 'FRAME');
+            isoCircle(cx, y0, cz, Math.round(minD * 0.22), 'XZ', 'PANEL_DETAIL');
+            isoCircle(cx, y0, cz, Math.round(minD * 0.12), 'XZ', 'FRAME');
+            const rHole = Math.round(minD * 0.285);
+            for (let deg = 0; deg < 360; deg += 45) {
+              const rad = deg * Math.PI / 180;
+              isoCircle(cx + rHole * Math.cos(rad), y0, cz + rHole * Math.sin(rad), 10, 'XZ', 'PANEL_DETAIL', 8);
+            }
           } else {
-            const m = 75;
-            poly([toIso(x0 + m, 0, z0 + m), toIso(x0 + w - m, 0, z0 + m), toIso(x0 + w - m, 0, z0 + h - m), toIso(x0 + m, 0, z0 + h - m)], 'PANEL_DETAIL', true);
-            const rx = (w - 2 * m) * 0.28, rz = (h - 2 * m) * 0.28;
-            poly([toIso(cx, 0, cz + rz), toIso(cx + rx, 0, cz), toIso(cx, 0, cz - rz), toIso(cx - rx, 0, cz)], 'PANEL_DETAIL', true);
-            ln(toIso(x0 + m, 0, z0 + m), toIso(cx - rx, 0, cz), 'PANEL_DETAIL');
-            ln(toIso(x0 + w - m, 0, z0 + m), toIso(cx + rx, 0, cz), 'PANEL_DETAIL');
-            ln(toIso(x0 + w - m, 0, z0 + h - m), toIso(cx + rx, 0, cz), 'PANEL_DETAIL');
-            ln(toIso(x0 + m, 0, z0 + h - m), toIso(cx - rx, 0, cz), 'PANEL_DETAIL');
+            const rawT = sideTemplates[w + 'x' + h];
+            if (rawT && rawT.length > 0) {
+              const fm = 75;
+              poly([toIso(x0 + fm, y0, z0 + fm), toIso(x0 + w - fm, y0, z0 + fm), toIso(x0 + w - fm, y0, z0 + h - fm), toIso(x0 + fm, y0, z0 + h - fm)], 'PANEL_DETAIL', true);
+              projectTemplateEntities(rawT, 'XZ', x0, y0, z0, 'PANEL_DETAIL');
+            } else {
+              const m = 75;
+              poly([toIso(x0 + m, y0, z0 + m), toIso(x0 + w - m, y0, z0 + m), toIso(x0 + w - m, y0, z0 + h - m), toIso(x0 + m, y0, z0 + h - m)], 'PANEL_DETAIL', true);
+              const rx = (w - 2 * m) * 0.28, rz = (h - 2 * m) * 0.28;
+              poly([toIso(cx, y0, cz + rz), toIso(cx + rx, y0, cz), toIso(cx, y0, cz - rz), toIso(cx - rx, y0, cz)], 'PANEL_DETAIL', true);
+              ln(toIso(x0 + m, y0, z0 + m), toIso(cx - rx, y0, cz), 'PANEL_DETAIL');
+              ln(toIso(x0 + w - m, y0, z0 + m), toIso(cx + rx, y0, cz), 'PANEL_DETAIL');
+              ln(toIso(x0 + w - m, y0, z0 + h - m), toIso(cx + rx, y0, cz), 'PANEL_DETAIL');
+              ln(toIso(x0 + m, y0, z0 + h - m), toIso(cx - rx, y0, cz), 'PANEL_DETAIL');
+            }
           }
         }
       }
     }
 
-    // 3. 우측면 패널 (Right Wall: X = totalL)
+    // 3. 우측 노출 패널 (Right-Facing Walls: normal +X, 'R')
     for (let i = 0; i < map.rows.length; i++) {
       const y0 = map.ys[i], w = map.rows[i];
-      for (let k = 0; k < hs.length; k++) {
-        const z0 = zs[k], h = hs[k];
-        const p1 = toIso(totalL, y0, z0);
-        const p2 = toIso(totalL, y0 + w, z0);
-        const p3 = toIso(totalL, y0 + w, z0 + h);
-        const p4 = toIso(totalL, y0, z0 + h);
-        poly([p1, p2, p3, p4], 'PANEL', true);
+      for (let j = 0; j < map.cols.length; j++) {
+        if (!map.has(i, j) || map.has(i, j + 1)) continue;
+        const xWall = map.xs[j + 1];
+        for (let k = 0; k < hs.length; k++) {
+          const z0 = zs[k], h = hs[k];
+          const p1 = toIso(xWall, y0, z0);
+          const p2 = toIso(xWall, y0 + w, z0);
+          const p3 = toIso(xWall, y0 + w, z0 + h);
+          const p4 = toIso(xWall, y0, z0 + h);
+          poly([p1, p2, p3, p4], 'PANEL', true);
 
-        const pType = sidePanels[`side,${k},${i}`] || sidePanels[`right,${k},${i}`] || sidePanels[`side_${k}_${i}`] || sidePanels[`right_${k}_${i}`] || 'std';
-        const cy = y0 + w / 2, cz = z0 + h / 2;
+          const pType = sidePanels[`side,${k},${i}`] || sidePanels[`right,${k},${i}`] || sidePanels[`side_${k}_${i}`] || sidePanels[`right_${k}_${i}`] || 'std';
+          const cy = y0 + w / 2, cz = z0 + h / 2;
 
-        if (pType === 'flat' || pType === 'flat-1x1') {
-          const m = 25;
-          poly([toIso(totalL, y0 + m, z0 + m), toIso(totalL, y0 + w - m, z0 + m), toIso(totalL, y0 + w - m, z0 + h - m), toIso(totalL, y0 + m, z0 + h - m)], 'PANEL_DETAIL', true);
-        } else if (pType === 'flat-half2' || pType === 'flat-0.5x2') {
-          const hw = Math.round(w / 2), m = 20;
-          ln(toIso(totalL, y0 + hw, z0), toIso(totalL, y0 + hw, z0 + h), 'PANEL');
-          ln(toIso(totalL, y0 + hw - 8, z0), toIso(totalL, y0 + hw - 8, z0 + h), 'PANEL_DETAIL');
-          ln(toIso(totalL, y0 + hw + 8, z0), toIso(totalL, y0 + hw + 8, z0 + h), 'PANEL_DETAIL');
-          poly([toIso(totalL, y0 + m, z0 + m), toIso(totalL, y0 + hw - m, z0 + m), toIso(totalL, y0 + hw - m, z0 + h - m), toIso(totalL, y0 + m, z0 + h - m)], 'PANEL_DETAIL', true);
-          poly([toIso(totalL, y0 + hw + m, z0 + m), toIso(totalL, y0 + w - m, z0 + m), toIso(totalL, y0 + w - m, z0 + h - m), toIso(totalL, y0 + hw + m, z0 + h - m)], 'PANEL_DETAIL', true);
-        } else if (pType === 'fitting' || pType === 'large') {
-          const minD = Math.min(w, h);
-          isoCircle(totalL, cy, cz, Math.round(minD * 0.35), 'YZ', 'FRAME');
-          isoCircle(totalL, cy, cz, Math.round(minD * 0.22), 'YZ', 'PANEL_DETAIL');
-          isoCircle(totalL, cy, cz, Math.round(minD * 0.12), 'YZ', 'FRAME');
-          const rHole = Math.round(minD * 0.285);
-          for (let deg = 0; deg < 360; deg += 45) {
-            const rad = deg * Math.PI / 180;
-            isoCircle(totalL, cy + rHole * Math.cos(rad), cz + rHole * Math.sin(rad), 10, 'YZ', 'PANEL_DETAIL', 8);
-          }
-        } else {
-          // Standard pressed panel: use real template geometry
-          const rawT = sideTemplates[w + 'x' + h];
-          if (rawT && rawT.length > 0) {
-            const fm = 75;
-            poly([toIso(totalL, y0 + fm, z0 + fm), toIso(totalL, y0 + w - fm, z0 + fm), toIso(totalL, y0 + w - fm, z0 + h - fm), toIso(totalL, y0 + fm, z0 + h - fm)], 'PANEL_DETAIL', true);
-            projectTemplateEntities(rawT, 'YZ', totalL, y0, z0, 'PANEL_DETAIL');
+          if (pType === 'flat' || pType === 'flat-1x1') {
+            const m = 25;
+            poly([toIso(xWall, y0 + m, z0 + m), toIso(xWall, y0 + w - m, z0 + m), toIso(xWall, y0 + w - m, z0 + h - m), toIso(xWall, y0 + m, z0 + h - m)], 'PANEL_DETAIL', true);
+          } else if (pType === 'flat-half2' || pType === 'flat-0.5x2') {
+            const hw = Math.round(w / 2), m = 20;
+            ln(toIso(xWall, y0 + hw, z0), toIso(xWall, y0 + hw, z0 + h), 'PANEL');
+            ln(toIso(xWall, y0 + hw - 8, z0), toIso(xWall, y0 + hw - 8, z0 + h), 'PANEL_DETAIL');
+            ln(toIso(xWall, y0 + hw + 8, z0), toIso(xWall, y0 + hw + 8, z0 + h), 'PANEL_DETAIL');
+            poly([toIso(xWall, y0 + m, z0 + m), toIso(xWall, y0 + hw - m, z0 + m), toIso(xWall, y0 + hw - m, z0 + h - m), toIso(xWall, y0 + m, z0 + h - m)], 'PANEL_DETAIL', true);
+            poly([toIso(xWall, y0 + hw + m, z0 + m), toIso(xWall, y0 + w - m, z0 + m), toIso(xWall, y0 + w - m, z0 + h - m), toIso(xWall, y0 + hw + m, z0 + h - m)], 'PANEL_DETAIL', true);
+          } else if (pType === 'fitting' || pType === 'large') {
+            const minD = Math.min(w, h);
+            isoCircle(xWall, cy, cz, Math.round(minD * 0.35), 'YZ', 'FRAME');
+            isoCircle(xWall, cy, cz, Math.round(minD * 0.22), 'YZ', 'PANEL_DETAIL');
+            isoCircle(xWall, cy, cz, Math.round(minD * 0.12), 'YZ', 'FRAME');
+            const rHole = Math.round(minD * 0.285);
+            for (let deg = 0; deg < 360; deg += 45) {
+              const rad = deg * Math.PI / 180;
+              isoCircle(xWall, cy + rHole * Math.cos(rad), cz + rHole * Math.sin(rad), 10, 'YZ', 'PANEL_DETAIL', 8);
+            }
           } else {
-            const m = 75;
-            poly([toIso(totalL, y0 + m, z0 + m), toIso(totalL, y0 + w - m, z0 + m), toIso(totalL, y0 + w - m, z0 + h - m), toIso(totalL, y0 + m, z0 + h - m)], 'PANEL_DETAIL', true);
-            const ry = (w - 2 * m) * 0.28, rz = (h - 2 * m) * 0.28;
-            poly([toIso(totalL, cy, cz + rz), toIso(totalL, cy + ry, cz), toIso(totalL, cy, cz - rz), toIso(totalL, cy - ry, cz)], 'PANEL_DETAIL', true);
-            ln(toIso(totalL, y0 + m, z0 + m), toIso(totalL, cy - ry, cz), 'PANEL_DETAIL');
-            ln(toIso(totalL, y0 + w - m, z0 + m), toIso(totalL, cy + ry, cz), 'PANEL_DETAIL');
-            ln(toIso(totalL, y0 + w - m, z0 + h - m), toIso(totalL, cy + ry, cz), 'PANEL_DETAIL');
-            ln(toIso(totalL, y0 + m, z0 + h - m), toIso(totalL, cy - ry, cz), 'PANEL_DETAIL');
+            const rawT = sideTemplates[w + 'x' + h];
+            if (rawT && rawT.length > 0) {
+              const fm = 75;
+              poly([toIso(xWall, y0 + fm, z0 + fm), toIso(xWall, y0 + w - fm, z0 + fm), toIso(xWall, y0 + w - fm, z0 + h - fm), toIso(xWall, y0 + fm, z0 + h - fm)], 'PANEL_DETAIL', true);
+              projectTemplateEntities(rawT, 'YZ', xWall, y0, z0, 'PANEL_DETAIL');
+            } else {
+              const m = 75;
+              poly([toIso(xWall, y0 + m, z0 + m), toIso(xWall, y0 + w - m, z0 + m), toIso(xWall, y0 + w - m, z0 + h - m), toIso(xWall, y0 + m, z0 + h - m)], 'PANEL_DETAIL', true);
+              const ry = (w - 2 * m) * 0.28, rz = (h - 2 * m) * 0.28;
+              poly([toIso(xWall, cy, cz + rz), toIso(xWall, cy + ry, cz), toIso(xWall, cy, cz - rz), toIso(xWall, cy - ry, cz)], 'PANEL_DETAIL', true);
+              ln(toIso(xWall, y0 + m, z0 + m), toIso(xWall, cy - ry, cz), 'PANEL_DETAIL');
+              ln(toIso(xWall, y0 + w - m, z0 + m), toIso(xWall, cy + ry, cz), 'PANEL_DETAIL');
+              ln(toIso(xWall, y0 + w - m, z0 + h - m), toIso(xWall, cy + ry, cz), 'PANEL_DETAIL');
+              ln(toIso(xWall, y0 + m, z0 + h - m), toIso(xWall, cy - ry, cz), 'PANEL_DETAIL');
+            }
           }
         }
       }
@@ -2646,115 +2675,143 @@ canvas.drag{cursor:grabbing}
       const FD = 75; // 측면 벽체 플랜지 돌출 폭 (75mm)
       const FT = 10; // 측면 벽체 플랜지 판재 두께 (10mm)
 
-      // (1) 전면 벽체 수직 플랜지 리브 (Front Wall Vertical Seams: 10mm 두께의 75mm 돌출 리브)
-      for (let j = 1; j < map.cols.length; j++) {
-        const x = map.xs[j];
-        // 플랜지 벽면 안쪽 베이스 라인
-        ln(toIso(x - FT, 0, 0), toIso(x - FT, 0, H), 'PANEL_DETAIL');
-        ln(toIso(x + FT, 0, 0), toIso(x + FT, 0, H), 'PANEL_DETAIL');
-        // 밖으로 75mm 돌출된 플랜지 능선 (10mm 두께 이중선)
-        ln(toIso(x - FT, -FD, 0), toIso(x - FT, -FD, H), 'PANEL');
-        ln(toIso(x + FT, -FD, 0), toIso(x + FT, -FD, H), 'PANEL');
-        ln(toIso(x, -FD, 0), toIso(x, -FD, H), 'FRAME');
-        // 상하단 마감 브라켓
-        ln(toIso(x - FT, 0, 0), toIso(x - FT, -FD, 0), 'FRAME');
-        ln(toIso(x + FT, 0, 0), toIso(x + FT, -FD, 0), 'FRAME');
-        ln(toIso(x - FT, 0, H), toIso(x - FT, -FD, H), 'FRAME');
-        ln(toIso(x + FT, 0, H), toIso(x + FT, -FD, H), 'FRAME');
+      // (1) 전면 노출 벽체 수직 & 수평 & 바닥 플랜지
+      for (let i = 0; i < map.rows.length; i++) {
+        const y0 = map.ys[i];
+        for (let j = 0; j < map.cols.length; j++) {
+          if (!map.has(i, j) || map.has(i - 1, j)) continue;
+          const x0 = map.xs[j], x1 = map.xs[j + 1];
+
+          // 수평 플랜지 리브 (단별)
+          for (let k = 1; k < hs.length; k++) {
+            const z = zs[k];
+            ln(toIso(x0, y0, z - FT), toIso(x1, y0, z - FT), 'PANEL_DETAIL');
+            ln(toIso(x0, y0, z + FT), toIso(x1, y0, z + FT), 'PANEL_DETAIL');
+            ln(toIso(x0, y0 - FD, z - FT), toIso(x1, y0 - FD, z - FT), 'PANEL');
+            ln(toIso(x0, y0 - FD, z + FT), toIso(x1, y0 - FD, z + FT), 'PANEL');
+            ln(toIso(x0, y0 - FD, z), toIso(x1, y0 - FD, z), 'FRAME');
+          }
+
+          // 하부 바닥 플랜지
+          ln(toIso(x0, y0 - FD, 0), toIso(x1, y0 - FD, 0), 'FRAME');
+          ln(toIso(x0, y0 - FD, -FT), toIso(x1, y0 - FD, -FT), 'FRAME');
+
+          // 인접 전면 패널 간 수직 플랜지 리브 (우측 인접 셀도 동일 Y 전면벽인 경우)
+          if (map.has(i, j + 1) && !map.has(i - 1, j + 1)) {
+            const x = x1;
+            ln(toIso(x - FT, y0, 0), toIso(x - FT, y0, H), 'PANEL_DETAIL');
+            ln(toIso(x + FT, y0, 0), toIso(x + FT, y0, H), 'PANEL_DETAIL');
+            ln(toIso(x - FT, y0 - FD, 0), toIso(x - FT, y0 - FD, H), 'PANEL');
+            ln(toIso(x + FT, y0 - FD, 0), toIso(x + FT, y0 - FD, H), 'PANEL');
+            ln(toIso(x, y0 - FD, 0), toIso(x, y0 - FD, H), 'FRAME');
+            ln(toIso(x - FT, y0, 0), toIso(x - FT, y0 - FD, 0), 'FRAME');
+            ln(toIso(x + FT, y0, 0), toIso(x + FT, y0 - FD, 0), 'FRAME');
+            ln(toIso(x - FT, y0, H), toIso(x - FT, y0 - FD, H), 'FRAME');
+            ln(toIso(x + FT, y0, H), toIso(x + FT, y0 - FD, H), 'FRAME');
+          }
+
+          // 좌측 외곽 모서리 (좌측에 인접 패널이 없을 때)
+          if (!map.has(i, j - 1)) {
+            ln(toIso(x0, y0 - FD, 0), toIso(x0, y0 - FD, H), 'FRAME');
+            ln(toIso(x0, y0, 0), toIso(x0, y0 - FD, 0), 'FRAME');
+            ln(toIso(x0, y0, H), toIso(x0, y0 - FD, H), 'FRAME');
+            for (let k = 1; k < hs.length; k++) {
+              ln(toIso(x0, y0, zs[k]), toIso(x0, y0 - FD, zs[k]), 'FRAME');
+            }
+          }
+        }
       }
 
-      // (2) 전면 벽체 수평 플랜지 리브 (Front Wall Horizontal Seams: 10mm 두께의 75mm 돌출 리브)
-      for (let k = 1; k < hs.length; k++) {
-        const z = zs[k];
-        ln(toIso(0, 0, z - FT), toIso(totalL, 0, z - FT), 'PANEL_DETAIL');
-        ln(toIso(0, 0, z + FT), toIso(totalL, 0, z + FT), 'PANEL_DETAIL');
-        ln(toIso(0, -FD, z - FT), toIso(totalL, -FD, z - FT), 'PANEL');
-        ln(toIso(0, -FD, z + FT), toIso(totalL, -FD, z + FT), 'PANEL');
-        ln(toIso(0, -FD, z), toIso(totalL, -FD, z), 'FRAME');
-        ln(toIso(0, 0, z - FT), toIso(0, -FD, z - FT), 'FRAME');
-        ln(toIso(0, 0, z + FT), toIso(0, -FD, z + FT), 'FRAME');
+      // (2) 우측 노출 벽체 수직 & 수평 & 바닥 플랜지
+      for (let i = 0; i < map.rows.length; i++) {
+        const y0 = map.ys[i], y1 = map.ys[i + 1];
+        for (let j = 0; j < map.cols.length; j++) {
+          if (!map.has(i, j) || map.has(i, j + 1)) continue;
+          const xWall = map.xs[j + 1];
+
+          // 수평 플랜지 리브 (단별)
+          for (let k = 1; k < hs.length; k++) {
+            const z = zs[k];
+            ln(toIso(xWall, y0, z - FT), toIso(xWall, y1, z - FT), 'PANEL_DETAIL');
+            ln(toIso(xWall, y0, z + FT), toIso(xWall, y1, z + FT), 'PANEL_DETAIL');
+            ln(toIso(xWall + FD, y0, z - FT), toIso(xWall + FD, y1, z - FT), 'PANEL');
+            ln(toIso(xWall + FD, y0, z + FT), toIso(xWall + FD, y1, z + FT), 'PANEL');
+            ln(toIso(xWall + FD, y0, z), toIso(xWall + FD, y1, z), 'FRAME');
+          }
+
+          // 하부 바닥 플랜지
+          ln(toIso(xWall + FD, y0, 0), toIso(xWall + FD, y1, 0), 'FRAME');
+          ln(toIso(xWall + FD, y0, -FT), toIso(xWall + FD, y1, -FT), 'FRAME');
+
+          // 인접 우측 패널 간 수직 플랜지 리브 (상부 인접 셀도 동일 X 우측벽인 경우)
+          if (map.has(i + 1, j) && !map.has(i + 1, j + 1)) {
+            const y = y1;
+            ln(toIso(xWall, y - FT, 0), toIso(xWall, y - FT, H), 'PANEL_DETAIL');
+            ln(toIso(xWall, y + FT, 0), toIso(xWall, y + FT, H), 'PANEL_DETAIL');
+            ln(toIso(xWall + FD, y - FT, 0), toIso(xWall + FD, y - FT, H), 'PANEL');
+            ln(toIso(xWall + FD, y + FT, 0), toIso(xWall + FD, y + FT, H), 'PANEL');
+            ln(toIso(xWall + FD, y, 0), toIso(xWall + FD, y, H), 'FRAME');
+            ln(toIso(xWall, y - FT, 0), toIso(xWall + FD, y - FT, 0), 'FRAME');
+            ln(toIso(xWall, y + FT, 0), toIso(xWall + FD, y + FT, 0), 'FRAME');
+            ln(toIso(xWall, y - FT, H), toIso(xWall + FD, y - FT, H), 'FRAME');
+            ln(toIso(xWall, y + FT, H), toIso(xWall + FD, y + FT, H), 'FRAME');
+          }
+
+          // 후측 외곽 모서리 (후측에 인접 패널이 없을 때)
+          if (!map.has(i + 1, j)) {
+            ln(toIso(xWall + FD, y1, 0), toIso(xWall + FD, y1, H), 'FRAME');
+            ln(toIso(xWall, y1, 0), toIso(xWall + FD, y1, 0), 'FRAME');
+            ln(toIso(xWall, y1, H), toIso(xWall + FD, y1, H), 'FRAME');
+            for (let k = 1; k < hs.length; k++) {
+              ln(toIso(xWall, y1, zs[k]), toIso(xWall + FD, y1, zs[k]), 'FRAME');
+            }
+          }
+        }
       }
 
-      // (3) 우측 벽체 수직 플랜지 리브 (Right Wall Vertical Seams: 10mm 두께의 75mm 돌출 리브)
-      for (let i = 1; i < map.rows.length; i++) {
-        const y = map.ys[i];
-        ln(toIso(totalL, y - FT, 0), toIso(totalL, y - FT, H), 'PANEL_DETAIL');
-        ln(toIso(totalL, y + FT, 0), toIso(totalL, y + FT, H), 'PANEL_DETAIL');
-        ln(toIso(totalL + FD, y - FT, 0), toIso(totalL + FD, y - FT, H), 'PANEL');
-        ln(toIso(totalL + FD, y + FT, 0), toIso(totalL + FD, y + FT, H), 'PANEL');
-        ln(toIso(totalL + FD, y, 0), toIso(totalL + FD, y, H), 'FRAME');
-        ln(toIso(totalL, y - FT, 0), toIso(totalL + FD, y - FT, 0), 'FRAME');
-        ln(toIso(totalL, y + FT, 0), toIso(totalL + FD, y + FT, 0), 'FRAME');
-        ln(toIso(totalL, y - FT, H), toIso(totalL + FD, y - FT, H), 'FRAME');
-        ln(toIso(totalL, y + FT, H), toIso(totalL + FD, y + FT, H), 'FRAME');
+      // (3) 외곽 볼록 코너 플랜지 (Convex Outer Corners: 전면벽과 우측벽이 만나는 모서리)
+      for (let i = 0; i < map.rows.length; i++) {
+        for (let j = 0; j < map.cols.length; j++) {
+          if (!map.has(i, j)) continue;
+          if (!map.has(i - 1, j) && !map.has(i, j + 1)) {
+            const xC = map.xs[j + 1], yC = map.ys[i];
+            // 전면벽 코너 플랜지 (좌측으로 -65px 돌출)
+            ln(toIso(xC, yC - FD, 0), toIso(xC, yC - FD, H), 'FRAME');
+            ln(toIso(xC - FT, yC - FD, 0), toIso(xC - FT, yC - FD, H), 'PANEL_DETAIL');
+            // 중심 모서리선
+            ln(toIso(xC, yC, 0), toIso(xC, yC, H), 'PANEL');
+            // 우측벽 코너 플랜지 (우측으로 +65px 돌출)
+            ln(toIso(xC + FD, yC, 0), toIso(xC + FD, yC, H), 'FRAME');
+            ln(toIso(xC + FD, yC + FT, 0), toIso(xC + FD, yC + FT, H), 'PANEL_DETAIL');
+            // 코너 상하단 및 단별 브라켓
+            ln(toIso(xC, yC - FD, 0), toIso(xC, yC, 0), 'FRAME');
+            ln(toIso(xC, yC, 0), toIso(xC + FD, yC, 0), 'FRAME');
+            ln(toIso(xC, yC - FD, H), toIso(xC, yC, H), 'FRAME');
+            ln(toIso(xC, yC, H), toIso(xC + FD, yC, H), 'FRAME');
+            ln(toIso(xC, yC - FD, 0), toIso(xC + FD, yC, 0), 'PANEL');
+            ln(toIso(xC, yC - FD, H), toIso(xC + FD, yC, H), 'PANEL');
+            ln(toIso(xC, yC - FD, -FT), toIso(xC + FD, yC, -FT), 'FRAME');
+            for (let k = 1; k < hs.length; k++) {
+              const z = zs[k];
+              ln(toIso(xC, yC - FD, z), toIso(xC, yC, z), 'FRAME');
+              ln(toIso(xC, yC, z), toIso(xC + FD, yC, z), 'FRAME');
+              ln(toIso(xC, yC - FD, z), toIso(xC + FD, yC, z), 'PANEL');
+            }
+          }
+        }
       }
 
-      // (4) 우측 벽체 수평 플랜지 리브 (Right Wall Horizontal Seams: 10mm 두께의 75mm 돌출 리브)
-      for (let k = 1; k < hs.length; k++) {
-        const z = zs[k];
-        ln(toIso(totalL, 0, z - FT), toIso(totalL, totalW, z - FT), 'PANEL_DETAIL');
-        ln(toIso(totalL, 0, z + FT), toIso(totalL, totalW, z + FT), 'PANEL_DETAIL');
-        ln(toIso(totalL + FD, 0, z - FT), toIso(totalL + FD, totalW, z - FT), 'PANEL');
-        ln(toIso(totalL + FD, 0, z + FT), toIso(totalL + FD, totalW, z + FT), 'PANEL');
-        ln(toIso(totalL + FD, 0, z), toIso(totalL + FD, totalW, z), 'FRAME');
-        ln(toIso(totalL, totalW, z - FT), toIso(totalL + FD, totalW, z - FT), 'FRAME');
-        ln(toIso(totalL, totalW, z + FT), toIso(totalL + FD, totalW, z + FT), 'FRAME');
+      // (4) 단차 안쪽 모서리선 (Concave Re-entrant Corners: 벽이 안쪽으로 꺾이는 수직선)
+      for (let i = 0; i < map.rows.length; i++) {
+        for (let j = 0; j < map.cols.length; j++) {
+          if (!map.has(i, j)) continue;
+          // 셀 (i, j)의 우측에 셀이 없고, 그 앞-우측(i-1, j+1)에 셀이 있는 경우
+          if (!map.has(i, j + 1) && map.has(i - 1, j + 1)) {
+            const xC = map.xs[j + 1], yC = map.ys[i];
+            ln(toIso(xC, yC, 0), toIso(xC, yC, H), 'PANEL');
+          }
+        }
       }
-
-      // (5) 수직 외곽 코너 75mm 플랜지 리브 (Vertical Corner Flanges: 10mm 두께 & 75mm 돌출 완전 가시화)
-      // 전면-우측면 코너 (X = totalL, Y = 0)
-      // 전면벽 코너 플랜지 (좌측으로 -65px 돌출되는 외곽선 및 10mm 판두께선)
-      ln(toIso(totalL, -FD, 0), toIso(totalL, -FD, H), 'FRAME');
-      ln(toIso(totalL - FT, -FD, 0), toIso(totalL - FT, -FD, H), 'PANEL_DETAIL');
-      // 중심 모서리선
-      ln(toIso(totalL, 0, 0), toIso(totalL, 0, H), 'PANEL');
-      // 우측벽 코너 플랜지 (우측으로 +65px 돌출되는 외곽선 및 10mm 판두께선)
-      ln(toIso(totalL + FD, 0, 0), toIso(totalL + FD, 0, H), 'FRAME');
-      ln(toIso(totalL + FD, FT, 0), toIso(totalL + FD, FT, H), 'PANEL_DETAIL');
-      // 코너 상하단 및 단별 체결 브라켓
-      ln(toIso(totalL, -FD, 0), toIso(totalL, 0, 0), 'FRAME');
-      ln(toIso(totalL, 0, 0), toIso(totalL + FD, 0, 0), 'FRAME');
-      ln(toIso(totalL, -FD, H), toIso(totalL, 0, H), 'FRAME');
-      ln(toIso(totalL, 0, H), toIso(totalL + FD, 0, H), 'FRAME');
-      ln(toIso(totalL, -FD, 0), toIso(totalL + FD, 0, 0), 'PANEL');
-      ln(toIso(totalL, -FD, H), toIso(totalL + FD, 0, H), 'PANEL');
-      for (let k = 1; k < hs.length; k++) {
-        const z = zs[k];
-        ln(toIso(totalL, -FD, z), toIso(totalL, 0, z), 'FRAME');
-        ln(toIso(totalL, 0, z), toIso(totalL + FD, 0, z), 'FRAME');
-        ln(toIso(totalL, -FD, z), toIso(totalL + FD, 0, z), 'PANEL');
-      }
-
-      // 좌측 모서리 (X = 0, Y = 0)
-      ln(toIso(0, -FD, 0), toIso(0, -FD, H), 'FRAME');
-      ln(toIso(0, 0, 0), toIso(0, -FD, 0), 'FRAME');
-      ln(toIso(0, 0, H), toIso(0, -FD, H), 'FRAME');
-      for (let k = 1; k < hs.length; k++) {
-        const z = zs[k];
-        ln(toIso(0, 0, z), toIso(0, -FD, z), 'FRAME');
-      }
-
-      // 후측-우측 모서리 (X = totalL, Y = totalW)
-      ln(toIso(totalL + FD, totalW, 0), toIso(totalL + FD, totalW, H), 'FRAME');
-      ln(toIso(totalL, totalW, 0), toIso(totalL + FD, totalW, 0), 'FRAME');
-      ln(toIso(totalL, totalW, H), toIso(totalL + FD, totalW, H), 'FRAME');
-      for (let k = 1; k < hs.length; k++) {
-        const z = zs[k];
-        ln(toIso(totalL, totalW, z), toIso(totalL + FD, totalW, z), 'FRAME');
-      }
-
-      // (6) 천정판넬 플랜지 (내향 플랜지: 길이 60mm, 두께 6mm)
-      // 천정판넬은 플랜지가 안쪽(하향)으로 들어가므로 상부 외부(Z=H 평면 위)로 돌출되지 않고 매끄러운 평면 유지
-
-      // (7) 하부 바닥 75mm 플랜지 (Bottom Flange at Z = 0: 75mm 돌출 & 10mm 두께)
-      ln(toIso(0, -FD, 0), toIso(totalL, -FD, 0), 'FRAME');
-      ln(toIso(0, -FD, -FT), toIso(totalL, -FD, -FT), 'FRAME');
-      ln(toIso(0, 0, 0), toIso(0, -FD, 0), 'FRAME');
-      ln(toIso(totalL + FD, 0, 0), toIso(totalL + FD, totalW, 0), 'FRAME');
-      ln(toIso(totalL + FD, 0, -FT), toIso(totalL + FD, totalW, -FT), 'FRAME');
-      ln(toIso(totalL, totalW, 0), toIso(totalL + FD, totalW, 0), 'FRAME');
-      ln(toIso(totalL, -FD, 0), toIso(totalL + FD, 0, 0), 'FRAME');
-      ln(toIso(totalL, -FD, -FT), toIso(totalL + FD, 0, -FT), 'FRAME');
     }
 
     // 5. 맨홀 및 환기구 (Manhole & Air Vent on Roof)
@@ -2879,14 +2936,20 @@ canvas.drag{cursor:grabbing}
     });
 
     // 7. 외부 코너 및 결속 보강 앵글
-    ln(toIso(totalL, 0, -th), toIso(totalL, 0, H), 'FRAME');
-    for (let j = 1; j < map.cols.length; j++) {
-      const vx = map.xs[j];
-      ln(toIso(vx, 0, 0), toIso(vx, 0, H), 'REINF');
-    }
-    for (let i = 1; i < map.rows.length; i++) {
-      const vy = map.ys[i];
-      ln(toIso(totalL, vy, 0), toIso(totalL, vy, H), 'REINF');
+    for (let i = 0; i < map.rows.length; i++) {
+      const y0 = map.ys[i];
+      for (let j = 0; j < map.cols.length; j++) {
+        if (!map.has(i, j)) continue;
+        if (!map.has(i - 1, j)) {
+          ln(toIso(map.xs[j], y0, 0), toIso(map.xs[j], y0, H), 'REINF');
+          ln(toIso(map.xs[j + 1], y0, 0), toIso(map.xs[j + 1], y0, H), 'REINF');
+        }
+        if (!map.has(i, j + 1)) {
+          const xWall = map.xs[j + 1];
+          ln(toIso(xWall, map.ys[i], 0), toIso(xWall, map.ys[i], H), 'REINF');
+          ln(toIso(xWall, map.ys[i + 1], 0), toIso(xWall, map.ys[i + 1], H), 'REINF');
+        }
+      }
     }
 
     // 8. 배관 노즐 (Nozzles)
@@ -2900,21 +2963,29 @@ canvas.drag{cursor:grabbing}
         if (n.face === 'front') {
           const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
           const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + (n.offset || 0);
+          let frontY = 0;
+          for (let r = 0; r < map.rows.length; r++) {
+            if (map.has(r, colIdx) && !map.has(r - 1, colIdx)) { frontY = map.ys[r]; break; }
+          }
           const stubLen = 140;
-          ln(toIso(cx, 0, elev), toIso(cx, -stubLen, elev), 'FRAME');
-          isoCircle(cx, -stubLen, elev, spec.rf, 'XZ', 'FRAME');
-          isoCircle(cx, -stubLen, elev, spec.r, 'XZ', 'FRAME');
-          const pStart = toIso(cx, -stubLen, elev);
+          ln(toIso(cx, frontY, elev), toIso(cx, frontY - stubLen, elev), 'FRAME');
+          isoCircle(cx, frontY - stubLen, elev, spec.rf, 'XZ', 'FRAME');
+          isoCircle(cx, frontY - stubLen, elev, spec.r, 'XZ', 'FRAME');
+          const pStart = toIso(cx, frontY - stubLen, elev);
           const pEnd = [pStart[0] - Math.round(textH * 3.5), pStart[1] + Math.round(textH * 1.8)];
           drawLeader(ents, pStart, [pEnd[0] + textH * 1.5, pEnd[1]], pEnd, [markLabel, `(EL.+${elev})`], textH * 0.85, 'right', 'DIM');
         } else if (n.face === 'right') {
           const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
           const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2 + (n.offset || 0);
+          let rightX = totalL;
+          for (let c = map.cols.length - 1; c >= 0; c--) {
+            if (map.has(rowIdx, c) && !map.has(rowIdx, c + 1)) { rightX = map.xs[c + 1]; break; }
+          }
           const stubLen = 140;
-          ln(toIso(totalL, cy, elev), toIso(totalL + stubLen, cy, elev), 'FRAME');
-          isoCircle(totalL + stubLen, cy, elev, spec.rf, 'YZ', 'FRAME');
-          isoCircle(totalL + stubLen, cy, elev, spec.r, 'YZ', 'FRAME');
-          const pStart = toIso(totalL + stubLen, cy, elev);
+          ln(toIso(rightX, cy, elev), toIso(rightX + stubLen, cy, elev), 'FRAME');
+          isoCircle(rightX + stubLen, cy, elev, spec.rf, 'YZ', 'FRAME');
+          isoCircle(rightX + stubLen, cy, elev, spec.r, 'YZ', 'FRAME');
+          const pStart = toIso(rightX + stubLen, cy, elev);
           const pEnd = [pStart[0] + Math.round(textH * 3.5), pStart[1] + Math.round(textH * 1.8)];
           drawLeader(ents, pStart, [pEnd[0] - textH * 1.5, pEnd[1]], pEnd, [markLabel, `(EL.+${elev})`], textH * 0.85, 'left', 'DIM');
         } else if (n.face === 'top') {
