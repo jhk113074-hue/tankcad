@@ -1564,6 +1564,8 @@
           // Standard pressed panel: use real template geometry
           const rawT = sideTemplates[w + 'x' + h];
           if (rawT && rawT.length > 0) {
+            const fm = 35;
+            poly([toIso(x0 + fm, 0, z0 + fm), toIso(x0 + w - fm, 0, z0 + fm), toIso(x0 + w - fm, 0, z0 + h - fm), toIso(x0 + fm, 0, z0 + h - fm)], 'PANEL_DETAIL', true);
             projectTemplateEntities(rawT, 'XZ', x0, 0, z0, 'PANEL_DETAIL');
           } else {
             const m = 40;
@@ -1617,6 +1619,8 @@
           // Standard pressed panel: use real template geometry
           const rawT = sideTemplates[w + 'x' + h];
           if (rawT && rawT.length > 0) {
+            const fm = 35;
+            poly([toIso(totalL, y0 + fm, z0 + fm), toIso(totalL, y0 + w - fm, z0 + fm), toIso(totalL, y0 + w - fm, z0 + h - fm), toIso(totalL, y0 + fm, z0 + h - fm)], 'PANEL_DETAIL', true);
             projectTemplateEntities(rawT, 'YZ', totalL, y0, z0, 'PANEL_DETAIL');
           } else {
             const m = 40;
@@ -1649,6 +1653,8 @@
         // Project CeilLT roof template geometry
         const rawT = ceilTemplates[w + 'x' + h];
         if (rawT && rawT.length > 0) {
+          const fm = 35;
+          poly([toIso(x0 + fm, y0 + fm, H), toIso(x0 + w - fm, y0 + fm, H), toIso(x0 + w - fm, y0 + h - fm, H), toIso(x0 + fm, y0 + h - fm, H)], 'PANEL_DETAIL', true);
           projectTemplateEntities(rawT, 'XY', x0, y0, H, 'PANEL_DETAIL');
         } else {
           const m = 35;
@@ -1657,6 +1663,105 @@
           ln(toIso(x0 + w - m, y0 + m, H), toIso(x0 + m, y0 + h - m, H), 'PANEL_DETAIL');
         }
       }
+    }
+
+    // 4-B. SMC 외부 돌출 플랜지 리브 및 상부 테두리 코니스 (SMC External Flange Ribs & Cornice)
+    if (mat === 'SMC') {
+      const FD = 45; // 플랜지 돌출 깊이 (45mm)
+      const FW = 18; // 플랜지 반폭 (총 36mm 맞댐 플랜지)
+
+      // (1) 전면 벽체 수직 플랜지 리브 (Front Wall Vertical Seams)
+      for (let j = 1; j < map.cols.length; j++) {
+        const x = map.xs[j];
+        // 플랜지 베이스 이중선
+        ln(toIso(x - FW, 0, 0), toIso(x - FW, 0, H), 'PANEL_DETAIL');
+        ln(toIso(x + FW, 0, 0), toIso(x + FW, 0, H), 'PANEL_DETAIL');
+        // 전면 돌출 플랜지 능선 (Ridge)
+        ln(toIso(x, -FD, 0), toIso(x, -FD, H), 'PANEL');
+        // 상하단 마감선
+        ln(toIso(x, 0, 0), toIso(x, -FD, 0), 'FRAME');
+        ln(toIso(x, 0, H), toIso(x, -FD, H), 'FRAME');
+      }
+
+      // (2) 전면 벽체 수평 플랜지 리브 (Front Wall Horizontal Seams)
+      for (let k = 1; k < hs.length; k++) {
+        const z = zs[k];
+        ln(toIso(0, 0, z - FW), toIso(totalL, 0, z - FW), 'PANEL_DETAIL');
+        ln(toIso(0, 0, z + FW), toIso(totalL, 0, z + FW), 'PANEL_DETAIL');
+        ln(toIso(0, -FD, z), toIso(totalL, -FD, z), 'PANEL');
+        ln(toIso(0, 0, z), toIso(0, -FD, z), 'FRAME');
+      }
+
+      // (3) 우측 벽체 수직 플랜지 리브 (Right Wall Vertical Seams)
+      for (let i = 1; i < map.rows.length; i++) {
+        const y = map.ys[i];
+        ln(toIso(totalL, y - FW, 0), toIso(totalL, y - FW, H), 'PANEL_DETAIL');
+        ln(toIso(totalL, y + FW, 0), toIso(totalL, y + FW, H), 'PANEL_DETAIL');
+        ln(toIso(totalL + FD, y, 0), toIso(totalL + FD, y, H), 'PANEL');
+        ln(toIso(totalL, y, 0), toIso(totalL + FD, y, 0), 'FRAME');
+        ln(toIso(totalL, y, H), toIso(totalL + FD, y, H), 'FRAME');
+      }
+
+      // (4) 우측 벽체 수평 플랜지 리브 (Right Wall Horizontal Seams)
+      for (let k = 1; k < hs.length; k++) {
+        const z = zs[k];
+        ln(toIso(totalL, 0, z - FW), toIso(totalL, totalW, z - FW), 'PANEL_DETAIL');
+        ln(toIso(totalL, 0, z + FW), toIso(totalL, totalW, z + FW), 'PANEL_DETAIL');
+        ln(toIso(totalL + FD, 0, z), toIso(totalL + FD, totalW, z), 'PANEL');
+        ln(toIso(totalL, totalW, z), toIso(totalL + FD, totalW, z), 'FRAME');
+      }
+
+      // (5) 전면-우측면 수직 외곽 코너 플랜지 (Corner Flange Rib at X=totalL, Y=0)
+      ln(toIso(totalL + FD, -FD, 0), toIso(totalL + FD, -FD, H), 'FRAME');
+      ln(toIso(totalL, 0, 0), toIso(totalL + FD, -FD, 0), 'FRAME');
+      ln(toIso(totalL, 0, H), toIso(totalL + FD, -FD, H), 'FRAME');
+      ln(toIso(totalL, -FD, 0), toIso(totalL + FD, -FD, 0), 'FRAME');
+      ln(toIso(totalL + FD, 0, 0), toIso(totalL + FD, -FD, 0), 'FRAME');
+      ln(toIso(totalL, -FD, H), toIso(totalL + FD, -FD, H), 'FRAME');
+      ln(toIso(totalL + FD, 0, H), toIso(totalL + FD, -FD, H), 'FRAME');
+      for (let k = 1; k < hs.length; k++) {
+        const z = zs[k];
+        ln(toIso(totalL, -FD, z), toIso(totalL + FD, -FD, z), 'FRAME');
+        ln(toIso(totalL + FD, 0, z), toIso(totalL + FD, -FD, z), 'FRAME');
+      }
+
+      // (6) 상부 지붕 테두리 돌출 플랜지 코니스 (Top Perimeter Flange at Z = H)
+      // 전면 상단 돌출
+      ln(toIso(0, -FD, H), toIso(totalL + FD, -FD, H), 'FRAME');
+      ln(toIso(0, -FD, H + 30), toIso(totalL + FD, -FD, H + 30), 'FRAME');
+      ln(toIso(0, 0, H + 30), toIso(totalL, 0, H + 30), 'PANEL_DETAIL');
+      ln(toIso(0, -FD, H), toIso(0, -FD, H + 30), 'FRAME');
+      ln(toIso(0, 0, H), toIso(0, 0, H + 30), 'FRAME');
+      // 우측 상단 돌출
+      ln(toIso(totalL + FD, -FD, H), toIso(totalL + FD, totalW, H), 'FRAME');
+      ln(toIso(totalL + FD, -FD, H + 30), toIso(totalL + FD, totalW, H + 30), 'FRAME');
+      ln(toIso(totalL, 0, H + 30), toIso(totalL, totalW, H + 30), 'PANEL_DETAIL');
+      ln(toIso(totalL + FD, totalW, H), toIso(totalL + FD, totalW, H + 30), 'FRAME');
+      ln(toIso(totalL, totalW, H), toIso(totalL, totalW, H + 30), 'FRAME');
+      // 코너 수직선
+      ln(toIso(totalL + FD, -FD, H), toIso(totalL + FD, -FD, H + 30), 'FRAME');
+
+      // (7) 상부 지붕 판넬 간 플랜지 리브 (Roof Seam Ribs at Z = H)
+      for (let j = 1; j < map.cols.length; j++) {
+        const x = map.xs[j];
+        ln(toIso(x - FW, 0, H), toIso(x - FW, totalW, H), 'PANEL_DETAIL');
+        ln(toIso(x + FW, 0, H), toIso(x + FW, totalW, H), 'PANEL_DETAIL');
+        ln(toIso(x, 0, H + 25), toIso(x, totalW, H + 25), 'FRAME');
+        ln(toIso(x, 0, H), toIso(x, 0, H + 25), 'FRAME');
+      }
+      for (let i = 1; i < map.rows.length; i++) {
+        const y = map.ys[i];
+        ln(toIso(0, y - FW, H), toIso(totalL, y - FW, H), 'PANEL_DETAIL');
+        ln(toIso(0, y + FW, H), toIso(totalL, y + FW, H), 'PANEL_DETAIL');
+        ln(toIso(0, y, H + 25), toIso(totalL, y, H + 25), 'FRAME');
+        ln(toIso(totalL, y, H), toIso(totalL, y, H + 25), 'FRAME');
+      }
+
+      // (8) 하부 바닥 플랜지 (Bottom Flange at Z = 0)
+      ln(toIso(0, -FD, 0), toIso(totalL, -FD, 0), 'FRAME');
+      ln(toIso(0, 0, 0), toIso(0, -FD, 0), 'FRAME');
+      ln(toIso(totalL + FD, 0, 0), toIso(totalL + FD, totalW, 0), 'FRAME');
+      ln(toIso(totalL, totalW, 0), toIso(totalL + FD, totalW, 0), 'FRAME');
     }
 
     // 5. 맨홀 및 환기구 (Manhole & Air Vent on Roof)
