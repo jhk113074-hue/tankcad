@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.2] - 2026-10-01
+
+### Fixed (3D ISOMETRIC 렌더링 화면 블랙스크린 / NaN 좌표 오류 긴급 패치)
+- **전면 노출 벽체 3D 투영 좌표 인자 누락 결함 수정**:
+  - `web/tank.js`의 전면 벽체 렌더링 루프에서 `toIso(x0 + w, y0 + h)`와 `toIso(x0, y0 + h)`에 $Z$축 좌표(`z0 + h`)가 누락되어 $Z$가 `undefined`로 전달되던 오타 수정.
+  - $Z$ 누락으로 인해 $Y_{iso}$ 좌표가 `NaN`으로 계산되어 캔버스 바운딩 박스(Bounding Box)와 자동 줌(Zoom Scale) 계산이 `NaN`으로 붕괴하여 화면에 아무 도면도 나오지 않던(검은 화면) 문제 완벽 해결.
+- **5뷰 종합 조립도(Assembly Sheet) 뷰 배치 안전성 강화**:
+  - `sheetKind` 미지정 또는 기본 호출 시에도 안전하게 조립도 5개 뷰 영역 크기를 체크하여 `NaN`이 발생하지 않도록 방어 코드 보강.
+
+---
+
 ## [1.5.1] - 2026-10-01
 
 ### Fixed & Enhanced (평면도 패널 편집 시 3D ISOMETRIC 측면 및 벽체 동적 연동 구현)

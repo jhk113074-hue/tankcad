@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.1</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.2</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2536,8 +2536,8 @@ canvas.drag{cursor:grabbing}
           const z0 = zs[k], h = hs[k];
           const p1 = toIso(x0, y0, z0);
           const p2 = toIso(x0 + w, y0, z0);
-          const p3 = toIso(x0 + w, y0 + h);
-          const p4 = toIso(x0, y0 + h);
+          const p3 = toIso(x0 + w, y0, z0 + h);
+          const p4 = toIso(x0, y0, z0 + h);
           poly([p1, p2, p3, p4], 'PANEL', true);
 
           const pType = sidePanels[`front,${k},${j}`] || sidePanels[`front_${k}_${j}`] || sidePanels[`front,${j},${k}`] || sidePanels[`front_${j}_${k}`] || 'std';
@@ -3387,7 +3387,7 @@ canvas.drag{cursor:grabbing}
     const totalL = mmap.length, totalW = mmap.width;
 
     // 1. 축척(Scale) 결정 (수동 선택값 우선, 없으면 자동 계산)
-    const isAsmSheet = (opt.sheetKind === 'asm');
+    const isAsmSheet = (!opt.sheetKind || opt.sheetKind === 'asm');
     const N = Number(opt.userScale) || pickScale(totalL, totalW, H, isAsmSheet);
     opt._N = N;
     const P = v => v * N;   // 종이 mm → 모델 mm
@@ -3763,7 +3763,7 @@ canvas.drag{cursor:grabbing}
     const row1_h = (EXTC + totalW + dim_bottom_1) / N + TITLE_H;
     const row2_h = front ? ((H + 100 - GRD + dim_bottom_1) / N + TITLE_H) : 0;
 
-    const isAsm5 = (opt.sheetKind === 'asm');
+    const isAsm5 = (!opt.sheetKind || opt.sheetKind === 'asm');
     const areaW = tx0 - x0; // 약 600mm
     const areaH = y1 - y0; // 약 564mm
 
@@ -3858,25 +3858,27 @@ canvas.drag{cursor:grabbing}
       drawViewTitleBubble(col2_tank_cx, row2_title_y, 1, 4, '우  측  면  도');
 
       // 5. 등각 조감도 (View 5: 3D ISOMETRIC VIEW) 배치
-      const iso = buildIsometric(opt, templates, sideT);
-      const b_iso = bb(iso.ents);
-      const isoW_mm = (b_iso[2] - b_iso[0]) / N;
-      const isoH_mm = (b_iso[3] - b_iso[1]) / N;
+      if (isAsm5 && col3_avail_w) {
+        const iso = buildIsometric(opt, templates, sideT);
+        const b_iso = bb(iso.ents);
+        const isoW_mm = (b_iso[2] - b_iso[0]) / N;
+        const isoH_mm = (b_iso[3] - b_iso[1]) / N;
 
-      const iso_avail_h = Math.max(120, (row1_tank_cy + totalW / (2 * N)) - (row2_title_y + 12));
-      const isoFitScale = Math.min((col3_avail_w * 0.90) / isoW_mm, (iso_avail_h * 0.85) / isoH_mm);
+        const iso_avail_h = Math.max(120, (row1_tank_cy + totalW / (2 * N)) - (row2_title_y + 12));
+        const isoFitScale = Math.min((col3_avail_w * 0.90) / isoW_mm, (iso_avail_h * 0.85) / isoH_mm);
 
-      const iso_cy = (row1_tank_cy + row2_ground_y) / 2 + 10;
-      const isoDx = P(col3_cx) - ((b_iso[0] + b_iso[2]) / 2) * isoFitScale;
-      const isoDy = P(iso_cy) - ((b_iso[1] + b_iso[3]) / 2) * isoFitScale;
+        const iso_cy = (row1_tank_cy + row2_ground_y) / 2 + 10;
+        const isoDx = P(col3_cx) - ((b_iso[0] + b_iso[2]) / 2) * isoFitScale;
+        const isoDy = P(iso_cy) - ((b_iso[1] + b_iso[3]) / 2) * isoFitScale;
 
-      iso.ents.forEach(e => {
-        if (e.t === 'line') ents.push({ ...e, a: [e.a[0] * isoFitScale + isoDx, e.a[1] * isoFitScale + isoDy], b: [e.b[0] * isoFitScale + isoDx, e.b[1] * isoFitScale + isoDy] });
-        else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] * isoFitScale + isoDx, e.c[1] * isoFitScale + isoDy], r: e.r * isoFitScale });
-        else ents.push({ ...e, p: [e.p[0] * isoFitScale + isoDx, e.p[1] * isoFitScale + isoDy], h: e.h * isoFitScale });
-      });
+        iso.ents.forEach(e => {
+          if (e.t === 'line') ents.push({ ...e, a: [e.a[0] * isoFitScale + isoDx, e.a[1] * isoFitScale + isoDy], b: [e.b[0] * isoFitScale + isoDx, e.b[1] * isoFitScale + isoDy] });
+          else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] * isoFitScale + isoDx, e.c[1] * isoFitScale + isoDy], r: e.r * isoFitScale });
+          else ents.push({ ...e, p: [e.p[0] * isoFitScale + isoDx, e.p[1] * isoFitScale + isoDy], h: e.h * isoFitScale });
+        });
 
-      drawViewTitleBubble(col3_cx, row2_title_y, 1, 5, '등  각  조  감  도');
+        drawViewTitleBubble(col3_cx, row2_title_y, 1, 5, '등  각  조  감  도');
+      }
       elev = true;
     }
     const blocks = Object.assign({}, plan.blocks, (front && front.blocks), (side && side.blocks));
