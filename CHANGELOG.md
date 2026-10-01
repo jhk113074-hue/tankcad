@@ -5,6 +5,24 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.9] - 2026-10-02
+
+### Added & Enhanced (최외각 첫 번째/마지막 기초패드 및 일반 기초패드 규격 개별 설정 인터페이스 구현)
+- **기초패드(Concrete Plinths) 규격 개별 지정 UI 전면 구현 ("최외각 첫번쨰, 마지막 기초패드와 일반 기초패드의 크기를 지정하는 인터페이스를 만들어주세요" 완벽 해결)**:
+  - 사양·치수 탭(Tab 1)에 `🏗️ 기초 콘크리트 패드 규격 설정 (mm)` 전용 설정 카드를 신설.
+  - **최외각 첫 번째 기초패드 폭(`padFirstW`)**, **일반(내부) 기초패드 폭(`padMidW`)**, **최외각 마지막 기초패드 폭(`padLastW`)**을 개별적으로 밀리미터 단위로 자유롭게 입력할 수 있는 직관적인 3분할 인터페이스 제공.
+  - 패드 높이(`padH`: 기본 600mm) 및 전·후면 외측 돌출 길이(`padOverhang`: 기본 200mm) 설정 지원.
+  - **원클릭 프리셋 버튼** 지원: `표준 (400/300/400)`, `광폭 (450/350/450)`, `동일 300`, `동일 400` 지원.
+  - 상단에 실시간으로 패드 배치 폭을 시각적으로 확인할 수 있는 도식화 뱃지 연동.
+- **모든 뷰 및 내보내기 엔진 완전 동기화**:
+  - **기초 콘크리트 배치도(`buildConcrete`)**: 첫 번째/중간/마지막 패드 폭에 맞추어 상단 치수선(폭 및 순 간격치수) 및 하단 C.T.C 피치 치수선이 1mm 오차 없이 정밀하게 연동.
+  - **입면도(`buildElevation`)**: 정면도/배면도 하부 기초패드 폭 및 지반고(GL) 깊이에 반영.
+  - **3D 등각 조감도(`buildIsometric`)**: 3D 조감도 하부 콘크리트 패드 빔 렌더링에 실시간 동기화.
+  - **3D STEP CAD 엔진(`Tank3DAssembly`)**: 3D CAD/STEP 파일 내보내기 시 지정된 패드 폭·높이·돌출 규격대로 정밀 솔리드 모델 생성.
+  - **상태 보존(`localStorage` & URL)**: 지정된 패드 규격이 브라우저 저장소 및 URL 파라미터(`pf`, `pm`, `pl`, `ph`, `po`)에 자동 저장되어 새로고침 후에도 유지.
+
+---
+
 ## [1.5.8] - 2026-10-02
 
 ### Fixed & Enhanced (새로고침 및 재접속 시 이전 마지막 작업 치수 및 설정 자동 유지 복원)

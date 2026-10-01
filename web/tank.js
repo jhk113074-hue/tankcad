@@ -662,8 +662,25 @@
   const solX = (s, e, y) => gRound((e[0] - s[0]) * (y - s[1]) / (e[1] - s[1]) + s[0]);
 
   /* ---------- 기초 콘크리트 (TankConcrete / CConcLT / ConcreteDim) : 직사각형 탱크 규칙 ---------- */
-  // 열 배열(패널 길이 목록) → 각 이음선의 콘크리트 띠 [x, 폭]
-  function concStrips(c) {
+  // 열 배열(패널 길이 목록) → 각 이음선의 콘크리트 띠 [x, 폭, idx]
+  function concStrips(c, opt = {}) {
+    const hasCustom = opt && (opt.padFirstW !== undefined || opt.padMidW !== undefined || opt.padLastW !== undefined);
+    const firstW = Number(opt && opt.padFirstW) || 400;
+    const midW = Number(opt && opt.padMidW) || 300;
+    const lastW = Number(opt && opt.padLastW) || 400;
+
+    if (hasCustom) {
+      const out = [];
+      let x = 0;
+      for (let i = 0; i < c.length; i++) {
+        const w = (i === 0) ? firstW : midW;
+        out.push([x - w / 2, w, i]);
+        x += c[i];
+      }
+      out.push([x - lastW / 2, lastW, -1]);
+      return out;
+    }
+
     const l = k => (k >= 0 && k < c.length ? c[k] : 0), out = [];
     let x = 0;
     for (let i = 0; i < c.length; i++) {
@@ -695,7 +712,8 @@
   const PAD_OVERHANG = 200; // 상하 대칭 각 200mm 돌출 (총 EXTC = 400mm)
   const EXTC = PAD_OVERHANG * 2;
   function buildConcrete(opt) {
-    const map = createMap(opt), W = map.width, L = map.length, ents = [], strips = concStrips(map.cols);
+    const padOv = (opt && opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : PAD_OVERHANG;
+    const map = createMap(opt), W = map.width, L = map.length, ents = [], strips = concStrips(map.cols, opt);
     const ln = (a, b, layer) => ents.push({ t: 'line', a, b, layer: layer || 'PANEL' });
     const nR = map.rows.length;
     // 각 콘크리트 보(strip)가 지지하는 행(row) 판별:
@@ -724,7 +742,7 @@
 
     const pieces = [];   // {x, w, y0, y1}
     strips.forEach(([x, w, idx]) => {
-      runsForStrip(idx).forEach(([y0, y1]) => pieces.push({ x, w, y0: y0 - PAD_OVERHANG, y1: y1 + PAD_OVERHANG }));
+      runsForStrip(idx).forEach(([y0, y1]) => pieces.push({ x, w, y0: y0 - padOv, y1: y1 + padOv }));
     });
     if (!pieces.length) return { ents, textH: 60 };
 
@@ -1250,10 +1268,11 @@
       }));
     }
 
-    // 기초 콘크리트 (프레임 아래 ~ 지면 -600)
+    // 기초 콘크리트 (프레임 아래 ~ 지면 -padH)
     const list = []; { let cx0 = 0; secs.forEach(sn => { split(sn, cx0).forEach(w => list.push(w)); cx0 += sn; }); }
-    const GRD = -600;
-    concStrips(list).forEach(([x, w]) => {
+    const padH = Number(opt.padH) || 600;
+    const GRD = -th - padH;
+    concStrips(list, opt).forEach(([x, w]) => {
       poly([[x, -th], [x, GRD], [x + w, GRD], [x + w, -th]], 'PANEL', true);
       hatchRect(ents, x, GRD, x + w, -th, 100, 'PANEL_DETAIL');   // 콘크리트 패드 빗금
       concDesign(ents, x, GRD);
@@ -1601,25 +1620,29 @@
     };
 
     // 1. 콘크리트 패드 (Concrete Pad Beams) & 베이스 프레임
-    const padW = opt.padW || 400;
-    const th = opt.th || 100;
-    const PAD_H = 600;
+    const firstW = Number(opt.padFirstW) || 400;
+    const midW = Number(opt.padMidW) || 300;
+    const lastW = Number(opt.padLastW) || 400;
+    const th = opt.th || opt.frame || 75;
+    const PAD_H = Number(opt.padH) || 600;
     const GRD = -th - PAD_H;
-    const PAD_OV = 100;
+    const PAD_OV = (opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : 200;
     const padPitch = (opt.pitch === 'custom' && opt.customPitch) ? opt.customPitch : ((opt.padPitch || opt.pitch) === 500 ? 500 : 1000);
 
     const strips = [];
     let curX = 0;
+    const numCols = map.cols.length;
     map.cols.forEach((colW, cIdx) => {
-      strips.push([curX - padW / 2, padW, cIdx]);
+      const pw = (cIdx === 0) ? firstW : midW;
+      strips.push([curX - pw / 2, pw, cIdx]);
       if (padPitch === 500 && colW >= 1000) {
-        strips.push([curX + colW / 2 - padW / 2, padW, cIdx + 0.5]);
+        strips.push([curX + colW / 2 - midW / 2, midW, cIdx + 0.5]);
       }
       curX += colW;
     });
-    strips.push([totalL - padW / 2, padW, map.cols.length]);
+    strips.push([totalL - lastW / 2, lastW, numCols]);
 
-    const XR = strips[strips.length - 1][0] + padW;
+    const XR = strips[strips.length - 1][0] + strips[strips.length - 1][1];
     const nR = map.rows.length;
 
     const hasTankAtRow = (idx, r) => {

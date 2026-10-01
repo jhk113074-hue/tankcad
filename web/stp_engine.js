@@ -344,13 +344,18 @@
         this.skidBeams.push({ pos: [map.xs[j] - 37.5, 0, -fH], size: [75, this.totalW, fH] });
       }
 
-      // 9. Concrete Foundation Pads (300~400mm width strips)
-      const padW = 300, padH = 500, padExt = 200;
+      // 9. Concrete Foundation Pads
+      const firstW = Number(this.opt.padFirstW) || 400;
+      const midW = Number(this.opt.padMidW) || 300;
+      const lastW = Number(this.opt.padLastW) || 400;
+      const padH = Number(this.opt.padH) || 600;
+      const padExt = (this.opt.padOverhang !== undefined && this.opt.padOverhang !== '') ? Number(this.opt.padOverhang) : 200;
       for (let j = 0; j <= map.cols.length; j++) {
         const cx = (j === map.cols.length) ? this.totalL : map.xs[j];
+        const pw = (j === 0) ? firstW : ((j === map.cols.length) ? lastW : midW);
         this.concPads.push({
-          pos: [cx - padW / 2, -padExt, -fH - padH],
-          size: [padW, this.totalW + padExt * 2, padH]
+          pos: [cx - pw / 2, -padExt, -fH - padH],
+          size: [pw, this.totalW + padExt * 2, padH]
         });
       }
 

@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.8</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.9</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -340,6 +340,70 @@ canvas.drag{cursor:grabbing}
         </div>
         <p class="hint">💡 폭·길이는 여러 칸에 입력 시 구간별 분할(예: 3000 + 2000)됩니다.</p>
         <div class="err" id="err" hidden></div>
+
+        <!-- 기초 콘크리트 패드 규격 설정 인터페이스 -->
+        <div class="pad-config-card" style="margin-top:16px;padding:12px;background:var(--surface-sub);border:1px solid var(--line);border-radius:var(--radius)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h3 style="margin:0;font-size:13px;display:flex;align-items:center;gap:6px">
+              <span>🏗️ 기초 콘크리트 패드 규격 설정 (mm)</span>
+            </h3>
+            <span style="font-size:10px;color:var(--accent);font-weight:600">콘크리트 패드</span>
+          </div>
+
+          <!-- 패드 도식화 / 시각 프리뷰 바 -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:8px 6px;background:var(--surface);border:1px solid var(--line);border-radius:6px;margin-bottom:10px;text-align:center">
+            <div style="flex:1">
+              <div style="font-size:10px;color:var(--muted);margin-bottom:2px">최외각 첫번째</div>
+              <div id="badgePadFirst" style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 4px;border-radius:4px">400mm</div>
+            </div>
+            <div style="color:var(--muted);font-size:10px">─·─</div>
+            <div style="flex:1">
+              <div style="font-size:10px;color:var(--muted);margin-bottom:2px">일반 (내부)</div>
+              <div id="badgePadMid" style="font-size:11px;font-weight:700;color:var(--fg);background:rgba(100,116,139,0.12);padding:2px 4px;border-radius:4px">300mm</div>
+            </div>
+            <div style="color:var(--muted);font-size:10px">─·─</div>
+            <div style="flex:1">
+              <div style="font-size:10px;color:var(--muted);margin-bottom:2px">최외각 마지막</div>
+              <div id="badgePadLast" style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 4px;border-radius:4px">400mm</div>
+            </div>
+          </div>
+
+          <!-- 패드 폭 설정 (3개 입력 필드) -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+            <div>
+              <label for="padFirstW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">첫번째 패드 폭</label>
+              <input type="number" id="padFirstW" value="400" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="400">
+            </div>
+            <div>
+              <label for="padMidW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">일반 패드 폭</label>
+              <input type="number" id="padMidW" value="300" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="300">
+            </div>
+            <div>
+              <label for="padLastW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">마지막 패드 폭</label>
+              <input type="number" id="padLastW" value="400" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="400">
+            </div>
+          </div>
+
+          <!-- 높이 및 돌출 설정 (2개 입력 필드) -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+            <div>
+              <label for="padH" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">패드 높이 (H)</label>
+              <input type="number" id="padH" value="600" min="200" max="2000" step="50" style="width:100%;padding:5px 4px;font-size:12px;text-align:center" placeholder="600">
+            </div>
+            <div>
+              <label for="padOverhang" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">전·후면 돌출</label>
+              <input type="number" id="padOverhang" value="200" min="0" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;text-align:center" placeholder="200">
+            </div>
+          </div>
+
+          <!-- 원클릭 프리셋 버튼들 -->
+          <div style="display:flex;gap:4px">
+            <button type="button" class="btn-sm" id="btnPadPresetStd" style="flex:1;padding:4px 2px;font-size:10px" title="첫번째 400 / 일반 300 / 마지막 400">표준 400/300/400</button>
+            <button type="button" class="btn-sm" id="btnPadPresetWide" style="flex:1;padding:4px 2px;font-size:10px" title="첫번째 450 / 일반 350 / 마지막 450">광폭 450/350/450</button>
+            <button type="button" class="btn-sm" id="btnPadPresetEqual3" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 300">동일 300</button>
+            <button type="button" class="btn-sm" id="btnPadPresetEqual4" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 400">동일 400</button>
+          </div>
+        </div>
       </section>
     </div>
 
@@ -1846,6 +1910,37 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   $('frm').addEventListener('change', () => schedule());
   $('scaleSel').addEventListener('change', () => schedule());
 
+  function updatePadBadges() {
+    const pf = $('padFirstW') ? ($('padFirstW').value || 400) : 400;
+    const pm = $('padMidW') ? ($('padMidW').value || 300) : 300;
+    const pl = $('padLastW') ? ($('padLastW').value || 400) : 400;
+    if ($('badgePadFirst')) $('badgePadFirst').textContent = pf + 'mm';
+    if ($('badgePadMid')) $('badgePadMid').textContent = pm + 'mm';
+    if ($('badgePadLast')) $('badgePadLast').textContent = pl + 'mm';
+  }
+
+  ['padFirstW', 'padMidW', 'padLastW', 'padH', 'padOverhang'].forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener('input', () => { updatePadBadges(); schedule(); });
+  });
+
+  if ($('btnPadPresetStd')) $('btnPadPresetStd').addEventListener('click', () => {
+    $('padFirstW').value = 400; $('padMidW').value = 300; $('padLastW').value = 400; $('padH').value = 600; $('padOverhang').value = 200;
+    updatePadBadges(); schedule();
+  });
+  if ($('btnPadPresetWide')) $('btnPadPresetWide').addEventListener('click', () => {
+    $('padFirstW').value = 450; $('padMidW').value = 350; $('padLastW').value = 450; $('padH').value = 600; $('padOverhang').value = 200;
+    updatePadBadges(); schedule();
+  });
+  if ($('btnPadPresetEqual3')) $('btnPadPresetEqual3').addEventListener('click', () => {
+    $('padFirstW').value = 300; $('padMidW').value = 300; $('padLastW').value = 300; $('padH').value = 600; $('padOverhang').value = 200;
+    updatePadBadges(); schedule();
+  });
+  if ($('btnPadPresetEqual4')) $('btnPadPresetEqual4').addEventListener('click', () => {
+    $('padFirstW').value = 400; $('padMidW').value = 400; $('padLastW').value = 400; $('padH').value = 600; $('padOverhang').value = 200;
+    updatePadBadges(); schedule();
+  });
+
   // Visual Nozzle Editor Listeners
   document.querySelectorAll('input[name=nozViewFace]').forEach(r => {
     r.addEventListener('change', () => {
@@ -2042,6 +2137,11 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       updateNozzleUi(m0);
       const opt = {
         length: L, width: W, height: H, hseg: C.heightSegs(H[0], $('b11').checked), b11: $('b11').checked, removed: [...removed].map(k => k.split(',').map(Number)), marks: Object.assign({}, marks), ladders: Object.assign({}, ladders), pillars: [...pillars].map(k => k.split(',').map(Number)), frame: Number($('frm').value), material: document.querySelector('input[name=mat]:checked').value,
+        padFirstW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
+        padMidW: $('padMidW') ? (Number($('padMidW').value) || 300) : 300,
+        padLastW: $('padLastW') ? (Number($('padLastW').value) || 400) : 400,
+        padH: $('padH') ? (Number($('padH').value) || 600) : 600,
+        padOverhang: ($('padOverhang') && $('padOverhang').value !== '' && !isNaN($('padOverhang').value)) ? Number($('padOverhang').value) : 200,
         rf: Number(document.querySelector('input[name=rf]:checked').value),
         userScale: $('scaleSel').value === 'auto' ? null : Number($('scaleSel').value),
         sidePanels: Object.assign({}, sidePanelTypes),
@@ -2105,7 +2205,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       (h ? '<span>유효 체적</span><b>' + ton + ' m³</b>' : '') +
       '<span>폭 분할 (W)</span><b>' + m.rows.join(' + ') + '</b>' +
       '<span>길이 분할 (L)</span><b>' + m.cols.join(' + ') + '</b>' +
-      '<span>평면 패널 수</span><b>' + total + ' 장' + (anyRemoved ? ` (${m.removed.size}장 삭제)` : '') + '</b>';
+      '<span>평면 패널 수</span><b>' + total + ' 장' + (anyRemoved ? ` (${m.removed.size}장 삭제)` : '') + '</b>' +
+      '<span>기초패드 규격</span><b>첫/끝 ' + ($('padFirstW') ? $('padFirstW').value : 400) + '/' + ($('padLastW') ? $('padLastW').value : 400) + ' mm · 일반 ' + ($('padMidW') ? $('padMidW').value : 300) + ' mm (H:' + ($('padH') ? $('padH').value : 600) + ')</b>';
     $('cnt').innerHTML = Object.entries(cnt).sort().map(([k, v]) => '<tr><td>' + k + ' mm</td><td class="n">' + v + '</td></tr>').join('');
   }
 
@@ -2146,6 +2247,11 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       mat: document.querySelector('input[name=mat]:checked') ? document.querySelector('input[name=mat]:checked').value : 'GRP',
       rf: document.querySelector('input[name=rf]:checked') ? Number(document.querySelector('input[name=rf]:checked').value) : 1,
       frm: Number($('frm').value) || 75,
+      padFirstW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
+      padMidW: $('padMidW') ? (Number($('padMidW').value) || 300) : 300,
+      padLastW: $('padLastW') ? (Number($('padLastW').value) || 400) : 400,
+      padH: $('padH') ? (Number($('padH').value) || 600) : 600,
+      padOverhang: ($('padOverhang') && $('padOverhang').value !== '' && !isNaN($('padOverhang').value)) ? Number($('padOverhang').value) : 200,
       scale: $('scaleSel').value,
       sheetOn: $('sheetOn').checked,
       sheetKind: $('sheetKind').value,
@@ -2217,6 +2323,13 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       if (typeof st.sheetOn === 'boolean') $('sheetOn').checked = st.sheetOn;
       if (st.sheetKind) $('sheetKind').value = st.sheetKind;
 
+      if (st.padFirstW && $('padFirstW')) $('padFirstW').value = st.padFirstW;
+      if (st.padMidW && $('padMidW')) $('padMidW').value = st.padMidW;
+      if (st.padLastW && $('padLastW')) $('padLastW').value = st.padLastW;
+      if (st.padH && $('padH')) $('padH').value = st.padH;
+      if (st.padOverhang !== undefined && $('padOverhang')) $('padOverhang').value = st.padOverhang;
+      updatePadBadges();
+
       if (typeof st.useNozzles === 'boolean') {
         if ($('pipeFeatureToggle')) $('pipeFeatureToggle').checked = st.useNozzles;
         if ($('lyNozzle')) $('lyNozzle').checked = st.useNozzles;
@@ -2286,6 +2399,11 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       if (st.rf && st.rf !== 1) params.set('rf', st.rf);
       if (st.frm && st.frm !== 75) params.set('frm', st.frm);
       if (st.b11) params.set('b11', '1');
+      if (st.padFirstW && st.padFirstW !== 400) params.set('pf', st.padFirstW);
+      if (st.padMidW && st.padMidW !== 300) params.set('pm', st.padMidW);
+      if (st.padLastW && st.padLastW !== 400) params.set('pl', st.padLastW);
+      if (st.padH && st.padH !== 600) params.set('ph', st.padH);
+      if (st.padOverhang !== undefined && st.padOverhang !== 200) params.set('po', st.padOverhang);
       if (!st.useNozzles) params.set('pipes', '0');
 
       const b64 = encodeState(st);
@@ -2327,13 +2445,17 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
             mat: sp.get('mat') || 'GRP',
             rf: sp.has('rf') ? Number(sp.get('rf')) : 1,
             frm: sp.has('frm') ? Number(sp.get('frm')) : 75,
+            padFirstW: sp.has('pf') ? Number(sp.get('pf')) : 400,
+            padMidW: sp.has('pm') ? Number(sp.get('pm')) : 300,
+            padLastW: sp.has('pl') ? Number(sp.get('pl')) : 400,
+            padH: sp.has('ph') ? Number(sp.get('ph')) : 600,
+            padOverhang: sp.has('po') ? Number(sp.get('po')) : 200,
             useNozzles: sp.get('pipes') !== '0'
           };
           if (applyAppState(stFromQuery)) return true;
         }
       }
 
-      // 3. Try LocalStorage
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
