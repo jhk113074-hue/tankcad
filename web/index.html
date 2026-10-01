@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.4.4</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.4.5</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -796,6 +796,10 @@ canvas.drag{cursor:grabbing}
             <label style="font-size:11px;font-weight:600">세로 높이 (H mm)</label>
             <input type="number" id="modalH" value="1000" step="100" style="width:100%;padding:5px;font-size:12px">
           </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin:-4px 0 10px">
+          <button type="button" id="btnFitSize" class="btn-sm" style="font-size:11px;padding:3px 8px;color:var(--accent)" title="현재 입력된 가로×세로(W×H) 규격에 맞춰 판넬 형상을 꽉 채우도록 자동 보정">📐 형상을 규격(WxH)에 강제 맞춤</button>
         </div>
 
         <div style="margin-bottom:10px">
@@ -5830,73 +5834,82 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       throw new Error('STEP 파일 내에서 유효한 3D 좌표점(CARTESIAN_POINT)을 찾을 수 없습니다.');
     }
 
-    // 형상에 실제 사용된 포인트 ID만 수집 (참조 평면, 원점, 뷰포트 등 비형상 점 배제)
-    const usedPtIds = new Set();
+    // 1) 3D 선분 추출 (단일 패널 최대 길이인 2250mm 이하의 모서리만 유효 판넬 형상으로 수집)
+    const raw3dEdges = [];
     const edgeRegex = /#(\d+)\s*=\s*EDGE_CURVE\s*\(\s*'[^']*'\s*,\s*#(\d+)\s*,\s*#(\d+)/g;
     let em;
     while ((em = edgeRegex.exec(stepText)) !== null) {
-      usedPtIds.add(Number(em[2]));
-      usedPtIds.add(Number(em[3]));
+      const p1 = getPt(Number(em[2]));
+      const p2 = getPt(Number(em[3]));
+      if (p1 && p2) {
+        const len3d = Math.hypot(p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2]);
+        if (len3d >= 1.5 && len3d <= 2250) {
+          raw3dEdges.push([p1, p2]);
+        }
+      }
     }
+
     const polyRegex = /#(\d+)\s*=\s*POLY_LOOP\s*\(\s*'[^']*'\s*,\s*\(\s*([^)]+)\s*\)\s*\)/g;
     let pm;
     while ((pm = polyRegex.exec(stepText)) !== null) {
       const refs = pm[2].match(/#(\d+)/g);
-      if (refs) refs.forEach(r => usedPtIds.add(Number(r.replace('#', ''))));
-    }
-    const placements = new Map();
-    const plcRegex = /#(\d+)\s*=\s*AXIS2_PLACEMENT_3D\s*\(\s*'[^']*'\s*,\s*#(\d+)/g;
-    let plm;
-    while ((plm = plcRegex.exec(stepText)) !== null) {
-      placements.set(Number(plm[1]), Number(plm[2]));
-    }
-    const cirRegex = /#(\d+)\s*=\s*CIRCLE\s*\(\s*'[^']*'\s*,\s*#(\d+)\s*,\s*([-\d\.eE\+]+)\s*\)/g;
-    let cm;
-    while ((cm = cirRegex.exec(stepText)) !== null) {
-      const ptRef = placements.get(Number(cm[2]));
-      if (ptRef) usedPtIds.add(ptRef);
-    }
-
-    const geomPts = [];
-    if (usedPtIds.size > 0) {
-      for (const id of usedPtIds) {
-        const p = getPt(id);
-        if (p) geomPts.push(p);
+      if (refs && refs.length >= 3) {
+        const lpts = refs.map(r => getPt(Number(r.replace('#', '')))).filter(Boolean);
+        for (let i = 0; i < lpts.length; i++) {
+          const p1 = lpts[i], p2 = lpts[(i + 1) % lpts.length];
+          const len3d = Math.hypot(p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2]);
+          if (len3d >= 1.5 && len3d <= 2250) raw3dEdges.push([p1, p2]);
+        }
       }
     }
-    const ptsToMeasure = geomPts.length > 0 ? geomPts : Array.from(pts.values());
 
-    let minX = Infinity, maxX = -Infinity;
-    let minY = Infinity, maxY = -Infinity;
-    let minZ = Infinity, maxZ = -Infinity;
+    // 모서리가 없으면 전체 점 사용
+    const edgePts = [];
+    raw3dEdges.forEach(e => edgePts.push(e[0], e[1]));
+    const ptsToMeasure = edgePts.length > 0 ? edgePts : Array.from(pts.values());
 
-    for (const p of ptsToMeasure) {
+    // 2) 3D 투영축 결정 (가장 얇은 축이 두께/법선 축, 나머지 둘이 2D 정면 평면)
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    ptsToMeasure.forEach(p => {
       if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
       if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
       if (p[2] < minZ) minZ = p[2]; if (p[2] > maxZ) maxZ = p[2];
-    }
+    });
 
-    const dx = maxX - minX, dy = maxY - minY, dz = maxZ - minZ;
     const dims = [
-      { axis: 'x', size: dx, min: minX, idx: 0 },
-      { axis: 'y', size: dy, min: minY, idx: 1 },
-      { axis: 'z', size: dz, min: minZ, idx: 2 }
+      { axis: 'x', size: maxX - minX, idx: 0 },
+      { axis: 'y', size: maxY - minY, idx: 1 },
+      { axis: 'z', size: maxZ - minZ, idx: 2 }
     ].sort((a, b) => a.size - b.size);
 
-    const uDim = dims[1]; // 투영 가로축
-    const vDim = dims[2]; // 투영 세로축
-    const wRaw = uDim.size;
-    const hRaw = vDim.size;
-    const uIdx = uDim.idx;
-    const vIdx = vDim.idx;
-    const uMin = uDim.min;
-    const vMin = vDim.min;
+    const uIdx = dims[1].idx;
+    const vIdx = dims[2].idx;
 
-    // 표준 규격(500, 1000, 1100, 1200, 1250, 1300, 1500, 2000mm) 스냅 보정
+    // 3) 투영면에서의 밀집 클러스터 영역(진짜 패널 크기) 계산
+    const uCoords = ptsToMeasure.map(p => p[uIdx]).sort((a, b) => a - b);
+    const vCoords = ptsToMeasure.map(p => p[vIdx]).sort((a, b) => a - b);
+
+    function getDenseRange(sorted) {
+      if (sorted.length < 4) return [sorted[0] || 0, sorted[sorted.length - 1] || 1000];
+      const q01 = sorted[Math.floor(sorted.length * 0.01)];
+      const q99 = sorted[Math.floor(sorted.length * 0.99)];
+      const minV = sorted[0], maxV = sorted[sorted.length - 1];
+      if ((q99 - q01) <= 2200 && (maxV - minV) > 2300) {
+        const inliers = sorted.filter(v => v >= q01 - 50 && v <= q99 + 50);
+        return [inliers[0], inliers[inliers.length - 1]];
+      }
+      return [minV, maxV];
+    }
+
+    const [uMin, uMax] = getDenseRange(uCoords);
+    const [vMin, vMax] = getDenseRange(vCoords);
+    const wRaw = uMax - uMin;
+    const hRaw = vMax - vMin;
+
     const stdSizes = [500, 1000, 1100, 1200, 1250, 1300, 1500, 2000];
     function snapStd(v) {
       for (const s of stdSizes) {
-        if (Math.abs(v - s) <= 60) return s;
+        if (Math.abs(v - s) <= 80) return s;
       }
       return Math.round(v);
     }
@@ -5943,61 +5956,24 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       }
     }
 
-    // 2) EDGE_CURVE 추출
+    // 4) 2D 선분 추출 및 스케일링 (밀집 패널 영역 내부 선분만 필터)
     const rawLines = [];
-    const edgeRegex = /#(\d+)\s*=\s*EDGE_CURVE\s*\(\s*'[^']*'\s*,\s*#(\d+)\s*,\s*#(\d+)/g;
-    while ((m = edgeRegex.exec(stepText)) !== null) {
-      const p1 = getPt(Number(m[2]));
-      const p2 = getPt(Number(m[3]));
-      if (p1 && p2) {
-        let u1 = Math.round((p1[uIdx] - uMin) * scaleU * 10) / 10;
-        let v1 = Math.round((p1[vIdx] - vMin) * scaleV * 10) / 10;
-        let u2 = Math.round((p2[uIdx] - uMin) * scaleU * 10) / 10;
-        let v2 = Math.round((p2[vIdx] - vMin) * scaleV * 10) / 10;
-        const len = Math.hypot(u2 - u1, v2 - v1);
-        if (len >= 2.0) {
-          if (u1 > u2 || (u1 === u2 && v1 > v2)) {
-            const tu = u1; u1 = u2; u2 = tu;
-            const tv = v1; v1 = v2; v2 = tv;
-          }
-          rawLines.push([[u1, v1], [u2, v2]]);
+    raw3dEdges.forEach(e => {
+      const p1 = e[0], p2 = e[1];
+      let u1 = Math.round((p1[uIdx] - uMin) * scaleU * 10) / 10;
+      let v1 = Math.round((p1[vIdx] - vMin) * scaleV * 10) / 10;
+      let u2 = Math.round((p2[uIdx] - uMin) * scaleU * 10) / 10;
+      let v2 = Math.round((p2[vIdx] - vMin) * scaleV * 10) / 10;
+      const len = Math.hypot(u2 - u1, v2 - v1);
+      if (len >= 2.0 && Math.min(u1, u2) >= -30 && Math.max(u1, u2) <= finalW + 30 &&
+          Math.min(v1, v2) >= -30 && Math.max(v1, v2) <= finalH + 30) {
+        if (u1 > u2 || (u1 === u2 && v1 > v2)) {
+          const tu = u1; u1 = u2; u2 = tu;
+          const tv = v1; v1 = v2; v2 = tv;
         }
+        rawLines.push([[u1, v1], [u2, v2]]);
       }
-    }
-
-    // 3) POLY_LOOP 추출 (메쉬/다면체)
-    const polyRegex = /#(\d+)\s*=\s*POLY_LOOP\s*\(\s*'[^']*'\s*,\s*\(\s*([^)]+)\s*\)\s*\)/g;
-    while ((m = polyRegex.exec(stepText)) !== null) {
-      const refs = m[2].match(/#(\d+)/g);
-      if (refs && refs.length >= 3) {
-        const loopPts = [];
-        for (const r of refs) {
-          const id = Number(r.replace('#', ''));
-          const p = getPt(id);
-          if (p) {
-            loopPts.push([
-              Math.round((p[uIdx] - uMin) * scaleU * 10) / 10,
-              Math.round((p[vIdx] - vMin) * scaleV * 10) / 10
-            ]);
-          }
-        }
-        if (loopPts.length >= 3) {
-          for (let i = 0; i < loopPts.length; i++) {
-            const p1 = loopPts[i];
-            const p2 = loopPts[(i + 1) % loopPts.length];
-            const len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
-            if (len >= 2.0) {
-              let u1 = p1[0], v1 = p1[1], u2 = p2[0], v2 = p2[1];
-              if (u1 > u2 || (u1 === u2 && v1 > v2)) {
-                const tu = u1; u1 = u2; u2 = tu;
-                const tv = v1; v1 = v2; v2 = tv;
-              }
-              rawLines.push([[u1, v1], [u2, v2]]);
-            }
-          }
-        }
-      }
-    }
+    });
 
     // 선분 중복 제거 (공차 2mm)
     const lines = [];
@@ -6010,33 +5986,24 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       }
     }
 
-    // 외곽 사각 테두리 유무 검사
-    const hasOuter = lines.some(l => 
-      (Math.abs(l.p[0][0]) < 5 && Math.abs(l.p[1][0] - finalW) < 5) ||
-      (Math.abs(l.p[0][1]) < 5 && Math.abs(l.p[1][1] - finalH) < 5)
-    );
-
     const entities = [];
-    if (!hasOuter) {
-      entities.push({
-        k: 'poly',
-        p: [[0, 0], [finalW, 0], [finalW, finalH], [0, finalH]],
-        c: true
-      });
-    }
-
+    entities.push({
+      k: 'poly',
+      p: [[0, 0], [finalW, 0], [finalW, finalH], [0, finalH]],
+      c: true
+    });
     entities.push(...lines);
     entities.push(...circles);
 
     // 파일명에서 재질 및 위치 자동 판별
     let detectedMat = 'SMC';
-    let detectedCat = 'side';
+    let detectedCat = 'top_bottom';
     const fnUpper = (fileName || '').toUpperCase();
     if (fnUpper.includes('STS') || fnUpper.includes('SUS') || fnUpper.includes('STAINLESS')) {
       detectedMat = 'STS';
     }
-    if (fnUpper.includes('ROOF') || fnUpper.includes('TOP') || fnUpper.includes('BOTTOM') || fnUpper.includes('FLOOR')) {
-      detectedCat = 'top_bottom';
+    if (fnUpper.includes('SIDE') || fnUpper.includes('WALL')) {
+      detectedCat = 'side';
     }
 
     return {
@@ -6050,6 +6017,104 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       circleCount: circles.length
     };
   }
+
+  // 형상을 지정된 WxH 크기로 꽉 채워 재조정하는 함수
+  function fitEntitiesToTargetSize(targetW, targetH) {
+    if (!modalEntities || !modalEntities.length) return;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    modalEntities.forEach(e => {
+      if (e.k === 'line') {
+        minX = Math.min(minX, e.p[0][0], e.p[1][0]);
+        maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
+        minY = Math.min(minY, e.p[0][1], e.p[1][1]);
+        maxY = Math.max(maxY, e.p[0][1], e.p[1][1]);
+      } else if (e.k === 'poly') {
+        e.p.forEach(pt => {
+          minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]);
+          minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]);
+        });
+      } else if (e.k === 'circle' || e.k === 'arc') {
+        minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r);
+        minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r);
+      }
+    });
+
+    const allX = [], allY = [];
+    modalEntities.forEach(e => {
+      if (e.k === 'line') {
+        const len = Math.hypot(e.p[1][0] - e.p[0][0], e.p[1][1] - e.p[0][1]);
+        if (len <= 2200) {
+          allX.push(e.p[0][0], e.p[1][0]);
+          allY.push(e.p[0][1], e.p[1][1]);
+        }
+      }
+    });
+    if (allX.length >= 8) {
+      allX.sort((a, b) => a - b);
+      allY.sort((a, b) => a - b);
+      const qX1 = allX[Math.floor(allX.length * 0.02)], qX2 = allX[Math.floor(allX.length * 0.98)];
+      const qY1 = allY[Math.floor(allY.length * 0.02)], qY2 = allY[Math.floor(allY.length * 0.98)];
+      if ((qX2 - qX1) <= 2200 && (maxX - minX) > 2300) {
+        minX = qX1; maxX = qX2;
+      }
+      if ((qY2 - qY1) <= 2200 && (maxY - minY) > 2300) {
+        minY = qY1; maxY = qY2;
+      }
+    }
+
+    const curW = maxX - minX;
+    const curH = maxY - minY;
+    if (curW <= 0 || curH <= 0) return;
+
+    const sx = targetW / curW;
+    const sy = targetH / curH;
+
+    const scaled = [];
+    scaled.push({
+      k: 'poly',
+      p: [[0, 0], [targetW, 0], [targetW, targetH], [0, targetH]],
+      c: true
+    });
+
+    modalEntities.forEach(e => {
+      if (e.k === 'line') {
+        const u1 = (e.p[0][0] - minX) * sx;
+        const v1 = (e.p[0][1] - minY) * sy;
+        const u2 = (e.p[1][0] - minX) * sx;
+        const v2 = (e.p[1][1] - minY) * sy;
+        const len = Math.hypot(u2 - u1, v2 - v1);
+        if (len >= 2.0 && Math.min(u1, u2) >= -30 && Math.max(u1, u2) <= targetW + 30 &&
+            Math.min(v1, v2) >= -30 && Math.max(v1, v2) <= targetH + 30) {
+          scaled.push({
+            k: 'line',
+            p: [[Math.round(u1 * 10) / 10, Math.round(v1 * 10) / 10], [Math.round(u2 * 10) / 10, Math.round(v2 * 10) / 10]]
+          });
+        }
+      } else if (e.k === 'poly') {
+        const pts = e.p.map(pt => [Math.round((pt[0] - minX) * sx * 10) / 10, Math.round((pt[1] - minY) * sy * 10) / 10]);
+        const isBox = pts.length === 4 && pts.every(p => (p[0] <= 1 || p[0] >= targetW - 1) && (p[1] <= 1 || p[1] >= targetH - 1));
+        if (!isBox) scaled.push({ k: 'poly', p: pts, c: e.c });
+      } else if (e.k === 'circle') {
+        const cu = Math.round((e.c[0] - minX) * sx * 10) / 10;
+        const cv = Math.round((e.c[1] - minY) * sy * 10) / 10;
+        const cr = Math.round(e.r * ((sx + sy) / 2) * 10) / 10;
+        if (cu >= -20 && cu <= targetW + 20 && cv >= -20 && cv <= targetH + 20) {
+          scaled.push({ k: 'circle', c: [cu, cv], r: cr });
+        }
+      }
+    });
+
+    modalEntities = scaled;
+    $('modalJson').value = JSON.stringify(modalEntities, null, 2);
+    updateModalPreview();
+  }
+
+  $('btnFitSize').addEventListener('click', () => {
+    const w = Number($('modalW').value) || 1000;
+    const h = Number($('modalH').value) || 1000;
+    fitEntitiesToTargetSize(w, h);
+    alert(`✅ 현재 규격 (${w}×${h} mm)에 맞춰 판넬 형상이 완벽히 재스케일 및 정렬되었습니다!`);
+  });
 
   // STP 파일 업로드 이벤트 핸들러
   $('stepFileInput').addEventListener('change', async (ev) => {
@@ -6084,7 +6149,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
 
           statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
           statusEl.style.color = '#10b981';
-          statusEl.innerHTML = `✅ <b>성공:</b> 규격 <b>${result.width}×${result.height} mm</b> | 형상 선분 <b>${result.entities.length}개</b> 자동 추출 완료!`;
+          statusEl.innerHTML = `✅ <b>성공:</b> 판넬 규격 <b>${result.width}×${result.height} mm</b> | 정면 형상 선분 <b>${result.entities.length}개</b> 자동 추출 완료!`;
         } catch (parseErr) {
           statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
           statusEl.style.color = '#ef4444';
