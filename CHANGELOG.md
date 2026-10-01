@@ -5,6 +5,16 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.17] - 2026-10-02
+
+### Clarified & Enhanced (DWG 변환 팝업 안내 문구 명확화 및 DXF 우선 추천)
+- **DWG 변환 안내 모달 개선**:
+  - 이미 PC에 ODA File Converter가 설치되어 있는 사용자에게 불필요한 재설치 안내로 오해를 일으키지 않도록 문구 명확화.
+  - 웹 브라우저의 보안 정책상 로컬 실행 파일 직접 접근이 제한되어 로컬 서비스(`python server.py`)가 켜져 있어야 연결됨을 명확히 안내.
+  - 별도 설치나 서버 실행 없이 AutoCAD/ZWCAD/캐디안 등에서 100% 동일하게 바로 열리는 **[DXF 파일로 즉시 다운로드]**를 메인 버튼으로 직관적 배치.
+
+---
+
 ## [1.5.16] - 2026-10-02
 
 ### Enhanced & Compact Spacing (Remarks 항목별 1, 2, 3... 공간 간격 최소화)
