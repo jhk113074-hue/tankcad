@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.8] - 2026-10-01
+
+### Fixed & Enhanced (SMC 실규격 75mm 플랜지 돌출폭 및 10mm 판두께 반영, 코너 플랜지 입체 가시성 개선)
+- **실제 SMC 표준 플랜지 규격 정밀 반영**:
+  - **플랜지 돌출폭(Flange Depth)**: 45mm -> **75mm**로 업데이트 (벽체 간 맞댐 리브 및 외곽 돌출폭).
+  - **플랜지 판두께(Flange Thickness)**: **10mm** 이중선 및 테두리 두께선 완벽 렌더링.
+  - **개별 판넬 내부 플랜지 여백(Inner Flange Margin)**: 35mm -> **75mm**로 업데이트 (전면벽, 우측벽, 지붕 모든 판넬 테두리에 75mm 플랜지 마진 적용).
+- **수직 외곽 코너 플랜지(Corner Flange) 가시성 버그 해결**:
+  - 기존 투영 수식 상 코너 외곽 돌출이 $(totalL+FD, -FD)$로 계산되어 아이소메트릭 X축 투영 시 0으로 상쇄(Center Line과 중첩)되어 보이지 않던 문제 완벽 해결.
+  - 전면 코너 플랜지($\Delta X_{iso} = -65$px 좌측 돌출)와 우측 코너 플랜지($\Delta X_{iso} = +65$px 우측 돌출) 및 중앙 능선, 10mm 두께선, 각 단(Tier)별 체결 브라켓을 선명하게 입체 렌더링.
+- **상부 및 하부 플랜지 입체 보강**:
+  - 상단 지붕 처마 75mm 돌출 및 10mm 두께 플랜지 라인 구현.
+  - 바닥 기초 플랜지 75mm 돌출 및 10mm 두께 하향선 구현.
+
+---
+
 ## [1.4.7] - 2026-10-01
 
 ### Added & Enhanced (3D ISOMETRIC 도면 내 SMC 3D 외부 돌출 플랜지 리브 구현)
