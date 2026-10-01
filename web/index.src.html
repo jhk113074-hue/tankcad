@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.4.1</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.4.2</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -302,7 +302,6 @@ canvas.drag{cursor:grabbing}
       <button type="button" class="tab-btn active" data-tab="tab-specs">📐 사양·치수</button>
       <button type="button" class="tab-btn" data-tab="tab-edit">✏️ 평면 편집</button>
       <button type="button" class="tab-btn" data-tab="tab-nozzles">📐 측면편집</button>
-      <button type="button" class="tab-btn" data-tab="tab-3d">🎮 3D 뷰어</button>
       <button type="button" class="tab-btn" data-tab="tab-sheet">📋 표제란·노트</button>
       <button type="button" class="tab-btn" data-tab="tab-bom">📊 집계</button>
       <button type="button" class="tab-btn" data-tab="tab-panels">🧩 판넬 DB</button>
@@ -576,67 +575,6 @@ canvas.drag{cursor:grabbing}
       </section>
     </div>
 
-    <!-- Tab: 3D Interactive Viewer Controls -->
-    <div class="tab-content" id="tab-3d">
-      <section class="box">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2 style="margin:0">🎮 3D 대화형 뷰어 조작</h2>
-          <button type="button" id="tab3dGoViewBtn" class="btn-preset primary" style="padding:3px 8px;font-size:11px">▶ 3D 화면 보기</button>
-        </div>
-        <p class="hint" style="margin-bottom:10px">마우스 좌클릭 드래그로 360° 자유 회전, 휠로 확대/축소, 우클릭으로 위치를 이동합니다.</p>
-
-        <!-- 3D 분해도 (Exploded View) -->
-        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <span style="font-size:11px;font-weight:700">💥 조립 분해도 (Exploded View)</span>
-            <span id="explodeValText" style="font-family:var(--font-num);font-size:11px;font-weight:700;color:var(--accent)">0%</span>
-          </div>
-          <input type="range" id="explodeSlider" min="0" max="100" value="0" style="width:100%;accent-color:var(--accent);cursor:pointer">
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px">
-            <span>완전 조립 (0%)</span>
-            <span>중간 분해 (50%)</span>
-            <span>최대 분해 (100%)</span>
-          </div>
-        </div>
-
-        <!-- 3D 시점 프리셋 & 절단뷰 -->
-        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px">
-          <span style="font-size:11px;font-weight:700;display:block;margin-bottom:6px">🎥 카메라 시점 프리셋</span>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px">
-            <button type="button" class="btn-preset" id="camIsoBtn">🧊 등각 (ISO)</button>
-            <button type="button" class="btn-preset" id="camFrontBtn">🏢 정면 (Front)</button>
-            <button type="button" class="btn-preset" id="camTopBtn">📐 평면 (Top)</button>
-            <button type="button" class="btn-preset" id="camRightBtn">🚪 우측 (Right)</button>
-            <button type="button" class="btn-preset" id="camRearBtn">📦 배면 (Rear)</button>
-            <button type="button" class="btn-preset" id="camResetBtn">🔄 시점 리셋</button>
-          </div>
-          <div style="display:flex;gap:6px">
-            <button type="button" id="tab3dCutToggle" class="btn-preset" style="flex:1">✂️ 내부 단면 절단 (Cut)</button>
-            <button type="button" id="tab3dWireToggle" class="btn-preset" style="flex:1">🕸️ 와이어프레임 토글</button>
-          </div>
-        </div>
-
-        <!-- 3D 판넬 STP 파일 등록 -->
-        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:11px;font-weight:700">🧩 판넬 3D STEP 파일 등록</span>
-          </div>
-          <p class="hint" style="margin-bottom:8px">실제 사출/프레스 금형의 <b>.stp / .step</b> 파일을 직접 등록하여 실물 정밀 3D 형상으로 탱크를 조립합니다.</p>
-          <button type="button" id="openStpModalBtn" class="btn-preset primary" style="width:100%;padding:6px;justify-content:center">📁 판넬 STP 파일 등록 (.stp)</button>
-        </div>
-
-        <!-- 3D 조립체 캐드 파일 다운로드 -->
-        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:10px">
-          <span style="font-size:11px;font-weight:700;display:block;margin-bottom:6px">💾 3D 조립체 캐드 다운로드</span>
-          <div style="display:flex;flex-direction:column;gap:5px">
-            <button type="button" id="sideStepBtn" class="pri" style="background:#059669;border-color:#059669;justify-content:center">💾 3D STEP (.stp) 조립체 다운로드</button>
-            <button type="button" id="side3dDxfBtn" class="btn-preset" style="justify-content:center">💾 3D DXF (.dxf) 다운로드</button>
-            <button type="button" id="sideObjBtn" class="btn-preset" style="justify-content:center">💾 3D OBJ (.obj) 3D 모델 다운로드</button>
-          </div>
-        </div>
-      </section>
-    </div>
-
     <!-- Tab 3: Sheet & Notes -->
     <div class="tab-content" id="tab-sheet">
       <section class="box">
@@ -776,11 +714,7 @@ canvas.drag{cursor:grabbing}
   <main class="main">
     <div class="toolbar">
       <button type="button" id="toggleSide" title="사이드바 접기/펼치기">◀ 패널</button>
-      <div class="tool-group" style="background:var(--surface-sub);padding:2px;border-radius:6px;border:1px solid var(--line);gap:2px">
-        <button type="button" id="btnView2D" class="pri" style="padding:4px 8px;font-size:11px" title="2D CAD A1 도면 시트 보기">📐 2D 도면</button>
-        <button type="button" id="btnView3D" style="padding:4px 8px;font-size:11px" title="360° 대화형 3D WebGL 뷰어 보기">🎮 3D 뷰어</button>
-      </div>
-      <div class="tool-group" id="layerGroup2D">
+      <div class="tool-group">
         <label class="layer-chip"><input type="checkbox" id="lyPanel" checked> 패널</label>
         <label class="layer-chip"><input type="checkbox" id="lyNozzle" checked> 💧 배관</label>
         <label class="layer-chip"><input type="checkbox" id="lyDetail" checked> 상세</label>
@@ -790,16 +724,10 @@ canvas.drag{cursor:grabbing}
         <label class="layer-chip"><input type="checkbox" id="lySheet" checked> 시트</label>
         <label class="layer-chip"><input type="checkbox" id="lyDim" checked> 치수</label>
       </div>
-      <div class="tool-group" id="viewNavGroup2D">
+      <div class="tool-group">
         <button type="button" id="fit" title="도면 화면 맞춤">⛶ 맞춤</button>
         <button type="button" id="zoomIn" title="확대">🔍➕</button>
         <button type="button" id="zoomOut" title="축소">🔍➖</button>
-      </div>
-      <div class="tool-group" id="viewNavGroup3D" style="display:none">
-        <button type="button" id="topIsoBtn" title="등각 시점">🧊 등각</button>
-        <button type="button" id="topFrontBtn" title="정면 시점">🏢 정면</button>
-        <button type="button" id="topTopBtn" title="평면 시점">📐 평면</button>
-        <button type="button" id="topCutBtn" title="단면 절단">✂️ 단면절단</button>
       </div>
       <span class="sp"></span>
       <button type="button" id="copyShareUrl" title="현재 도면 및 설정이 저장된 URL 링크를 복사합니다">🔗 공유 링크</button>
@@ -807,7 +735,6 @@ canvas.drag{cursor:grabbing}
       <button type="button" id="svg" title="벡터 SVG 도면 다운로드">📐 SVG</button>
       <button type="button" id="dxfDirect" title="AutoCAD/CADian에서 바로 열리는 DXF 파일 다운로드">💾 DXF (.dxf)</button>
       <button type="button" id="dwgBtn" class="pri" title="AutoCAD 표준 DWG 바이너리 파일 다운로드">💾 DWG 저장 (.dwg)</button>
-      <button type="button" id="step3dBtn" class="pri" style="background:#059669;border-color:#059669" title="SolidWorks/Inventor/CAD용 3D STEP 조립체 파일 다운로드">💾 3D STEP (.stp)</button>
       <button type="button" id="dxf" title="DXF 파일 압축(zip) 다운로드">📦 zip</button>
     </div>
 
@@ -922,37 +849,6 @@ canvas.drag{cursor:grabbing}
       </div>
     </div>
 
-    <!-- STP File Ingestion Modal -->
-    <div id="stpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
-      <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px;max-width:520px;width:92%;box-shadow:var(--shadow)">
-        <h3 style="margin:0 0 8px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px">
-          <span>📁</span> 판넬 3D STEP (.stp) 파일 등록
-        </h3>
-        <p style="margin:0 0 12px;font-size:12px;line-height:1.5;color:var(--muted)">
-          SolidWorks, Inventor, CATIA 등 CAD 프로그램에서 내보낸 <b>ISO 10303-21 STEP (.stp / .step)</b> 파일을 업로드하면 3D 형상과 외곽 곡선이 실시간 추출되어 탱크 모델에 적용됩니다.
-        </p>
-
-        <!-- Drag & Drop Target Zone -->
-        <div id="stpDropZone" style="border:2px dashed var(--accent);border-radius:8px;padding:24px 16px;text-align:center;background:var(--surface-sub);cursor:pointer;margin-bottom:12px;transition:all .15s">
-          <div style="font-size:32px;margin-bottom:6px">📥</div>
-          <div style="font-size:13px;font-weight:700;color:var(--fg);margin-bottom:4px">STP 파일을 여기로 드래그하거나 클릭하여 선택</div>
-          <div style="font-size:11px;color:var(--muted)">지원 확장자: .stp, .step (표준 3D STEP AP203/AP214/AP242)</div>
-          <input type="file" id="stpFileInput" accept=".stp,.step" style="display:none">
-        </div>
-
-        <!-- Parse Result Info Box -->
-        <div id="stpInfoBox" style="display:none;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:12px;font-size:11px">
-          <div style="font-weight:700;color:var(--accent);margin-bottom:4px" id="stpFileName">-</div>
-          <div style="color:var(--muted)" id="stpStats">-</div>
-        </div>
-
-        <div style="display:flex;justify-content:flex-end;gap:8px">
-          <button type="button" id="closeStpModal" class="btn-sm">닫기</button>
-          <button type="button" id="applyStpBtn" class="pri" style="padding:6px 16px" disabled>적용하기</button>
-        </div>
-      </div>
-    </div>
-
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
@@ -964,33 +860,6 @@ canvas.drag{cursor:grabbing}
       <div class="cv-hud-guide">휠: 확대/축소  ·  드래그: 이동  ·  더블클릭: 맞춤</div>
     </div>
 
-    <!-- 3D WebGL Interactive Viewer Container -->
-    <div class="cv-container" id="cv3d" style="display:none;position:relative">
-      <div id="c3dWrap" style="width:100%;height:100%"></div>
-      <div class="cv-hud-top">
-        <div class="hud-badge" id="hud3dTitle">🎮 3D INTERACTIVE WEBGL VIEWER</div>
-        <div class="hud-badge" id="hud3dInfo">5000 × 5000 × 3000 mm</div>
-      </div>
-      <div class="cv-hud-bottom">
-        <div class="coord-badge" id="hud3dStatus">SMC 패널 조립 완료</div>
-      </div>
-      <!-- Floating quick controls in 3D viewport -->
-      <div style="position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:6px;background:rgba(15,23,42,0.85);backdrop-filter:blur(4px);padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);z-index:20;color:#fff">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px">
-          <span style="font-weight:700">💥 분해도</span>
-          <span id="quickExplodeVal" style="color:#38bdf8;font-family:var(--font-num);font-weight:700">0%</span>
-        </div>
-        <input type="range" id="quickExplodeSlider" min="0" max="100" value="0" style="width:130px;accent-color:#38bdf8;cursor:pointer">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:2px">
-          <button type="button" id="quickIsoBtn" class="btn-preset" style="padding:2px 5px;font-size:10px;background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)">🧊 등각</button>
-          <button type="button" id="quickFrontBtn" class="btn-preset" style="padding:2px 5px;font-size:10px;background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)">🏢 정면</button>
-          <button type="button" id="quickTopBtn" class="btn-preset" style="padding:2px 5px;font-size:10px;background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)">📐 평면</button>
-          <button type="button" id="quickCutBtn" class="btn-preset" style="padding:2px 5px;font-size:10px;background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)">✂️ 절단</button>
-        </div>
-      </div>
-      <div class="cv-hud-guide">좌클릭: 360° 회전 · 휠: 줌 · 우클릭/Shift: 이동</div>
-    </div>
-
     <div class="status-bar">
       <div id="status">준비 완료</div>
       <div>YSACC Tank Engineering System</div>
@@ -998,9 +867,6 @@ canvas.drag{cursor:grabbing}
   </main>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script>/*__STP_JS__*/</script>
 <script>/*__TANK_JS__*/</script>
 <script>
 let TEMPLATES = /*__TEMPLATES__*/;
@@ -1033,9 +899,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       const target = $(btn.getAttribute('data-tab'));
       if (target) {
         target.classList.add('active');
-        if (btn.getAttribute('data-tab') === 'tab-3d') {
-          if (typeof switchViewMode === 'function') switchViewMode('3D');
-        } else if (btn.getAttribute('data-tab') === 'tab-panels') {
+        if (btn.getAttribute('data-tab') === 'tab-panels') {
           loadDbPanels();
         } else if (btn.getAttribute('data-tab') === 'tab-nozzles') {
           updateNozzleUi();
@@ -1050,9 +914,6 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const nx = cur === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', nx);
     $('themeBtn').textContent = nx === 'dark' ? '🌙 다크' : '☀️ 라이트';
-    if (scene3d && typeof THREE !== 'undefined') {
-      scene3d.background = new THREE.Color(nx === 'dark' ? 0x090d16 : 0xf1f5f9);
-    }
     draw();
   });
 
@@ -2183,11 +2044,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       $('viewBadge').textContent = sheet ? `A1 ${kindText} (1/${plan.scale})` : (opt.sheetKind === 'iso' ? '3D 등각 모델 뷰' : '평면도 모델 뷰');
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
-    if (typeof viewMode !== 'undefined' && viewMode === '3D') {
-      if (typeof update3dScene === 'function') update3dScene();
-    } else {
-      if (fit) fitView(); else draw();
-    }
+    if (fit) fitView(); else draw();
     syncStateToStorageAndUrl();
   }
 
@@ -2692,307 +2549,6 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       if (blob) save(stamp() + '.png', blob);
     }, 'image/png');
   });
-
-  /* ==============================================================
-     WebGL 3D Interactive Tank Viewer (Three.js & Tank3D Engine)
-     ============================================================== */
-  let scene3d = null, camera3d = null, renderer3d = null, controls3d = null;
-  let tank3dGroup = null, current3dAsm = null;
-  let viewMode = '2D'; // '2D' or '3D'
-  let isSectionCut = false;
-  let wireframeMode = 'edges'; // 'shaded', 'edges', 'wireframe'
-  let clipPlane = null;
-
-  function init3dViewer() {
-    if (renderer3d) return;
-    const container = $('c3dWrap');
-    if (!container) return;
-
-    scene3d = new THREE.Scene();
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    scene3d.background = new THREE.Color(isDark ? 0x090d16 : 0xf1f5f9);
-
-    const w = container.clientWidth || 800;
-    const h = container.clientHeight || 500;
-    camera3d = new THREE.PerspectiveCamera(40, w / h, 10, 100000);
-    camera3d.up.set(0, 0, 1); // Z is UP in CAD/Engineering
-    camera3d.position.set(7000, -9000, 5000);
-
-    renderer3d = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-    renderer3d.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer3d.setSize(w, h);
-    renderer3d.localClippingEnabled = true;
-    container.innerHTML = '';
-    container.appendChild(renderer3d.domElement);
-
-    controls3d = new THREE.OrbitControls(camera3d, renderer3d.domElement);
-    controls3d.enableDamping = true;
-    controls3d.dampingFactor = 0.08;
-    controls3d.maxPolarAngle = Math.PI / 2 + 0.15;
-    controls3d.target.set(0, 0, 1500);
-
-    // Lights
-    const amb = new THREE.AmbientLight(0xffffff, 0.7);
-    scene3d.add(amb);
-
-    const dir1 = new THREE.DirectionalLight(0xffffff, 0.85);
-    dir1.position.set(10000, -12000, 15000);
-    scene3d.add(dir1);
-
-    const dir2 = new THREE.DirectionalLight(0xb0c4de, 0.45);
-    dir2.position.set(-10000, 12000, 8000);
-    scene3d.add(dir2);
-
-    // Ground Grid
-    const grid = new THREE.GridHelper(20000, 40, 0x0284c7, 0x475569);
-    grid.rotation.x = Math.PI / 2;
-    grid.position.z = -700;
-    scene3d.add(grid);
-
-    // Clipping plane for section cut
-    clipPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-
-    // Animation Loop
-    function animate() {
-      requestAnimationFrame(animate);
-      if (viewMode === '3D') {
-        controls3d.update();
-        renderer3d.render(scene3d, camera3d);
-      }
-    }
-    animate();
-
-    window.addEventListener('resize', on3dResize);
-  }
-
-  function on3dResize() {
-    if (!renderer3d || !camera3d) return;
-    const container = $('c3dWrap');
-    if (!container || !container.clientWidth) return;
-    const w = container.clientWidth, h = container.clientHeight || 500;
-    camera3d.aspect = w / h;
-    camera3d.updateProjectionMatrix();
-    renderer3d.setSize(w, h);
-  }
-
-  function switchViewMode(mode) {
-    viewMode = mode;
-    const is3D = (mode === '3D');
-    $('cv').style.display = is3D ? 'none' : 'block';
-    $('cv3d').style.display = is3D ? 'block' : 'none';
-    if ($('layerGroup2D')) $('layerGroup2D').style.display = is3D ? 'none' : 'inline-flex';
-    if ($('viewNavGroup2D')) $('viewNavGroup2D').style.display = is3D ? 'none' : 'inline-flex';
-    if ($('viewNavGroup3D')) $('viewNavGroup3D').style.display = is3D ? 'inline-flex' : 'none';
-    if ($('btnView2D')) $('btnView2D').className = is3D ? '' : 'pri';
-    if ($('btnView3D')) $('btnView3D').className = is3D ? 'pri' : '';
-
-    if (is3D) {
-      if (!renderer3d) init3dViewer();
-      update3dScene();
-      setTimeout(on3dResize, 60);
-    } else {
-      draw();
-    }
-  }
-
-  function update3dScene() {
-    if (!window.Tank3D || !window.Tank3D.Tank3DAssembly) return;
-    if (!scene3d) init3dViewer();
-    const opt = getOpt();
-    current3dAsm = new Tank3D.Tank3DAssembly(opt, TEMPLATES, SIDE_T);
-
-    if (tank3dGroup) scene3d.remove(tank3dGroup);
-    tank3dGroup = current3dAsm.createThreeGroup(THREE);
-    scene3d.add(tank3dGroup);
-
-    // Sync Explode
-    const exVal = Number($('explodeSlider') ? $('explodeSlider').value : 0) / 100;
-    if (tank3dGroup.setExplode) tank3dGroup.setExplode(exVal);
-    if (tank3dGroup.setWireframe) tank3dGroup.setWireframe(wireframeMode);
-    applySectionCut();
-
-    // Update camera target to center of tank
-    if (controls3d) {
-      controls3d.target.set(0, 0, current3dAsm.H / 2);
-    }
-
-    // HUD labels
-    const C = window.TankCore;
-    const map = C.createMap(opt);
-    const H = (opt.height || []).reduce((a, b) => a + (b || 0), 0) || 3000;
-    $('hud3dInfo').textContent = `${map.length} × ${map.width} × ${H} mm (${opt.material || 'SMC'})`;
-    $('hud3dStatus').textContent = `조립 패널 ${current3dAsm.panels.length}개 · 3D B-Rep 모델 정상`;
-  }
-
-  function applySectionCut() {
-    if (!tank3dGroup || !clipPlane || !renderer3d) return;
-    if (isSectionCut) {
-      clipPlane.constant = 0; // Cut at center
-      renderer3d.clippingPlanes = [clipPlane];
-    } else {
-      renderer3d.clippingPlanes = [];
-    }
-  }
-
-  function set3dCamera(preset) {
-    if (!camera3d || !controls3d || !current3dAsm) return;
-    const maxDim = Math.max(current3dAsm.totalL, current3dAsm.totalW, current3dAsm.H);
-    const dist = maxDim * 1.8;
-    controls3d.target.set(0, 0, current3dAsm.H / 2);
-
-    if (preset === 'iso') {
-      camera3d.position.set(dist * 0.9, -dist * 1.1, dist * 0.85);
-    } else if (preset === 'front') {
-      camera3d.position.set(0, -dist * 1.5, current3dAsm.H / 2);
-    } else if (preset === 'top') {
-      camera3d.position.set(0, 0, dist * 1.6);
-    } else if (preset === 'right') {
-      camera3d.position.set(dist * 1.5, 0, current3dAsm.H / 2);
-    } else if (preset === 'rear') {
-      camera3d.position.set(0, dist * 1.5, current3dAsm.H / 2);
-    }
-    camera3d.lookAt(controls3d.target);
-    controls3d.update();
-  }
-
-  function download3dStep() {
-    if (!current3dAsm) update3dScene();
-    if (!current3dAsm) return;
-    const stpStr = current3dAsm.toStepString();
-    const filename = `${stamp()}_3D_Assembly_${current3dAsm.totalL}x${current3dAsm.totalW}x${current3dAsm.H}.stp`;
-    save(filename, stpStr);
-  }
-
-  function download3dDxf() {
-    if (!current3dAsm) update3dScene();
-    if (!current3dAsm) return;
-    const dxfStr = current3dAsm.to3dDxfString();
-    const filename = `${stamp()}_3D_${current3dAsm.totalL}x${current3dAsm.totalW}x${current3dAsm.H}.dxf`;
-    save(filename, dxfStr);
-  }
-
-  function download3dObj() {
-    if (!current3dAsm) update3dScene();
-    if (!current3dAsm) return;
-    const objStr = current3dAsm.toObjString();
-    const filename = `${stamp()}_3D_Model.obj`;
-    save(filename, objStr);
-  }
-
-  // View switch buttons
-  if ($('btnView2D')) $('btnView2D').addEventListener('click', () => switchViewMode('2D'));
-  if ($('btnView3D')) $('btnView3D').addEventListener('click', () => switchViewMode('3D'));
-  if ($('tab3dGoViewBtn')) $('tab3dGoViewBtn').addEventListener('click', () => switchViewMode('3D'));
-
-  // Explode sliders (synchronized)
-  const syncExplode = val => {
-    if ($('explodeSlider')) $('explodeSlider').value = val;
-    if ($('quickExplodeSlider')) $('quickExplodeSlider').value = val;
-    if ($('explodeValText')) $('explodeValText').textContent = val + '%';
-    if ($('quickExplodeVal')) $('quickExplodeVal').textContent = val + '%';
-    if (tank3dGroup && tank3dGroup.setExplode) {
-      tank3dGroup.setExplode(val / 100);
-    }
-  };
-  if ($('explodeSlider')) $('explodeSlider').addEventListener('input', e => syncExplode(e.target.value));
-  if ($('quickExplodeSlider')) $('quickExplodeSlider').addEventListener('input', e => syncExplode(e.target.value));
-
-  // Section cut toggles
-  const toggleCut = () => {
-    isSectionCut = !isSectionCut;
-    const txt = isSectionCut ? '✂️ 단면절단 ON' : '✂️ 단면절단';
-    if ($('tab3dCutToggle')) $('tab3dCutToggle').textContent = txt;
-    if ($('quickCutBtn')) $('quickCutBtn').textContent = txt;
-    if ($('topCutBtn')) $('topCutBtn').textContent = txt;
-    applySectionCut();
-  };
-  if ($('tab3dCutToggle')) $('tab3dCutToggle').addEventListener('click', toggleCut);
-  if ($('quickCutBtn')) $('quickCutBtn').addEventListener('click', toggleCut);
-  if ($('topCutBtn')) $('topCutBtn').addEventListener('click', toggleCut);
-
-  // Wireframe mode toggle
-  if ($('tab3dWireToggle')) {
-    $('tab3dWireToggle').addEventListener('click', () => {
-      wireframeMode = (wireframeMode === 'edges') ? 'wireframe' : (wireframeMode === 'wireframe') ? 'shaded' : 'edges';
-      const label = wireframeMode === 'wireframe' ? '🕸️ 와이어프레임' : wireframeMode === 'shaded' ? '🎨 음영만' : '🔲 음영+외곽선';
-      $('tab3dWireToggle').textContent = label;
-      if (tank3dGroup && tank3dGroup.setWireframe) tank3dGroup.setWireframe(wireframeMode);
-    });
-  }
-
-  // Camera presets
-  [['camIsoBtn', 'iso'], ['quickIsoBtn', 'iso'], ['topIsoBtn', 'iso'],
-   ['camFrontBtn', 'front'], ['quickFrontBtn', 'front'], ['topFrontBtn', 'front'],
-   ['camTopBtn', 'top'], ['quickTopBtn', 'top'], ['topTopBtn', 'top'],
-   ['camRightBtn', 'right'], ['camRearBtn', 'rear'], ['camResetBtn', 'iso']].forEach(([id, preset]) => {
-    const el = $(id);
-    if (el) el.addEventListener('click', () => set3dCamera(preset));
-  });
-
-  // 3D Downloads
-  if ($('step3dBtn')) $('step3dBtn').addEventListener('click', download3dStep);
-  if ($('sideStepBtn')) $('sideStepBtn').addEventListener('click', download3dStep);
-  if ($('side3dDxfBtn')) $('side3dDxfBtn').addEventListener('click', download3dDxf);
-  if ($('sideObjBtn')) $('sideObjBtn').addEventListener('click', download3dObj);
-
-  // STP File Upload Modal & Ingestion
-  let parsedStpData = null;
-  function handleStpFile(file) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      const text = e.target.result;
-      const parser = new Tank3D.ClientStepParser(text);
-      parsedStpData = {
-        name: file.name.replace(/\.[^/.]+$/, ''),
-        parser: parser,
-        edges: parser.edges,
-        bounds: parser.bounds
-      };
-      $('stpFileName').textContent = `📄 ${file.name} (${Math.round(file.size / 1024)} KB)`;
-      const bw = Math.round(parser.bounds[3] - parser.bounds[0]) || 1000;
-      const bh = Math.round(parser.bounds[4] - parser.bounds[1]) || 1000;
-      const bd = Math.round(parser.bounds[5] - parser.bounds[2]) || 80;
-      $('stpStats').innerHTML = `추출 엔티티: <b>${Object.keys(parser.entities).length}</b>개 · 3D 형상 곡선: <b>${parser.edges.length}</b>개<br>외곽 크기: <b>${bw} × ${bh} × ${bd} mm</b>`;
-      $('stpInfoBox').style.display = 'block';
-      $('applyStpBtn').disabled = false;
-    };
-    reader.readAsText(file);
-  }
-
-  if ($('openStpModalBtn')) {
-    $('openStpModalBtn').addEventListener('click', () => {
-      $('stpModal').style.display = 'flex';
-      $('stpInfoBox').style.display = 'none';
-      $('applyStpBtn').disabled = true;
-    });
-  }
-  if ($('closeStpModal')) $('closeStpModal').addEventListener('click', () => { $('stpModal').style.display = 'none'; });
-
-  const stpDrop = $('stpDropZone');
-  if (stpDrop) {
-    stpDrop.addEventListener('click', () => $('stpFileInput').click());
-    stpDrop.addEventListener('dragover', e => { e.preventDefault(); stpDrop.style.background = 'var(--accent-light)'; });
-    stpDrop.addEventListener('dragleave', () => { stpDrop.style.background = 'var(--surface-sub)'; });
-    stpDrop.addEventListener('drop', e => {
-      e.preventDefault();
-      stpDrop.style.background = 'var(--surface-sub)';
-      if (e.dataTransfer.files.length) handleStpFile(e.dataTransfer.files[0]);
-    });
-    $('stpFileInput').addEventListener('change', e => {
-      if (e.target.files.length) handleStpFile(e.target.files[0]);
-    });
-  }
-
-  if ($('applyStpBtn')) {
-    $('applyStpBtn').addEventListener('click', async () => {
-      if (!parsedStpData) return;
-      $('stpModal').style.display = 'none';
-      alert(`✅ STP 판넬 모델 "${parsedStpData.name}" (${parsedStpData.edges.length}개 곡선)이 3D 캐드 엔진에 등록되었습니다!`);
-      switchViewMode('3D');
-      update3dScene();
-    });
-  }
 
   /* ==============================================================
      Panel Database (SQLite) Management & Dynamic Template Sync

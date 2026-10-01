@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.2] - 2026-10-01
+
+### Changed & Stabilized (Direction A: 도면 중심 정밀 설계 체제 복귀)
+- **도면 중심(방향 A)으로 전면 복귀 및 WebGL 3D 엔진 분리**:
+  - 사용자 요청에 따라 실험적 3D WebGL 뷰어(`tab-3d`, Three.js) 및 관련 3D 다운로드 UI를 완전히 제거하고, 실무용 2D CAD 승인 도면(A1 Sheet, 평면도, 정/측면도, 콘크리트 패드도, 등각투영도)에 집중하도록 UI를 깔끔하게 복원.
+  - 도면 캔버스(`#cv`) 뷰포트 구조를 원천 단순화하여 캔버스 표출 오류 가능성을 원천 차단.
+- **판넬 DB(37종) 및 도면 뷰어 100% 자립형 정상 작동 유지**:
+  - `server.py` 없이도 37종 SMC/STS 표준 판넬이 완벽 표출되며, 판넬 선택 시 2D 실시간 형상 렌더링 정상 작동.
+  - 승인 도면 A1 배치 및 DXF 내보내기, BOM 자동 산출의 정확도와 안정성 확보.
+
+---
+
 ## [1.4.1] - 2026-10-01
 
 ### Fixed
