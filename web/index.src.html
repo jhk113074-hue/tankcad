@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.3</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.4</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2360,8 +2360,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
           a[2] = Math.max(a[2], e.p[0] + e.w); a[3] = Math.max(a[3], e.p[1] + e.h);
         }
       } else {
-        const pts = e.t === 'line' ? [e.a, e.b] : (e.t === 'circle' || e.t === 'arc') ? [[e.c[0] - e.r, e.c[1] - e.r], [e.c[0] + e.r, e.c[1] + e.r]] : [e.p];
-        pts.forEach(p => { a[0] = Math.min(a[0], p[0]); a[1] = Math.min(a[1], p[1]); a[2] = Math.max(a[2], p[0]); a[3] = Math.max(a[3], p[1]); });
+        const pts = e.t === 'line' ? [e.a, e.b] : (e.t === 'circle' || e.t === 'arc') ? [[e.c[0] - e.r, e.c[1] - e.r], [e.c[0] + e.r, e.c[1] + e.r]] : (e.t === 'poly' && e.pts) ? e.pts : [e.p];
+        pts.forEach(p => { if (p) { a[0] = Math.min(a[0], p[0]); a[1] = Math.min(a[1], p[1]); a[2] = Math.max(a[2], p[0]); a[3] = Math.max(a[3], p[1]); } });
       }
     });
     return a;
@@ -2385,16 +2385,60 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const lw = { PANEL: 1.4, PANEL_DETAIL: 0.9, FRAME: 1.6, REINF: 1.2, WALL: 1, DIM: 1, SHEET: 1.3 };
     const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
 
-    ['PANEL_DETAIL', 'PANEL', 'WALL', 'REINF', 'FRAME', 'DIM', 'SHEET'].forEach(layer => {
-      ctx.strokeStyle = col[layer]; ctx.fillStyle = col[layer]; ctx.lineWidth = lw[layer]; ctx.beginPath();
+    const hasFills = (plan.ents || []).some(e => e.fill);
+    if (hasFills) {
+      const bgCol = css('--cv-bg') || '#0b1120';
       const texts = [];
-      const renderEnt = (e, ox = 0, oy = 0) => {
-        if (e.layer !== layer || !layerOn(e)) return;
-        if (e.t === 'line') { ctx.moveTo(tx(e.a[0] + ox), ty(e.a[1] + oy)); ctx.lineTo(tx(e.b[0] + ox), ty(e.b[1] + oy)); }
-        else if (e.t === 'circle') { ctx.moveTo(tx(e.c[0] + ox) + e.r * view.s, ty(e.c[1] + oy)); ctx.arc(tx(e.c[0] + ox), ty(e.c[1] + oy), e.r * view.s, 0, 7); }
-        else if (e.t === 'arc') { const r = e.r * view.s, cx = tx(e.c[0] + ox), cy = ty(e.c[1] + oy), a0 = e.a0 * Math.PI / 180, a1 = e.a1 * Math.PI / 180; ctx.moveTo(cx + r * Math.cos(a0), cy - r * Math.sin(a0)); ctx.arc(cx, cy, r, -a0, -a1, true); }
-        else if (e.t === 'text') texts.push(e);
+      let curLayer = null;
+
+      const setLayer = layer => {
+        if (curLayer === layer) return;
+        ctx.stroke();
+        curLayer = layer;
+        ctx.strokeStyle = col[layer] || '#fff';
+        ctx.lineWidth = lw[layer] || 1;
+        ctx.beginPath();
       };
+
+      const renderEnt = (e, ox = 0, oy = 0) => {
+        if (!layerOn(e)) return;
+        if (e.t === 'poly') {
+          if (e.fill && e.pts && e.pts.length > 2) {
+            ctx.stroke();
+            curLayer = null;
+            ctx.save();
+            ctx.fillStyle = bgCol;
+            ctx.beginPath();
+            ctx.moveTo(tx(e.pts[0][0] + ox), ty(e.pts[0][1] + oy));
+            for (let i = 1; i < e.pts.length; i++) ctx.lineTo(tx(e.pts[i][0] + ox), ty(e.pts[i][1] + oy));
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+          }
+          if (e.stroke !== false && e.pts && e.pts.length > 1) {
+            setLayer(e.layer || 'PANEL');
+            ctx.moveTo(tx(e.pts[0][0] + ox), ty(e.pts[0][1] + oy));
+            for (let i = 1; i < e.pts.length; i++) ctx.lineTo(tx(e.pts[i][0] + ox), ty(e.pts[i][1] + oy));
+            if (e.close !== false) ctx.closePath();
+          }
+        } else if (e.t === 'line') {
+          setLayer(e.layer || 'PANEL');
+          ctx.moveTo(tx(e.a[0] + ox), ty(e.a[1] + oy));
+          ctx.lineTo(tx(e.b[0] + ox), ty(e.b[1] + oy));
+        } else if (e.t === 'circle') {
+          setLayer(e.layer || 'PANEL');
+          ctx.moveTo(tx(e.c[0] + ox) + e.r * view.s, ty(e.c[1] + oy));
+          ctx.arc(tx(e.c[0] + ox), ty(e.c[1] + oy), e.r * view.s, 0, 7);
+        } else if (e.t === 'arc') {
+          setLayer(e.layer || 'PANEL');
+          const r = e.r * view.s, cx = tx(e.c[0] + ox), cy = ty(e.c[1] + oy), a0 = e.a0 * Math.PI / 180, a1 = e.a1 * Math.PI / 180;
+          ctx.moveTo(cx + r * Math.cos(a0), cy - r * Math.sin(a0));
+          ctx.arc(cx, cy, r, -a0, -a1, true);
+        } else if (e.t === 'text') {
+          texts.push(e);
+        }
+      };
+
       plan.ents.forEach(e => {
         if (!layerOn(e)) return;
         if (e.t === 'insert') {
@@ -2405,6 +2449,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         }
       });
       ctx.stroke();
+
       texts.forEach(e => {
         const px = Math.max(3, e.h * view.s); if (px < 3) return;
         const fontFam = (e.layer === 'SHEET') ? '"Malgun Gothic", "Noto Sans KR", sans-serif' : css('--font-num');
@@ -2414,7 +2459,38 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         ctx.textBaseline = e.valign === 'middle' ? 'middle' : 'alphabetic';
         ctx.save(); ctx.translate(tx(e.p[0]), ty(e.p[1])); ctx.rotate(-e.rot * Math.PI / 180); ctx.fillText(e.s, 0, 0); ctx.restore();
       });
-    });
+    } else {
+      ['PANEL_DETAIL', 'PANEL', 'WALL', 'REINF', 'FRAME', 'DIM', 'SHEET'].forEach(layer => {
+        ctx.strokeStyle = col[layer]; ctx.fillStyle = col[layer]; ctx.lineWidth = lw[layer]; ctx.beginPath();
+        const texts = [];
+        const renderEnt = (e, ox = 0, oy = 0) => {
+          if (e.layer !== layer || !layerOn(e)) return;
+          if (e.t === 'line') { ctx.moveTo(tx(e.a[0] + ox), ty(e.a[1] + oy)); ctx.lineTo(tx(e.b[0] + ox), ty(e.b[1] + oy)); }
+          else if (e.t === 'circle') { ctx.moveTo(tx(e.c[0] + ox) + e.r * view.s, ty(e.c[1] + oy)); ctx.arc(tx(e.c[0] + ox), ty(e.c[1] + oy), e.r * view.s, 0, 7); }
+          else if (e.t === 'arc') { const r = e.r * view.s, cx = tx(e.c[0] + ox), cy = ty(e.c[1] + oy), a0 = e.a0 * Math.PI / 180, a1 = e.a1 * Math.PI / 180; ctx.moveTo(cx + r * Math.cos(a0), cy - r * Math.sin(a0)); ctx.arc(cx, cy, r, -a0, -a1, true); }
+          else if (e.t === 'text') texts.push(e);
+        };
+        plan.ents.forEach(e => {
+          if (!layerOn(e)) return;
+          if (e.t === 'insert') {
+            const blk = blocks[e.block];
+            if (blk) blk.forEach(be => renderEnt(be, e.p[0], e.p[1]));
+          } else {
+            renderEnt(e);
+          }
+        });
+        ctx.stroke();
+        texts.forEach(e => {
+          const px = Math.max(3, e.h * view.s); if (px < 3) return;
+          const fontFam = (e.layer === 'SHEET') ? '"Malgun Gothic", "Noto Sans KR", sans-serif' : css('--font-num');
+          const isBold = (e.layer === 'SHEET' && e.h >= 5.5 * plan.scale) ? 'bold ' : '';
+          ctx.font = isBold + px + 'px ' + fontFam;
+          ctx.textAlign = e.align === 'left' ? 'left' : e.align === 'right' ? 'right' : 'center';
+          ctx.textBaseline = e.valign === 'middle' ? 'middle' : 'alphabetic';
+          ctx.save(); ctx.translate(tx(e.p[0]), ty(e.p[1])); ctx.rotate(-e.rot * Math.PI / 180); ctx.fillText(e.s, 0, 0); ctx.restore();
+        });
+      });
+    }
     $('status').textContent = '배율 ' + (view.s * 1000).toFixed(0) + '%  ·  판넬 블럭 ' + plan.ents.filter(e => e.t === 'insert').length + '개 / 선 ' + plan.ents.filter(e => e.t === 'line').length.toLocaleString('ko-KR') + '개';
   }
 
@@ -2551,7 +2627,15 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
     const renderSvgEnt = (e, ox = 0, oy = 0) => {
       const c = col[e.layer];
-      if (e.t === 'line') s += `<line x1="${f(e.a[0] + ox)}" y1="${f(-(e.a[1] + oy))}" x2="${f(e.b[0] + ox)}" y2="${f(-(e.b[1] + oy))}" stroke="${c}"/>`;
+      if (e.t === 'poly') {
+        if (e.fill && e.pts && e.pts.length > 2) {
+          s += `<polygon points="${e.pts.map(p => `${f(p[0] + ox)},${f(-(p[1] + oy))}`).join(' ')}" fill="#fff" stroke="none"/>`;
+        }
+        if (e.stroke !== false && e.pts && e.pts.length > 1) {
+          s += `<polygon points="${e.pts.map(p => `${f(p[0] + ox)},${f(-(p[1] + oy))}`).join(' ')}" stroke="${c}" fill="none"/>`;
+        }
+      }
+      else if (e.t === 'line') s += `<line x1="${f(e.a[0] + ox)}" y1="${f(-(e.a[1] + oy))}" x2="${f(e.b[0] + ox)}" y2="${f(-(e.b[1] + oy))}" stroke="${c}"/>`;
       else if (e.t === 'arc') { const r = e.r, p = a => [f(e.c[0] + ox + r * Math.cos(a * Math.PI / 180)), f(-(e.c[1] + oy + r * Math.sin(a * Math.PI / 180)))], A = p(e.a0), B = p(e.a1), sw = (((e.a1 - e.a0) % 360) + 360) % 360; s += `<path d="M${A[0]} ${A[1]} A${r} ${r} 0 ${sw > 180 ? 1 : 0} 0 ${B[0]} ${B[1]}" stroke="${c}" fill="none"/>`; }
       else if (e.t === 'circle') s += `<circle cx="${f(e.c[0] + ox)}" cy="${f(-(e.c[1] + oy))}" r="${e.r}" stroke="${c}" fill="none"/>`;
       else if (e.t === 'text') s += `<text x="${f(e.p[0] + ox)}" y="${f(-(e.p[1] + oy))}" font-size="${e.h}" fill="${c}" text-anchor="${e.align === 'left' ? 'start' : e.align === 'right' ? 'end' : 'middle'}" dominant-baseline="${e.valign === 'middle' ? 'central' : 'auto'}" font-family="monospace" transform="rotate(${-e.rot} ${f(e.p[0] + ox)} ${f(-(e.p[1] + oy))})">${e.s}</text>`;

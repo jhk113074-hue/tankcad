@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.4] - 2026-10-01
+
+### Fixed & Enhanced (3D ISOMETRIC 은선 차폐 화가 알고리즘 및 후면/측면 노출 벽체 판넬 렌더링)
+- **3D ISOMETRIC 은선 제거 / 화가 알고리즘 (Painter's Algorithm) 적용 ("겹치는 부분은 보이지 않게 해주시고" 완벽 해결)**:
+  - 3D 조감도(ISOMETRIC VIEW)에서 전경의 벽체/지붕/패드가 투명 와이어프레임으로 그려져 뒤쪽의 리브 선, 배경 벽체, 바닥 패드 선이 그대로 비쳐 보이는 현상 차단.
+  - 모든 벽체 판넬, 지붕 판넬, 콘크리트 패드 노출면에 불투명 마스크(`{ t: 'poly', pts, fill: true, layer: 'PANEL' }`)를 적용.
+  - 3D 등각 시선 깊이 지표($\text{Depth} = Y - X - Z$)를 기반으로 원거리에서 근거리 순(Back-to-Front)으로 정렬하여 렌더링하는 화가 알고리즘(Painter's Algorithm) 적용.
+  - Canvas 뷰어(배경색 채우기 차폐), DXF 내보내기(3DFACE), SVG 내보내기(`<polygon fill="#fff"/>`) 전반에서 겹침 은선 완벽 차폐 지원.
+- **후면 및 좌측 노출 벽체 판넬 전면 렌더링 ("뒷면도 판넬보여주세요" 완벽 해결)**:
+  - L자형, U자형, 중정(Courtyard) 형태 탱크의 후면 노출 벽체(법선 $+Y$) 및 좌측 노출 벽체(법선 $-X$)에 대해서도 전면 벽체와 동일하게 완벽한 SMC 표준 리브, 엠보싱, 플랜지 프레임을 렌더링하도록 확장.
+  - `projectTemplateEntities` 투영 시 XZ 평면의 원점 Y좌표 누락 버그를 수정하여 단차 및 후면 벽체에서도 템플릿 패턴이 정위치에 정확히 결합되도록 보완.
+
+---
+
 ## [1.5.3] - 2026-10-01
 
 ### Fixed & Enhanced (3D ISOMETRIC 콘크리트 패드 탱크 내부 은선 제거 및 후면 돌출 상자 정리)
