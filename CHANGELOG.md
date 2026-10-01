@@ -5,6 +5,16 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.16] - 2026-10-02
+
+### Enhanced & Compact Spacing (Remarks 항목별 1, 2, 3... 공간 간격 최소화)
+- **Remarks 항목별 공간 간격 최소화 ("1/2/3....항목별 곻간 간격을 최소화 해주세요." 완벽 해결)**:
+  - 각 번호 항목(1, 2, 3...) 사이의 여백(`noteGap`)을 과도하게 벌어지지 않도록 **2.2mm(최소 간격)**로 정밀 축소.
+  - 동일 항목 내 다중 줄 간격(행간) 또한 폰트 4.8mm에 최적화된 **6.6mm**로 콤팩트하게 밀착시켜, 목록 전체가 산만하게 흩어지지 않고 하나의 정돈된 리스트로 한눈에 읽히도록 시각적 응집도 극대화.
+  - 가로 폭은 표제란 전폭(~174mm)을 그대로 알차게 채우면서, 항목별 상하 간격은 최소화하여 단정하고 전문적인 캐드 도면 스타일 완성.
+
+---
+
 ## [1.5.15] - 2026-10-02
 
 ### Enhanced & Optimized Layout (도면 Remarks 영역 공간 최적화 및 빈 공간 해소)

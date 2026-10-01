@@ -292,7 +292,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.15</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.16</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -3985,7 +3985,7 @@ canvas.drag{cursor:grabbing}
       line([tableX1, nozTableTop], [tableX1, yy]);
     }
 
-    // 노트 (Remarks) - 가로 전체 폭 및 세로 가용 높이 최적화로 빈 공간 없이 균형 배치 (현재 폰트 4.8mm 유지)
+    // 노트 (Remarks) - 가로 전체 폭 활용 및 항목별(1,2,3...) 간격 최소화 (현재 폰트 4.8mm 유지)
     let allNotes = [];
     if (opt.notes && opt.notes.length) allNotes.push(...opt.notes);
     if (opt.remarks && opt.remarks.length) {
@@ -4009,14 +4009,14 @@ canvas.drag{cursor:grabbing}
     let totalLines = 0;
     wrappedNotes.forEach(lines => totalLines += lines.length);
 
-    // 가용 높이에 맞춘 동적 라인 높이 및 간격(gap) 최적화로 하단 빈공간 해소
-    let noteLineH = 8.0;
-    const minGap = 3.5;
-    if (availNotesH < (totalLines * noteLineH + (allNotes.length - 1) * minGap)) {
-      noteLineH = Math.max(6.2, (availNotesH - (allNotes.length - 1) * minGap) / Math.max(1, totalLines));
+    // 항목별 공간 간격 최소화 (noteGap: 2.2mm, noteLineH: 6.6mm로 콤팩트 배치)
+    let noteLineH = 6.6;
+    let noteGap = 2.2;
+    const neededH = totalLines * noteLineH + (allNotes.length - 1) * noteGap;
+    if (availNotesH < neededH) {
+      noteLineH = Math.max(5.6, (availNotesH - (allNotes.length - 1) * 1.2) / Math.max(1, totalLines));
+      noteGap = Math.max(1.0, (availNotesH - totalLines * noteLineH) / Math.max(1, allNotes.length - 1));
     }
-    const freeSpace = Math.max(0, availNotesH - (totalLines * noteLineH));
-    const noteGap = allNotes.length > 1 ? Math.min(14.0, Math.max(minGap, freeSpace / (allNotes.length - 1))) : 6.0;
 
     wrappedNotes.forEach((lines, i) => {
       text(tx0 + 8, ny, noteFontH, String(i + 1), 'left');
