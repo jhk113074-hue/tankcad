@@ -348,8 +348,8 @@
       const firstW = Number(this.opt.padFirstW) || 400;
       const midW = Number(this.opt.padMidW) || 300;
       const lastW = Number(this.opt.padLastW) || 400;
-      const padH = Number(this.opt.padH) || 600;
-      const padExt = (this.opt.padOverhang !== undefined && this.opt.padOverhang !== '') ? Number(this.opt.padOverhang) : 200;
+      const padH = (this.opt.padH !== undefined && this.opt.padH !== '') ? Number(this.opt.padH) : (600 - fH);
+      const padExt = (this.opt.padOverhang !== undefined && this.opt.padOverhang !== '') ? Number(this.opt.padOverhang) : Math.round(firstW / 2);
       for (let j = 0; j <= map.cols.length; j++) {
         const cx = (j === map.cols.length) ? this.totalL : map.xs[j];
         const pw = (j === 0) ? firstW : ((j === map.cols.length) ? lastW : midW);

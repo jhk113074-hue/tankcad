@@ -5,6 +5,23 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.10] - 2026-10-02
+
+### Enhanced & Simplified (기초패드 전·후면 돌출 및 패드 높이 자동 계산화 및 중복 입력 필드 제거)
+- **전·후면 돌출 및 패드 높이 공식 기반 자동 계산화 ("전후면 돌출의 계산식은 첫번째(마지막)/2, 패드높이는 600-스틸스키드높이 입니다. 중복되는 입력은 빼주세요." 완벽 해결)**:
+  - **전·후면 돌출 길이(mm)**: 첫 번째(마지막) 패드 폭 기준 `Math.round(padFirstW / 2)`로 자동 계산 (예: 400mm 패드일 때 전후 200mm 돌출, 300mm 패드일 때 전후 150mm 돌출).
+  - **기초패드 높이(mm)**: 지면(GL)부터 수조 바닥까지 총 600mm 기준, 스틸 스키드 프레임 높이를 뺀 `600 - frameHeight`로 자동 계산 (예: 스키드 75mm일 때 패드 높이 525mm, 스키드 125mm일 때 패드 높이 475mm).
+  - 사양·치수 탭(Tab 1) 기초패드 설정 카드에서 불필요하고 중복되던 수동 입력칸(`padH`, `padOverhang`)을 제거하고 실시간 자동 계산 수치가 즉시 표시되는 인터랙티브 정보 배지로 대체.
+  - 사용자가 첫 번째 패드 폭이나 베이스 프레임 크기를 변경하면 돌출 및 패드 높이가 실시간 자동 갱신.
+- **도면 엔진 및 3D 모델 일괄 자동 연동**:
+  - **기초 콘크리트 배치도(`buildConcrete`)**: `padFirstW / 2` 돌출 공식 적용.
+  - **정면/측면 입면도(`buildElevation`)**: 패드 높이 `600 - th` 반영하여 GL(지반고) 선이 `-600`에 일치.
+  - **3D 등각 조감도(`buildIsometric`)**: 패드 높이 및 전후 돌출 길이 자동 동기화.
+  - **3D STEP CAD 엔진(`Tank3DAssembly`)**: 패드 높이 `600 - fH`, 돌출 길이 `Math.round(firstW / 2)` 적용.
+  - 하단 상태바 요약 텍스트 및 애플리케이션 상태 저장소(`localStorage`) 완전 연동.
+
+---
+
 ## [1.5.9] - 2026-10-02
 
 ### Added & Enhanced (최외각 첫 번째/마지막 기초패드 및 일반 기초패드 규격 개별 설정 인터페이스 구현)

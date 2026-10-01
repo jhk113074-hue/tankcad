@@ -712,7 +712,8 @@
   const PAD_OVERHANG = 200; // 상하 대칭 각 200mm 돌출 (총 EXTC = 400mm)
   const EXTC = PAD_OVERHANG * 2;
   function buildConcrete(opt) {
-    const padOv = (opt && opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : PAD_OVERHANG;
+    const firstW = Number(opt && opt.padFirstW) || 400;
+    const padOv = (opt && opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : Math.round(firstW / 2);
     const map = createMap(opt), W = map.width, L = map.length, ents = [], strips = concStrips(map.cols, opt);
     const ln = (a, b, layer) => ents.push({ t: 'line', a, b, layer: layer || 'PANEL' });
     const nR = map.rows.length;
@@ -1270,7 +1271,7 @@
 
     // 기초 콘크리트 (프레임 아래 ~ 지면 -padH)
     const list = []; { let cx0 = 0; secs.forEach(sn => { split(sn, cx0).forEach(w => list.push(w)); cx0 += sn; }); }
-    const padH = Number(opt.padH) || 600;
+    const padH = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
     const GRD = -th - padH;
     concStrips(list, opt).forEach(([x, w]) => {
       poly([[x, -th], [x, GRD], [x + w, GRD], [x + w, -th]], 'PANEL', true);
@@ -1624,9 +1625,9 @@
     const midW = Number(opt.padMidW) || 300;
     const lastW = Number(opt.padLastW) || 400;
     const th = opt.th || opt.frame || 75;
-    const PAD_H = Number(opt.padH) || 600;
+    const PAD_H = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
     const GRD = -th - PAD_H;
-    const PAD_OV = (opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : 200;
+    const PAD_OV = (opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : Math.round(firstW / 2);
     const padPitch = (opt.pitch === 'custom' && opt.customPitch) ? opt.customPitch : ((opt.padPitch || opt.pitch) === 500 ? 500 : 1000);
 
     const strips = [];
