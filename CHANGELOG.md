@@ -5,6 +5,18 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.7] - 2026-10-02
+
+### Fixed & Enhanced (3D ISOMETRIC 최상단 수직 플랜지 은선 차폐 방지 및 디폴트 화면 사다리/배관 미정의 상태 유지)
+- **3D ISOMETRIC 1×1 패널 모듈 최상단 수직 플랜지 시각화 ("최상에 수직 플랜지가 안보입니다. 1x1패널모듈로 변경했을때" 완벽 해결)**:
+  - 수직 플랜지 림(Vertical Flange Ribs)이 전체 높이 단일 선분으로 계산될 때, 상단 티어($Z = 2000 \sim 3000$)의 패널 면(Depth $-3000$)보다 수직선 평균 깊이(Depth $-1500$)가 더 뒤쪽으로 평가되어 상단 패널 불투명 마스크에 의해 수직 플랜지 상부가 가려지던 결함 수정.
+  - 전면, 우측면 및 코너 수직 플랜지를 층별(Tier-by-Tier, $0 \sim 1000$, $1000 \sim 2000$, $2000 \sim 3000$) 선분으로 분할하고, 각 층별 중심 깊이($Z = (z_0 + z_1)/2$) 및 외측 오프셋($Y_0 - 75\text{mm}$, $X_{\text{wall}} + 75\text{mm}$)을 적용하여 화가 알고리즘에서 항상 해당 층 패널보다 앞쪽(작은 Depth)에 렌더링되도록 개선.
+  - 1×1 모듈 및 모든 패널 조합에서 최상단 수직 플랜지(75mm 돌출 및 10mm 두께)가 선명하게 노출되도록 보장.
+- **디폴트 초기 화면 사다리 및 배관 노즐 미표시 ("디폴트 화면은 사다리 배관이 정의되지 않았기 떄문에 표지하지 말아주세요" 완벽 해결)**:
+  - 3D ISOMETRIC 조감도(`buildIsometric`)에서 사다리가 미정의 상태일 때 정면 우측에 강제로 기본 사다리를 생성하던 하드코딩 대체 로직(`lads = [{ sd: 'D', idx: 2 ... }]`) 제거.
+  - 배관 노즐 UI 초기화 시(`updateNozzleUi`) 사용자가 프리셋 버튼을 누르지 않았음에도 자동으로 기본 5개 노즐(N1~N5)을 채워 넣던 자동 프리셋 로직 제거.
+  - 초기 화면에서는 사용자가 상단 "기본 단독형/2구획 노즐 세트 적용" 버튼을 누르거나 입면도 셀을 클릭하여 배치하기 전까지 사다리와 배관 노즐이 일체 표시되지 않도록 깨끗한 초기 상태 유지.
+
 ---
 
 ## [1.5.6] - 2026-10-01

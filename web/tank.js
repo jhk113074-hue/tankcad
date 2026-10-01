@@ -1844,17 +1844,17 @@
       const FD = 75; // 측면 벽체 플랜지 폭 (75mm)
       const FT = 10; // 측면 벽체 플랜지 두께 (10mm)
 
-      // (1) 전면 벽체 수평 & 수직 & 바닥 플랜지
+      // (1) 전면 벽체 수평 & 수직 & 바닥 & 상부 플랜지
       for (let i = 0; i < map.rows.length; i++) {
         const y0 = map.ys[i];
         for (let j = 0; j < map.cols.length; j++) {
           if (!map.has(i, j) || map.has(i - 1, j)) continue;
           const x0 = map.xs[j], x1 = map.xs[j + 1];
-          const fDepth = getDepth((x0 + x1) / 2, y0 - FD / 2, H / 2);
 
-          // 횡 플랜지 림 (외부)
+          // 횡 플랜지 림 (중간 층간 플랜지)
           for (let k = 1; k < hs.length; k++) {
             const z = zs[k];
+            const fDepth = getDepth((x0 + x1) / 2, y0 - FD, z);
             ln(toIso(x0, y0, z - FT), toIso(x1, y0, z - FT), 'PANEL_DETAIL', fDepth);
             ln(toIso(x0, y0, z + FT), toIso(x1, y0, z + FT), 'PANEL_DETAIL', fDepth);
             ln(toIso(x0, y0 - FD, z - FT), toIso(x1, y0 - FD, z - FT), 'PANEL', fDepth);
@@ -1863,11 +1863,12 @@
           }
 
           // 하부 바닥 플랜지
-          ln(toIso(x0, y0 - FD, 0), toIso(x1, y0 - FD, 0), 'FRAME', fDepth);
-          ln(toIso(x0, y0 - FD, -FT), toIso(x1, y0 - FD, -FT), 'FRAME', fDepth);
+          const bDepthF = getDepth((x0 + x1) / 2, y0 - FD, 0);
+          ln(toIso(x0, y0 - FD, 0), toIso(x1, y0 - FD, 0), 'FRAME', bDepthF);
+          ln(toIso(x0, y0 - FD, -FT), toIso(x1, y0 - FD, -FT), 'FRAME', bDepthF);
 
           // 상부 플랜지 (75mm 폭, 10mm 두께)
-          const topDepthF = getDepth((x0 + x1) / 2, y0 - FD / 2, H);
+          const topDepthF = getDepth((x0 + x1) / 2, y0 - FD, H);
           ln(toIso(x0, y0 - FD, H), toIso(x1, y0 - FD, H), 'FRAME', topDepthF);
           ln(toIso(x0, y0 - FD, H - FT), toIso(x1, y0 - FD, H - FT), 'FRAME', topDepthF);
           ln(toIso(x0, y0, H - FT), toIso(x1, y0, H - FT), 'PANEL_DETAIL', topDepthF);
@@ -1876,45 +1877,54 @@
           ln(toIso(x0, y0 - FD, H - FT), toIso(x0, y0 - FD, H), 'FRAME', topDepthF);
           ln(toIso(x1, y0 - FD, H - FT), toIso(x1, y0 - FD, H), 'FRAME', topDepthF);
 
-          // 종 플랜지 림
+          // 종 플랜지 림 (층별 분할 렌더링으로 상단 판넬에 의한 은선 차폐 방지)
           if (map.has(i, j + 1) && !map.has(i - 1, j + 1)) {
             const x = x1;
-            const vertDepth = getDepth(x, y0 - FD / 2, H / 2);
-            ln(toIso(x - FT, y0, 0), toIso(x - FT, y0, H), 'PANEL_DETAIL', vertDepth);
-            ln(toIso(x + FT, y0, 0), toIso(x + FT, y0, H), 'PANEL_DETAIL', vertDepth);
-            ln(toIso(x - FT, y0 - FD, 0), toIso(x - FT, y0 - FD, H), 'PANEL', vertDepth);
-            ln(toIso(x + FT, y0 - FD, 0), toIso(x + FT, y0 - FD, H), 'PANEL', vertDepth);
-            ln(toIso(x, y0 - FD, 0), toIso(x, y0 - FD, H), 'FRAME', vertDepth);
-            ln(toIso(x - FT, y0, 0), toIso(x - FT, y0 - FD, 0), 'FRAME', vertDepth);
-            ln(toIso(x + FT, y0, 0), toIso(x + FT, y0 - FD, 0), 'FRAME', vertDepth);
-            ln(toIso(x - FT, y0, H), toIso(x - FT, y0 - FD, H), 'FRAME', vertDepth);
-            ln(toIso(x + FT, y0, H), toIso(x + FT, y0 - FD, H), 'FRAME', vertDepth);
+            for (let k = 0; k < hs.length; k++) {
+              const z0 = zs[k], z1 = zs[k + 1];
+              const cz = (z0 + z1) / 2;
+              const vertDepth = getDepth(x, y0 - FD, cz);
+              ln(toIso(x - FT, y0, z0), toIso(x - FT, y0, z1), 'PANEL_DETAIL', vertDepth);
+              ln(toIso(x + FT, y0, z0), toIso(x + FT, y0, z1), 'PANEL_DETAIL', vertDepth);
+              ln(toIso(x - FT, y0 - FD, z0), toIso(x - FT, y0 - FD, z1), 'PANEL', vertDepth);
+              ln(toIso(x + FT, y0 - FD, z0), toIso(x + FT, y0 - FD, z1), 'PANEL', vertDepth);
+              ln(toIso(x, y0 - FD, z0), toIso(x, y0 - FD, z1), 'FRAME', vertDepth);
+            }
+            const bDepth = getDepth(x, y0 - FD, 0);
+            ln(toIso(x - FT, y0, 0), toIso(x - FT, y0 - FD, 0), 'FRAME', bDepth);
+            ln(toIso(x + FT, y0, 0), toIso(x + FT, y0 - FD, 0), 'FRAME', bDepth);
+            const tDepth = getDepth(x, y0 - FD, H);
+            ln(toIso(x - FT, y0, H), toIso(x - FT, y0 - FD, H), 'FRAME', tDepth);
+            ln(toIso(x + FT, y0, H), toIso(x + FT, y0 - FD, H), 'FRAME', tDepth);
           }
 
-          // 좌측 외곽 모서리
+          // 좌측 외곽 모서리 (층별 분할 렌더링)
           if (!map.has(i, j - 1)) {
-            const cornerDepth = getDepth(x0, y0 - FD / 2, H / 2);
-            ln(toIso(x0, y0 - FD, 0), toIso(x0, y0 - FD, H), 'FRAME', cornerDepth);
-            ln(toIso(x0, y0, 0), toIso(x0, y0 - FD, 0), 'FRAME', cornerDepth);
-            ln(toIso(x0, y0, H), toIso(x0, y0 - FD, H), 'FRAME', cornerDepth);
-            for (let k = 1; k < hs.length; k++) {
-              ln(toIso(x0, y0, zs[k]), toIso(x0, y0 - FD, zs[k]), 'FRAME', cornerDepth);
+            for (let k = 0; k < hs.length; k++) {
+              const z0 = zs[k], z1 = zs[k + 1];
+              const cz = (z0 + z1) / 2;
+              const cornerDepth = getDepth(x0, y0 - FD, cz);
+              ln(toIso(x0, y0 - FD, z0), toIso(x0, y0 - FD, z1), 'FRAME', cornerDepth);
+              ln(toIso(x0, y0, z0), toIso(x0, y0, z1), 'FRAME', cornerDepth);
+              ln(toIso(x0, y0, z0), toIso(x0, y0 - FD, z0), 'FRAME', cornerDepth);
             }
+            const tDepth = getDepth(x0, y0 - FD, H);
+            ln(toIso(x0, y0, H), toIso(x0, y0 - FD, H), 'FRAME', tDepth);
           }
         }
       }
 
-      // (2) 우측 벽체 수평 & 수직 & 바닥 플랜지
+      // (2) 우측 벽체 수평 & 수직 & 바닥 & 상부 플랜지
       for (let i = 0; i < map.rows.length; i++) {
         const y0 = map.ys[i], y1 = map.ys[i + 1];
         for (let j = 0; j < map.cols.length; j++) {
           if (!map.has(i, j) || map.has(i, j + 1)) continue;
           const xWall = map.xs[j + 1];
-          const fDepth = getDepth(xWall + FD / 2, (y0 + y1) / 2, H / 2);
 
-          // 횡 플랜지 림 (외부)
+          // 횡 플랜지 림 (중간 층간 플랜지)
           for (let k = 1; k < hs.length; k++) {
             const z = zs[k];
+            const fDepth = getDepth(xWall + FD, (y0 + y1) / 2, z);
             ln(toIso(xWall, y0, z - FT), toIso(xWall, y1, z - FT), 'PANEL_DETAIL', fDepth);
             ln(toIso(xWall, y0, z + FT), toIso(xWall, y1, z + FT), 'PANEL_DETAIL', fDepth);
             ln(toIso(xWall + FD, y0, z - FT), toIso(xWall + FD, y1, z - FT), 'PANEL', fDepth);
@@ -1923,11 +1933,12 @@
           }
 
           // 하부 바닥 플랜지
-          ln(toIso(xWall + FD, y0, 0), toIso(xWall + FD, y1, 0), 'FRAME', fDepth);
-          ln(toIso(xWall + FD, y0, -FT), toIso(xWall + FD, y1, -FT), 'FRAME', fDepth);
+          const bDepthR = getDepth(xWall + FD, (y0 + y1) / 2, 0);
+          ln(toIso(xWall + FD, y0, 0), toIso(xWall + FD, y1, 0), 'FRAME', bDepthR);
+          ln(toIso(xWall + FD, y0, -FT), toIso(xWall + FD, y1, -FT), 'FRAME', bDepthR);
 
           // 상부 플랜지 (75mm 폭, 10mm 두께)
-          const topDepthR = getDepth(xWall + FD / 2, (y0 + y1) / 2, H);
+          const topDepthR = getDepth(xWall + FD, (y0 + y1) / 2, H);
           ln(toIso(xWall + FD, y0, H), toIso(xWall + FD, y1, H), 'FRAME', topDepthR);
           ln(toIso(xWall + FD, y0, H - FT), toIso(xWall + FD, y1, H - FT), 'FRAME', topDepthR);
           ln(toIso(xWall, y0, H - FT), toIso(xWall, y1, H - FT), 'PANEL_DETAIL', topDepthR);
@@ -1936,30 +1947,39 @@
           ln(toIso(xWall + FD, y0, H - FT), toIso(xWall + FD, y0, H), 'FRAME', topDepthR);
           ln(toIso(xWall + FD, y1, H - FT), toIso(xWall + FD, y1, H), 'FRAME', topDepthR);
 
-          // 종 플랜지 림
+          // 종 플랜지 림 (층별 분할 렌더링으로 상단 판넬에 의한 은선 차폐 방지)
           if (map.has(i + 1, j) && !map.has(i + 1, j + 1)) {
             const y = y1;
-            const vertDepth = getDepth(xWall + FD / 2, y, H / 2);
-            ln(toIso(xWall, y - FT, 0), toIso(xWall, y - FT, H), 'PANEL_DETAIL', vertDepth);
-            ln(toIso(xWall, y + FT, 0), toIso(xWall, y + FT, H), 'PANEL_DETAIL', vertDepth);
-            ln(toIso(xWall + FD, y - FT, 0), toIso(xWall + FD, y - FT, H), 'PANEL', vertDepth);
-            ln(toIso(xWall + FD, y + FT, 0), toIso(xWall + FD, y + FT, H), 'PANEL', vertDepth);
-            ln(toIso(xWall + FD, y, 0), toIso(xWall + FD, y, H), 'FRAME', vertDepth);
-            ln(toIso(xWall, y - FT, 0), toIso(xWall + FD, y - FT, 0), 'FRAME', vertDepth);
-            ln(toIso(xWall, y + FT, 0), toIso(xWall + FD, y + FT, 0), 'FRAME', vertDepth);
-            ln(toIso(xWall, y - FT, H), toIso(xWall + FD, y - FT, H), 'FRAME', vertDepth);
-            ln(toIso(xWall, y + FT, H), toIso(xWall + FD, y + FT, H), 'FRAME', vertDepth);
+            for (let k = 0; k < hs.length; k++) {
+              const z0 = zs[k], z1 = zs[k + 1];
+              const cz = (z0 + z1) / 2;
+              const vertDepth = getDepth(xWall + FD, y, cz);
+              ln(toIso(xWall, y - FT, z0), toIso(xWall, y - FT, z1), 'PANEL_DETAIL', vertDepth);
+              ln(toIso(xWall, y + FT, z0), toIso(xWall, y + FT, z1), 'PANEL_DETAIL', vertDepth);
+              ln(toIso(xWall + FD, y - FT, z0), toIso(xWall + FD, y - FT, z1), 'PANEL', vertDepth);
+              ln(toIso(xWall + FD, y + FT, z0), toIso(xWall + FD, y + FT, z1), 'PANEL', vertDepth);
+              ln(toIso(xWall + FD, y, z0), toIso(xWall + FD, y, z1), 'FRAME', vertDepth);
+            }
+            const bDepth = getDepth(xWall + FD, y, 0);
+            ln(toIso(xWall, y - FT, 0), toIso(xWall + FD, y - FT, 0), 'FRAME', bDepth);
+            ln(toIso(xWall, y + FT, 0), toIso(xWall + FD, y + FT, 0), 'FRAME', bDepth);
+            const tDepth = getDepth(xWall + FD, y, H);
+            ln(toIso(xWall, y - FT, H), toIso(xWall + FD, y - FT, H), 'FRAME', tDepth);
+            ln(toIso(xWall, y + FT, H), toIso(xWall + FD, y + FT, H), 'FRAME', tDepth);
           }
 
-          // 후면 외곽 모서리
+          // 후면 외곽 모서리 (층별 분할 렌더링)
           if (!map.has(i + 1, j)) {
-            const cornerDepth = getDepth(xWall + FD / 2, y1, H / 2);
-            ln(toIso(xWall + FD, y1, 0), toIso(xWall + FD, y1, H), 'FRAME', cornerDepth);
-            ln(toIso(xWall, y1, 0), toIso(xWall + FD, y1, 0), 'FRAME', cornerDepth);
-            ln(toIso(xWall, y1, H), toIso(xWall + FD, y1, H), 'FRAME', cornerDepth);
-            for (let k = 1; k < hs.length; k++) {
-              ln(toIso(xWall, y1, zs[k]), toIso(xWall + FD, y1, zs[k]), 'FRAME', cornerDepth);
+            for (let k = 0; k < hs.length; k++) {
+              const z0 = zs[k], z1 = zs[k + 1];
+              const cz = (z0 + z1) / 2;
+              const cornerDepth = getDepth(xWall + FD, y1, cz);
+              ln(toIso(xWall + FD, y1, z0), toIso(xWall + FD, y1, z1), 'FRAME', cornerDepth);
+              ln(toIso(xWall, y1, z0), toIso(xWall, y1, z1), 'FRAME', cornerDepth);
+              ln(toIso(xWall, y1, z0), toIso(xWall + FD, y1, z0), 'FRAME', cornerDepth);
             }
+            const tDepth = getDepth(xWall + FD, y1, H);
+            ln(toIso(xWall, y1, H), toIso(xWall + FD, y1, H), 'FRAME', tDepth);
           }
         }
       }
@@ -1970,7 +1990,7 @@
         for (let j = 0; j < map.cols.length; j++) {
           if (!map.has(i, j) || map.has(i + 1, j)) continue;
           const x0 = map.xs[j], x1 = map.xs[j + 1];
-          const topDepthB = getDepth((x0 + x1) / 2, yWall + FD / 2, H);
+          const topDepthB = getDepth((x0 + x1) / 2, yWall + FD, H);
           ln(toIso(x0, yWall + FD, H), toIso(x1, yWall + FD, H), 'FRAME', topDepthB);
           ln(toIso(x0, yWall + FD, H - FT), toIso(x1, yWall + FD, H - FT), 'FRAME', topDepthB);
           ln(toIso(x0, yWall, H - FT), toIso(x1, yWall, H - FT), 'PANEL_DETAIL', topDepthB);
@@ -1987,7 +2007,7 @@
         for (let j = 0; j < map.cols.length; j++) {
           if (!map.has(i, j) || map.has(i, j - 1)) continue;
           const xWall = map.xs[j];
-          const topDepthL = getDepth(xWall - FD / 2, (y0 + y1) / 2, H);
+          const topDepthL = getDepth(xWall - FD, (y0 + y1) / 2, H);
           ln(toIso(xWall - FD, y0, H), toIso(xWall - FD, y1, H), 'FRAME', topDepthL);
           ln(toIso(xWall - FD, y0, H - FT), toIso(xWall - FD, y1, H - FT), 'FRAME', topDepthL);
           ln(toIso(xWall, y0, H - FT), toIso(xWall, y1, H - FT), 'PANEL_DETAIL', topDepthL);
@@ -1998,33 +2018,33 @@
         }
       }
 
-      // (3) 외곽 돌출 코너 플랜지 (Convex Outer Corners)
+      // (3) 외곽 돌출 코너 플랜지 (Convex Outer Corners - 층별 분할 렌더링)
       for (let i = 0; i < map.rows.length; i++) {
         for (let j = 0; j < map.cols.length; j++) {
           if (!map.has(i, j)) continue;
           if (!map.has(i - 1, j) && !map.has(i, j + 1)) {
             const xC = map.xs[j + 1], yC = map.ys[i];
-            const cDepth = getDepth(xC + FD / 2, yC - FD / 2, H / 2);
-            ln(toIso(xC, yC - FD, 0), toIso(xC, yC - FD, H), 'FRAME', cDepth);
-            ln(toIso(xC - FT, yC - FD, 0), toIso(xC - FT, yC - FD, H), 'PANEL_DETAIL', cDepth);
-            ln(toIso(xC, yC, 0), toIso(xC, yC, H), 'PANEL', cDepth);
-            ln(toIso(xC + FD, yC, 0), toIso(xC + FD, yC, H), 'FRAME', cDepth);
-            ln(toIso(xC + FD, yC + FT, 0), toIso(xC + FD, yC + FT, H), 'PANEL_DETAIL', cDepth);
-            ln(toIso(xC, yC - FD, 0), toIso(xC, yC, 0), 'FRAME', cDepth);
-            ln(toIso(xC, yC, 0), toIso(xC + FD, yC, 0), 'FRAME', cDepth);
-            ln(toIso(xC, yC - FD, H), toIso(xC, yC, H), 'FRAME', cDepth);
-            ln(toIso(xC, yC, H), toIso(xC + FD, yC, H), 'FRAME', cDepth);
-            ln(toIso(xC, yC - FD, 0), toIso(xC + FD, yC, 0), 'PANEL', cDepth);
-            ln(toIso(xC, yC - FD, H), toIso(xC + FD, yC, H), 'PANEL', cDepth);
-            ln(toIso(xC, yC - FD, -FT), toIso(xC + FD, yC, -FT), 'FRAME', cDepth);
-            ln(toIso(xC, yC - FD, H - FT), toIso(xC + FD, yC - FD, H - FT), 'FRAME', cDepth);
-            ln(toIso(xC + FD, yC - FD, H - FT), toIso(xC + FD, yC, H - FT), 'FRAME', cDepth);
-            for (let k = 1; k < hs.length; k++) {
-              const z = zs[k];
-              ln(toIso(xC, yC - FD, z), toIso(xC, yC, z), 'FRAME', cDepth);
-              ln(toIso(xC, yC, z), toIso(xC + FD, yC, z), 'FRAME', cDepth);
-              ln(toIso(xC, yC - FD, z), toIso(xC + FD, yC, z), 'PANEL', cDepth);
+            for (let k = 0; k < hs.length; k++) {
+              const z0 = zs[k], z1 = zs[k + 1];
+              const cz = (z0 + z1) / 2;
+              const cDepth = getDepth(xC + FD, yC - FD, cz);
+              ln(toIso(xC, yC - FD, z0), toIso(xC, yC - FD, z1), 'FRAME', cDepth);
+              ln(toIso(xC - FT, yC - FD, z0), toIso(xC - FT, yC - FD, z1), 'PANEL_DETAIL', cDepth);
+              ln(toIso(xC, yC, z0), toIso(xC, yC, z1), 'PANEL', cDepth);
+              ln(toIso(xC + FD, yC, z0), toIso(xC + FD, yC, z1), 'FRAME', cDepth);
+              ln(toIso(xC + FD, yC + FT, z0), toIso(xC + FD, yC + FT, z1), 'PANEL_DETAIL', cDepth);
+              ln(toIso(xC, yC - FD, z0), toIso(xC, yC, z0), 'FRAME', cDepth);
+              ln(toIso(xC, yC, z0), toIso(xC + FD, yC, z0), 'FRAME', cDepth);
+              ln(toIso(xC, yC - FD, z0), toIso(xC + FD, yC, z0), 'PANEL', cDepth);
             }
+            const bDepth = getDepth(xC + FD, yC - FD, 0);
+            ln(toIso(xC, yC - FD, -FT), toIso(xC + FD, yC, -FT), 'FRAME', bDepth);
+            const tDepth = getDepth(xC + FD, yC - FD, H);
+            ln(toIso(xC, yC - FD, H), toIso(xC, yC, H), 'FRAME', tDepth);
+            ln(toIso(xC, yC, H), toIso(xC + FD, yC, H), 'FRAME', tDepth);
+            ln(toIso(xC, yC - FD, H), toIso(xC + FD, yC, H), 'PANEL', tDepth);
+            ln(toIso(xC, yC - FD, H - FT), toIso(xC + FD, yC - FD, H - FT), 'FRAME', tDepth);
+            ln(toIso(xC + FD, yC - FD, H - FT), toIso(xC + FD, yC, H - FT), 'FRAME', tDepth);
           }
         }
       }
@@ -2087,12 +2107,7 @@
     });
 
     // 6. 외부 사다리 (External Ladder with Cage & Top Safety Rails)
-    let lads = ladderList(opt, map);
-    if (!lads || lads.length === 0) {
-      const colIdx = Math.min(1, map.cols.length - 1);
-      const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2;
-      lads = [{ sd: 'D', idx: 2, x: cx, y: 0 }];
-    }
+    const lads = ladderList(opt, map) || [];
     lads.forEach(l => {
       const ladW = 450;
       if (l.sd === 'D') {

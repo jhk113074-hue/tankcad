@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.6</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.7</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1522,6 +1522,10 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       const activeCnt = nozzleData.filter(n => n.use !== false).length;
       sumTitle.textContent = `📋 배관 노즐 일람표 (NOZZLE SCHEDULE - 총 ${activeCnt}개)`;
     }
+    if (nozzleData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:14px">정의된 배관 노즐이 없습니다. (위 프리셋 버튼을 누르거나 셀을 클릭하여 추가)</td></tr>';
+      return;
+    }
     const faceTextMap = { front: 'FRONT (정면)', rear: 'REAR (배면)', left: 'LEFT (좌측)', right: 'RIGHT (우측)' };
     tbody.innerHTML = nozzleData.map(n => {
       if (!n.use) return `<tr style="opacity:0.4"><td>${n.mark}</td><td>${n.name}${n.desc ? ' (' + n.desc + ')' : ''}</td><td colspan="5" style="text-align:center">미사용</td></tr>`;
@@ -1572,12 +1576,6 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       }
     }
     if (!map) return;
-    if (nozzleData.length === 0) {
-      const isMulti = vals('L').filter(Boolean).length > 1;
-      const H = Number($('H').value) || 3000;
-      nozzleData = isMulti ? getDoubleCompNozzles(map, H) : getSingleCompNozzles(map, H);
-      selectedNozzleId = nozzleData[0] ? nozzleData[0].id : null;
-    }
     renderNozzleElevationGrid(map);
     updateMiniInspector();
     updatePreviewTbody();
