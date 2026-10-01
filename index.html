@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.4.2</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.4.3</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -805,10 +805,11 @@ canvas.drag{cursor:grabbing}
         <!-- 형상 등록 방식 선택 -->
         <div style="margin-bottom:10px">
           <label style="font-size:11px;font-weight:600">형상 입력 방식</label>
-          <div style="display:flex;gap:6px;margin-top:4px">
-            <button type="button" class="btn-sm active" id="btnSourcePreset" style="flex:1">🎨 기본 프리셋 패턴</button>
-            <button type="button" class="btn-sm" id="btnSourceDxf" style="flex:1">📁 CAD DWG / DXF 업로드</button>
-            <button type="button" class="btn-sm" id="btnSourceJson" style="flex:1">📝 JSON 직접 편집</button>
+          <div style="display:grid;grid-template-columns:1fr 1.2fr 1fr 0.9fr;gap:4px;margin-top:4px">
+            <button type="button" class="btn-sm active" id="btnSourcePreset">🎨 프리셋</button>
+            <button type="button" class="btn-sm" id="btnSourceStep" style="color:var(--accent);font-weight:700">📦 3D STP/STEP</button>
+            <button type="button" class="btn-sm" id="btnSourceDxf">📁 CAD DXF</button>
+            <button type="button" class="btn-sm" id="btnSourceJson">📝 JSON 편집</button>
           </div>
         </div>
 
@@ -826,7 +827,21 @@ canvas.drag{cursor:grabbing}
           </div>
         </div>
 
-        <!-- Source 2: DWG / DXF Upload -->
+        <!-- Source 2: 3D STP / STEP Upload -->
+        <div id="boxSourceStep" style="display:none;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:12px;font-weight:700;color:var(--accent)">📦 3D STP / STEP 파일 로딩</span>
+            <span style="font-size:10px;color:var(--muted);background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px">3D CAD (.stp, .step)</span>
+          </div>
+          <p style="font-size:11px;margin:0 0 8px;color:var(--muted);line-height:1.4">
+            SolidWorks, Inventor, Creo 등에서 제작한 <b>판넬 3D 모델(.stp, .step)</b>을 선택하세요.<br>
+            시스템이 3D 모델에서 <b>가로×세로 규격(W×H)과 정면 형상(외곽선, 엠보싱, 리브)을 자동 추출</b>하여 2D 승인도면에 완벽히 매핑합니다.
+          </p>
+          <input type="file" id="stepFileInput" accept=".stp,.step" style="font-size:12px;width:100%;padding:5px;background:var(--bg);border:1px solid var(--line);border-radius:4px">
+          <div id="stepParseStatus" style="font-size:11px;margin-top:6px;display:none;padding:6px 8px;border-radius:4px"></div>
+        </div>
+
+        <!-- Source 3: DWG / DXF Upload -->
         <div id="boxSourceDxf" style="display:none;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:12px">
           <p style="font-size:11px;margin:0 0 6px;color:var(--muted)">AutoCAD/GstarCAD에서 작성한 단일 판넬 <b>DWG 또는 DXF</b> 파일을 선택하세요. 내부 선/원/호가 자동으로 추출됩니다.</p>
           <input type="file" id="dxfFileInput" accept=".dwg,.dxf" style="font-size:12px;width:100%">
@@ -5715,18 +5730,276 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     }
   });
 
-  const sourceBoxes = { preset: $('boxSourcePreset'), dxf: $('boxSourceDxf'), json: $('boxSourceJson') };
-  const sourceBtns = { preset: $('btnSourcePreset'), dxf: $('btnSourceDxf'), json: $('btnSourceJson') };
+  const sourceBoxes = { preset: $('boxSourcePreset'), step: $('boxSourceStep'), dxf: $('boxSourceDxf'), json: $('boxSourceJson') };
+  const sourceBtns = { preset: $('btnSourcePreset'), step: $('btnSourceStep'), dxf: $('btnSourceDxf'), json: $('btnSourceJson') };
 
   function switchSource(name) {
     Object.keys(sourceBoxes).forEach(k => {
-      sourceBoxes[k].style.display = (k === name) ? 'block' : 'none';
-      sourceBtns[k].classList.toggle('active', k === name);
+      if (sourceBoxes[k]) sourceBoxes[k].style.display = (k === name) ? 'block' : 'none';
+      if (sourceBtns[k]) sourceBtns[k].classList.toggle('active', k === name);
     });
   }
   $('btnSourcePreset').addEventListener('click', () => switchSource('preset'));
+  $('btnSourceStep').addEventListener('click', () => switchSource('step'));
   $('btnSourceDxf').addEventListener('click', () => switchSource('dxf'));
   $('btnSourceJson').addEventListener('click', () => switchSource('json'));
+
+  // 3D STP / STEP Parser (브라우저 직접 구동 & 오프라인 완벽 지원)
+  function parseStepFileTo2D(stepText, fileName) {
+    const pts = new Map();
+    const ptRegex = /#(\d+)\s*=\s*CARTESIAN_POINT\s*\(\s*'[^']*'\s*,\s*\(\s*([-\d\.eE\+]+)\s*,\s*([-\d\.eE\+]+)\s*,\s*([-\d\.eE\+]+)\s*\)\s*\)/g;
+    let m;
+    while ((m = ptRegex.exec(stepText)) !== null) {
+      pts.set(Number(m[1]), [parseFloat(m[2]), parseFloat(m[3]), parseFloat(m[4])]);
+    }
+
+    const vpts = new Map();
+    const vpRegex = /#(\d+)\s*=\s*VERTEX_POINT\s*\(\s*'[^']*'\s*,\s*#(\d+)\s*\)/g;
+    while ((m = vpRegex.exec(stepText)) !== null) {
+      const pt = pts.get(Number(m[2]));
+      if (pt) vpts.set(Number(m[1]), pt);
+    }
+
+    function getPt(ref) {
+      return pts.get(ref) || vpts.get(ref);
+    }
+
+    if (pts.size === 0) {
+      throw new Error('STEP 파일 내에서 유효한 3D 좌표점(CARTESIAN_POINT)을 찾을 수 없습니다.');
+    }
+
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+    let minZ = Infinity, maxZ = -Infinity;
+
+    for (const p of pts.values()) {
+      if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
+      if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
+      if (p[2] < minZ) minZ = p[2]; if (p[2] > maxZ) maxZ = p[2];
+    }
+
+    const dx = maxX - minX, dy = maxY - minY, dz = maxZ - minZ;
+    const dims = [
+      { axis: 'x', size: dx, min: minX, idx: 0 },
+      { axis: 'y', size: dy, min: minY, idx: 1 },
+      { axis: 'z', size: dz, min: minZ, idx: 2 }
+    ].sort((a, b) => a.size - b.size);
+
+    const uDim = dims[1]; // 투영 가로축
+    const vDim = dims[2]; // 투영 세로축
+    const wRaw = uDim.size;
+    const hRaw = vDim.size;
+    const uIdx = uDim.idx;
+    const vIdx = vDim.idx;
+    const uMin = uDim.min;
+    const vMin = vDim.min;
+
+    // 표준 규격(500, 1000, 1100, 1200, 1250, 1300, 1500, 2000mm) 스냅 보정
+    const stdSizes = [500, 1000, 1100, 1200, 1250, 1300, 1500, 2000];
+    function snapStd(v) {
+      for (const s of stdSizes) {
+        if (Math.abs(v - s) <= 35) return s;
+      }
+      return Math.round(v);
+    }
+
+    let finalW = snapStd(wRaw);
+    let finalH = snapStd(hRaw);
+    if (finalW <= 0) finalW = 1000;
+    if (finalH <= 0) finalH = 1000;
+
+    const scaleU = finalW / (wRaw > 0 ? wRaw : finalW);
+    const scaleV = finalH / (hRaw > 0 ? hRaw : finalH);
+
+    // 1) CIRCLE 추출
+    const placements = new Map();
+    const plcRegex = /#(\d+)\s*=\s*AXIS2_PLACEMENT_3D\s*\(\s*'[^']*'\s*,\s*#(\d+)/g;
+    while ((m = plcRegex.exec(stepText)) !== null) {
+      placements.set(Number(m[1]), Number(m[2]));
+    }
+
+    const rawCircles = [];
+    const circleRegex = /#(\d+)\s*=\s*CIRCLE\s*\(\s*'[^']*'\s*,\s*#(\d+)\s*,\s*([-\d\.eE\+]+)\s*\)/g;
+    while ((m = circleRegex.exec(stepText)) !== null) {
+      const plcRef = Number(m[2]);
+      const r = parseFloat(m[3]);
+      const ptRef = placements.get(plcRef);
+      if (ptRef) {
+        const c = getPt(ptRef);
+        if (c) {
+          const cu = Math.round((c[uIdx] - uMin) * scaleU * 10) / 10;
+          const cv = Math.round((c[vIdx] - vMin) * scaleV * 10) / 10;
+          const cr = Math.round(r * ((scaleU + scaleV) / 2) * 10) / 10;
+          rawCircles.push({ cu, cv, cr });
+        }
+      }
+    }
+
+    const circles = [];
+    const seenCircles = new Set();
+    for (const c of rawCircles) {
+      const key = `${Math.round(c.cu)}_${Math.round(c.cv)}_${Math.round(c.cr)}`;
+      if (!seenCircles.has(key)) {
+        seenCircles.add(key);
+        circles.push({ k: 'circle', c: [c.cu, c.cv], r: c.cr });
+      }
+    }
+
+    // 2) EDGE_CURVE 추출
+    const rawLines = [];
+    const edgeRegex = /#(\d+)\s*=\s*EDGE_CURVE\s*\(\s*'[^']*'\s*,\s*#(\d+)\s*,\s*#(\d+)/g;
+    while ((m = edgeRegex.exec(stepText)) !== null) {
+      const p1 = getPt(Number(m[2]));
+      const p2 = getPt(Number(m[3]));
+      if (p1 && p2) {
+        let u1 = Math.round((p1[uIdx] - uMin) * scaleU * 10) / 10;
+        let v1 = Math.round((p1[vIdx] - vMin) * scaleV * 10) / 10;
+        let u2 = Math.round((p2[uIdx] - uMin) * scaleU * 10) / 10;
+        let v2 = Math.round((p2[vIdx] - vMin) * scaleV * 10) / 10;
+        const len = Math.hypot(u2 - u1, v2 - v1);
+        if (len >= 2.0) {
+          if (u1 > u2 || (u1 === u2 && v1 > v2)) {
+            const tu = u1; u1 = u2; u2 = tu;
+            const tv = v1; v1 = v2; v2 = tv;
+          }
+          rawLines.push([[u1, v1], [u2, v2]]);
+        }
+      }
+    }
+
+    // 3) POLY_LOOP 추출 (메쉬/다면체)
+    const polyRegex = /#(\d+)\s*=\s*POLY_LOOP\s*\(\s*'[^']*'\s*,\s*\(\s*([^)]+)\s*\)\s*\)/g;
+    while ((m = polyRegex.exec(stepText)) !== null) {
+      const refs = m[2].match(/#(\d+)/g);
+      if (refs && refs.length >= 3) {
+        const loopPts = [];
+        for (const r of refs) {
+          const id = Number(r.replace('#', ''));
+          const p = getPt(id);
+          if (p) {
+            loopPts.push([
+              Math.round((p[uIdx] - uMin) * scaleU * 10) / 10,
+              Math.round((p[vIdx] - vMin) * scaleV * 10) / 10
+            ]);
+          }
+        }
+        if (loopPts.length >= 3) {
+          for (let i = 0; i < loopPts.length; i++) {
+            const p1 = loopPts[i];
+            const p2 = loopPts[(i + 1) % loopPts.length];
+            const len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+            if (len >= 2.0) {
+              let u1 = p1[0], v1 = p1[1], u2 = p2[0], v2 = p2[1];
+              if (u1 > u2 || (u1 === u2 && v1 > v2)) {
+                const tu = u1; u1 = u2; u2 = tu;
+                const tv = v1; v1 = v2; v2 = tv;
+              }
+              rawLines.push([[u1, v1], [u2, v2]]);
+            }
+          }
+        }
+      }
+    }
+
+    // 선분 중복 제거 (공차 2mm)
+    const lines = [];
+    const seenLines = new Set();
+    for (const l of rawLines) {
+      const key = `${Math.round(l[0][0]/2)*2}_${Math.round(l[0][1]/2)*2}_${Math.round(l[1][0]/2)*2}_${Math.round(l[1][1]/2)*2}`;
+      if (!seenLines.has(key)) {
+        seenLines.add(key);
+        lines.push({ k: 'line', p: l });
+      }
+    }
+
+    // 외곽 사각 테두리 유무 검사
+    const hasOuter = lines.some(l => 
+      (Math.abs(l.p[0][0]) < 5 && Math.abs(l.p[1][0] - finalW) < 5) ||
+      (Math.abs(l.p[0][1]) < 5 && Math.abs(l.p[1][1] - finalH) < 5)
+    );
+
+    const entities = [];
+    if (!hasOuter) {
+      entities.push({
+        k: 'poly',
+        p: [[0, 0], [finalW, 0], [finalW, finalH], [0, finalH]],
+        c: true
+      });
+    }
+
+    entities.push(...lines);
+    entities.push(...circles);
+
+    // 파일명에서 재질 및 위치 자동 판별
+    let detectedMat = 'SMC';
+    let detectedCat = 'side';
+    const fnUpper = (fileName || '').toUpperCase();
+    if (fnUpper.includes('STS') || fnUpper.includes('SUS') || fnUpper.includes('STAINLESS')) {
+      detectedMat = 'STS';
+    }
+    if (fnUpper.includes('ROOF') || fnUpper.includes('TOP') || fnUpper.includes('BOTTOM') || fnUpper.includes('FLOOR')) {
+      detectedCat = 'top_bottom';
+    }
+
+    return {
+      width: finalW,
+      height: finalH,
+      material: detectedMat,
+      category: detectedCat,
+      entities: entities,
+      pointCount: pts.size,
+      lineCount: lines.length,
+      circleCount: circles.length
+    };
+  }
+
+  // STP 파일 업로드 이벤트 핸들러
+  $('stepFileInput').addEventListener('change', async (ev) => {
+    const file = ev.target.files[0];
+    if (!file) return;
+
+    const statusEl = $('stepParseStatus');
+    statusEl.style.display = 'block';
+    statusEl.style.background = 'rgba(59, 130, 246, 0.1)';
+    statusEl.style.color = 'var(--accent)';
+    statusEl.textContent = `⏳ ${file.name} 분석 중...`;
+
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const stepText = reader.result;
+          const result = parseStepFileTo2D(stepText, file.name);
+
+          // 폼 자동 채우기
+          $('modalW').value = result.width;
+          $('modalH').value = result.height;
+          $('modalMat').value = result.material;
+          $('modalCat').value = result.category;
+
+          const baseName = file.name.replace(/\.[^/.]+$/, "");
+          $('modalName').value = `${result.material} ${result.width}x${result.height} (${baseName})`;
+
+          modalEntities = result.entities;
+          $('modalJson').value = JSON.stringify(modalEntities, null, 2);
+          updateModalPreview();
+
+          statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
+          statusEl.style.color = '#10b981';
+          statusEl.innerHTML = `✅ <b>성공:</b> 규격 <b>${result.width}×${result.height} mm</b> | 형상 선분 <b>${result.entities.length}개</b> 자동 추출 완료!`;
+        } catch (parseErr) {
+          statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
+          statusEl.style.color = '#ef4444';
+          statusEl.textContent = `❌ STP 분석 실패: ${parseErr.message}`;
+        }
+      };
+      reader.readAsText(file);
+    } catch (err) {
+      statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
+      statusEl.style.color = '#ef4444';
+      statusEl.textContent = `❌ 파일 읽기 오류: ${err.message}`;
+    }
+  });
 
   $('btnApplyPreset').addEventListener('click', () => {
     const w = Number($('modalW').value) || 1000;

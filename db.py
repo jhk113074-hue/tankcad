@@ -1,6 +1,7 @@
 import os
 import json
 import math
+import re
 import sqlite3
 import ezdxf
 
@@ -314,4 +315,143 @@ def parse_dxf_string(dxf_content, target_w=None, target_h=None):
             entities.append({'k': 'poly', 'p': pts, 'c': item.get('c', False)})
 
     return entities
+
+
+def parse_step_string(step_text, target_w=None, target_h=None):
+    """
+    3D CAD STEP (ISO-10303-21) 파일 텍스트에서 정면 2D 투영 형상(외곽선, 엠보싱, 리브)을 추출합니다.
+    """
+    pts = {}
+    pt_regex = re.compile(r'#(\d+)\s*=\s*CARTESIAN_POINT\s*\(\s*\'[^\']*\'\s*,\s*\(\s*([-\d\.eE\+]+)\s*,\s*([-\d\.eE\+]+)\s*,\s*([-\d\.eE\+]+)\s*\)\s*\)')
+    for m in pt_regex.finditer(step_text):
+        pts[int(m.group(1))] = [float(m.group(2)), float(m.group(3)), float(m.group(4))]
+
+    vpts = {}
+    vp_regex = re.compile(r'#(\d+)\s*=\s*VERTEX_POINT\s*\(\s*\'[^\']*\'\s*,\s*#(\d+)\s*\)')
+    for m in vp_regex.finditer(step_text):
+        vid = int(m.group(1))
+        p_ref = int(m.group(2))
+        if p_ref in pts:
+            vpts[vid] = pts[p_ref]
+
+    def get_pt(ref):
+        return pts.get(ref) or vpts.get(ref)
+
+    if not pts:
+        return {"width": 1000, "height": 1000, "entities": []}
+
+    xs = [p[0] for p in pts.values()]
+    ys = [p[1] for p in pts.values()]
+    zs = [p[2] for p in pts.values()]
+
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+    min_z, max_z = min(zs), max(zs)
+    dx = max_x - min_x
+    dy = max_y - min_y
+    dz = max_z - min_z
+
+    dims = [
+        {'size': dx, 'min': min_x, 'idx': 0},
+        {'size': dy, 'min': min_y, 'idx': 1},
+        {'size': dz, 'min': min_z, 'idx': 2}
+    ]
+    dims.sort(key=lambda d: d['size'])
+
+    u_dim = dims[1]
+    v_dim = dims[2]
+    w_raw = u_dim['size']
+    h_raw = v_dim['size']
+    u_idx = u_dim['idx']
+    v_idx = v_dim['idx']
+    u_min = u_dim['min']
+    v_min = v_dim['min']
+
+    std_sizes = [500, 1000, 1100, 1200, 1250, 1300, 1500, 2000]
+    def snap(v):
+        for s in std_sizes:
+            if abs(v - s) <= 35:
+                return s
+        return round(v)
+
+    final_w = int(target_w) if target_w else snap(w_raw)
+    final_h = int(target_h) if target_h else snap(h_raw)
+    if final_w <= 0: final_w = 1000
+    if final_h <= 0: final_h = 1000
+
+    scale_u = final_w / (w_raw if w_raw > 0 else final_w)
+    scale_v = final_h / (h_raw if h_raw > 0 else final_h)
+
+    # 1. Edge Curves
+    raw_lines = []
+    edge_regex = re.compile(r'#(\d+)\s*=\s*EDGE_CURVE\s*\(\s*\'[^\']*\'\s*,\s*#(\d+)\s*,\s*#(\d+)')
+    for m in edge_regex.finditer(step_text):
+        p1 = get_pt(int(m.group(2)))
+        p2 = get_pt(int(m.group(3)))
+        if p1 and p2:
+            u1 = round((p1[u_idx] - u_min) * scale_u, 1)
+            v1 = round((p1[v_idx] - v_min) * scale_v, 1)
+            u2 = round((p2[u_idx] - u_min) * scale_u, 1)
+            v2 = round((p2[v_idx] - v_min) * scale_v, 1)
+            dist = math.hypot(u2 - u1, v2 - v1)
+            if dist >= 2.0:
+                if (u1, v1) > (u2, v2):
+                    u1, v1, u2, v2 = u2, v2, u1, v1
+                raw_lines.append([[u1, v1], [u2, v2]])
+
+    # 2. Circles
+    placements = {}
+    plc_regex = re.compile(r'#(\d+)\s*=\s*AXIS2_PLACEMENT_3D\s*\(\s*\'[^\']*\'\s*,\s*#(\d+)')
+    for m in plc_regex.finditer(step_text):
+        placements[int(m.group(1))] = int(m.group(2))
+
+    circles = []
+    seen_circles = set()
+    cir_regex = re.compile(r'#(\d+)\s*=\s*CIRCLE\s*\(\s*\'[^\']*\'\s*,\s*#(\d+)\s*,\s*([-\d\.eE\+]+)\s*\)')
+    for m in cir_regex.finditer(step_text):
+        plc_ref = int(m.group(2))
+        r = float(m.group(3))
+        pt_ref = placements.get(plc_ref)
+        if pt_ref:
+            c = get_pt(pt_ref)
+            if c:
+                cu = round((c[u_idx] - u_min) * scale_u, 1)
+                cv = round((c[v_idx] - v_min) * scale_v, 1)
+                cr = round(r * ((scale_u + scale_v) / 2), 1)
+                ckey = (round(cu), round(cv), round(cr))
+                if ckey not in seen_circles:
+                    seen_circles.add(ckey)
+                    circles.append({'k': 'circle', 'c': [cu, cv], 'r': cr})
+
+    # Line deduplication
+    lines = []
+    seen_lines = set()
+    for l in raw_lines:
+        key = (round(l[0][0] / 2) * 2, round(l[0][1] / 2) * 2, round(l[1][0] / 2) * 2, round(l[1][1] / 2) * 2)
+        if key not in seen_lines:
+            seen_lines.add(key)
+            lines.append({'k': 'line', 'p': l})
+
+    has_outer = any(
+        (abs(l['p'][0][0]) < 5 and abs(l['p'][1][0] - final_w) < 5) or
+        (abs(l['p'][0][1]) < 5 and abs(l['p'][1][1] - final_h) < 5)
+        for l in lines
+    )
+
+    entities = []
+    if not has_outer:
+        entities.append({
+            'k': 'poly',
+            'p': [[0, 0], [final_w, 0], [final_w, final_h], [0, final_h]],
+            'c': True
+        })
+    entities.extend(lines)
+    entities.extend(circles)
+
+    return {
+        "width": final_w,
+        "height": final_h,
+        "entities": entities
+    }
+
 

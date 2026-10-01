@@ -200,6 +200,21 @@ class TankCADHandler(SimpleHTTPRequestHandler):
                 self.send_json({"success": False, "error": f"DXF 파싱 오류: {e}"}, status=400)
             return
 
+        # STP 파일에서 판넬 엔티티 추출
+        if self.path == "/api/panels/import-step":
+            step_text = payload.get("step", "")
+            target_w = payload.get("width")
+            target_h = payload.get("height")
+            if not step_text:
+                self.send_json({"success": False, "error": "STEP 내용이 없습니다."}, status=400)
+                return
+            try:
+                res = db.parse_step_string(step_text, target_w, target_h)
+                self.send_json({"success": True, "width": res["width"], "height": res["height"], "entities": res["entities"], "count": len(res["entities"])})
+            except Exception as e:
+                self.send_json({"success": False, "error": f"STEP 파싱 오류: {e}"}, status=400)
+            return
+
         # DWG 파일에서 판넬 엔티티 추출 (ODA File Converter 활용)
         if self.path == "/api/panels/import-dwg":
             dwg_b64 = payload.get("dwg_base64", "")

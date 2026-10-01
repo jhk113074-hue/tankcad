@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.3] - 2026-10-01
+
+### Added (3D STP / STEP 판넬 파일 직접 로딩 엔진)
+- **판넬 등록 모달 내 3D STP / STEP 파일 직접 로더 탑재 (`📦 3D STP/STEP`)**:
+  - 판넬 등록 및 형상 편집 모달에 `📦 3D STP/STEP` 로딩 탭 추가.
+  - SolidWorks, Inventor, Creo, AutoCAD 3D 등에서 제작된 `.stp` / `.step` 3D CAD 파일을 브라우저에서 직접 선택/로드 가능.
+  - **3D 형상 정면 2D 자동 투영 엔진 (클라이언트 자립형)**:
+    - 3D 좌표점(`CARTESIAN_POINT`, `VERTEX_POINT`), 모서리선(`EDGE_CURVE`), 원형/원호(`CIRCLE`), 다면체 루프(`POLY_LOOP`) 해석.
+    - 탱크 판넬의 최소 두께 축(Thickness Axis)을 자동 판별하여 최적의 2D 정면(Front View) 투영면 자동 결정.
+    - 가로×세로 규격(W×H), 엠보싱 리브 선분, 볼트 홀 등을 자동 추출 및 중복 선분 필터링.
+    - 가로 폭(W), 세로 높이(H), 판넬 명칭 및 2D 형상 데이터를 모달 폼과 캔버스 미리보기에 즉시 자동 채움.
+  - **오프라인 및 GitHub Pages 100% 자립 구동**: 백엔드 서버 없이도 브라우저 내부에서 즉시 파싱되며, 서버 연결 시 `/api/panels/import-step` API도 함께 지원.
+
+---
+
 ## [1.4.2] - 2026-10-01
 
 ### Changed & Stabilized (Direction A: 도면 중심 정밀 설계 체제 복귀)
