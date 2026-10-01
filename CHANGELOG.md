@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.1] - 2026-10-01
+
+### Fixed
+- **도면 캔버스(#cv, #cv3d) 미표출 버그 완전 해결**:
+  - 모달 닫는 태그 누락으로 인해 캔버스 뷰포트가 모달(`display: none`) 내부에 갇혀 도면 영역이 백색으로 나오던 문제 수정.
+- **판넬 DB 서버 미연결 시 공장 표준 템플릿(37종) 자동 폴백 표시 지원**:
+  - GitHub Pages 등 정적 웹 환경이나 로컬 `server.py` 미실행 환경에서도 내장 템플릿(`TEMPLATES`, `SIDE_T`) 및 `localStorage` 기반으로 37종의 표준 SMC/STS 판넬 목록과 실시간 2D 형상 뷰어를 100% 정상 표출.
+  - 신규 판넬 등록/수정/삭제도 `localStorage`에 자동 영속화되어 서버 없이도 완벽 작동.
+
+---
+
 ## [1.4.0] - 2026-10-01
 
 ### Added & Breakthrough (Direction C: 3D CAD & STEP Pipeline Complete)

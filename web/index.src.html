@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.4.0</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.4.1</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -920,6 +920,8 @@ canvas.drag{cursor:grabbing}
           <button type="button" id="savePanelBtn" class="pri" style="padding:6px 16px">💾 DB에 저장</button>
         </div>
       </div>
+    </div>
+
     <!-- STP File Ingestion Modal -->
     <div id="stpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
       <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px;max-width:520px;width:92%;box-shadow:var(--shadow)">
@@ -3073,20 +3075,88 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     });
   }
 
-  async function loadDbPanels() {
+  function getBuiltinPanelsList(filterMat, filterCat) {
+    const list = [];
+    const mats = (filterMat === 'ALL') ? ['SMC', 'STS'] : [filterMat];
+    mats.forEach(mat => {
+      // 1. Top/Bottom templates
+      if (filterCat === 'ALL' || filterCat === 'top_bottom') {
+        const topDict = (typeof TEMPLATES !== 'undefined' && TEMPLATES && TEMPLATES[mat]) || {};
+        for (const [key, ents] of Object.entries(topDict)) {
+          const parts = key.split('x').map(Number);
+          const w = parts[0] || 1000, h = parts[1] || 1000;
+          list.push({
+            id: `builtin_${mat}_top_${key}`,
+            material: mat,
+            category: 'top_bottom',
+            width: w,
+            height: h,
+            size_key: key,
+            name: `${mat} ${key} 평면/천정 표준형`,
+            entities: ents,
+            is_default: true
+          });
+        }
+      }
+      // 2. Side elevation templates
+      if (filterCat === 'ALL' || filterCat === 'side') {
+        const sideDict = (typeof SIDE_T !== 'undefined' && SIDE_T && SIDE_T[mat]) || {};
+        for (const [key, ents] of Object.entries(sideDict)) {
+          const parts = key.match(/\d+/g) || [1000, 1000];
+          const w = Number(parts[0]) || 1000, h = Number(parts[1]) || 1000;
+          let label = `${mat} ${key} 측면 표준형`;
+          if (key === 'flat-1x1' || key === 'flat') label = `${mat} 1×1 평판형 (피팅용)`;
+          else if (key === 'flat-half2') label = `${mat} 0.5×1 (2장 분할) 평판형`;
+          else if (key === 'fitting') label = `${mat} 피팅 가공용 판넬`;
+          list.push({
+            id: `builtin_${mat}_side_${key}`,
+            material: mat,
+            category: 'side',
+            width: w,
+            height: h,
+            size_key: key,
+            name: label,
+            entities: ents,
+            is_default: true
+          });
+        }
+      }
+    });
+
+    // Custom panels from localStorage
     try {
-      const mat = $('dbFilterMat').value;
-      const cat = $('dbFilterCat').value;
-      const res = await fetch(`${API_BASE}/api/panels?material=${mat}&category=${cat}`);
+      const custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
+      custom.forEach(cp => {
+        if ((filterMat === 'ALL' || cp.material === filterMat) &&
+            (filterCat === 'ALL' || cp.category === filterCat)) {
+          list.push(cp);
+        }
+      });
+    } catch (e) {}
+
+    return list;
+  }
+
+  async function loadDbPanels() {
+    const mat = $('dbFilterMat').value;
+    const cat = $('dbFilterCat').value;
+    try {
+      const controller = new AbortController();
+      const tid = setTimeout(() => controller.abort(), 800);
+      const res = await fetch(`${API_BASE}/api/panels?material=${mat}&category=${cat}`, { signal: controller.signal });
+      clearTimeout(tid);
       if (!res.ok) throw new Error('API 응답 실패');
       const data = await res.json();
       dbPanelsList = data.panels || [];
-      renderPanelTable(dbPanelsList);
-      if (dbPanelsList.length > 0) {
-        selectPanel(dbPanelsList[0].id);
-      }
     } catch (err) {
-      $('panelTableBody').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:12px;color:#f87171">서버 DB 연결 대기 중 (server.py 실행 필요)</td></tr>';
+      dbPanelsList = getBuiltinPanelsList(mat, cat);
+    }
+    if (!dbPanelsList || !dbPanelsList.length) {
+      dbPanelsList = getBuiltinPanelsList(mat, cat);
+    }
+    renderPanelTable(dbPanelsList);
+    if (dbPanelsList.length > 0) {
+      selectPanel(dbPanelsList[0].id);
     }
   }
 
@@ -3111,32 +3181,38 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     tbody.querySelectorAll('tr').forEach(tr => {
       tr.addEventListener('click', (e) => {
         if (e.target.closest('button')) return;
-        selectPanel(Number(tr.getAttribute('data-id')));
+        selectPanel(tr.getAttribute('data-id'));
       });
     });
 
     tbody.querySelectorAll('.btn-panel-edit').forEach(btn => {
-      btn.addEventListener('click', () => editPanel(Number(btn.getAttribute('data-id'))));
+      btn.addEventListener('click', () => editPanel(btn.getAttribute('data-id')));
     });
 
     tbody.querySelectorAll('.btn-panel-del').forEach(btn => {
-      btn.addEventListener('click', () => deletePanel(Number(btn.getAttribute('data-id'))));
+      btn.addEventListener('click', () => deletePanel(btn.getAttribute('data-id')));
     });
   }
 
-  async function selectPanel(pid) {
+  function selectPanel(pid) {
     $('panelTableBody').querySelectorAll('tr').forEach(tr => {
       tr.style.background = (tr.getAttribute('data-id') == pid) ? 'var(--accent-light)' : 'transparent';
     });
-    try {
-      const res = await fetch(`${API_BASE}/api/panels/${pid}`);
-      const data = await res.json();
+    const found = dbPanelsList.find(p => String(p.id) === String(pid));
+    if (found) {
+      selectedPanel = found;
+      $('previewPanelTitle').textContent = selectedPanel.name || `${selectedPanel.material} ${selectedPanel.size_key}`;
+      $('previewPanelInfo').textContent = `${selectedPanel.width} × ${selectedPanel.height} mm (${selectedPanel.entities ? selectedPanel.entities.length : 0}개 도형)`;
+      renderSinglePanel($('panelPreviewCv'), selectedPanel.width, selectedPanel.height, selectedPanel.entities);
+      return;
+    }
+    fetch(`${API_BASE}/api/panels/${pid}`).then(r => r.json()).then(data => {
       if (!data.panel) return;
       selectedPanel = data.panel;
       $('previewPanelTitle').textContent = selectedPanel.name || `${selectedPanel.material} ${selectedPanel.size_key}`;
       $('previewPanelInfo').textContent = `${selectedPanel.width} × ${selectedPanel.height} mm (${selectedPanel.entities ? selectedPanel.entities.length : 0}개 도형)`;
       renderSinglePanel($('panelPreviewCv'), selectedPanel.width, selectedPanel.height, selectedPanel.entities);
-    } catch (e) {}
+    }).catch(() => {});
   }
 
   async function syncTemplatesFromDb(silent = false) {
@@ -3321,6 +3397,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const name = $('modalName').value.trim() || `${mat} ${width}x${height} 판넬`;
     const payload = { material: mat, category: cat, width, height, name, entities: modalEntities };
 
+    let saved = false;
     try {
       const res = await fetch(`${API_BASE}/api/panels`, {
         method: 'POST',
@@ -3328,46 +3405,65 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      if (data.success) {
-        $('panelRegModal').style.display = 'none';
-        alert('✅ 판넬이 DB에 성공적으로 저장되었습니다!');
-        await loadDbPanels();
-        await syncTemplatesFromDb();
-      } else {
-        alert('저장 실패: ' + data.error);
-      }
-    } catch (err) { alert('DB 저장 오류: ' + err.message); }
+      if (data.success) saved = true;
+    } catch (err) {}
+
+    try {
+      const custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
+      custom.push({
+        ...payload,
+        id: 'custom_' + Date.now(),
+        size_key: `${width}x${height}`,
+        is_default: false
+      });
+      localStorage.setItem('tankcad_custom_panels', JSON.stringify(custom));
+      saved = true;
+    } catch (e) {}
+
+    if (saved) {
+      $('panelRegModal').style.display = 'none';
+      alert('✅ 판넬이 성공적으로 저장되었습니다!');
+      await loadDbPanels();
+      rebuild(false);
+    } else {
+      alert('판넬 저장 실패');
+    }
   });
 
   async function editPanel(pid) {
-    try {
-      const res = await fetch(`${API_BASE}/api/panels/${pid}`);
-      const data = await res.json();
-      if (!data.panel) return;
-      const p = data.panel;
-      $('modalMat').value = p.material;
-      $('modalCat').value = p.category;
-      $('modalW').value = p.width;
-      $('modalH').value = p.height;
-      $('modalName').value = p.name;
-      modalEntities = (p.entities && p.entities.length) ? p.entities : generatePresetEntities('chamfer', p.width, p.height);
-      $('modalJson').value = JSON.stringify(modalEntities, null, 2);
-      openPanelModal(true);
-      switchSource('json');
-      setTimeout(updateModalPreview, 60);
-    } catch (e) {}
+    let p = dbPanelsList.find(x => String(x.id) === String(pid));
+    if (!p) {
+      try {
+        const res = await fetch(`${API_BASE}/api/panels/${pid}`);
+        const data = await res.json();
+        if (data.panel) p = data.panel;
+      } catch (e) {}
+    }
+    if (!p) return;
+    $('modalMat').value = p.material;
+    $('modalCat').value = p.category;
+    $('modalW').value = p.width;
+    $('modalH').value = p.height;
+    $('modalName').value = p.name;
+    modalEntities = (p.entities && p.entities.length) ? p.entities : generatePresetEntities('chamfer', p.width, p.height);
+    $('modalJson').value = JSON.stringify(modalEntities, null, 2);
+    openPanelModal(true);
+    switchSource('json');
+    setTimeout(updateModalPreview, 60);
   }
 
   async function deletePanel(pid) {
     if (!confirm('이 판넬을 DB에서 삭제하시겠습니까?')) return;
     try {
-      const res = await fetch(`${API_BASE}/api/panels/${pid}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        await loadDbPanels();
-        await syncTemplatesFromDb();
-      } else { alert('삭제 실패: ' + data.error); }
-    } catch (e) { alert('삭제 오류: ' + e.message); }
+      await fetch(`${API_BASE}/api/panels/${pid}`, { method: 'DELETE' });
+    } catch (e) {}
+    try {
+      let custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
+      custom = custom.filter(p => String(p.id) !== String(pid));
+      localStorage.setItem('tankcad_custom_panels', JSON.stringify(custom));
+    } catch (e) {}
+    await loadDbPanels();
+    rebuild(false);
   }
 
   // 초기 시작 시 DB에서 판넬 목록 및 최신 템플릿 로드 후 저장된 상태 복원
