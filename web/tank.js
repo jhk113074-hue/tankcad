@@ -2978,7 +2978,7 @@
       line([tableX1, nozTableTop], [tableX1, yy]);
     }
 
-    // 노트 (Remarks) - 가로 전체 폭 활용 및 항목별(1,2,3...) 간격 최소화 (현재 폰트 4.8mm 유지)
+    // 노트 (Remarks) - AutoCAD DWG 및 웹 화면 1:1 완벽 일치 (우측 돌출 방지 48자 제한 & 균등 배치)
     let allNotes = [];
     if (opt.notes && opt.notes.length) allNotes.push(...opt.notes);
     if (opt.remarks && opt.remarks.length) {
@@ -2995,20 +2995,22 @@
     const availNotesH = ny - bottomLimit;
     const noteFontH = 4.8;
     const textStartX = tx0 + 18;
-    const maxTextW = (x1 - 8) - textStartX; // ~174mm (표제란 200mm 폭 전체 활용)
 
-    // 전체 라인 수 계산 (가로 폭에 맞춘 동적 줄바꿈으로 오른쪽 빈공간 해소)
-    const wrappedNotes = allNotes.map(n => wrapTextByWidth(n, maxTextW - 4, noteFontH));
+    // AutoCAD simplex.shx 폰트 폭(0.85배율)에 안전한 최대 글자수 (48자 기준)
+    // 48자 기준 줄바꿈 시 AutoCAD DWG에서 우측 외곽선을 절대 침범/돌출하지 않고 안전 마진 확보
+    const wrappedNotes = allNotes.map(n => wrapText(n, 48));
     let totalLines = 0;
     wrappedNotes.forEach(lines => totalLines += lines.length);
 
-    // 항목별 공간 간격 최소화 (noteGap: 2.2mm, noteLineH: 6.6mm로 콤팩트 배치)
-    let noteLineH = 6.6;
-    let noteGap = 2.2;
-    const neededH = totalLines * noteLineH + (allNotes.length - 1) * noteGap;
-    if (availNotesH < neededH) {
-      noteLineH = Math.max(5.6, (availNotesH - (allNotes.length - 1) * 1.2) / Math.max(1, totalLines));
-      noteGap = Math.max(1.0, (availNotesH - totalLines * noteLineH) / Math.max(1, allNotes.length - 1));
+    // 가용 높이에 맞추어 행간(noteLineH)과 항목별 간격(noteGap)을 지능적으로 균등 배치
+    // 배관 노즐표나 부품표 상단까지 빈 공간 없이 자연스럽게 채우도록 분할
+    let noteLineH = 6.8;
+    const minGap = 2.5;
+    const freeSpace = availNotesH - (totalLines * noteLineH);
+    let noteGap = allNotes.length > 1 ? Math.min(6.5, Math.max(minGap, freeSpace / (allNotes.length - 1))) : 4.0;
+    if (totalLines * noteLineH + (allNotes.length - 1) * noteGap > availNotesH) {
+      noteLineH = Math.max(5.6, (availNotesH - (allNotes.length - 1) * minGap) / Math.max(1, totalLines));
+      noteGap = Math.max(1.5, (availNotesH - totalLines * noteLineH) / Math.max(1, allNotes.length - 1));
     }
 
     wrappedNotes.forEach((lines, i) => {

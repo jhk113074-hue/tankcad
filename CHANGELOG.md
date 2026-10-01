@@ -5,6 +5,19 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.18] - 2026-10-02
+
+### Fixed & Parity (AutoCAD DWG와 웹 화면 1:1 완벽 일치 및 우측 외곽선 침범 수정)
+- **AutoCAD DWG에서 Remarks 텍스트 우측 테두리선 침범/돌출 문제 완벽 해결**:
+  - 오토캐드의 벡터 폰트(`simplex.shx`) 폭 특성에 맞추어 최대 줄바꿈 글자수를 **48자**로 정밀 보정.
+  - AutoCAD에서 텍스트가 표제란 우측 외곽선을 뚫고 나가지 않고 약 20~25mm의 깔끔하고 안전한 마진을 유지하도록 개선.
+- **웹 화면과 DWG 도면의 1:1 시각적 일치성(WYSIWYG) 확보**:
+  - 웹 캔버스의 도면 시트 폰트를 캐드 비율과 호환되는 고정폭/CAD 스택(`Consolas`, `Noto Sans KR`, `monospace`)으로 연동하여, 웹 브라우저에서 보는 텍스트 폭과 AutoCAD DWG에서 열었을 때의 텍스트 폭이 왜곡 없이 똑같이 보이도록 일치화.
+- **노즐표 상단까지 빈틈없는 균등 높이 채움**:
+  - 배관 노즐 일람표(NOZZLE SCHEDULE)가 있는 경우, `<Remarks>`부터 노즐표 상단까지의 공간을 28개 텍스트 행과 항목별 간격으로 빈틈없이 균등하게 채워 하단 공백과 우측 돌출을 동시에 해결.
+
+---
+
 ## [1.5.17] - 2026-10-02
 
 ### Clarified & Enhanced (DWG 변환 팝업 안내 문구 명확화 및 DXF 우선 추천)
