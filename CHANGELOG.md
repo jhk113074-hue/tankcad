@@ -5,6 +5,21 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.14] - 2026-10-02
+
+### Reorganized & Enhanced UI (표제란 환경설정 메뉴 통합 및 3개 세부 탭 분리 고도화)
+- **표제란 설정 환경설정으로 통합 ("표제란도 환경설정으로 넣어주세요." 완벽 해결)**:
+  - 기존 메인 네비게이션에 위치하던 표제란 탭(`tab-sheet`)을 환경설정 메뉴 내부로 완전히 이전 및 통합.
+  - 메인 네비게이션 바를 설계 핵심 워크플로우 5개(`📐 사양·치수`, `✏️ 평면 편집`, `📐 측면편집`, `📊 집계`, `⚙️ 환경설정`)로 일원화하여 불필요한 탭 혼잡을 해소.
+- **환경설정 내 메뉴 세부 TAB(서브탭) 분리 및 쉬운 UI 고도화 ("환경설정 내의 메뉴는 TAB으로 분리해서 넣어주세요. 화면 고도화해주세오. 쉬운UI로" 완벽 해결)**:
+  - 환경설정 상단에 직관적인 세그먼트 알약형 서브 탭 컨트롤(`.subtab-nav`) 구축:
+    1. **`🏗️ 기초패드` (`subtab-pad`)**: 최외각 패드 폭, 일반 패드 폭, 패드 높이(H), 전후면 돌출 자동 계산, 기본값 리셋, 원클릭 프리셋 버튼 및 시각 프리뷰 바 제공.
+    2. **`📋 표제란·시트` (`subtab-title`)**: A1 도면 시트 표제란 포함 여부 및 도면 종류 선택기, 도면 축척(Scale: 자동 맞춤 및 축척 리스트), 회사명/공사명/발주처/시공사/TANK SIZE/규격/도면번호/작성일/작성자/부품표 등 핵심 표제란 입력 그리드, 감리/MEP/ChartNo 등 추가 필드 접이식 메뉴, 도면 표준 주의사항(NOTES) & 특기사항(REMARKS) 및 `.cht` 고객 차트 파일 불러오기 기능 통합 배치.
+    3. **`🧩 판넬 DB` (`subtab-panels`)**: 재질/위치 필터, 실시간 판넬 형상 2D 캔버스 프리뷰, 판넬 신규 등록 모달 및 도면 즉시 동기화·초기화 지원.
+  - 서브탭 전환 시 판넬 DB 자동 재로드 및 반응형 레이아웃 지원으로 길게 스크롤하지 않고 원하는 설정을 즉시 확인 및 제어 가능.
+
+---
+
 ## [1.5.13] - 2026-10-02
 
 ### Reorganized & Streamlined (표제란 도면 노트 및 REMARKS 환경설정 메뉴로 이전)

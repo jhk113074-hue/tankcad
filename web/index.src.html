@@ -58,6 +58,14 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:1
 .tab-btn:hover{color:var(--fg);background:var(--surface-sub)}
 .tab-btn.active{background:var(--accent);color:var(--accent-fg);box-shadow:0 1px 3px rgba(2,132,199,0.25)}
 
+/* Sub-Tabs / Segmented Controls */
+.subtab-nav{display:flex;background:var(--surface-sub);padding:3px;border-radius:8px;border:1px solid var(--line);gap:3px;margin-bottom:12px}
+.subtab-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:7px 4px;font-size:11px;font-weight:600;border:0;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;transition:all .15s}
+.subtab-btn:hover{color:var(--fg);background:rgba(255,255,255,0.05)}
+.subtab-btn.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,0.12);border:1px solid var(--line)}
+.subtab-content{display:none}
+.subtab-content.active{display:block}
+
 /* Cards / Sections */
 .box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm)}
 .box h2{font-size:12px;font-weight:700;margin:0 0 10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;justify-content:space-between}
@@ -284,7 +292,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.13</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.14</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -302,7 +310,6 @@ canvas.drag{cursor:grabbing}
       <button type="button" class="tab-btn active" data-tab="tab-specs">📐 사양·치수</button>
       <button type="button" class="tab-btn" data-tab="tab-edit">✏️ 평면 편집</button>
       <button type="button" class="tab-btn" data-tab="tab-nozzles">📐 측면편집</button>
-      <button type="button" class="tab-btn" data-tab="tab-sheet">📋 표제란</button>
       <button type="button" class="tab-btn" data-tab="tab-bom">📊 집계</button>
       <button type="button" class="tab-btn" data-tab="tab-settings">⚙️ 환경설정</button>
     </nav>
@@ -575,63 +582,6 @@ canvas.drag{cursor:grabbing}
       </section>
     </div>
 
-    <!-- Tab 3: Sheet & Notes -->
-    <div class="tab-content" id="tab-sheet">
-      <section class="box">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
-          <label class="chk" style="font-weight:600;font-size:12px;cursor:pointer"><input type="checkbox" id="sheetOn" checked> A1 도면 시트 표제란 포함</label>
-          <select id="sheetKind" style="width:auto">
-            <option value="asm">조립도 (평면·콘크리트·정면·측면·3D등각)</option>
-            <option value="iso">등각 조감도 (3D ISOMETRIC DWG)</option>
-            <option value="frame">프레임도 (스키드·내부 스테이)</option>
-            <option value="detail">상세도 (DETAILS DWG)</option>
-          </select>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
-          <label for="scaleSel" style="font-weight:600;font-size:12px;color:var(--fg)">도면 축척 (Scale)</label>
-          <select id="scaleSel" style="width:auto;min-width:140px">
-            <option value="auto" selected>⚡ 자동 맞춤 (Auto)</option>
-            <option value="15">1 / 15</option>
-            <option value="20">1 / 20</option>
-            <option value="25">1 / 25</option>
-            <option value="30">1 / 30</option>
-            <option value="40">1 / 40</option>
-            <option value="50">1 / 50</option>
-            <option value="60">1 / 60</option>
-            <option value="75">1 / 75</option>
-            <option value="100">1 / 100</option>
-            <option value="125">1 / 125</option>
-            <option value="150">1 / 150</option>
-            <option value="200">1 / 200</option>
-            <option value="250">1 / 250</option>
-            <option value="300">1 / 300</option>
-          </select>
-        </div>
-
-        <h2 style="margin-top:14px">표제란 정보</h2>
-        <div class="tb">
-          <label for="tCustomer">회사명</label><input type="text" id="tCustomer" placeholder="YSACC CO.,LTD">
-          <label for="tAddress">주소</label><input type="text" id="tAddress" placeholder="201-1, 1251, Garosu-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28420, Republic of Korea">
-          <label for="tTankSize">TANK SIZE</label><input type="text" id="tTankSize" placeholder="자동 생성 (직접 입력 가능)">
-          <label for="tClient">Client</label><input type="text" id="tClient">
-          <label for="tConsultant">Consultant</label><input type="text" id="tConsultant">
-          <label for="tContractor">Main Contractor</label><input type="text" id="tContractor">
-          <label for="tProject">Project</label><input type="text" id="tProject">
-          <label for="tMep">MEP Contractor</label><input type="text" id="tMep">
-          <label for="tTel">TEL</label><input type="text" id="tTel" placeholder="연락처 (선택)">
-          <label for="tDwgNo">DWG NO.</label><input type="text" id="tDwgNo">
-          <label for="tChart">Chart No.</label><input type="text" id="tChart">
-          <label for="tDate">DATE</label><input type="text" id="tDate" placeholder="비우면 오늘 날짜">
-          <label for="tDrawn">DRAWN</label><input type="text" id="tDrawn">
-          <label for="tParts">품명(부품표)</label><textarea id="tParts" rows="2" placeholder="한 줄에 1개씩 입력 (최대 10개)" style="width:100%;font-size:11px;padding:5px"></textarea>
-        </div>
-
-        <div style="margin-top:12px;padding:8px 10px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:6px;font-size:11px;display:flex;align-items:center;justify-content:space-between">
-          <span style="color:var(--muted)">💡 도면 공통 주의사항(NOTES) 및 특기사항은 환경설정에서 관리됩니다.</span>
-          <button type="button" class="btn-sm" onclick="document.querySelector('[data-tab=tab-settings]').click()" style="padding:2px 6px;font-size:10px">⚙️ 환경설정 이동</button>
-        </div>
-      </section>
-    </div>
 
     <!-- Tab 4: BOM -->
     <div class="tab-content" id="tab-bom">
@@ -643,158 +593,233 @@ canvas.drag{cursor:grabbing}
       </section>
     </div>
 
-    <!-- Tab 6: Settings (환경설정) -->
+    <!-- Tab 5: Settings (환경설정) -->
     <div class="tab-content" id="tab-settings">
-      <!-- 1. 기초 콘크리트 패드 규격 설정 -->
-      <section class="box" style="margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2 style="margin:0">🏗️ 기초 콘크리트 패드 설정 (mm)</h2>
-          <span style="font-size:10px;color:var(--accent);font-weight:600">콘크리트 패드</span>
-        </div>
-        <p class="hint" style="margin-bottom:10px">수조 하부 기초 콘크리트 패드 빔의 폭·높이 규격 및 전후면 돌출 길이를 설정합니다.</p>
+      <!-- 환경설정 서브 탭 네비게이션 -->
+      <div class="subtab-nav">
+        <button type="button" class="subtab-btn active" data-subtab="subtab-pad">🏗️ 기초패드</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-title">📋 표제란·시트</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-panels">🧩 판넬 DB</button>
+      </div>
 
-        <!-- 패드 도식화 / 시각 프리뷰 바 -->
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:8px 6px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;margin-bottom:10px;text-align:center">
-          <div style="flex:1">
-            <div style="font-size:10px;color:var(--muted);margin-bottom:2px">최외각 첫번째</div>
-            <div id="badgePadFirst" style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 4px;border-radius:4px">400mm</div>
+      <!-- Subtab 1: 기초 콘크리트 패드 설정 -->
+      <div class="subtab-content active" id="subtab-pad">
+        <section class="box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h2 style="margin:0">🏗️ 기초 콘크리트 패드 설정 (mm)</h2>
+            <span style="font-size:10px;color:var(--accent);font-weight:600">콘크리트 패드</span>
           </div>
-          <div style="color:var(--muted);font-size:10px">─·─</div>
-          <div style="flex:1">
-            <div style="font-size:10px;color:var(--muted);margin-bottom:2px">일반 (내부)</div>
-            <div id="badgePadMid" style="font-size:11px;font-weight:700;color:var(--fg);background:rgba(100,116,139,0.12);padding:2px 4px;border-radius:4px">300mm</div>
-          </div>
-          <div style="color:var(--muted);font-size:10px">─·─</div>
-          <div style="flex:1">
-            <div style="font-size:10px;color:var(--muted);margin-bottom:2px">최외각 마지막</div>
-            <div id="badgePadLast" style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 4px;border-radius:4px">400mm</div>
-          </div>
-        </div>
+          <p class="hint" style="margin-bottom:10px">수조 하부 기초 콘크리트 패드 빔의 폭·높이 규격 및 전후면 돌출 길이를 설정합니다.</p>
 
-        <!-- 패드 규격 설정 (최외각 패드 폭, 일반 패드 폭, 패드 높이) -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
-          <div>
-            <label for="padFirstW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">최외각 패드 폭</label>
-            <input type="number" id="padFirstW" value="400" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="400">
-            <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">첫번째·마지막 동일</div>
-          </div>
-          <div>
-            <label for="padMidW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">일반 패드 폭</label>
-            <input type="number" id="padMidW" value="300" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="300">
-            <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">내부 패드 폭</div>
-          </div>
-          <div>
-            <label for="padH" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">패드 높이 (H)</label>
-            <input type="number" id="padH" value="525" min="100" max="3000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="525">
-            <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">기본: 600 - 스키드</div>
-          </div>
-        </div>
-
-        <!-- 자동 계산 정보 표시 (전·후면 돌출 = 최외각 폭 / 2, 패드 높이 기본식 안내 및 초기화) -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;padding:8px 10px;background:var(--surface);border:1px dashed var(--line);border-radius:6px;font-size:11px">
-          <div>
-            <div style="color:var(--muted);margin-bottom:2px">전·후면 돌출 (자동)</div>
-            <div style="font-size:13px;font-weight:700;color:var(--accent)"><span id="calcPadOverhang">200</span> mm</div>
-            <div style="font-size:9px;color:var(--muted)">최외각 폭(<span id="calcEdgeW">400</span>) / 2</div>
-          </div>
-          <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-              <span style="color:var(--muted)">패드높이 기본식</span>
-              <button type="button" id="btnResetPadH" class="btn-sm" style="padding:1px 5px;font-size:9px;line-height:1.2;background:rgba(2,132,199,0.08);color:var(--accent)" title="기본 계산값(600 - 스키드)으로 재설정">기본값 적용</button>
+          <!-- 패드 도식화 / 시각 프리뷰 바 -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:8px 6px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;margin-bottom:10px;text-align:center">
+            <div style="flex:1">
+              <div style="font-size:10px;color:var(--muted);margin-bottom:2px">최외각 첫번째</div>
+              <div id="badgePadFirst" style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 4px;border-radius:4px">400mm</div>
             </div>
-            <div style="font-size:13px;font-weight:700;color:var(--text)"><span id="calcDefaultPadH">525</span> mm</div>
-            <div style="font-size:9px;color:var(--muted)">600 - 스키드(<span id="calcSkidH">75</span>)</div>
+            <div style="color:var(--muted);font-size:10px">─·─</div>
+            <div style="flex:1">
+              <div style="font-size:10px;color:var(--muted);margin-bottom:2px">일반 (내부)</div>
+              <div id="badgePadMid" style="font-size:11px;font-weight:700;color:var(--fg);background:rgba(100,116,139,0.12);padding:2px 4px;border-radius:4px">300mm</div>
+            </div>
+            <div style="color:var(--muted);font-size:10px">─·─</div>
+            <div style="flex:1">
+              <div style="font-size:10px;color:var(--muted);margin-bottom:2px">최외각 마지막</div>
+              <div id="badgePadLast" style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 4px;border-radius:4px">400mm</div>
+            </div>
           </div>
-        </div>
 
-        <!-- 원클릭 프리셋 버튼들 -->
-        <div style="display:flex;gap:4px">
-          <button type="button" class="btn-sm" id="btnPadPresetStd" style="flex:1;padding:4px 2px;font-size:10px" title="최외각 400 / 일반 300">표준 400/300</button>
-          <button type="button" class="btn-sm" id="btnPadPresetWide" style="flex:1;padding:4px 2px;font-size:10px" title="최외각 450 / 일반 350">광폭 450/350</button>
-          <button type="button" class="btn-sm" id="btnPadPresetEqual3" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 300">동일 300</button>
-          <button type="button" class="btn-sm" id="btnPadPresetEqual4" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 400">동일 400</button>
-        </div>
-      </section>
+          <!-- 패드 규격 설정 (최외각 패드 폭, 일반 패드 폭, 패드 높이) -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+            <div>
+              <label for="padFirstW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">최외각 패드 폭</label>
+              <input type="number" id="padFirstW" value="400" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="400">
+              <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">첫번째·마지막 동일</div>
+            </div>
+            <div>
+              <label for="padMidW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">일반 패드 폭</label>
+              <input type="number" id="padMidW" value="300" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="300">
+              <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">내부 패드 폭</div>
+            </div>
+            <div>
+              <label for="padH" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">패드 높이 (H)</label>
+              <input type="number" id="padH" value="525" min="100" max="3000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="525">
+              <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">기본: 600 - 스키드</div>
+            </div>
+          </div>
 
-      <!-- 2. 표제란 도면 공통 노트 및 특기사항 (NOTES & REMARKS) -->
-      <section class="box" style="margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2 style="margin:0">📋 표제란 노트 및 특기사항</h2>
-          <button type="button" id="chtBtn" class="btn-sm" style="background:var(--surface);border:1px solid var(--line)" title="고객 차트(.cht) 파일 불러오기">📁 .cht 차트 파일 불러오기</button>
-          <input type="file" id="chtFile" accept=".cht,.txt" hidden>
-        </div>
-        <p class="hint" style="margin-bottom:8px">A1 도면 표제란 영역에 출력되는 표준 설치 주의사항(NOTES) 및 특기사항(REMARKS)을 관리합니다.</p>
+          <!-- 자동 계산 정보 표시 -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;padding:8px 10px;background:var(--surface);border:1px dashed var(--line);border-radius:6px;font-size:11px">
+            <div>
+              <div style="color:var(--muted);margin-bottom:2px">전·후면 돌출 (자동)</div>
+              <div style="font-size:13px;font-weight:700;color:var(--accent)"><span id="calcPadOverhang">200</span> mm</div>
+              <div style="font-size:9px;color:var(--muted)">최외각 폭(<span id="calcEdgeW">400</span>) / 2</div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                <span style="color:var(--muted)">패드높이 기본식</span>
+                <button type="button" id="btnResetPadH" class="btn-sm" style="padding:1px 5px;font-size:9px;line-height:1.2;background:rgba(2,132,199,0.08);color:var(--accent)" title="기본 계산값(600 - 스키드)으로 재설정">기본값 적용</button>
+              </div>
+              <div style="font-size:13px;font-weight:700;color:var(--text)"><span id="calcDefaultPadH">525</span> mm</div>
+              <div style="font-size:9px;color:var(--muted)">600 - 스키드(<span id="calcSkidH">75</span>)</div>
+            </div>
+          </div>
 
-        <div style="margin-bottom:8px">
-          <label for="tRemarks" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px;color:var(--fg)">REMARKS (특기사항)</label>
-          <textarea id="tRemarks" rows="2" placeholder="REMARKS (한 줄에 1개씩)" style="width:100%;font-size:11px;padding:6px 8px"></textarea>
-        </div>
+          <!-- 원클릭 프리셋 버튼들 -->
+          <div style="display:flex;gap:4px">
+            <button type="button" class="btn-sm" id="btnPadPresetStd" style="flex:1;padding:4px 2px;font-size:10px" title="최외각 400 / 일반 300">표준 400/300</button>
+            <button type="button" class="btn-sm" id="btnPadPresetWide" style="flex:1;padding:4px 2px;font-size:10px" title="최외각 450 / 일반 350">광폭 450/350</button>
+            <button type="button" class="btn-sm" id="btnPadPresetEqual3" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 300">동일 300</button>
+            <button type="button" class="btn-sm" id="btnPadPresetEqual4" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 400">동일 400</button>
+          </div>
+        </section>
+      </div>
 
-        <div>
-          <label for="tNotes" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px;color:var(--fg)">NOTES (표준 주의사항)</label>
-          <textarea id="tNotes" rows="7" style="width:100%;font-size:11px;padding:6px 8px" placeholder="도면 주의사항 (한 줄에 1개씩)"></textarea>
-        </div>
-      </section>
-
-      <!-- 3. 탱크 판넬 DB 관리 -->
-      <section class="box">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2 style="margin:0">🧩 탱크 판넬 DB 관리</h2>
-          <button type="button" id="openPanelModal" class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent)">➕ 판넬 등록</button>
-        </div>
-        <p class="hint" style="margin-bottom:10px">탱크 규격별 판넬의 형상(엠보싱, 무늬, 보강)을 등록하고 관리합니다.</p>
-        
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
-          <div>
-            <label style="font-size:11px;color:var(--muted)">재질 필터</label>
-            <select id="dbFilterMat" style="width:100%;font-size:12px;padding:4px">
-              <option value="ALL">전체 재질</option>
-              <option value="SMC">SMC (GRP)</option>
-              <option value="STS">STS (스텐)</option>
+      <!-- Subtab 2: 표제란 & 도면 시트 설정 -->
+      <div class="subtab-content" id="subtab-title">
+        <!-- 도면 시트 및 축척 설정 -->
+        <section class="box" style="margin-bottom:12px">
+          <h2>📐 도면 시트 및 축척</h2>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
+            <label class="chk" style="font-weight:600;font-size:12px;cursor:pointer"><input type="checkbox" id="sheetOn" checked> A1 도면 시트 표제란 포함</label>
+            <select id="sheetKind" style="width:auto">
+              <option value="asm">조립도 (평면·콘크리트·정면·측면·3D등각)</option>
+              <option value="iso">등각 조감도 (3D ISOMETRIC DWG)</option>
+              <option value="frame">프레임도 (스키드·내부 스테이)</option>
+              <option value="detail">상세도 (DETAILS DWG)</option>
             </select>
           </div>
-          <div>
-            <label style="font-size:11px;color:var(--muted)">위치 필터</label>
-            <select id="dbFilterCat" style="width:100%;font-size:12px;padding:4px">
-              <option value="ALL">전체 위치</option>
-              <option value="top_bottom">평면 (상·하부)</option>
-              <option value="side">입면 (측면)</option>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <label for="scaleSel" style="font-weight:600;font-size:12px;color:var(--fg)">도면 축척 (Scale)</label>
+            <select id="scaleSel" style="width:auto;min-width:140px">
+              <option value="auto" selected>⚡ 자동 맞춤 (Auto)</option>
+              <option value="15">1 / 15</option>
+              <option value="20">1 / 20</option>
+              <option value="25">1 / 25</option>
+              <option value="30">1 / 30</option>
+              <option value="40">1 / 40</option>
+              <option value="50">1 / 50</option>
+              <option value="60">1 / 60</option>
+              <option value="75">1 / 75</option>
+              <option value="100">1 / 100</option>
+              <option value="125">1 / 125</option>
+              <option value="150">1 / 150</option>
+              <option value="200">1 / 200</option>
+              <option value="250">1 / 250</option>
+              <option value="300">1 / 300</option>
             </select>
           </div>
-        </div>
+        </section>
 
-        <div style="max-height:200px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;margin-bottom:12px;background:var(--bg)">
-          <table style="width:100%;font-size:11px;border-collapse:collapse" id="panelTable">
-            <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
-              <tr>
-                <th style="padding:6px 4px;text-align:left">재질/구분</th>
-                <th style="padding:6px 4px;text-align:left">규격</th>
-                <th style="padding:6px 4px;text-align:left">명칭</th>
-                <th style="padding:6px 4px;text-align:center">관리</th>
-              </tr>
-            </thead>
-            <tbody id="panelTableBody">
-              <tr><td colspan="4" style="text-align:center;padding:12px;color:var(--muted)">판넬 목록을 불러오는 중...</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Panel Preview Canvas Box -->
-        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <span style="font-size:11px;font-weight:600;color:var(--fg)" id="previewPanelTitle">선택된 판넬 형상</span>
-            <span style="font-size:10px;color:var(--muted)" id="previewPanelInfo">-</span>
+        <!-- 표제란 기본 정보 -->
+        <section class="box" style="margin-bottom:12px">
+          <h2>📋 표제란 기본 정보</h2>
+          <div class="tb">
+            <label for="tCustomer">회사명</label><input type="text" id="tCustomer" placeholder="YSACC CO.,LTD">
+            <label for="tProject">Project</label><input type="text" id="tProject">
+            <label for="tTankSize">TANK SIZE</label><input type="text" id="tTankSize" placeholder="자동 생성 (직접 입력 가능)">
+            <label for="tClient">Client</label><input type="text" id="tClient">
+            <label for="tContractor">Main Contractor</label><input type="text" id="tContractor">
+            <label for="tAddress">주소</label><input type="text" id="tAddress" placeholder="201-1, 1251, Garosu-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28420, Republic of Korea">
+            <label for="tDwgNo">DWG NO.</label><input type="text" id="tDwgNo">
+            <label for="tDate">DATE</label><input type="text" id="tDate" placeholder="비우면 오늘 날짜">
+            <label for="tDrawn">DRAWN</label><input type="text" id="tDrawn">
+            <label for="tTel">TEL</label><input type="text" id="tTel" placeholder="연락처 (선택)">
+            <label for="tParts">품명(부품표)</label><textarea id="tParts" rows="2" placeholder="한 줄에 1개씩 입력 (최대 10개)" style="width:100%;font-size:11px;padding:5px"></textarea>
           </div>
-          <div style="display:flex;justify-content:center;align-items:center;background:#0f172a;border-radius:4px;height:170px;position:relative;overflow:hidden">
-            <canvas id="panelPreviewCv" width="340" height="170" style="width:100%;height:100%"></canvas>
-          </div>
-        </div>
+          <!-- 추가 필드 (감리/MEP/ChartNo 등) 접이식 -->
+          <details style="margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);font-size:11px">
+            <summary style="cursor:pointer;color:var(--muted);font-weight:600">추가 상세 필드 (Consultant, MEP, Chart No.)</summary>
+            <div class="tb" style="margin-top:8px">
+              <label for="tConsultant">Consultant</label><input type="text" id="tConsultant">
+              <label for="tMep">MEP Contractor</label><input type="text" id="tMep">
+              <label for="tChart">Chart No.</label><input type="text" id="tChart">
+            </div>
+          </details>
+        </section>
 
-        <div style="display:flex;gap:6px;margin-top:12px">
-          <button type="button" id="syncDbBtn" class="btn-sm" style="flex:1" title="DB의 최신 판넬 형상을 현재 2D 캐드 도면에 즉시 반영">🔄 도면 동기화</button>
-          <button type="button" id="resetDbBtn" class="btn-sm" style="color:#ef4444" title="기본 공장 템플릿으로 복원">초기화</button>
-        </div>
-      </section>
+        <!-- 도면 공통 노트 및 특기사항 (NOTES & REMARKS) -->
+        <section class="box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h2 style="margin:0">📝 도면 노트 및 특기사항</h2>
+            <button type="button" id="chtBtn" class="btn-sm" style="background:var(--surface);border:1px solid var(--line)" title="고객 차트(.cht) 파일 불러오기">📁 .cht 불러오기</button>
+            <input type="file" id="chtFile" accept=".cht,.txt" hidden>
+          </div>
+          <p class="hint" style="margin-bottom:8px">A1 도면 표제란 영역에 출력되는 표준 설치 주의사항(NOTES) 및 특기사항(REMARKS)을 관리합니다.</p>
+
+          <div style="margin-bottom:8px">
+            <label for="tRemarks" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px;color:var(--fg)">REMARKS (특기사항)</label>
+            <textarea id="tRemarks" rows="2" placeholder="REMARKS (한 줄에 1개씩)" style="width:100%;font-size:11px;padding:6px 8px"></textarea>
+          </div>
+
+          <div>
+            <label for="tNotes" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px;color:var(--fg)">NOTES (표준 주의사항)</label>
+            <textarea id="tNotes" rows="7" style="width:100%;font-size:11px;padding:6px 8px" placeholder="도면 주의사항 (한 줄에 1개씩)"></textarea>
+          </div>
+        </section>
+      </div>
+
+      <!-- Subtab 3: 판넬 DB 관리 -->
+      <div class="subtab-content" id="subtab-panels">
+        <section class="box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h2 style="margin:0">🧩 탱크 판넬 DB 관리</h2>
+            <button type="button" id="openPanelModal" class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent)">➕ 판넬 등록</button>
+          </div>
+          <p class="hint" style="margin-bottom:10px">탱크 규격별 판넬의 형상(엠보싱, 무늬, 보강)을 등록하고 관리합니다.</p>
+          
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+            <div>
+              <label style="font-size:11px;color:var(--muted)">재질 필터</label>
+              <select id="dbFilterMat" style="width:100%;font-size:12px;padding:4px">
+                <option value="ALL">전체 재질</option>
+                <option value="SMC">SMC (GRP)</option>
+                <option value="STS">STS (스텐)</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted)">위치 필터</label>
+              <select id="dbFilterCat" style="width:100%;font-size:12px;padding:4px">
+                <option value="ALL">전체 위치</option>
+                <option value="top_bottom">평면 (상·하부)</option>
+                <option value="side">입면 (측면)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="max-height:200px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;margin-bottom:12px;background:var(--bg)">
+            <table style="width:100%;font-size:11px;border-collapse:collapse" id="panelTable">
+              <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
+                <tr>
+                  <th style="padding:6px 4px;text-align:left">재질/구분</th>
+                  <th style="padding:6px 4px;text-align:left">규격</th>
+                  <th style="padding:6px 4px;text-align:left">명칭</th>
+                  <th style="padding:6px 4px;text-align:center">관리</th>
+                </tr>
+              </thead>
+              <tbody id="panelTableBody">
+                <tr><td colspan="4" style="text-align:center;padding:12px;color:var(--muted)">판넬 목록을 불러오는 중...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Panel Preview Canvas Box -->
+          <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:11px;font-weight:600;color:var(--fg)" id="previewPanelTitle">선택된 판넬 형상</span>
+              <span style="font-size:10px;color:var(--muted)" id="previewPanelInfo">-</span>
+            </div>
+            <div style="display:flex;justify-content:center;align-items:center;background:#0f172a;border-radius:4px;height:170px;position:relative;overflow:hidden">
+              <canvas id="panelPreviewCv" width="340" height="170" style="width:100%;height:100%"></canvas>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:6px;margin-top:12px">
+            <button type="button" id="syncDbBtn" class="btn-sm" style="flex:1" title="DB의 최신 판넬 형상을 현재 2D 캐드 도면에 즉시 반영">🔄 도면 동기화</button>
+            <button type="button" id="resetDbBtn" class="btn-sm" style="color:#ef4444" title="기본 공장 템플릿으로 복원">초기화</button>
+          </div>
+        </section>
+      </div>
     </div>
   </aside>
 
@@ -1012,10 +1037,29 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       const target = $(btn.getAttribute('data-tab'));
       if (target) {
         target.classList.add('active');
-        if (btn.getAttribute('data-tab') === 'tab-settings' || btn.getAttribute('data-tab') === 'tab-panels') {
-          loadDbPanels();
+        if (btn.getAttribute('data-tab') === 'tab-settings') {
+          const actSub = document.querySelector('.subtab-btn.active');
+          if (actSub && actSub.getAttribute('data-subtab') === 'subtab-panels') {
+            loadDbPanels();
+          }
         } else if (btn.getAttribute('data-tab') === 'tab-nozzles') {
           updateNozzleUi();
+        }
+      }
+    });
+  });
+
+  /* Sub-Tab Navigation (환경설정 세부 탭 전환) */
+  document.querySelectorAll('.subtab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.subtab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      const target = $(btn.getAttribute('data-subtab'));
+      if (target) {
+        target.classList.add('active');
+        if (btn.getAttribute('data-subtab') === 'subtab-panels') {
+          loadDbPanels();
         }
       }
     });
