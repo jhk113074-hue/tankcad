@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.2</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.3</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2429,8 +2429,8 @@ canvas.drag{cursor:grabbing}
     };
 
     // 지면 기준선 (Ground Level GL Line at Z = GRD)
-    ln(toIso(strips[0][0] - 150, -PAD_OV, GRD), toIso(totalL + 150, -PAD_OV, GRD), 'PANEL_DETAIL');
-    ln(toIso(totalL, -PAD_OV, GRD), toIso(totalL, totalW + 150, GRD), 'PANEL_DETAIL');
+    ln(toIso(strips[0][0] - 150, -PAD_OV, GRD), toIso(XR + 150, -PAD_OV, GRD), 'PANEL_DETAIL');
+    ln(toIso(XR, -PAD_OV, GRD), toIso(XR, totalW + 150, GRD), 'PANEL_DETAIL');
 
     // 각 패드 보(piece) 렌더링
     strips.forEach(([px, pw, idx], sIdx) => {
@@ -2439,16 +2439,15 @@ canvas.drag{cursor:grabbing}
 
       runs.forEach(([y0, y1]) => {
         const yStart = y0 - PAD_OV;
-        const yEnd = y1 + PAD_OV;
 
-        // 1) 전면부 직사각형 (Front Face)
+        // 1) 전면 돌출부 직사각형 (Front Face: Y = yStart)
         const p1 = toIso(px, yStart, -th);
         const p2 = toIso(rightX, yStart, -th);
         const p3 = toIso(rightX, yStart, GRD);
         const p4 = toIso(px, yStart, GRD);
         poly([p1, p2, p3, p4], 'PANEL', true);
 
-        // 2) 전면 돌출부 상부면 (Top Face of Front Overhang: Y = yStart ~ y0)
+        // 2) 전면 돌출부 상부면 (Top Face: Y = yStart ~ y0, 탱크 전면 벽체까지만 렌더링)
         const p1_top = toIso(px, y0, -th);
         const p2_top = toIso(rightX, y0, -th);
         poly([p1, p2, p2_top, p1_top], 'PANEL', true);
@@ -2472,32 +2471,35 @@ canvas.drag{cursor:grabbing}
         const r4 = p3;
         poly([r1, r2, r3, r4], 'PANEL', true);
 
-        // 5) 탱크 구간 (Y = y0 ~ y1) 우측 측면이 외부에 노출되는지 검사
+        // 5) 탱크 구간 (Y = y0 ~ y1): 탱크 내부는 일체 그리지 않고, 우측 최외곽 노출면만 렌더링
         for (let r = 0; r < nR; r++) {
           if (map.ys[r] >= y0 && map.ys[r + 1] <= y1) {
             const isRightmostAtR = (sIdx === strips.length - 1) || !hasTankAtRow(idx + 1, r);
             if (isRightmostAtR) {
               const segY0 = map.ys[r], segY1 = map.ys[r + 1];
+              // 해당 행(r)의 실제 우측 탱크 벽면 위치 (xWall)
+              let xWall = totalL;
+              for (let j = map.cols.length - 1; j >= 0; j--) {
+                if (map.has(r, j)) { xWall = map.xs[j + 1]; break; }
+              }
+              // 우측 수직 노출면 (X = rightX, Z = -th ~ GRD)
               poly([
                 toIso(rightX, segY0, -th),
                 toIso(rightX, segY1, -th),
                 toIso(rightX, segY1, GRD),
                 toIso(rightX, segY0, GRD)
               ], 'PANEL', true);
-              ln(toIso(px, segY0, -th), toIso(px, segY1, -th), 'PANEL_DETAIL');
+              // 우측 상부 노출면 외곽선 (탱크 내부 선은 완전히 제거)
               ln(toIso(rightX, segY0, -th), toIso(rightX, segY1, -th), 'PANEL');
+
+              // 해당 런의 마지막 행이면 탱크 후면 모서리에서 깔끔하게 마감
+              if (segY1 === y1) {
+                ln(toIso(xWall, y1, -th), toIso(rightX, y1, -th), 'PANEL');
+                ln(toIso(rightX, y1, -th), toIso(rightX, y1, GRD), 'PANEL');
+              }
             }
           }
         }
-
-        // 6) 후면 돌출 구간 (Y = y1 ~ yEnd) 및 후면 단면
-        const b1 = toIso(px, yEnd, -th);
-        const b2 = toIso(rightX, yEnd, -th);
-        const b3 = toIso(rightX, yEnd, GRD);
-        const b4 = toIso(px, yEnd, GRD);
-        poly([b1, b2, b3, b4], 'PANEL', true);
-        poly([toIso(px, y1, -th), toIso(rightX, y1, -th), b2, b1], 'PANEL', true);
-        poly([toIso(rightX, y1, -th), b2, b3, toIso(rightX, y1, GRD)], 'PANEL', true);
       });
     });
 
