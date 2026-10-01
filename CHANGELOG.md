@@ -5,6 +5,18 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.13] - 2026-10-02
+
+### Reorganized & Streamlined (표제란 도면 노트 및 REMARKS 환경설정 메뉴로 이전)
+- **표제란 노트 및 특기사항 환경설정으로 이전 ("표제란 노트는 환경설정으로 옮겨주세요." 완벽 해결)**:
+  - 기존 표제란 탭(`tab-sheet`) 하단에 위치하던 **표준 설치 주의사항(NOTES)**, **특기사항(REMARKS)** 및 **고객 차트(.cht) 파일 불러오기** 기능을 **`⚙️ 환경설정` (`tab-settings`)** 메뉴의 제2 섹션으로 이전.
+  - 표제란 탭(`tab-sheet`)은 프로젝트별 표제 정보(회사명, 주소, 규격, 고객사, 공사명, 작성일, 도면번호, 부품표 등)와 도면 축척(Scale) 및 시트 옵션에만 온전히 집중할 수 있도록 정돈.
+  - 표제란 탭 하단에 환경설정의 노트 설정으로 즉시 이동할 수 있는 직관적인 안내 링크 버튼 제공.
+  - 상단 탭 버튼 명칭을 `📋 표제란`으로 간결하게 갱신.
+  - 도면 렌더링, 상태 저장(`localStorage`), URL 동기화 및 `.cht` 파일 파싱 기능 100% 정상 유지.
+
+---
+
 ## [1.5.12] - 2026-10-02
 
 ### Added & Reorganized (환경설정 메뉴 신설, 기초콘크리트 패드/패널DB 이전 및 폭 입력 1칸 간소화)
