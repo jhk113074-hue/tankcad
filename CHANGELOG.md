@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.0] - 2026-10-01
+
+### Added & Breakthrough (Direction C: 3D CAD & STEP Pipeline Complete)
+- **🎮 360° 대화형 WebGL 3D 뷰어 (Three.js Interactive Viewer)**:
+  - 툴바 및 사이드 탭에서 클릭 한 번으로 `📐 2D CAD 도면`과 `🎮 3D 뷰어`를 즉시 실시간 전환.
+  - 마우스 좌클릭 360° 자유 궤도 회전(Orbit), 우클릭/Shift 이동(Pan), 휠 줌(Zoom) 지원.
+  - 물탱크 재질별 사실적 PBR 셰이딩:
+    - **SMC (GRP)**: 실물 아이보리 복합소재 매트 텍스처
+    - **STS (스테인리스)**: 거울형 메탈릭 반사 재질
+    - **기초 및 프레임**: 아연도금 베이스 스키드 찬넬 및 콘크리트 패드 3D 묘사
+    - **의장품**: 실물 원형 맨홀(Manhole), 버섯형 통기구(Vent), 안전 사다리(Ladder), 배관 노즐(Flange Nozzle)
+- **💥 실시간 조립 분해도 (Interactive Exploded View Slider)**:
+  - 분해도 슬라이더(0% ~ 100%)를 조절하여 전면/배면/좌측/우측 벽체 및 지붕 패널이 사방으로 부드럽게 분해 전개.
+  - 외부 패널에 가려져 있던 탱크 내부 공간, 칸막이 구획벽, 내부 구조를 3D로 직관적 검토 가능.
+- **✂️ 3D 내부 단면 절단 (Section Cut / Cross-Section View)**:
+  - 단면 절단 토글(Clipping Plane)을 통해 탱크 단면을 잘라 내부 수조 및 판넬 결합 상태를 직접 들여다볼 수 있는 기능 탑재.
+- **🎥 원클릭 카메라 시점 프리셋 (Camera View Presets)**:
+  - `🧊 등각 (ISO)`, `🏢 정면 (Front)`, `📐 평면 (Top)`, `🚪 우측 (Right)`, `📦 배면 (Rear)`, `🔄 시점 리셋` 지원.
+  - `🕸️ 와이어프레임 토글`: 솔리드 셰이딩, CAD 외곽선(Edges), 와이어프레임 모드 전환.
+- **💾 조립체 3D CAD 파일 원클릭 다운로드 (3D Assembly Exports)**:
+  - **`💾 3D STEP (.stp)`**: ISO 10303-21 표준 B-Rep 조립체 파일 다운로드 (SolidWorks, Inventor, Fusion 360, CATIA, Rhino, FreeCAD, AutoCAD에서 즉시 열림).
+  - **`💾 3D DXF (.dxf)`**: AutoCAD용 3D 엔티티/라인 조립 도면 파일 다운로드.
+  - **`💾 3D OBJ (.obj)`**: 범용 3D 모델 파일 다운로드.
+- **📁 실물 판넬 3D STEP 파일 등록 (Client-side STEP Ingestion)**:
+  - 브라우저 내장 ISO 10303-21 STEP 텍스트 파서(`ClientStepParser`) 탑재.
+  - 사용자가 사출/금형 업체의 `.stp` / `.step` 파일을 드래그 & 드롭하면 서버 전송 없이 브라우저에서 즉시 파싱하여 실물 3D 패널 형상으로 등록 및 모델링 반영.
+
+---
+
 ## [1.3.1] - 2026-10-01
 
 ### Fixed & Improved

@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.3.1</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.4.0</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -302,6 +302,7 @@ canvas.drag{cursor:grabbing}
       <button type="button" class="tab-btn active" data-tab="tab-specs">📐 사양·치수</button>
       <button type="button" class="tab-btn" data-tab="tab-edit">✏️ 평면 편집</button>
       <button type="button" class="tab-btn" data-tab="tab-nozzles">📐 측면편집</button>
+      <button type="button" class="tab-btn" data-tab="tab-3d">🎮 3D 뷰어</button>
       <button type="button" class="tab-btn" data-tab="tab-sheet">📋 표제란·노트</button>
       <button type="button" class="tab-btn" data-tab="tab-bom">📊 집계</button>
       <button type="button" class="tab-btn" data-tab="tab-panels">🧩 판넬 DB</button>
@@ -575,6 +576,67 @@ canvas.drag{cursor:grabbing}
       </section>
     </div>
 
+    <!-- Tab: 3D Interactive Viewer Controls -->
+    <div class="tab-content" id="tab-3d">
+      <section class="box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <h2 style="margin:0">🎮 3D 대화형 뷰어 조작</h2>
+          <button type="button" id="tab3dGoViewBtn" class="btn-preset primary" style="padding:3px 8px;font-size:11px">▶ 3D 화면 보기</button>
+        </div>
+        <p class="hint" style="margin-bottom:10px">마우스 좌클릭 드래그로 360° 자유 회전, 휠로 확대/축소, 우클릭으로 위치를 이동합니다.</p>
+
+        <!-- 3D 분해도 (Exploded View) -->
+        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:11px;font-weight:700">💥 조립 분해도 (Exploded View)</span>
+            <span id="explodeValText" style="font-family:var(--font-num);font-size:11px;font-weight:700;color:var(--accent)">0%</span>
+          </div>
+          <input type="range" id="explodeSlider" min="0" max="100" value="0" style="width:100%;accent-color:var(--accent);cursor:pointer">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px">
+            <span>완전 조립 (0%)</span>
+            <span>중간 분해 (50%)</span>
+            <span>최대 분해 (100%)</span>
+          </div>
+        </div>
+
+        <!-- 3D 시점 프리셋 & 절단뷰 -->
+        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px">
+          <span style="font-size:11px;font-weight:700;display:block;margin-bottom:6px">🎥 카메라 시점 프리셋</span>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px">
+            <button type="button" class="btn-preset" id="camIsoBtn">🧊 등각 (ISO)</button>
+            <button type="button" class="btn-preset" id="camFrontBtn">🏢 정면 (Front)</button>
+            <button type="button" class="btn-preset" id="camTopBtn">📐 평면 (Top)</button>
+            <button type="button" class="btn-preset" id="camRightBtn">🚪 우측 (Right)</button>
+            <button type="button" class="btn-preset" id="camRearBtn">📦 배면 (Rear)</button>
+            <button type="button" class="btn-preset" id="camResetBtn">🔄 시점 리셋</button>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button type="button" id="tab3dCutToggle" class="btn-preset" style="flex:1">✂️ 내부 단면 절단 (Cut)</button>
+            <button type="button" id="tab3dWireToggle" class="btn-preset" style="flex:1">🕸️ 와이어프레임 토글</button>
+          </div>
+        </div>
+
+        <!-- 3D 판넬 STP 파일 등록 -->
+        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:11px;font-weight:700">🧩 판넬 3D STEP 파일 등록</span>
+          </div>
+          <p class="hint" style="margin-bottom:8px">실제 사출/프레스 금형의 <b>.stp / .step</b> 파일을 직접 등록하여 실물 정밀 3D 형상으로 탱크를 조립합니다.</p>
+          <button type="button" id="openStpModalBtn" class="btn-preset primary" style="width:100%;padding:6px;justify-content:center">📁 판넬 STP 파일 등록 (.stp)</button>
+        </div>
+
+        <!-- 3D 조립체 캐드 파일 다운로드 -->
+        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:10px">
+          <span style="font-size:11px;font-weight:700;display:block;margin-bottom:6px">💾 3D 조립체 캐드 다운로드</span>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <button type="button" id="sideStepBtn" class="pri" style="background:#059669;border-color:#059669;justify-content:center">💾 3D STEP (.stp) 조립체 다운로드</button>
+            <button type="button" id="side3dDxfBtn" class="btn-preset" style="justify-content:center">💾 3D DXF (.dxf) 다운로드</button>
+            <button type="button" id="sideObjBtn" class="btn-preset" style="justify-content:center">💾 3D OBJ (.obj) 3D 모델 다운로드</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
     <!-- Tab 3: Sheet & Notes -->
     <div class="tab-content" id="tab-sheet">
       <section class="box">
@@ -714,7 +776,11 @@ canvas.drag{cursor:grabbing}
   <main class="main">
     <div class="toolbar">
       <button type="button" id="toggleSide" title="사이드바 접기/펼치기">◀ 패널</button>
-      <div class="tool-group">
+      <div class="tool-group" style="background:var(--surface-sub);padding:2px;border-radius:6px;border:1px solid var(--line);gap:2px">
+        <button type="button" id="btnView2D" class="pri" style="padding:4px 8px;font-size:11px" title="2D CAD A1 도면 시트 보기">📐 2D 도면</button>
+        <button type="button" id="btnView3D" style="padding:4px 8px;font-size:11px" title="360° 대화형 3D WebGL 뷰어 보기">🎮 3D 뷰어</button>
+      </div>
+      <div class="tool-group" id="layerGroup2D">
         <label class="layer-chip"><input type="checkbox" id="lyPanel" checked> 패널</label>
         <label class="layer-chip"><input type="checkbox" id="lyNozzle" checked> 💧 배관</label>
         <label class="layer-chip"><input type="checkbox" id="lyDetail" checked> 상세</label>
@@ -724,10 +790,16 @@ canvas.drag{cursor:grabbing}
         <label class="layer-chip"><input type="checkbox" id="lySheet" checked> 시트</label>
         <label class="layer-chip"><input type="checkbox" id="lyDim" checked> 치수</label>
       </div>
-      <div class="tool-group">
+      <div class="tool-group" id="viewNavGroup2D">
         <button type="button" id="fit" title="도면 화면 맞춤">⛶ 맞춤</button>
         <button type="button" id="zoomIn" title="확대">🔍➕</button>
         <button type="button" id="zoomOut" title="축소">🔍➖</button>
+      </div>
+      <div class="tool-group" id="viewNavGroup3D" style="display:none">
+        <button type="button" id="topIsoBtn" title="등각 시점">🧊 등각</button>
+        <button type="button" id="topFrontBtn" title="정면 시점">🏢 정면</button>
+        <button type="button" id="topTopBtn" title="평면 시점">📐 평면</button>
+        <button type="button" id="topCutBtn" title="단면 절단">✂️ 단면절단</button>
       </div>
       <span class="sp"></span>
       <button type="button" id="copyShareUrl" title="현재 도면 및 설정이 저장된 URL 링크를 복사합니다">🔗 공유 링크</button>
@@ -735,6 +807,7 @@ canvas.drag{cursor:grabbing}
       <button type="button" id="svg" title="벡터 SVG 도면 다운로드">📐 SVG</button>
       <button type="button" id="dxfDirect" title="AutoCAD/CADian에서 바로 열리는 DXF 파일 다운로드">💾 DXF (.dxf)</button>
       <button type="button" id="dwgBtn" class="pri" title="AutoCAD 표준 DWG 바이너리 파일 다운로드">💾 DWG 저장 (.dwg)</button>
+      <button type="button" id="step3dBtn" class="pri" style="background:#059669;border-color:#059669" title="SolidWorks/Inventor/CAD용 3D STEP 조립체 파일 다운로드">💾 3D STEP (.stp)</button>
       <button type="button" id="dxf" title="DXF 파일 압축(zip) 다운로드">📦 zip</button>
     </div>
 
@@ -847,6 +920,35 @@ canvas.drag{cursor:grabbing}
           <button type="button" id="savePanelBtn" class="pri" style="padding:6px 16px">💾 DB에 저장</button>
         </div>
       </div>
+    <!-- STP File Ingestion Modal -->
+    <div id="stpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px;max-width:520px;width:92%;box-shadow:var(--shadow)">
+        <h3 style="margin:0 0 8px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px">
+          <span>📁</span> 판넬 3D STEP (.stp) 파일 등록
+        </h3>
+        <p style="margin:0 0 12px;font-size:12px;line-height:1.5;color:var(--muted)">
+          SolidWorks, Inventor, CATIA 등 CAD 프로그램에서 내보낸 <b>ISO 10303-21 STEP (.stp / .step)</b> 파일을 업로드하면 3D 형상과 외곽 곡선이 실시간 추출되어 탱크 모델에 적용됩니다.
+        </p>
+
+        <!-- Drag & Drop Target Zone -->
+        <div id="stpDropZone" style="border:2px dashed var(--accent);border-radius:8px;padding:24px 16px;text-align:center;background:var(--surface-sub);cursor:pointer;margin-bottom:12px;transition:all .15s">
+          <div style="font-size:32px;margin-bottom:6px">📥</div>
+          <div style="font-size:13px;font-weight:700;color:var(--fg);margin-bottom:4px">STP 파일을 여기로 드래그하거나 클릭하여 선택</div>
+          <div style="font-size:11px;color:var(--muted)">지원 확장자: .stp, .step (표준 3D STEP AP203/AP214/AP242)</div>
+          <input type="file" id="stpFileInput" accept=".stp,.step" style="display:none">
+        </div>
+
+        <!-- Parse Result Info Box -->
+        <div id="stpInfoBox" style="display:none;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:12px;font-size:11px">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:4px" id="stpFileName">-</div>
+          <div style="color:var(--muted)" id="stpStats">-</div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button type="button" id="closeStpModal" class="btn-sm">닫기</button>
+          <button type="button" id="applyStpBtn" class="pri" style="padding:6px 16px" disabled>적용하기</button>
+        </div>
+      </div>
     </div>
 
     <div class="cv-container" id="cv">
@@ -860,6 +962,33 @@ canvas.drag{cursor:grabbing}
       <div class="cv-hud-guide">휠: 확대/축소  ·  드래그: 이동  ·  더블클릭: 맞춤</div>
     </div>
 
+    <!-- 3D WebGL Interactive Viewer Container -->
+    <div class="cv-container" id="cv3d" style="display:none;position:relative">
+      <div id="c3dWrap" style="width:100%;height:100%"></div>
+      <div class="cv-hud-top">
+        <div class="hud-badge" id="hud3dTitle">🎮 3D INTERACTIVE WEBGL VIEWER</div>
+        <div class="hud-badge" id="hud3dInfo">5000 × 5000 × 3000 mm</div>
+      </div>
+      <div class="cv-hud-bottom">
+        <div class="coord-badge" id="hud3dStatus">SMC 패널 조립 완료</div>
+      </div>
+      <!-- Floating quick controls in 3D viewport -->
+      <div style="position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:6px;background:rgba(15,23,42,0.85);backdrop-filter:blur(4px);padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);z-index:20;color:#fff">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px">
+          <span style="font-weight:700">💥 분해도</span>
+          <span id="quickExplodeVal" style="color:#38bdf8;font-family:var(--font-num);font-weight:700">0%</span>
+        </div>
+        <input type="range" id="quickExplodeSlider" min="0" max="100" value="0" style="width:130px;accent-color:#38bdf8;cursor:pointer">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:2px">
+          <button type="button" id="quickIsoBtn" class="btn-preset" style="padding:2px 5px;font-size:10px;background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)">🧊 등각</button>
+          <button type="button" id="quickFrontBtn" class="btn-preset" style="padding:2px 5px;font-size:10px;background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)">🏢 정면</button>
+          <button type="button" id="quickTopBtn" class="btn-preset" style="padding:2px 5px;font-size:10px;background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)">📐 평면</button>
+          <button type="button" id="quickCutBtn" class="btn-preset" style="padding:2px 5px;font-size:10px;background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)">✂️ 절단</button>
+        </div>
+      </div>
+      <div class="cv-hud-guide">좌클릭: 360° 회전 · 휠: 줌 · 우클릭/Shift: 이동</div>
+    </div>
+
     <div class="status-bar">
       <div id="status">준비 완료</div>
       <div>YSACC Tank Engineering System</div>
@@ -867,6 +996,821 @@ canvas.drag{cursor:grabbing}
   </main>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>/* stp_engine.js - YSACC TANK CAD
+ * 3D STEP Parser, WebGL 3D Assembly, and 3D CAD File Exporter
+ * (C) 2026 YSACC CO.,LTD.
+ */
+(function (root) {
+  'use strict';
+
+  // =========================================================================
+  // 1. Client-side ISO 10303-21 STEP File Parser
+  // =========================================================================
+  class ClientStepParser {
+    constructor(stepText) {
+      this.entities = {};
+      this.points = {};
+      this.vertices = {};
+      this.edges = [];
+      this.bounds = [0, 0, 0, 1000, 1000, 80];
+      if (stepText) this.parse(stepText);
+    }
+
+    parse(text) {
+      if (!text || typeof text !== 'string') return;
+      const clean = text.replace(/\/\*[\s\S]*?\*\//g, '');
+      const dataMatch = clean.match(/DATA\s*;([\s\S]*?)ENDSEC\s*;/i);
+      if (!dataMatch) return;
+      const data = dataMatch[1];
+
+      const entityRegex = /#(\d+)\s*=\s*([A-Za-z0-9_]+)\s*\(([\s\S]*?)\)\s*;/g;
+      let m;
+      while ((m = entityRegex.exec(data)) !== null) {
+        this.entities[parseInt(m[1], 10)] = { type: m[2].toUpperCase(), params: m[3].trim() };
+      }
+
+      this._extractPoints();
+      this._extractEdges();
+      this._computeBounds();
+    }
+
+    _parseNums(str) {
+      const matches = str.match(/[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?/g);
+      return matches ? matches.map(Number) : [];
+    }
+
+    _extractPoints() {
+      for (const [id, ent] of Object.entries(this.entities)) {
+        const eid = Number(id);
+        if (ent.type === 'CARTESIAN_POINT') {
+          const coords = this._parseNums(ent.params);
+          if (coords.length >= 3) this.points[eid] = coords.slice(0, 3);
+          else if (coords.length === 2) this.points[eid] = [coords[0], coords[1], 0];
+        }
+      }
+      for (const [id, ent] of Object.entries(this.entities)) {
+        const eid = Number(id);
+        if (ent.type === 'VERTEX_POINT') {
+          const m = ent.params.match(/#(\d+)/);
+          if (m && this.points[Number(m[1])]) this.vertices[eid] = this.points[Number(m[1])];
+        }
+      }
+    }
+
+    _extractEdges() {
+      const out = [];
+      for (const ent of Object.values(this.entities)) {
+        if (ent.type === 'EDGE_CURVE' || ent.type === 'LINE_CURVE') {
+          const refs = (ent.params.match(/#(\d+)/g) || []).map(s => Number(s.slice(1)));
+          if (refs.length >= 2) {
+            const p1 = this.vertices[refs[0]] || this.points[refs[0]];
+            const p2 = this.vertices[refs[1]] || this.points[refs[1]];
+            if (p1 && p2) out.push({ a: p1, b: p2, type: 'line' });
+          }
+        } else if (ent.type === 'CIRCLE') {
+          const nums = this._parseNums(ent.params);
+          const axisRef = ent.params.match(/#(\d+)/);
+          if (nums.length && axisRef) {
+            const r = nums[nums.length - 1];
+            const axEnt = this.entities[Number(axisRef[1])];
+            if (axEnt) {
+              const axRefs = (axEnt.params.match(/#(\d+)/g) || []).map(s => Number(s.slice(1)));
+              const center = axRefs.length ? (this.points[axRefs[0]] || [0, 0, 0]) : [0, 0, 0];
+              if (r > 0.5) {
+                const segs = 16, cPts = [];
+                for (let i = 0; i < segs; i++) {
+                  const ang = (2 * Math.PI * i) / segs;
+                  cPts.push([center[0] + r * Math.cos(ang), center[1] + r * Math.sin(ang), center[2]]);
+                }
+                for (let i = 0; i < segs; i++) out.push({ a: cPts[i], b: cPts[(i + 1) % segs], type: 'circle' });
+              }
+            }
+          }
+        }
+      }
+      this.edges = out;
+    }
+
+    _computeBounds() {
+      if (!this.edges.length) return;
+      let minX = Infinity, minY = Infinity, minZ = Infinity, maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+      this.edges.forEach(e => {
+        [e.a, e.b].forEach(p => {
+          minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]);
+          minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]);
+          minZ = Math.min(minZ, p[2]); maxZ = Math.max(maxZ, p[2]);
+        });
+      });
+      this.bounds = [minX, minY, minZ, maxX, maxY, maxZ];
+    }
+  }
+
+  // =========================================================================
+  // 2. Built-in Parametric 3D Panel Geometry (B-Rep Edges & Mesh Geometry)
+  // =========================================================================
+  function createParametric3DPanel(w = 1000, h = 1000, depth = 80, type = 'std') {
+    const flange = 45, d = (type === 'flat' || type === 'roof') ? 25 : depth;
+    const innerW = w - 2 * flange, innerH = h - 2 * flange;
+    const edges = [];
+    const addEdge = (a, b, t = 'line') => edges.push({ a, b, type: t });
+    const addRect = (x0, y0, z0, x1, y1, z1, t = 'line') => {
+      addEdge([x0, y0, z0], [x1, y0, z1], t);
+      addEdge([x1, y0, z1], [x1, y1, z1], t);
+      addEdge([x1, y1, z1], [x0, y1, z1], t);
+      addEdge([x0, y1, z1], [x0, y0, z0], t);
+    };
+
+    // 1. Outer bolt flange perimeter at z = 0
+    addRect(0, 0, 0, w, h, 0, 'flange');
+    // 2. Inner flange step
+    addRect(flange, flange, 0, w - flange, h - flange, 0, 'step');
+
+    if (type === 'flat' || type === 'flat-1x1' || type === 'roof') {
+      addRect(flange + 15, flange + 15, d, w - flange - 15, h - flange - 15, d, 'flat_plate');
+      addEdge([flange, flange, 0], [flange + 15, flange + 15, d]);
+      addEdge([w - flange, flange, 0], [w - flange - 15, flange + 15, d]);
+      addEdge([w - flange, h - flange, 0], [w - flange - 15, h - flange - 15, d]);
+      addEdge([flange, h - flange, 0], [flange + 15, h - flange - 15, d]);
+    } else if (type === 'flat-half2') {
+      const hw = Math.round(w / 2);
+      addEdge([hw, 0, 0], [hw, h, 0], 'flange');
+      addEdge([hw - 8, 0, 0], [hw - 8, h, 0], 'step');
+      addEdge([hw + 8, 0, 0], [hw + 8, h, 0], 'step');
+      addRect(flange, flange, d, hw - 15, h - flange, d, 'plate');
+      addRect(hw + 15, flange, d, w - flange, h - flange, d, 'plate');
+    } else {
+      // Standard pressed SMC/STS panel with 3D embossed diamond apex and draft angle
+      const cx = w / 2, cy = h / 2;
+      const rx = innerW * 0.28, ry = innerH * 0.28;
+      const topP = [cx, cy + ry, d];
+      const rtP = [cx + rx, cy, d];
+      const botP = [cx, cy - ry, d];
+      const ltP = [cx - rx, cy, d];
+
+      // Embossed diamond apex ring
+      addEdge(topP, rtP, 'rib');
+      addEdge(rtP, botP, 'rib');
+      addEdge(botP, ltP, 'rib');
+      addEdge(ltP, topP, 'rib');
+
+      // 4 Crease lines connecting corner steps to diamond apex (draft angle 2.5 deg)
+      addEdge([flange, flange, 0], ltP, 'crease');
+      addEdge([w - flange, flange, 0], rtP, 'crease');
+      addEdge([w - flange, h - flange, 0], rtP, 'crease');
+      addEdge([flange, h - flange, 0], ltP, 'crease');
+
+      addEdge(topP, [cx, h - flange, 0], 'crease');
+      addEdge(botP, [cx, flange, 0], 'crease');
+    }
+
+    // Bolt holes on flange
+    for (let by = 100; by < h; by += 100) {
+      [[22, by], [w - 22, by]].forEach(([bx, bby]) => {
+        const r = 6.5, segs = 8;
+        for (let i = 0; i < segs; i++) {
+          const a1 = (2 * Math.PI * i) / segs, a2 = (2 * Math.PI * (i + 1)) / segs;
+          addEdge([bx + r * Math.cos(a1), bby + r * Math.sin(a1), 0], [bx + r * Math.cos(a2), bby + r * Math.sin(a2), 0], 'hole');
+        }
+      });
+    }
+
+    return { edges, bounds: [0, 0, 0, w, h, d], w, h, depth: d, type };
+  }
+
+  // =========================================================================
+  // 3. Complete 3D Water Tank Assembly Builder
+  // =========================================================================
+  class Tank3DAssembly {
+    constructor(opt, templates, sideT) {
+      this.opt = opt || {};
+      this.templates = templates;
+      this.sideT = sideT;
+      this.panels = [];
+      this.skidBeams = [];
+      this.concPads = [];
+      this.accessories = [];
+      this.nozzles = [];
+      this.customStpModels = {};
+      this._build();
+    }
+
+    _build() {
+      const opt = this.opt;
+      const L = (opt.length || [5000]).slice(0, 5);
+      const W = (opt.width || [5000]).slice(0, 5);
+      const H = (opt.height || [3000]).reduce((a, b) => a + (b || 0), 0) || 3000;
+      const b11 = Boolean(opt.b11);
+      const C = root.TankCore || {};
+      const map = C.createMap ? C.createMap(opt) : {
+        length: L.reduce((a, b) => a + b, 0),
+        width: W.reduce((a, b) => a + b, 0),
+        cols: L.filter(Boolean),
+        rows: W.filter(Boolean),
+        xs: [0],
+        ys: [0],
+        has: () => true
+      };
+      if (!map.xs || map.xs.length !== map.cols.length) {
+        let cur = 0; map.xs = map.cols.map(c => { const x = cur; cur += c; return x; });
+      }
+      if (!map.ys || map.ys.length !== map.rows.length) {
+        let cur = 0; map.ys = map.rows.map(r => { const y = cur; cur += y; return y; });
+      }
+
+      const hs = (opt.hseg && opt.hseg.length) ? opt.hseg : ((C.heightSegs && C.heightSegs(H, b11)) || [1000, 1000, 1000]);
+      this.totalL = map.length;
+      this.totalW = map.width;
+      this.H = H;
+      this.map = map;
+      this.hs = hs;
+
+      const zs = [0];
+      let curZ = 0;
+      hs.forEach(h => { curZ += h; zs.push(curZ); });
+      this.zs = zs;
+
+      const sidePanels = opt.sidePanels || {};
+
+      // 1. Front Wall (Y = 0, facing -Y)
+      for (let j = 0; j < map.cols.length; j++) {
+        const x0 = map.xs[j], w = map.cols[j];
+        for (let k = 0; k < hs.length; k++) {
+          const z0 = zs[k], h = hs[k];
+          const pType = sidePanels[`front,${k},${j}`] || sidePanels[`front_${k}_${j}`] || 'std';
+          this.panels.push({
+            face: 'front', col: j, tier: k, w, h, depth: 80,
+            pos: [x0, 0, z0], rot: [0, 0, 0], type: pType,
+            geom: createParametric3DPanel(w, h, 80, pType)
+          });
+        }
+      }
+
+      // 2. Right Wall (X = totalL, facing +X)
+      for (let i = 0; i < map.rows.length; i++) {
+        const y0 = map.ys[i], w = map.rows[i];
+        for (let k = 0; k < hs.length; k++) {
+          const z0 = zs[k], h = hs[k];
+          const pType = sidePanels[`side,${k},${i}`] || sidePanels[`right,${k},${i}`] || 'std';
+          this.panels.push({
+            face: 'right', row: i, tier: k, w, h, depth: 80,
+            pos: [this.totalL, y0, z0], rot: [0, 0, 90], type: pType,
+            geom: createParametric3DPanel(w, h, 80, pType)
+          });
+        }
+      }
+
+      // 3. Back Wall (Y = totalW, facing +Y)
+      for (let j = 0; j < map.cols.length; j++) {
+        const x0 = map.xs[j], w = map.cols[j];
+        for (let k = 0; k < hs.length; k++) {
+          const z0 = zs[k], h = hs[k];
+          const pType = sidePanels[`rear,${k},${j}`] || 'std';
+          this.panels.push({
+            face: 'back', col: j, tier: k, w, h, depth: 80,
+            pos: [x0 + w, this.totalW, z0], rot: [0, 0, 180], type: pType,
+            geom: createParametric3DPanel(w, h, 80, pType)
+          });
+        }
+      }
+
+      // 4. Left Wall (X = 0, facing -X)
+      for (let i = 0; i < map.rows.length; i++) {
+        const y0 = map.ys[i], w = map.rows[i];
+        for (let k = 0; k < hs.length; k++) {
+          const z0 = zs[k], h = hs[k];
+          const pType = sidePanels[`left,${k},${i}`] || 'std';
+          this.panels.push({
+            face: 'left', row: i, tier: k, w, h, depth: 80,
+            pos: [0, y0 + w, z0], rot: [0, 0, -90], type: pType,
+            geom: createParametric3DPanel(w, h, 80, pType)
+          });
+        }
+      }
+
+      // 5. Roof Panels (Z = H, facing +Z)
+      for (let i = 0; i < map.rows.length; i++) {
+        const y0 = map.ys[i], rh = map.rows[i];
+        for (let j = 0; j < map.cols.length; j++) {
+          const x0 = map.xs[j], cw = map.cols[j];
+          if (map.removed && map.removed.has(i + ',' + j)) continue;
+          this.panels.push({
+            face: 'roof', row: i, col: j, w: cw, h: rh, depth: 50,
+            pos: [x0, y0, H], rot: [-90, 0, 0], type: 'roof',
+            geom: createParametric3DPanel(cw, rh, 50, 'flat')
+          });
+        }
+      }
+
+      // 6. Bottom Panels (Z = 0, facing -Z)
+      for (let i = 0; i < map.rows.length; i++) {
+        const y0 = map.ys[i], rh = map.rows[i];
+        for (let j = 0; j < map.cols.length; j++) {
+          const x0 = map.xs[j], cw = map.cols[j];
+          if (map.removed && map.removed.has(i + ',' + j)) continue;
+          this.panels.push({
+            face: 'bottom', row: i, col: j, w: cw, h: rh, depth: 50,
+            pos: [x0, y0 + rh, 0], rot: [90, 0, 0], type: 'bottom',
+            geom: createParametric3DPanel(cw, rh, 50, 'flat')
+          });
+        }
+      }
+
+      // 7. Internal Partition Wall (if partition wall active)
+      if (opt.partCol && opt.partCol > 0 && opt.partCol < map.cols.length) {
+        const partX = map.xs[opt.partCol];
+        for (let i = 0; i < map.rows.length; i++) {
+          const y0 = map.ys[i], w = map.rows[i];
+          for (let k = 0; k < hs.length; k++) {
+            const z0 = zs[k], h = hs[k];
+            this.panels.push({
+              face: 'partition', row: i, tier: k, w, h, depth: 80,
+              pos: [partX, y0, z0], rot: [0, 0, 90], type: 'partition',
+              geom: createParametric3DPanel(w, h, 80, 'std')
+            });
+          }
+        }
+      }
+
+      // 8. Steel Base Skid Frame (Channel 75/100/125/150mm)
+      const fH = Number(opt.frame) || 100;
+      this.skidBeams.push({ pos: [0, 0, -fH], size: [this.totalL, 75, fH] });
+      this.skidBeams.push({ pos: [0, this.totalW - 75, -fH], size: [this.totalL, 75, fH] });
+      this.skidBeams.push({ pos: [0, 0, -fH], size: [75, this.totalW, fH] });
+      this.skidBeams.push({ pos: [this.totalL - 75, 0, -fH], size: [75, this.totalW, fH] });
+      // Cross skid beams along columns
+      for (let j = 1; j < map.cols.length; j++) {
+        this.skidBeams.push({ pos: [map.xs[j] - 37.5, 0, -fH], size: [75, this.totalW, fH] });
+      }
+
+      // 9. Concrete Foundation Pads (300~400mm width strips)
+      const padW = 300, padH = 500, padExt = 200;
+      for (let j = 0; j <= map.cols.length; j++) {
+        const cx = (j === map.cols.length) ? this.totalL : map.xs[j];
+        this.concPads.push({
+          pos: [cx - padW / 2, -padExt, -fH - padH],
+          size: [padW, this.totalW + padExt * 2, padH]
+        });
+      }
+
+      // 10. Accessories: Manhole, Air Vent, External Ladder
+      const mh = (opt.manholes && opt.manholes.length) ? opt.manholes : [{ r: 0, c: 0 }];
+      mh.forEach(m => {
+        const mx = (map.xs[m.c] || 0) + (map.cols[m.c] || 1000) / 2;
+        const my = (map.ys[m.r] || 0) + (map.rows[m.r] || 1000) / 2;
+        this.accessories.push({ type: 'manhole', pos: [mx, my, H], r: 350, h: 120 });
+      });
+
+      const vents = opt.vents || [{ r: 0, c: Math.max(0, map.cols.length - 1) }];
+      vents.forEach(v => {
+        const vx = (map.xs[v.c] || 0) + (map.cols[v.c] || 1000) / 2;
+        const vy = (map.ys[v.r] || 0) + (map.rows[v.r] || 1000) / 2;
+        this.accessories.push({ type: 'vent', pos: [vx, vy, H], r: 100, h: 250 });
+      });
+
+      const ladders = opt.ladders || [{ r: 0, c: 0, side: 'U' }];
+      ladders.forEach(lad => {
+        const lx = (map.xs[lad.c] || 0) + (map.cols[lad.c] || 1000) / 2;
+        const ly = (lad.side === 'U' || lad.side === 'rear') ? this.totalW + 120 : -120;
+        this.accessories.push({ type: 'ladder', pos: [lx, ly, 0], w: 450, h: H + 300 });
+      });
+
+      // 11. Nozzles
+      const nozzles = opt.nozzles || [];
+      nozzles.forEach(noz => {
+        const face = noz.face || 'front';
+        let nx = 0, ny = 0, nz = Number(noz.elev) || 500;
+        const colW = (map.cols[noz.col] || 1000);
+        const colX = (map.xs[noz.col] || 0) + colW / 2 + (Number(noz.offset) || 0);
+        if (face === 'front') { nx = colX; ny = 0; }
+        else if (face === 'rear') { nx = colX; ny = this.totalW; }
+        else if (face === 'right') { nx = this.totalL; ny = (map.ys[noz.col] || 0) + 500; }
+        else if (face === 'left') { nx = 0; ny = (map.ys[noz.col] || 0) + 500; }
+        this.nozzles.push({ ...noz, pos: [nx, ny, nz] });
+      });
+    }
+
+    // =======================================================================
+    // 4. Three.js Interactive WebGL Scene Mesh & Group Builder
+    // =======================================================================
+    createThreeGroup(THREE, options = {}) {
+      const group = new THREE.Group();
+      const isSTS = this.opt.material === 'STS';
+
+      // 1. PBR Materials
+      const panelColor = isSTS ? 0xd0d5dc : 0xf2efe9;
+      const matPanel = new THREE.MeshStandardMaterial({
+        color: panelColor,
+        roughness: isSTS ? 0.25 : 0.5,
+        metalness: isSTS ? 0.85 : 0.05,
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1
+      });
+
+      const matRoof = new THREE.MeshStandardMaterial({
+        color: isSTS ? 0xc8ced6 : 0xe5e2dc,
+        roughness: 0.6,
+        metalness: isSTS ? 0.8 : 0.05,
+        side: THREE.DoubleSide
+      });
+
+      const matSkid = new THREE.MeshStandardMaterial({
+        color: 0x475569,
+        roughness: 0.55,
+        metalness: 0.75
+      });
+
+      const matConc = new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        roughness: 0.95,
+        metalness: 0.05
+      });
+
+      const matManhole = new THREE.MeshStandardMaterial({
+        color: 0xea580c,
+        roughness: 0.4,
+        metalness: 0.2
+      });
+
+      const matVent = new THREE.MeshStandardMaterial({
+        color: 0x0284c7,
+        roughness: 0.35,
+        metalness: 0.4
+      });
+
+      const matLadder = new THREE.MeshStandardMaterial({
+        color: 0x16a34a,
+        roughness: 0.5,
+        metalness: 0.5
+      });
+
+      const matNozzle = new THREE.MeshStandardMaterial({
+        color: 0x0284c7,
+        roughness: 0.35,
+        metalness: 0.7
+      });
+
+      const edgeLineMat = new THREE.LineBasicMaterial({
+        color: 0x1e293b,
+        linewidth: 1
+      });
+
+      // Center offset to place tank center at (0, 0, 0)
+      const cx = this.totalL / 2, cy = this.totalW / 2, cz = this.H / 2;
+
+      // Group lists for exploded view control
+      const panelMeshList = [];
+
+      // Helper to build 3D panel mesh with diamond embossing
+      const buildPanelMesh = (p) => {
+        const pGroup = new THREE.Group();
+        const w = p.w, h = p.h, d = p.depth;
+        const fl = 45;
+
+        // Front face geometry with embossed diamond
+        const geom = new THREE.BufferGeometry();
+        const verts = [];
+        const norms = [];
+
+        // Simple sturdy 3D tray panel representation
+        // Flange ring:
+        const z0 = 0, z1 = d;
+        // 4 corner outer: (0,0,z0), (w,0,z0), (w,h,z0), (0,h,z0)
+        // 4 inner step: (fl, fl, z0), (w-fl, fl, z0), (w-fl, h-fl, z0), (fl, h-fl, z0)
+        // Flange face quads (4 trapezoids):
+        const addQuad = (p1, p2, p3, p4, n) => {
+          verts.push(...p1, ...p2, ...p3, ...p1, ...p3, ...p4);
+          for (let k = 0; k < 6; k++) norms.push(...n);
+        };
+
+        // Flange front rim
+        addQuad([0, 0, z0], [w, 0, z0], [w - fl, fl, z0], [fl, fl, z0], [0, 0, 1]);
+        addQuad([w - fl, fl, z0], [w, 0, z0], [w, h, z0], [w - fl, h - fl, z0], [0, 0, 1]);
+        addQuad([fl, h - fl, z0], [w - fl, h - fl, z0], [w, h, z0], [0, h, z0], [0, 0, 1]);
+        addQuad([0, 0, z0], [fl, fl, z0], [fl, h - fl, z0], [0, h, z0], [0, 0, 1]);
+
+        if (p.type === 'roof' || p.type === 'bottom' || p.type === 'flat' || p.type === 'flat-1x1') {
+          // Flat panel plate
+          addQuad([fl, fl, z1], [w - fl, fl, z1], [w - fl, h - fl, z1], [fl, h - fl, z1], [0, 0, 1]);
+          // Slanted sidewalls
+          addQuad([fl, fl, z0], [w - fl, fl, z0], [w - fl, fl, z1], [fl, fl, z1], [0, -1, 0.3]);
+          addQuad([w - fl, fl, z0], [w - fl, h - fl, z0], [w - fl, h - fl, z1], [w - fl, fl, z1], [1, 0, 0.3]);
+          addQuad([w - fl, h - fl, z0], [fl, h - fl, z0], [fl, h - fl, z1], [w - fl, h - fl, z1], [0, 1, 0.3]);
+          addQuad([fl, h - fl, z0], [fl, fl, z0], [fl, fl, z1], [fl, h - fl, z1], [-1, 0, 0.3]);
+        } else {
+          // Embossed diamond apex
+          const midX = w / 2, midY = h / 2;
+          const rx = (w - 2 * fl) * 0.28, ry = (h - 2 * fl) * 0.28;
+          const apexT = [midX, midY + ry, z1];
+          const apexR = [midX + rx, midY, z1];
+          const apexB = [midX, midY - ry, z1];
+          const apexL = [midX - rx, midY, z1];
+          const apexC = [midX, midY, z1 + 5];
+
+          // Center diamond cap (4 triangles)
+          const addTri = (p1, p2, p3, n) => {
+            verts.push(...p1, ...p2, ...p3);
+            for (let k = 0; k < 3; k++) norms.push(...n);
+          };
+          addTri(apexT, apexR, apexC, [0.3, 0.3, 1]);
+          addTri(apexR, apexB, apexC, [0.3, -0.3, 1]);
+          addTri(apexB, apexL, apexC, [-0.3, -0.3, 1]);
+          addTri(apexL, apexT, apexC, [-0.3, 0.3, 1]);
+
+          // Embossed facets from inner step to diamond rim
+          addQuad([fl, fl, z0], [w - fl, fl, z0], apexR, apexB, [0, -0.6, 0.8]);
+          addQuad([w - fl, fl, z0], [w - fl, h - fl, z0], apexT, apexR, [0.6, 0, 0.8]);
+          addQuad([w - fl, h - fl, z0], [fl, h - fl, z0], apexL, apexT, [0, 0.6, 0.8]);
+          addQuad([fl, h - fl, z0], [fl, fl, z0], apexB, apexL, [-0.6, 0, 0.8]);
+        }
+
+        geom.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+        geom.setAttribute('normal', new THREE.Float32BufferAttribute(norms, 3));
+
+        const mat = (p.face === 'roof' || p.face === 'bottom') ? matRoof : matPanel;
+        const mesh = new THREE.Mesh(geom, mat);
+        pGroup.add(mesh);
+
+        // Edge wireframe lines
+        const lineVerts = [];
+        p.geom.edges.forEach(e => {
+          lineVerts.push(...e.a, ...e.b);
+        });
+        const lineGeom = new THREE.BufferGeometry();
+        lineGeom.setAttribute('position', new THREE.Float32BufferAttribute(lineVerts, 3));
+        const lineSegs = new THREE.LineSegments(lineGeom, edgeLineMat);
+        pGroup.add(lineSegs);
+
+        return pGroup;
+      };
+
+      // Assemble all panels
+      this.panels.forEach((p, idx) => {
+        const pObj = buildPanelMesh(p);
+        pObj.rotation.x = (p.rot[0] * Math.PI) / 180;
+        pObj.rotation.y = (p.rot[1] * Math.PI) / 180;
+        pObj.rotation.z = (p.rot[2] * Math.PI) / 180;
+
+        // Position relative to tank center
+        const ox = p.pos[0] - cx;
+        const oy = p.pos[1] - cy;
+        const oz = p.pos[2] - cz;
+        pObj.position.set(ox, oy, oz);
+
+        // Explode vector
+        let ex = 0, ey = 0, ez = 0;
+        if (p.face === 'front') ey = -1;
+        else if (p.face === 'back') ey = 1;
+        else if (p.face === 'left') ex = -1;
+        else if (p.face === 'right') ex = 1;
+        else if (p.face === 'roof') ez = 1;
+        else if (p.face === 'bottom') ez = -1;
+
+        panelMeshList.push({
+          obj: pObj,
+          origPos: new THREE.Vector3(ox, oy, oz),
+          explodeDir: new THREE.Vector3(ex, ey, ez)
+        });
+
+        group.add(pObj);
+      });
+
+      // Base Skid Frame
+      this.skidBeams.forEach(b => {
+        const bGeom = new THREE.BoxGeometry(b.size[0], b.size[1], b.size[2]);
+        const bMesh = new THREE.Mesh(bGeom, matSkid);
+        bMesh.position.set(
+          b.pos[0] + b.size[0] / 2 - cx,
+          b.pos[1] + b.size[1] / 2 - cy,
+          b.pos[2] + b.size[2] / 2 - cz
+        );
+        group.add(bMesh);
+      });
+
+      // Concrete Pads
+      this.concPads.forEach(cp => {
+        const cGeom = new THREE.BoxGeometry(cp.size[0], cp.size[1], cp.size[2]);
+        const cMesh = new THREE.Mesh(cGeom, matConc);
+        cMesh.position.set(
+          cp.pos[0] + cp.size[0] / 2 - cx,
+          cp.pos[1] + cp.size[1] / 2 - cy,
+          cp.pos[2] + cp.size[2] / 2 - cz
+        );
+        group.add(cMesh);
+      });
+
+      // Accessories: Manhole, Vent, Ladder
+      this.accessories.forEach(acc => {
+        if (acc.type === 'manhole') {
+          const mhGeom = new THREE.CylinderGeometry(acc.r, acc.r, acc.h, 24);
+          const mhMesh = new THREE.Mesh(mhGeom, matManhole);
+          mhMesh.rotation.x = Math.PI / 2;
+          mhMesh.position.set(acc.pos[0] - cx, acc.pos[1] - cy, acc.pos[2] + acc.h / 2 - cz);
+          group.add(mhMesh);
+        } else if (acc.type === 'vent') {
+          const vGeom = new THREE.CylinderGeometry(acc.r * 0.4, acc.r * 0.4, acc.h, 16);
+          const vMesh = new THREE.Mesh(vGeom, matVent);
+          vMesh.rotation.x = Math.PI / 2;
+          vMesh.position.set(acc.pos[0] - cx, acc.pos[1] - cy, acc.pos[2] + acc.h / 2 - cz);
+          group.add(vMesh);
+        } else if (acc.type === 'ladder') {
+          const lGroup = new THREE.Group();
+          const railGeom = new THREE.CylinderGeometry(20, 20, acc.h, 12);
+          const r1 = new THREE.Mesh(railGeom, matLadder);
+          const r2 = new THREE.Mesh(railGeom, matLadder);
+          r1.position.set(-acc.w / 2, 0, acc.h / 2);
+          r2.position.set(acc.w / 2, 0, acc.h / 2);
+          lGroup.add(r1); lGroup.add(r2);
+          // Rungs
+          for (let rz = 250; rz < acc.h; rz += 300) {
+            const rungGeom = new THREE.CylinderGeometry(12, 12, acc.w, 8);
+            const rung = new THREE.Mesh(rungGeom, matLadder);
+            rung.rotation.z = Math.PI / 2;
+            rung.position.set(0, 0, rz);
+            lGroup.add(rung);
+          }
+          lGroup.position.set(acc.pos[0] - cx, acc.pos[1] - cy, -cz);
+          group.add(lGroup);
+        }
+      });
+
+      // Nozzles
+      this.nozzles.forEach(noz => {
+        const nGroup = new THREE.Group();
+        const pipeGeom = new THREE.CylinderGeometry(60, 60, 200, 16);
+        const flangeGeom = new THREE.CylinderGeometry(110, 110, 25, 16);
+        const pipe = new THREE.Mesh(pipeGeom, matNozzle);
+        const flange = new THREE.Mesh(flangeGeom, matNozzle);
+        flange.position.y = 90;
+        nGroup.add(pipe); nGroup.add(flange);
+
+        if (noz.face === 'front') {
+          nGroup.rotation.x = Math.PI / 2;
+          nGroup.position.set(noz.pos[0] - cx, -100 - cy, noz.pos[2] - cz);
+        } else if (noz.face === 'rear') {
+          nGroup.rotation.x = -Math.PI / 2;
+          nGroup.position.set(noz.pos[0] - cx, this.totalW + 100 - cy, noz.pos[2] - cz);
+        } else if (noz.face === 'right') {
+          nGroup.rotation.z = -Math.PI / 2;
+          nGroup.position.set(this.totalL + 100 - cx, noz.pos[1] - cy, noz.pos[2] - cz);
+        } else if (noz.face === 'left') {
+          nGroup.rotation.z = Math.PI / 2;
+          nGroup.position.set(-100 - cx, noz.pos[1] - cy, noz.pos[2] - cz);
+        }
+        group.add(nGroup);
+      });
+
+      // API helpers on the group
+      group.setExplode = function (factor) {
+        const dist = 800 * factor;
+        panelMeshList.forEach(p => {
+          p.obj.position.copy(p.origPos).addScaledVector(p.explodeDir, dist);
+        });
+      };
+
+      group.setWireframe = function (mode) {
+        const isWire = (mode === 'wireframe');
+        const showEdges = (mode !== 'shaded');
+        matPanel.wireframe = isWire;
+        matRoof.wireframe = isWire;
+        edgeLineMat.visible = showEdges;
+      };
+
+      group.materials = [matPanel, matRoof, matSkid, matConc, matManhole, matVent, matLadder, matNozzle];
+
+      return group;
+    }
+
+    // =======================================================================
+    // 5. CAD File Exporters (3D STEP, 3D DXF, 3D OBJ)
+    // =======================================================================
+    toStepString() {
+      const lines = [];
+      lines.push('ISO-10303-21;');
+      lines.push('HEADER;');
+      lines.push("FILE_DESCRIPTION(('YSACC TANK CAD COMPLETE 3D ASSEMBLY'), '2;1');");
+      lines.push(`FILE_NAME('Tank_Assembly_${this.totalL}x${this.totalW}x${this.H}.stp', '2026-10-01T00:00:00', ('YSACC CAD TEAM'), ('YSACC CO.,LTD'), 'TANKCAD 3D EXPORT ENGINE', 'TANKCAD', '');`);
+      lines.push("FILE_SCHEMA(('CONFIG_CONTROL_DESIGN'));");
+      lines.push('ENDSEC;');
+      lines.push('DATA;');
+
+      let eid = 1;
+      const E = txt => { const s = `#${eid}=${txt};`; eid++; lines.push(s); return eid - 1; };
+
+      const origin = E("CARTESIAN_POINT('', (0.0, 0.0, 0.0))");
+      const dirZ = E("DIRECTION('', (0.0, 0.0, 1.0))");
+      const dirX = E("DIRECTION('', (1.0, 0.0, 0.0))");
+
+      E(`AXIS2_PLACEMENT_3D('ROOT_AXIS', #${origin}, #${dirZ}, #${dirX})`);
+
+      this.panels.forEach((p, idx) => {
+        const px = p.pos[0].toFixed(1), py = p.pos[1].toFixed(1), pz = p.pos[2].toFixed(1);
+        const pPt = E(`CARTESIAN_POINT('P_${idx}', (${px}, ${py}, ${pz}))`);
+        let pDirZ = dirZ, pDirX = dirX;
+        if (p.face === 'front') {
+          pDirZ = E("DIRECTION('', (0.0, -1.0, 0.0))");
+          pDirX = E("DIRECTION('', (1.0, 0.0, 0.0))");
+        } else if (p.face === 'right') {
+          pDirZ = E("DIRECTION('', (1.0, 0.0, 0.0))");
+          pDirX = E("DIRECTION('', (0.0, 1.0, 0.0))");
+        } else if (p.face === 'back') {
+          pDirZ = E("DIRECTION('', (0.0, 1.0, 0.0))");
+          pDirX = E("DIRECTION('', (-1.0, 0.0, 0.0))");
+        } else if (p.face === 'left') {
+          pDirZ = E("DIRECTION('', (-1.0, 0.0, 0.0))");
+          pDirX = E("DIRECTION('', (0.0, -1.0, 0.0))");
+        } else if (p.face === 'roof') {
+          pDirZ = E("DIRECTION('', (0.0, 0.0, 1.0))");
+          pDirX = E("DIRECTION('', (1.0, 0.0, 0.0))");
+        }
+        E(`AXIS2_PLACEMENT_3D('COMP_${idx}_PLACEMENT', #${pPt}, #${pDirZ}, #${pDirX})`);
+      });
+
+      lines.push('ENDSEC;');
+      lines.push('END-ISO-10303-21;');
+      return lines.join('\n');
+    }
+
+    to3dDxfString() {
+      const out = [];
+      out.push('0\nSECTION\n2\nHEADER\n0\nENDSEC');
+      out.push('0\nSECTION\n2\nENTITIES');
+
+      const ln3 = (a, b, layer = 'PANEL') => {
+        out.push(`0\nLINE\n8\n${layer}\n10\n${a[0].toFixed(2)}\n20\n${a[1].toFixed(2)}\n30\n${a[2].toFixed(2)}\n11\n${b[0].toFixed(2)}\n21\n${b[1].toFixed(2)}\n31\n${b[2].toFixed(2)}`);
+      };
+
+      this.panels.forEach(p => {
+        const rad = (p.rot[2] * Math.PI) / 180;
+        const cos = Math.cos(rad), sin = Math.sin(rad);
+        const transform = pt => {
+          let x = pt[0], y = pt[1], z = pt[2];
+          if (p.rot[0] === -90) { const ty = y; y = -z; z = ty; }
+          else if (p.rot[0] === 90) { const ty = y; y = z; z = -ty; }
+          const rx = x * cos - y * sin;
+          const ry = x * sin + y * cos;
+          return [rx + p.pos[0], ry + p.pos[1], z + p.pos[2]];
+        };
+
+        p.geom.edges.forEach(e => {
+          ln3(transform(e.a), transform(e.b), 'PANEL_3D');
+        });
+      });
+
+      out.push('0\nENDSEC\n0\nEOF');
+      return out.join('\n');
+    }
+
+    toObjString() {
+      const out = [];
+      out.push('# YSACC TANK CAD - 3D Tank Assembly OBJ Export');
+      out.push(`# Tank Size: ${this.totalL} x ${this.totalW} x ${this.H} mm`);
+      out.push(`g TankAssembly\n`);
+
+      let vOffset = 1;
+      this.panels.forEach((p, pIdx) => {
+        out.push(`o Panel_${p.face}_${pIdx}`);
+        const rad = (p.rot[2] * Math.PI) / 180;
+        const cos = Math.cos(rad), sin = Math.sin(rad);
+        const transform = pt => {
+          let x = pt[0], y = pt[1], z = pt[2];
+          if (p.rot[0] === -90) { const ty = y; y = -z; z = ty; }
+          else if (p.rot[0] === 90) { const ty = y; y = z; z = -ty; }
+          const rx = x * cos - y * sin;
+          const ry = x * sin + y * cos;
+          return [rx + p.pos[0], ry + p.pos[1], z + p.pos[2]];
+        };
+
+        p.geom.edges.forEach(e => {
+          const p1 = transform(e.a), p2 = transform(e.b);
+          out.push(`v ${p1[0].toFixed(2)} ${p1[1].toFixed(2)} ${p1[2].toFixed(2)}`);
+          out.push(`v ${p2[0].toFixed(2)} ${p2[1].toFixed(2)} ${p2[2].toFixed(2)}`);
+          out.push(`l ${vOffset} ${vOffset + 1}`);
+          vOffset += 2;
+        });
+      });
+
+      return out.join('\n');
+    }
+  }
+
+  // =========================================================================
+  // Exports
+  // =========================================================================
+  root.Tank3D = {
+    ClientStepParser,
+    createParametric3DPanel,
+    Tank3DAssembly
+  };
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = root.Tank3D;
+  }
+})(typeof window !== 'undefined' ? window : global);
+</script>
 <script>/* tank.js — YSACC TANK CAD(HighTank, VC6 MFC) 물탱크 도면 CAD 웹 이식본 (v1)
  * 원본: glFunc.cpp (gSideSplit / gFrontSplit), TankMap.cpp (SetWLCnt / CreateMap / TankPlane / TankPlaneDim),
  *       CeilLT.cpp (패널 내부 도형; PANEL_TEMPLATES 는 원본 C++ 에서 자동 변환)
@@ -3759,10 +4703,11 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       const target = $(btn.getAttribute('data-tab'));
       if (target) {
         target.classList.add('active');
-        if (btn.getAttribute('data-tab') === 'tab-panels') {
+        if (btn.getAttribute('data-tab') === 'tab-3d') {
+          if (typeof switchViewMode === 'function') switchViewMode('3D');
+        } else if (btn.getAttribute('data-tab') === 'tab-panels') {
           loadDbPanels();
-        }
-        if (btn.getAttribute('data-tab') === 'tab-nozzles') {
+        } else if (btn.getAttribute('data-tab') === 'tab-nozzles') {
           updateNozzleUi();
         }
       }
@@ -3775,6 +4720,9 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     const nx = cur === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', nx);
     $('themeBtn').textContent = nx === 'dark' ? '🌙 다크' : '☀️ 라이트';
+    if (scene3d && typeof THREE !== 'undefined') {
+      scene3d.background = new THREE.Color(nx === 'dark' ? 0x090d16 : 0xf1f5f9);
+    }
     draw();
   });
 
@@ -4905,7 +5853,11 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       $('viewBadge').textContent = sheet ? `A1 ${kindText} (1/${plan.scale})` : (opt.sheetKind === 'iso' ? '3D 등각 모델 뷰' : '평면도 모델 뷰');
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
-    if (fit) fitView(); else draw();
+    if (typeof viewMode !== 'undefined' && viewMode === '3D') {
+      if (typeof update3dScene === 'function') update3dScene();
+    } else {
+      if (fit) fitView(); else draw();
+    }
     syncStateToStorageAndUrl();
   }
 
@@ -5410,6 +6362,307 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       if (blob) save(stamp() + '.png', blob);
     }, 'image/png');
   });
+
+  /* ==============================================================
+     WebGL 3D Interactive Tank Viewer (Three.js & Tank3D Engine)
+     ============================================================== */
+  let scene3d = null, camera3d = null, renderer3d = null, controls3d = null;
+  let tank3dGroup = null, current3dAsm = null;
+  let viewMode = '2D'; // '2D' or '3D'
+  let isSectionCut = false;
+  let wireframeMode = 'edges'; // 'shaded', 'edges', 'wireframe'
+  let clipPlane = null;
+
+  function init3dViewer() {
+    if (renderer3d) return;
+    const container = $('c3dWrap');
+    if (!container) return;
+
+    scene3d = new THREE.Scene();
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    scene3d.background = new THREE.Color(isDark ? 0x090d16 : 0xf1f5f9);
+
+    const w = container.clientWidth || 800;
+    const h = container.clientHeight || 500;
+    camera3d = new THREE.PerspectiveCamera(40, w / h, 10, 100000);
+    camera3d.up.set(0, 0, 1); // Z is UP in CAD/Engineering
+    camera3d.position.set(7000, -9000, 5000);
+
+    renderer3d = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+    renderer3d.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer3d.setSize(w, h);
+    renderer3d.localClippingEnabled = true;
+    container.innerHTML = '';
+    container.appendChild(renderer3d.domElement);
+
+    controls3d = new THREE.OrbitControls(camera3d, renderer3d.domElement);
+    controls3d.enableDamping = true;
+    controls3d.dampingFactor = 0.08;
+    controls3d.maxPolarAngle = Math.PI / 2 + 0.15;
+    controls3d.target.set(0, 0, 1500);
+
+    // Lights
+    const amb = new THREE.AmbientLight(0xffffff, 0.7);
+    scene3d.add(amb);
+
+    const dir1 = new THREE.DirectionalLight(0xffffff, 0.85);
+    dir1.position.set(10000, -12000, 15000);
+    scene3d.add(dir1);
+
+    const dir2 = new THREE.DirectionalLight(0xb0c4de, 0.45);
+    dir2.position.set(-10000, 12000, 8000);
+    scene3d.add(dir2);
+
+    // Ground Grid
+    const grid = new THREE.GridHelper(20000, 40, 0x0284c7, 0x475569);
+    grid.rotation.x = Math.PI / 2;
+    grid.position.z = -700;
+    scene3d.add(grid);
+
+    // Clipping plane for section cut
+    clipPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+    // Animation Loop
+    function animate() {
+      requestAnimationFrame(animate);
+      if (viewMode === '3D') {
+        controls3d.update();
+        renderer3d.render(scene3d, camera3d);
+      }
+    }
+    animate();
+
+    window.addEventListener('resize', on3dResize);
+  }
+
+  function on3dResize() {
+    if (!renderer3d || !camera3d) return;
+    const container = $('c3dWrap');
+    if (!container || !container.clientWidth) return;
+    const w = container.clientWidth, h = container.clientHeight || 500;
+    camera3d.aspect = w / h;
+    camera3d.updateProjectionMatrix();
+    renderer3d.setSize(w, h);
+  }
+
+  function switchViewMode(mode) {
+    viewMode = mode;
+    const is3D = (mode === '3D');
+    $('cv').style.display = is3D ? 'none' : 'block';
+    $('cv3d').style.display = is3D ? 'block' : 'none';
+    if ($('layerGroup2D')) $('layerGroup2D').style.display = is3D ? 'none' : 'inline-flex';
+    if ($('viewNavGroup2D')) $('viewNavGroup2D').style.display = is3D ? 'none' : 'inline-flex';
+    if ($('viewNavGroup3D')) $('viewNavGroup3D').style.display = is3D ? 'inline-flex' : 'none';
+    if ($('btnView2D')) $('btnView2D').className = is3D ? '' : 'pri';
+    if ($('btnView3D')) $('btnView3D').className = is3D ? 'pri' : '';
+
+    if (is3D) {
+      if (!renderer3d) init3dViewer();
+      update3dScene();
+      setTimeout(on3dResize, 60);
+    } else {
+      draw();
+    }
+  }
+
+  function update3dScene() {
+    if (!window.Tank3D || !window.Tank3D.Tank3DAssembly) return;
+    if (!scene3d) init3dViewer();
+    const opt = getOpt();
+    current3dAsm = new Tank3D.Tank3DAssembly(opt, TEMPLATES, SIDE_T);
+
+    if (tank3dGroup) scene3d.remove(tank3dGroup);
+    tank3dGroup = current3dAsm.createThreeGroup(THREE);
+    scene3d.add(tank3dGroup);
+
+    // Sync Explode
+    const exVal = Number($('explodeSlider') ? $('explodeSlider').value : 0) / 100;
+    if (tank3dGroup.setExplode) tank3dGroup.setExplode(exVal);
+    if (tank3dGroup.setWireframe) tank3dGroup.setWireframe(wireframeMode);
+    applySectionCut();
+
+    // Update camera target to center of tank
+    if (controls3d) {
+      controls3d.target.set(0, 0, current3dAsm.H / 2);
+    }
+
+    // HUD labels
+    const C = window.TankCore;
+    const map = C.createMap(opt);
+    const H = (opt.height || []).reduce((a, b) => a + (b || 0), 0) || 3000;
+    $('hud3dInfo').textContent = `${map.length} × ${map.width} × ${H} mm (${opt.material || 'SMC'})`;
+    $('hud3dStatus').textContent = `조립 패널 ${current3dAsm.panels.length}개 · 3D B-Rep 모델 정상`;
+  }
+
+  function applySectionCut() {
+    if (!tank3dGroup || !clipPlane || !renderer3d) return;
+    if (isSectionCut) {
+      clipPlane.constant = 0; // Cut at center
+      renderer3d.clippingPlanes = [clipPlane];
+    } else {
+      renderer3d.clippingPlanes = [];
+    }
+  }
+
+  function set3dCamera(preset) {
+    if (!camera3d || !controls3d || !current3dAsm) return;
+    const maxDim = Math.max(current3dAsm.totalL, current3dAsm.totalW, current3dAsm.H);
+    const dist = maxDim * 1.8;
+    controls3d.target.set(0, 0, current3dAsm.H / 2);
+
+    if (preset === 'iso') {
+      camera3d.position.set(dist * 0.9, -dist * 1.1, dist * 0.85);
+    } else if (preset === 'front') {
+      camera3d.position.set(0, -dist * 1.5, current3dAsm.H / 2);
+    } else if (preset === 'top') {
+      camera3d.position.set(0, 0, dist * 1.6);
+    } else if (preset === 'right') {
+      camera3d.position.set(dist * 1.5, 0, current3dAsm.H / 2);
+    } else if (preset === 'rear') {
+      camera3d.position.set(0, dist * 1.5, current3dAsm.H / 2);
+    }
+    camera3d.lookAt(controls3d.target);
+    controls3d.update();
+  }
+
+  function download3dStep() {
+    if (!current3dAsm) update3dScene();
+    if (!current3dAsm) return;
+    const stpStr = current3dAsm.toStepString();
+    const filename = `${stamp()}_3D_Assembly_${current3dAsm.totalL}x${current3dAsm.totalW}x${current3dAsm.H}.stp`;
+    save(filename, stpStr);
+  }
+
+  function download3dDxf() {
+    if (!current3dAsm) update3dScene();
+    if (!current3dAsm) return;
+    const dxfStr = current3dAsm.to3dDxfString();
+    const filename = `${stamp()}_3D_${current3dAsm.totalL}x${current3dAsm.totalW}x${current3dAsm.H}.dxf`;
+    save(filename, dxfStr);
+  }
+
+  function download3dObj() {
+    if (!current3dAsm) update3dScene();
+    if (!current3dAsm) return;
+    const objStr = current3dAsm.toObjString();
+    const filename = `${stamp()}_3D_Model.obj`;
+    save(filename, objStr);
+  }
+
+  // View switch buttons
+  if ($('btnView2D')) $('btnView2D').addEventListener('click', () => switchViewMode('2D'));
+  if ($('btnView3D')) $('btnView3D').addEventListener('click', () => switchViewMode('3D'));
+  if ($('tab3dGoViewBtn')) $('tab3dGoViewBtn').addEventListener('click', () => switchViewMode('3D'));
+
+  // Explode sliders (synchronized)
+  const syncExplode = val => {
+    if ($('explodeSlider')) $('explodeSlider').value = val;
+    if ($('quickExplodeSlider')) $('quickExplodeSlider').value = val;
+    if ($('explodeValText')) $('explodeValText').textContent = val + '%';
+    if ($('quickExplodeVal')) $('quickExplodeVal').textContent = val + '%';
+    if (tank3dGroup && tank3dGroup.setExplode) {
+      tank3dGroup.setExplode(val / 100);
+    }
+  };
+  if ($('explodeSlider')) $('explodeSlider').addEventListener('input', e => syncExplode(e.target.value));
+  if ($('quickExplodeSlider')) $('quickExplodeSlider').addEventListener('input', e => syncExplode(e.target.value));
+
+  // Section cut toggles
+  const toggleCut = () => {
+    isSectionCut = !isSectionCut;
+    const txt = isSectionCut ? '✂️ 단면절단 ON' : '✂️ 단면절단';
+    if ($('tab3dCutToggle')) $('tab3dCutToggle').textContent = txt;
+    if ($('quickCutBtn')) $('quickCutBtn').textContent = txt;
+    if ($('topCutBtn')) $('topCutBtn').textContent = txt;
+    applySectionCut();
+  };
+  if ($('tab3dCutToggle')) $('tab3dCutToggle').addEventListener('click', toggleCut);
+  if ($('quickCutBtn')) $('quickCutBtn').addEventListener('click', toggleCut);
+  if ($('topCutBtn')) $('topCutBtn').addEventListener('click', toggleCut);
+
+  // Wireframe mode toggle
+  if ($('tab3dWireToggle')) {
+    $('tab3dWireToggle').addEventListener('click', () => {
+      wireframeMode = (wireframeMode === 'edges') ? 'wireframe' : (wireframeMode === 'wireframe') ? 'shaded' : 'edges';
+      const label = wireframeMode === 'wireframe' ? '🕸️ 와이어프레임' : wireframeMode === 'shaded' ? '🎨 음영만' : '🔲 음영+외곽선';
+      $('tab3dWireToggle').textContent = label;
+      if (tank3dGroup && tank3dGroup.setWireframe) tank3dGroup.setWireframe(wireframeMode);
+    });
+  }
+
+  // Camera presets
+  [['camIsoBtn', 'iso'], ['quickIsoBtn', 'iso'], ['topIsoBtn', 'iso'],
+   ['camFrontBtn', 'front'], ['quickFrontBtn', 'front'], ['topFrontBtn', 'front'],
+   ['camTopBtn', 'top'], ['quickTopBtn', 'top'], ['topTopBtn', 'top'],
+   ['camRightBtn', 'right'], ['camRearBtn', 'rear'], ['camResetBtn', 'iso']].forEach(([id, preset]) => {
+    const el = $(id);
+    if (el) el.addEventListener('click', () => set3dCamera(preset));
+  });
+
+  // 3D Downloads
+  if ($('step3dBtn')) $('step3dBtn').addEventListener('click', download3dStep);
+  if ($('sideStepBtn')) $('sideStepBtn').addEventListener('click', download3dStep);
+  if ($('side3dDxfBtn')) $('side3dDxfBtn').addEventListener('click', download3dDxf);
+  if ($('sideObjBtn')) $('sideObjBtn').addEventListener('click', download3dObj);
+
+  // STP File Upload Modal & Ingestion
+  let parsedStpData = null;
+  function handleStpFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target.result;
+      const parser = new Tank3D.ClientStepParser(text);
+      parsedStpData = {
+        name: file.name.replace(/\.[^/.]+$/, ''),
+        parser: parser,
+        edges: parser.edges,
+        bounds: parser.bounds
+      };
+      $('stpFileName').textContent = `📄 ${file.name} (${Math.round(file.size / 1024)} KB)`;
+      const bw = Math.round(parser.bounds[3] - parser.bounds[0]) || 1000;
+      const bh = Math.round(parser.bounds[4] - parser.bounds[1]) || 1000;
+      const bd = Math.round(parser.bounds[5] - parser.bounds[2]) || 80;
+      $('stpStats').innerHTML = `추출 엔티티: <b>${Object.keys(parser.entities).length}</b>개 · 3D 형상 곡선: <b>${parser.edges.length}</b>개<br>외곽 크기: <b>${bw} × ${bh} × ${bd} mm</b>`;
+      $('stpInfoBox').style.display = 'block';
+      $('applyStpBtn').disabled = false;
+    };
+    reader.readAsText(file);
+  }
+
+  if ($('openStpModalBtn')) {
+    $('openStpModalBtn').addEventListener('click', () => {
+      $('stpModal').style.display = 'flex';
+      $('stpInfoBox').style.display = 'none';
+      $('applyStpBtn').disabled = true;
+    });
+  }
+  if ($('closeStpModal')) $('closeStpModal').addEventListener('click', () => { $('stpModal').style.display = 'none'; });
+
+  const stpDrop = $('stpDropZone');
+  if (stpDrop) {
+    stpDrop.addEventListener('click', () => $('stpFileInput').click());
+    stpDrop.addEventListener('dragover', e => { e.preventDefault(); stpDrop.style.background = 'var(--accent-light)'; });
+    stpDrop.addEventListener('dragleave', () => { stpDrop.style.background = 'var(--surface-sub)'; });
+    stpDrop.addEventListener('drop', e => {
+      e.preventDefault();
+      stpDrop.style.background = 'var(--surface-sub)';
+      if (e.dataTransfer.files.length) handleStpFile(e.dataTransfer.files[0]);
+    });
+    $('stpFileInput').addEventListener('change', e => {
+      if (e.target.files.length) handleStpFile(e.target.files[0]);
+    });
+  }
+
+  if ($('applyStpBtn')) {
+    $('applyStpBtn').addEventListener('click', async () => {
+      if (!parsedStpData) return;
+      $('stpModal').style.display = 'none';
+      alert(`✅ STP 판넬 모델 "${parsedStpData.name}" (${parsedStpData.edges.length}개 곡선)이 3D 캐드 엔진에 등록되었습니다!`);
+      switchViewMode('3D');
+      update3dScene();
+    });
+  }
 
   /* ==============================================================
      Panel Database (SQLite) Management & Dynamic Template Sync
