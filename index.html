@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.11</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.12</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -304,7 +304,7 @@ canvas.drag{cursor:grabbing}
       <button type="button" class="tab-btn" data-tab="tab-nozzles">📐 측면편집</button>
       <button type="button" class="tab-btn" data-tab="tab-sheet">📋 표제란·노트</button>
       <button type="button" class="tab-btn" data-tab="tab-bom">📊 집계</button>
-      <button type="button" class="tab-btn" data-tab="tab-panels">🧩 판넬 DB</button>
+      <button type="button" class="tab-btn" data-tab="tab-settings">⚙️ 환경설정</button>
     </nav>
 
     <!-- Tab 1: Specs -->
@@ -338,80 +338,8 @@ canvas.drag{cursor:grabbing}
             <option value="150">150 (채널)</option>
           </select>
         </div>
-        <p class="hint">💡 폭·길이는 여러 칸에 입력 시 구간별 분할(예: 3000 + 2000)됩니다.</p>
+        <p class="hint">💡 길이는 여러 칸에 입력 시 구간별 분할(예: 3000 + 2000)됩니다. 폭은 단일 치수(mm)입니다.</p>
         <div class="err" id="err" hidden></div>
-
-        <!-- 기초 콘크리트 패드 규격 설정 인터페이스 -->
-        <div class="pad-config-card" style="margin-top:16px;padding:12px;background:var(--surface-sub);border:1px solid var(--line);border-radius:var(--radius)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <h3 style="margin:0;font-size:13px;display:flex;align-items:center;gap:6px">
-              <span>🏗️ 기초 콘크리트 패드 규격 설정 (mm)</span>
-            </h3>
-            <span style="font-size:10px;color:var(--accent);font-weight:600">콘크리트 패드</span>
-          </div>
-
-          <!-- 패드 도식화 / 시각 프리뷰 바 -->
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:8px 6px;background:var(--surface);border:1px solid var(--line);border-radius:6px;margin-bottom:10px;text-align:center">
-            <div style="flex:1">
-              <div style="font-size:10px;color:var(--muted);margin-bottom:2px">최외각 첫번째</div>
-              <div id="badgePadFirst" style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 4px;border-radius:4px">400mm</div>
-            </div>
-            <div style="color:var(--muted);font-size:10px">─·─</div>
-            <div style="flex:1">
-              <div style="font-size:10px;color:var(--muted);margin-bottom:2px">일반 (내부)</div>
-              <div id="badgePadMid" style="font-size:11px;font-weight:700;color:var(--fg);background:rgba(100,116,139,0.12);padding:2px 4px;border-radius:4px">300mm</div>
-            </div>
-            <div style="color:var(--muted);font-size:10px">─·─</div>
-            <div style="flex:1">
-              <div style="font-size:10px;color:var(--muted);margin-bottom:2px">최외각 마지막</div>
-              <div id="badgePadLast" style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 4px;border-radius:4px">400mm</div>
-            </div>
-          </div>
-
-          <!-- 패드 규격 설정 (최외각 패드 폭, 일반 패드 폭, 패드 높이) -->
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
-            <div>
-              <label for="padFirstW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">최외각 패드 폭</label>
-              <input type="number" id="padFirstW" value="400" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="400">
-              <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">첫번째·마지막 동일</div>
-            </div>
-            <div>
-              <label for="padMidW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">일반 패드 폭</label>
-              <input type="number" id="padMidW" value="300" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="300">
-              <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">내부 패드 폭</div>
-            </div>
-            <div>
-              <label for="padH" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">패드 높이 (H)</label>
-              <input type="number" id="padH" value="525" min="100" max="3000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="525">
-              <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">기본: 600 - 스키드</div>
-            </div>
-          </div>
-
-          <!-- 자동 계산 정보 표시 (전·후면 돌출 = 최외각 폭 / 2, 패드 높이 기본식 안내 및 초기화) -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;padding:8px 10px;background:var(--surface);border:1px dashed var(--line);border-radius:6px;font-size:11px">
-            <div>
-              <div style="color:var(--muted);margin-bottom:2px">전·후면 돌출 (자동)</div>
-              <div style="font-size:13px;font-weight:700;color:var(--accent)"><span id="calcPadOverhang">200</span> mm</div>
-              <div style="font-size:9px;color:var(--muted)">최외각 폭(<span id="calcEdgeW">400</span>) / 2</div>
-            </div>
-            <div>
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-                <span style="color:var(--muted)">패드높이 기본식</span>
-                <button type="button" id="btnResetPadH" class="btn-sm" style="padding:1px 5px;font-size:9px;line-height:1.2;background:rgba(2,132,199,0.08);color:var(--accent)" title="기본 계산값(600 - 스키드)으로 재설정">기본값 적용</button>
-              </div>
-              <div style="font-size:13px;font-weight:700;color:var(--text)"><span id="calcDefaultPadH">525</span> mm</div>
-              <div style="font-size:9px;color:var(--muted)">600 - 스키드(<span id="calcSkidH">75</span>)</div>
-            </div>
-          </div>
-
-          <!-- 원클릭 프리셋 버튼들 -->
-          <div style="display:flex;gap:4px">
-            <button type="button" class="btn-sm" id="btnPadPresetStd" style="flex:1;padding:4px 2px;font-size:10px" title="최외각 400 / 일반 300">표준 400/300</button>
-            <button type="button" class="btn-sm" id="btnPadPresetWide" style="flex:1;padding:4px 2px;font-size:10px" title="최외각 450 / 일반 350">광폭 450/350</button>
-            <button type="button" class="btn-sm" id="btnPadPresetEqual3" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 300">동일 300</button>
-            <button type="button" class="btn-sm" id="btnPadPresetEqual4" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 400">동일 400</button>
-          </div>
-        </div>
       </section>
     </div>
 
@@ -720,11 +648,83 @@ canvas.drag{cursor:grabbing}
       </section>
     </div>
 
-    <!-- Tab 5: Panel Database -->
-    <div class="tab-content" id="tab-panels">
+    <!-- Tab 6: Settings (환경설정) -->
+    <div class="tab-content" id="tab-settings">
+      <!-- 1. 기초 콘크리트 패드 규격 설정 -->
+      <section class="box" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <h2 style="margin:0">🏗️ 기초 콘크리트 패드 설정 (mm)</h2>
+          <span style="font-size:10px;color:var(--accent);font-weight:600">콘크리트 패드</span>
+        </div>
+        <p class="hint" style="margin-bottom:10px">수조 하부 기초 콘크리트 패드 빔의 폭·높이 규격 및 전후면 돌출 길이를 설정합니다.</p>
+
+        <!-- 패드 도식화 / 시각 프리뷰 바 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:8px 6px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;margin-bottom:10px;text-align:center">
+          <div style="flex:1">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:2px">최외각 첫번째</div>
+            <div id="badgePadFirst" style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 4px;border-radius:4px">400mm</div>
+          </div>
+          <div style="color:var(--muted);font-size:10px">─·─</div>
+          <div style="flex:1">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:2px">일반 (내부)</div>
+            <div id="badgePadMid" style="font-size:11px;font-weight:700;color:var(--fg);background:rgba(100,116,139,0.12);padding:2px 4px;border-radius:4px">300mm</div>
+          </div>
+          <div style="color:var(--muted);font-size:10px">─·─</div>
+          <div style="flex:1">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:2px">최외각 마지막</div>
+            <div id="badgePadLast" style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 4px;border-radius:4px">400mm</div>
+          </div>
+        </div>
+
+        <!-- 패드 규격 설정 (최외각 패드 폭, 일반 패드 폭, 패드 높이) -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+          <div>
+            <label for="padFirstW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">최외각 패드 폭</label>
+            <input type="number" id="padFirstW" value="400" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="400">
+            <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">첫번째·마지막 동일</div>
+          </div>
+          <div>
+            <label for="padMidW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">일반 패드 폭</label>
+            <input type="number" id="padMidW" value="300" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="300">
+            <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">내부 패드 폭</div>
+          </div>
+          <div>
+            <label for="padH" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">패드 높이 (H)</label>
+            <input type="number" id="padH" value="525" min="100" max="3000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="525">
+            <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">기본: 600 - 스키드</div>
+          </div>
+        </div>
+
+        <!-- 자동 계산 정보 표시 (전·후면 돌출 = 최외각 폭 / 2, 패드 높이 기본식 안내 및 초기화) -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;padding:8px 10px;background:var(--surface);border:1px dashed var(--line);border-radius:6px;font-size:11px">
+          <div>
+            <div style="color:var(--muted);margin-bottom:2px">전·후면 돌출 (자동)</div>
+            <div style="font-size:13px;font-weight:700;color:var(--accent)"><span id="calcPadOverhang">200</span> mm</div>
+            <div style="font-size:9px;color:var(--muted)">최외각 폭(<span id="calcEdgeW">400</span>) / 2</div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+              <span style="color:var(--muted)">패드높이 기본식</span>
+              <button type="button" id="btnResetPadH" class="btn-sm" style="padding:1px 5px;font-size:9px;line-height:1.2;background:rgba(2,132,199,0.08);color:var(--accent)" title="기본 계산값(600 - 스키드)으로 재설정">기본값 적용</button>
+            </div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)"><span id="calcDefaultPadH">525</span> mm</div>
+            <div style="font-size:9px;color:var(--muted)">600 - 스키드(<span id="calcSkidH">75</span>)</div>
+          </div>
+        </div>
+
+        <!-- 원클릭 프리셋 버튼들 -->
+        <div style="display:flex;gap:4px">
+          <button type="button" class="btn-sm" id="btnPadPresetStd" style="flex:1;padding:4px 2px;font-size:10px" title="최외각 400 / 일반 300">표준 400/300</button>
+          <button type="button" class="btn-sm" id="btnPadPresetWide" style="flex:1;padding:4px 2px;font-size:10px" title="최외각 450 / 일반 350">광폭 450/350</button>
+          <button type="button" class="btn-sm" id="btnPadPresetEqual3" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 300">동일 300</button>
+          <button type="button" class="btn-sm" id="btnPadPresetEqual4" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 400">동일 400</button>
+        </div>
+      </section>
+
+      <!-- 2. 탱크 판넬 DB 관리 -->
       <section class="box">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2>탱크 판넬 DB 관리</h2>
+          <h2 style="margin:0">🧩 탱크 판넬 DB 관리</h2>
           <button type="button" id="openPanelModal" class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent)">➕ 판넬 등록</button>
         </div>
         <p class="hint" style="margin-bottom:10px">탱크 규격별 판넬의 형상(엠보싱, 무늬, 보강)을 등록하고 관리합니다.</p>
@@ -4315,7 +4315,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
 (function () {
   const C = window.TankCore;
   const $ = id => document.getElementById(id);
-  const LEN0 = [5000, 0, 0, 0, 0], WID0 = [3000, 2000, 0, 0, 0];
+  const LEN0 = [5000, 0, 0, 0, 0], WID0 = [4000];
   const NOTES = [
     'Customers are requested to make a base concrete according to the designed specifications and the strength of site.',
     'The required strength of base concrete must be at least 180Kg/cm2.',
@@ -4340,7 +4340,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       const target = $(btn.getAttribute('data-tab'));
       if (target) {
         target.classList.add('active');
-        if (btn.getAttribute('data-tab') === 'tab-panels') {
+        if (btn.getAttribute('data-tab') === 'tab-settings' || btn.getAttribute('data-tab') === 'tab-panels') {
           loadDbPanels();
         } else if (btn.getAttribute('data-tab') === 'tab-nozzles') {
           updateNozzleUi();
@@ -4434,7 +4434,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
   let currentNozTool = 'panel-std';
   let selectedNozzleId = null;
   const iconCache = {};
-  const vals = k => [0, 1, 2, 3, 4].map(i => Number($(k + i).value) || 0).filter(Boolean);
+  const vals = k => [0, 1, 2, 3, 4].map(i => $(k + i) ? (Number($(k + i).value) || 0) : 0).filter(Boolean);
   const pk = (i, j) => i + ',' + j;
 
   function getSingleCompNozzles(map, H) {
@@ -5516,8 +5516,8 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     let msg = [];
     [['길이(LENGTH)', L, 'L'], ['폭(WIDTH)', W, 'W']].forEach(([nm, arr, k]) => arr.forEach((v, i) => {
       const e = C.checkSegment(v), el = $(k + i);
-      el.classList.toggle('bad', !!e);
-      if (e) msg.push(nm + ' ' + (i + 1) + '번 칸: ' + e);
+      if (el) el.classList.toggle('bad', !!e);
+      if (e) msg.push(nm + (k === 'W' ? ': ' : ' ' + (i + 1) + '번 칸: ') + e);
     }));
     if (!W[0] || !L[0]) msg.push('폭과 길이의 첫 칸을 입력하세요');
     const err = $('err'); err.hidden = !msg.length; err.textContent = msg.join(' / ');
@@ -5633,8 +5633,8 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
 
   function getAppState() {
     return {
-      L: [0, 1, 2, 3, 4].map(i => Number($('L' + i).value) || 0),
-      W: [0, 1, 2, 3, 4].map(i => Number($('W' + i).value) || 0),
+      L: [0, 1, 2, 3, 4].map(i => $('L' + i) ? (Number($('L' + i).value) || 0) : 0),
+      W: [0, 1, 2, 3, 4].map(i => $('W' + i) ? (Number($('W' + i).value) || 0) : 0),
       H: Number($('H').value) || 3000,
       b11: $('b11').checked,
       mat: document.querySelector('input[name=mat]:checked') ? document.querySelector('input[name=mat]:checked').value : 'GRP',

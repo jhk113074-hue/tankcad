@@ -5,6 +5,21 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.12] - 2026-10-02
+
+### Added & Reorganized (환경설정 메뉴 신설, 기초콘크리트 패드/패널DB 이전 및 폭 입력 1칸 간소화)
+- **환경설정(Settings) 메뉴 신설 및 기본 설정 메뉴 일괄 이전 ("환경설정 메뉴를 만들어, 기초콘크리트 패드, 패널DB 등 기본 설정 메뉴는 옮겨주세요." 완벽 해결)**:
+  - 탭 내비게이션에 **`⚙️ 환경설정` (`tab-settings`)** 탭을 신설.
+  - 기존 사양·치수 탭(`tab-specs`)을 복잡하게 차지하던 **`🏗️ 기초 콘크리트 패드 규격 설정 (mm)`**을 `⚙️ 환경설정` 탭의 제1 섹션으로 깔끔하게 이전.
+  - 별도 탭으로 분리되어 있던 **`🧩 탱크 판넬 DB 관리`**를 `⚙️ 환경설정` 탭의 제2 섹션으로 통합하여 도면 환경과 라이브러리를 한곳에서 관리하도록 최적화.
+  - 사양·치수 탭(`tab-specs`)은 재질/보강방식 및 치수 입력에만 온전히 집중할 수 있도록 화면이 한눈에 들어오게 경량화.
+- **폭(WIDTH) 치수 입력 5칸에서 단일 1칸으로 간소화 ("폭은 5칸에서 1칸만 살려주세요." 완벽 해결)**:
+  - 길이(LENGTH) 방향과 달리 칸막이 분할이 없는 폭(WIDTH)의 특성에 맞추어, 불필요하던 4개의 빈 칸을 제거하고 **단일 1칸(`W0`) 입력 필드**로 간소화.
+  - 안내 문구를 "길이는 여러 칸에 입력 시 구간별 분할됩니다. 폭은 단일 치수(mm)입니다."로 명확하게 갱신.
+  - 내부 데이터 파싱(`vals`), 상태 저장(`localStorage`), URL 동기화 및 치수 검증 모두 안전하게 연동.
+
+---
+
 ## [1.5.11] - 2026-10-02
 
 ### Enhanced & Streamlined (최외각 패드 폭 일원화 및 기초패드 높이 커스텀 수정 지원)

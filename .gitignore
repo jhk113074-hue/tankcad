@@ -38,3 +38,4 @@ desktop.ini
 # Test outputs (keep repository clean)
 test_*.dxf
 test_*.dwg
+*.pdf
