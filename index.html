@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.4.3</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.4.4</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -785,6 +785,7 @@ canvas.drag{cursor:grabbing}
             <select id="modalCat" style="width:100%;padding:5px;font-size:12px">
               <option value="top_bottom">평면 (상·하부 패널)</option>
               <option value="side">입면 (측면 패널)</option>
+              <option value="all">전체 (평면 + 입면 모두 적용)</option>
             </select>
           </div>
           <div>
@@ -5591,28 +5592,82 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     }
   }
 
+  function applyActiveTemplates() {
+    try {
+      const custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
+      custom.forEach(p => {
+        const mat = p.material || 'SMC';
+        const key = p.size_key || `${p.width}x${p.height}`;
+        const ents = p.entities || [];
+        if (!ents.length) return;
+
+        if (p.category === 'top_bottom' || p.category === 'all') {
+          if (!TEMPLATES[mat]) TEMPLATES[mat] = {};
+          TEMPLATES[mat][key] = ents;
+        }
+        if (p.category === 'side' || p.category === 'all') {
+          if (!SIDE_T[mat]) SIDE_T[mat] = {};
+          SIDE_T[mat][key] = ents;
+        }
+      });
+    } catch (e) {
+      console.warn('applyActiveTemplates error:', e);
+    }
+  }
+
   function renderPanelTable(panels) {
     const tbody = $('panelTableBody');
     if (!panels.length) {
       tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:12px;color:var(--muted)">등록된 판넬이 없습니다.</td></tr>';
       return;
     }
-    tbody.innerHTML = panels.map(p => `
+    tbody.innerHTML = panels.map(p => {
+      const catText = (p.category === 'top_bottom') ? '평면' : ((p.category === 'side') ? '입면' : '전체');
+      return `
       <tr data-id="${p.id}" style="cursor:pointer;border-bottom:1px solid var(--line-sub)">
-        <td style="padding:6px 4px"><b>${p.material}</b> <span style="font-size:10px;color:var(--muted)">(${p.category === 'top_bottom' ? '평면' : '입면'})</span></td>
-        <td style="padding:6px 4px;font-family:var(--font-num)">${p.size_key}</td>
-        <td style="padding:6px 4px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.name}">${p.name}</td>
-        <td style="padding:6px 4px;text-align:center;white-space:nowrap">
-          <button type="button" class="btn-sm btn-panel-edit" data-id="${p.id}" style="padding:2px 5px;font-size:10px">수정</button>
-          ${!p.is_default ? `<button type="button" class="btn-sm btn-panel-del" data-id="${p.id}" style="padding:2px 5px;font-size:10px;color:#ef4444">삭제</button>` : ''}
+        <td style="padding:5px 3px"><b>${p.material}</b> <span style="font-size:10px;color:var(--muted)">(${catText})</span></td>
+        <td style="padding:5px 3px;font-family:var(--font-num)">${p.size_key}</td>
+        <td style="padding:5px 3px;max-width:85px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.name}">${p.name}</td>
+        <td style="padding:5px 3px;text-align:center;white-space:nowrap">
+          <button type="button" class="btn-sm btn-panel-apply" data-id="${p.id}" style="padding:2px 4px;font-size:10px;background:var(--accent);color:#fff;border-color:var(--accent)" title="이 판넬을 현재 탱크 도면에 즉시 반영">⚡적용</button>
+          <button type="button" class="btn-sm btn-panel-edit" data-id="${p.id}" style="padding:2px 4px;font-size:10px">수정</button>
+          ${!p.is_default ? `<button type="button" class="btn-sm btn-panel-del" data-id="${p.id}" style="padding:2px 4px;font-size:10px;color:#ef4444">삭제</button>` : ''}
         </td>
       </tr>
-    `).join('');
+      `;
+    }).join('');
 
     tbody.querySelectorAll('tr').forEach(tr => {
       tr.addEventListener('click', (e) => {
         if (e.target.closest('button')) return;
         selectPanel(tr.getAttribute('data-id'));
+      });
+    });
+
+    tbody.querySelectorAll('.btn-panel-apply').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const pid = btn.getAttribute('data-id');
+        const p = dbPanelsList.find(x => String(x.id) === String(pid));
+        if (!p) return;
+        const mat = p.material || 'SMC';
+        const key = p.size_key || `${p.width}x${p.height}`;
+        const ents = p.entities;
+        if (!ents || !ents.length) {
+          alert('이 판넬에는 등록된 형상 데이터가 없습니다.');
+          return;
+        }
+        if (p.category === 'top_bottom' || p.category === 'all') {
+          if (!TEMPLATES[mat]) TEMPLATES[mat] = {};
+          TEMPLATES[mat][key] = ents;
+        }
+        if (p.category === 'side' || p.category === 'all') {
+          if (!SIDE_T[mat]) SIDE_T[mat] = {};
+          SIDE_T[mat][key] = ents;
+        }
+        rebuild(false);
+        draw();
+        alert(`✅ [${p.name}] 판넬이 현재 탱크 도면(${key})에 즉시 적용되었습니다!`);
       });
     });
 
@@ -5651,20 +5706,21 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     if (!silent) st.textContent = '판넬 DB 동기화 중...';
     try {
       const res = await fetch(`${API_BASE}/api/panels/templates`);
-      if (!res.ok) throw new Error('API 오류');
-      const data = await res.json();
-      if (data.panel_templates) TEMPLATES = data.panel_templates;
-      if (data.side_templates) SIDE_T = data.side_templates;
-      rebuild(false);
-      if (!silent) {
-        st.textContent = '판넬 DB가 캐드 엔진에 동기화되었습니다.';
-        alert('✅ DB에 등록된 판넬 형상이 캐드 화면에 즉시 적용되었습니다!');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.panel_templates) TEMPLATES = data.panel_templates;
+        if (data.side_templates) SIDE_T = data.side_templates;
       }
-    } catch (e) {
-      if (!silent) {
-        st.textContent = '동기화 실패: ' + e.message;
-        alert('⚠️ DB 동기화 실패 (server.py 실행을 확인하세요)');
-      }
+    } catch (e) {}
+
+    // 항상 localStorage에 등록된 사용자 정의 판넬을 최우선으로 활성 템플릿에 병합
+    applyActiveTemplates();
+    rebuild(false);
+    draw();
+
+    if (!silent) {
+      st.textContent = '판넬 DB가 캐드 화면에 동기화되었습니다.';
+      alert('✅ 판넬 형상이 캐드 도면(평면도, 입면도, 3D 등각도)에 즉시 적용되었습니다!');
     }
   }
 
@@ -5724,9 +5780,15 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
   $('syncDbBtn').addEventListener('click', syncTemplatesFromDb);
   $('resetDbBtn').addEventListener('click', async () => {
     if (confirm('판넬 DB를 최초 공장 표준 템플릿으로 초기화하시겠습니까? 사용자 추가 판넬은 삭제됩니다.')) {
-      await fetch(`${API_BASE}/api/panels/reset`, { method: 'POST' });
+      try {
+        await fetch(`${API_BASE}/api/panels/reset`, { method: 'POST' });
+      } catch (e) {}
+      localStorage.removeItem('tankcad_custom_panels');
       await loadDbPanels();
-      await syncTemplatesFromDb();
+      await syncTemplatesFromDb(true);
+      rebuild(false);
+      draw();
+      alert('판넬 DB가 공장 표준으로 초기화되었습니다.');
     }
   });
 
@@ -5768,11 +5830,47 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       throw new Error('STEP 파일 내에서 유효한 3D 좌표점(CARTESIAN_POINT)을 찾을 수 없습니다.');
     }
 
+    // 형상에 실제 사용된 포인트 ID만 수집 (참조 평면, 원점, 뷰포트 등 비형상 점 배제)
+    const usedPtIds = new Set();
+    const edgeRegex = /#(\d+)\s*=\s*EDGE_CURVE\s*\(\s*'[^']*'\s*,\s*#(\d+)\s*,\s*#(\d+)/g;
+    let em;
+    while ((em = edgeRegex.exec(stepText)) !== null) {
+      usedPtIds.add(Number(em[2]));
+      usedPtIds.add(Number(em[3]));
+    }
+    const polyRegex = /#(\d+)\s*=\s*POLY_LOOP\s*\(\s*'[^']*'\s*,\s*\(\s*([^)]+)\s*\)\s*\)/g;
+    let pm;
+    while ((pm = polyRegex.exec(stepText)) !== null) {
+      const refs = pm[2].match(/#(\d+)/g);
+      if (refs) refs.forEach(r => usedPtIds.add(Number(r.replace('#', ''))));
+    }
+    const placements = new Map();
+    const plcRegex = /#(\d+)\s*=\s*AXIS2_PLACEMENT_3D\s*\(\s*'[^']*'\s*,\s*#(\d+)/g;
+    let plm;
+    while ((plm = plcRegex.exec(stepText)) !== null) {
+      placements.set(Number(plm[1]), Number(plm[2]));
+    }
+    const cirRegex = /#(\d+)\s*=\s*CIRCLE\s*\(\s*'[^']*'\s*,\s*#(\d+)\s*,\s*([-\d\.eE\+]+)\s*\)/g;
+    let cm;
+    while ((cm = cirRegex.exec(stepText)) !== null) {
+      const ptRef = placements.get(Number(cm[2]));
+      if (ptRef) usedPtIds.add(ptRef);
+    }
+
+    const geomPts = [];
+    if (usedPtIds.size > 0) {
+      for (const id of usedPtIds) {
+        const p = getPt(id);
+        if (p) geomPts.push(p);
+      }
+    }
+    const ptsToMeasure = geomPts.length > 0 ? geomPts : Array.from(pts.values());
+
     let minX = Infinity, maxX = -Infinity;
     let minY = Infinity, maxY = -Infinity;
     let minZ = Infinity, maxZ = -Infinity;
 
-    for (const p of pts.values()) {
+    for (const p of ptsToMeasure) {
       if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
       if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
       if (p[2] < minZ) minZ = p[2]; if (p[2] > maxZ) maxZ = p[2];
@@ -5798,7 +5896,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     const stdSizes = [500, 1000, 1100, 1200, 1250, 1300, 1500, 2000];
     function snapStd(v) {
       for (const s of stdSizes) {
-        if (Math.abs(v - s) <= 35) return s;
+        if (Math.abs(v - s) <= 60) return s;
       }
       return Math.round(v);
     }
@@ -6098,22 +6196,41 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     } catch (err) {}
 
     try {
-      const custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
-      custom.push({
+      let custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
+      const existingIdx = custom.findIndex(p => p.material === mat && p.category === cat && p.width === width && p.height === height);
+      const newPanel = {
         ...payload,
-        id: 'custom_' + Date.now(),
+        id: (existingIdx >= 0) ? custom[existingIdx].id : ('custom_' + Date.now()),
         size_key: `${width}x${height}`,
         is_default: false
-      });
+      };
+      if (existingIdx >= 0) {
+        custom[existingIdx] = newPanel;
+      } else {
+        custom.unshift(newPanel);
+      }
       localStorage.setItem('tankcad_custom_panels', JSON.stringify(custom));
       saved = true;
     } catch (e) {}
 
+    // ★★★ 핵심: 현재 활성 CAD 엔진 메모리(TEMPLATES / SIDE_T)에 즉시 주입! ★★★
+    const key = `${width}x${height}`;
+    if (cat === 'top_bottom' || cat === 'all') {
+      if (!TEMPLATES[mat]) TEMPLATES[mat] = {};
+      TEMPLATES[mat][key] = modalEntities;
+    }
+    if (cat === 'side' || cat === 'all') {
+      if (!SIDE_T[mat]) SIDE_T[mat] = {};
+      SIDE_T[mat][key] = modalEntities;
+    }
+
     if (saved) {
       $('panelRegModal').style.display = 'none';
-      alert('✅ 판넬이 성공적으로 저장되었습니다!');
       await loadDbPanels();
+      applyActiveTemplates();
       rebuild(false);
+      draw();
+      alert(`✅ [${name}] 판넬이 성공적으로 저장되고, 현재 도면에 즉시 반영되었습니다!`);
     } else {
       alert('판넬 저장 실패');
     }
@@ -6152,7 +6269,9 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       localStorage.setItem('tankcad_custom_panels', JSON.stringify(custom));
     } catch (e) {}
     await loadDbPanels();
+    await syncTemplatesFromDb(true);
     rebuild(false);
+    draw();
   }
 
   // 초기 시작 시 DB에서 판넬 목록 및 최신 템플릿 로드 후 저장된 상태 복원
