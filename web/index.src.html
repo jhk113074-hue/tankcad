@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.5</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.6</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2435,7 +2435,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
           ctx.moveTo(cx + r * Math.cos(a0), cy - r * Math.sin(a0));
           ctx.arc(cx, cy, r, -a0, -a1, true);
         } else if (e.t === 'text') {
-          texts.push(e);
+          if (ox || oy) texts.push({ ...e, p: [e.p[0] + ox, e.p[1] + oy] });
+          else texts.push(e);
         }
       };
 
@@ -2452,6 +2453,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
       texts.forEach(e => {
         const px = Math.max(3, e.h * view.s); if (px < 3) return;
+        ctx.fillStyle = col[e.layer] || '#cbd5e1';
         const fontFam = (e.layer === 'SHEET') ? '"Malgun Gothic", "Noto Sans KR", sans-serif' : css('--font-num');
         const isBold = (e.layer === 'SHEET' && e.h >= 5.5 * plan.scale) ? 'bold ' : '';
         ctx.font = isBold + px + 'px ' + fontFam;
