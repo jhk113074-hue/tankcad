@@ -1652,23 +1652,22 @@
 
         // Project CeilLT roof template geometry
         const rawT = ceilTemplates[w + 'x' + h];
+        const fm = 60; // 천정판넬은 플랜지가 안쪽(탱크 내부)으로 들어가며 길이 60mm, 두께 6mm (외부 돌출 없음)
         if (rawT && rawT.length > 0) {
-          const fm = 75;
           poly([toIso(x0 + fm, y0 + fm, H), toIso(x0 + w - fm, y0 + fm, H), toIso(x0 + w - fm, y0 + h - fm, H), toIso(x0 + fm, y0 + h - fm, H)], 'PANEL_DETAIL', true);
           projectTemplateEntities(rawT, 'XY', x0, y0, H, 'PANEL_DETAIL');
         } else {
-          const m = 75;
-          poly([toIso(x0 + m, y0 + m, H), toIso(x0 + w - m, y0 + m, H), toIso(x0 + w - m, y0 + h - m, H), toIso(x0 + m, y0 + h - m, H)], 'PANEL_DETAIL', true);
-          ln(toIso(x0 + m, y0 + m, H), toIso(x0 + w - m, y0 + h - m, H), 'PANEL_DETAIL');
-          ln(toIso(x0 + w - m, y0 + m, H), toIso(x0 + m, y0 + h - m, H), 'PANEL_DETAIL');
+          poly([toIso(x0 + fm, y0 + fm, H), toIso(x0 + w - fm, y0 + fm, H), toIso(x0 + w - fm, y0 + h - fm, H), toIso(x0 + fm, y0 + h - fm, H)], 'PANEL_DETAIL', true);
+          ln(toIso(x0 + fm, y0 + fm, H), toIso(x0 + w - fm, y0 + h - fm, H), 'PANEL_DETAIL');
+          ln(toIso(x0 + w - fm, y0 + fm, H), toIso(x0 + fm, y0 + h - fm, H), 'PANEL_DETAIL');
         }
       }
     }
 
     // 4-B. SMC 표준 75mm 외부 돌출 플랜지 리브 및 10mm 두께 (SMC 75mm Flange & 10mm Thickness)
     if (mat === 'SMC') {
-      const FD = 75; // 플랜지 돌출 폭 (75mm)
-      const FT = 10; // 플랜지 판재 두께 (10mm)
+      const FD = 75; // 측면 벽체 플랜지 돌출 폭 (75mm)
+      const FT = 10; // 측면 벽체 플랜지 판재 두께 (10mm)
 
       // (1) 전면 벽체 수직 플랜지 리브 (Front Wall Vertical Seams: 10mm 두께의 75mm 돌출 리브)
       for (let j = 1; j < map.cols.length; j++) {
@@ -1767,44 +1766,10 @@
         ln(toIso(totalL, totalW, z), toIso(totalL + FD, totalW, z), 'FRAME');
       }
 
-      // (6) 상부 지붕 테두리 75mm 돌출 플랜지 코니스 (Top Perimeter Flange: 75mm 돌출 & 10mm 두께)
-      // 전면 상단 돌출
-      ln(toIso(0, -FD, H), toIso(totalL, -FD, H), 'FRAME');
-      ln(toIso(0, -FD, H + FT), toIso(totalL, -FD, H + FT), 'FRAME');
-      ln(toIso(0, 0, H + FT), toIso(totalL, 0, H + FT), 'PANEL_DETAIL');
-      ln(toIso(0, -FD, H), toIso(0, -FD, H + FT), 'FRAME');
-      ln(toIso(0, 0, H), toIso(0, 0, H + FT), 'FRAME');
-      // 우측 상단 돌출
-      ln(toIso(totalL + FD, 0, H), toIso(totalL + FD, totalW, H), 'FRAME');
-      ln(toIso(totalL + FD, 0, H + FT), toIso(totalL + FD, totalW, H + FT), 'FRAME');
-      ln(toIso(totalL, 0, H + FT), toIso(totalL, totalW, H + FT), 'PANEL_DETAIL');
-      ln(toIso(totalL + FD, totalW, H), toIso(totalL + FD, totalW, H + FT), 'FRAME');
-      ln(toIso(totalL, totalW, H), toIso(totalL, totalW, H + FT), 'FRAME');
-      // 코너 상단 연결선
-      ln(toIso(totalL, -FD, H), toIso(totalL + FD, 0, H), 'FRAME');
-      ln(toIso(totalL, -FD, H + FT), toIso(totalL + FD, 0, H + FT), 'FRAME');
+      // (6) 천정판넬 플랜지 (내향 플랜지: 길이 60mm, 두께 6mm)
+      // 천정판넬은 플랜지가 안쪽(하향)으로 들어가므로 상부 외부(Z=H 평면 위)로 돌출되지 않고 매끄러운 평면 유지
 
-      // (7) 상부 지붕 판넬 간 75mm 플랜지 리브 (Roof Seam Ribs: 10mm 두께의 75mm 돌출 리브)
-      for (let j = 1; j < map.cols.length; j++) {
-        const x = map.xs[j];
-        ln(toIso(x - FT, 0, H), toIso(x - FT, totalW, H), 'PANEL_DETAIL');
-        ln(toIso(x + FT, 0, H), toIso(x + FT, totalW, H), 'PANEL_DETAIL');
-        ln(toIso(x - FT, 0, H + FD), toIso(x - FT, totalW, H + FD), 'FRAME');
-        ln(toIso(x + FT, 0, H + FD), toIso(x + FT, totalW, H + FD), 'FRAME');
-        ln(toIso(x - FT, 0, H), toIso(x - FT, 0, H + FD), 'FRAME');
-        ln(toIso(x + FT, 0, H), toIso(x + FT, 0, H + FD), 'FRAME');
-      }
-      for (let i = 1; i < map.rows.length; i++) {
-        const y = map.ys[i];
-        ln(toIso(0, y - FT, H), toIso(totalL, y - FT, H), 'PANEL_DETAIL');
-        ln(toIso(0, y + FT, H), toIso(totalL, y + FT, H), 'PANEL_DETAIL');
-        ln(toIso(0, y - FT, H + FD), toIso(totalL, y - FT, H + FD), 'FRAME');
-        ln(toIso(0, y + FT, H + FD), toIso(totalL, y + FT, H + FD), 'FRAME');
-        ln(toIso(totalL, y - FT, H), toIso(totalL, y - FT, H + FD), 'FRAME');
-        ln(toIso(totalL, y + FT, H), toIso(totalL, y + FT, H + FD), 'FRAME');
-      }
-
-      // (8) 하부 바닥 75mm 플랜지 (Bottom Flange at Z = 0: 75mm 돌출 & 10mm 두께)
+      // (7) 하부 바닥 75mm 플랜지 (Bottom Flange at Z = 0: 75mm 돌출 & 10mm 두께)
       ln(toIso(0, -FD, 0), toIso(totalL, -FD, 0), 'FRAME');
       ln(toIso(0, -FD, -FT), toIso(totalL, -FD, -FT), 'FRAME');
       ln(toIso(0, 0, 0), toIso(0, -FD, 0), 'FRAME');
