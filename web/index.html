@@ -284,7 +284,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.10</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.11</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -368,40 +368,46 @@ canvas.drag{cursor:grabbing}
             </div>
           </div>
 
-          <!-- 패드 폭 설정 (3개 입력 필드) -->
+          <!-- 패드 규격 설정 (최외각 패드 폭, 일반 패드 폭, 패드 높이) -->
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
             <div>
-              <label for="padFirstW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">첫번째 패드 폭</label>
+              <label for="padFirstW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">최외각 패드 폭</label>
               <input type="number" id="padFirstW" value="400" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="400">
+              <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">첫번째·마지막 동일</div>
             </div>
             <div>
               <label for="padMidW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">일반 패드 폭</label>
               <input type="number" id="padMidW" value="300" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="300">
+              <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">내부 패드 폭</div>
             </div>
             <div>
-              <label for="padLastW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">마지막 패드 폭</label>
-              <input type="number" id="padLastW" value="400" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="400">
+              <label for="padH" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">패드 높이 (H)</label>
+              <input type="number" id="padH" value="525" min="100" max="3000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="525">
+              <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">기본: 600 - 스키드</div>
             </div>
           </div>
 
-          <!-- 자동 계산 정보 표시 (중복 입력 제거: 전후면 돌출 = 첫번째·마지막/2, 패드높이 = 600 - 스키드) -->
+          <!-- 자동 계산 정보 표시 (전·후면 돌출 = 최외각 폭 / 2, 패드 높이 기본식 안내 및 초기화) -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;padding:8px 10px;background:var(--surface);border:1px dashed var(--line);border-radius:6px;font-size:11px">
             <div>
               <div style="color:var(--muted);margin-bottom:2px">전·후면 돌출 (자동)</div>
               <div style="font-size:13px;font-weight:700;color:var(--accent)"><span id="calcPadOverhang">200</span> mm</div>
-              <div style="font-size:9px;color:var(--muted)">첫번째(마지막) 폭 / 2</div>
+              <div style="font-size:9px;color:var(--muted)">최외각 폭(<span id="calcEdgeW">400</span>) / 2</div>
             </div>
             <div>
-              <div style="color:var(--muted);margin-bottom:2px">패드 높이 (자동)</div>
-              <div style="font-size:13px;font-weight:700;color:var(--accent)"><span id="calcPadH">525</span> mm</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                <span style="color:var(--muted)">패드높이 기본식</span>
+                <button type="button" id="btnResetPadH" class="btn-sm" style="padding:1px 5px;font-size:9px;line-height:1.2;background:rgba(2,132,199,0.08);color:var(--accent)" title="기본 계산값(600 - 스키드)으로 재설정">기본값 적용</button>
+              </div>
+              <div style="font-size:13px;font-weight:700;color:var(--text)"><span id="calcDefaultPadH">525</span> mm</div>
               <div style="font-size:9px;color:var(--muted)">600 - 스키드(<span id="calcSkidH">75</span>)</div>
             </div>
           </div>
 
           <!-- 원클릭 프리셋 버튼들 -->
           <div style="display:flex;gap:4px">
-            <button type="button" class="btn-sm" id="btnPadPresetStd" style="flex:1;padding:4px 2px;font-size:10px" title="첫번째 400 / 일반 300 / 마지막 400">표준 400/300/400</button>
-            <button type="button" class="btn-sm" id="btnPadPresetWide" style="flex:1;padding:4px 2px;font-size:10px" title="첫번째 450 / 일반 350 / 마지막 450">광폭 450/350/450</button>
+            <button type="button" class="btn-sm" id="btnPadPresetStd" style="flex:1;padding:4px 2px;font-size:10px" title="최외각 400 / 일반 300">표준 400/300</button>
+            <button type="button" class="btn-sm" id="btnPadPresetWide" style="flex:1;padding:4px 2px;font-size:10px" title="최외각 450 / 일반 350">광폭 450/350</button>
             <button type="button" class="btn-sm" id="btnPadPresetEqual3" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 300">동일 300</button>
             <button type="button" class="btn-sm" id="btnPadPresetEqual4" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 400">동일 400</button>
           </div>
@@ -1628,7 +1634,7 @@ canvas.drag{cursor:grabbing}
     const hasCustom = opt && (opt.padFirstW !== undefined || opt.padMidW !== undefined || opt.padLastW !== undefined);
     const firstW = Number(opt && opt.padFirstW) || 400;
     const midW = Number(opt && opt.padMidW) || 300;
-    const lastW = Number(opt && opt.padLastW) || 400;
+    const lastW = Number(opt && (opt.padLastW !== undefined ? opt.padLastW : opt.padFirstW)) || firstW;
 
     if (hasCustom) {
       const out = [];
@@ -2584,7 +2590,7 @@ canvas.drag{cursor:grabbing}
     // 1. 콘크리트 패드 (Concrete Pad Beams) & 베이스 프레임
     const firstW = Number(opt.padFirstW) || 400;
     const midW = Number(opt.padMidW) || 300;
-    const lastW = Number(opt.padLastW) || 400;
+    const lastW = Number(opt.padLastW !== undefined ? opt.padLastW : opt.padFirstW) || firstW;
     const th = opt.th || opt.frame || 75;
     const PAD_H = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
     const GRD = -th - PAD_H;
@@ -5252,44 +5258,79 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
   const LY = { PANEL: 'lyPanel', PANEL_DETAIL: 'lyDetail', FRAME: 'lyFrame', REINF: 'lyReinf', WALL: 'lyWall', DIM: 'lyDim', SHEET: 'lySheet' };
   const layerOn = e => $(LY[e.layer]).checked;
   Object.values(LY).forEach(id => $(id).addEventListener('change', draw));
+  let isPadHCustom = false;
+
   function updatePadBadges() {
     const pf = $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400;
     const pm = $('padMidW') ? (Number($('padMidW').value) || 300) : 300;
-    const pl = $('padLastW') ? (Number($('padLastW').value) || 400) : 400;
     const frm = $('frm') ? (Number($('frm').value) || 75) : 75;
+    const defPh = 600 - frm;
     const ov = Math.round(pf / 2);
-    const ph = 600 - frm;
 
     if ($('badgePadFirst')) $('badgePadFirst').textContent = pf + 'mm';
     if ($('badgePadMid')) $('badgePadMid').textContent = pm + 'mm';
-    if ($('badgePadLast')) $('badgePadLast').textContent = pl + 'mm';
+    if ($('badgePadLast')) $('badgePadLast').textContent = pf + 'mm';
     if ($('calcPadOverhang')) $('calcPadOverhang').textContent = ov;
-    if ($('calcPadH')) $('calcPadH').textContent = ph;
+    if ($('calcEdgeW')) $('calcEdgeW').textContent = pf;
+    if ($('calcDefaultPadH')) $('calcDefaultPadH').textContent = defPh;
     if ($('calcSkidH')) $('calcSkidH').textContent = frm;
+    if ($('padH') && !isPadHCustom && ($('padH').value === '' || Number($('padH').dataset.lastDef || 0) === Number($('padH').value))) {
+      $('padH').value = defPh;
+      $('padH').dataset.lastDef = defPh;
+    }
   }
 
-  $('frm').addEventListener('change', () => { updatePadBadges(); schedule(); });
+  $('frm').addEventListener('change', () => {
+    const frm = Number($('frm').value) || 75;
+    if (!isPadHCustom && $('padH')) {
+      $('padH').value = 600 - frm;
+      $('padH').dataset.lastDef = 600 - frm;
+    }
+    updatePadBadges();
+    schedule();
+  });
   $('scaleSel').addEventListener('change', () => schedule());
 
-  ['padFirstW', 'padMidW', 'padLastW'].forEach(id => {
+  ['padFirstW', 'padMidW'].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener('input', () => { updatePadBadges(); schedule(); });
   });
 
+  if ($('padH')) {
+    $('padH').addEventListener('input', () => {
+      isPadHCustom = true;
+      updatePadBadges();
+      schedule();
+    });
+  }
+
+  if ($('btnResetPadH')) {
+    $('btnResetPadH').addEventListener('click', () => {
+      const frm = Number($('frm').value) || 75;
+      if ($('padH')) {
+        $('padH').value = 600 - frm;
+        $('padH').dataset.lastDef = 600 - frm;
+      }
+      isPadHCustom = false;
+      updatePadBadges();
+      schedule();
+    });
+  }
+
   if ($('btnPadPresetStd')) $('btnPadPresetStd').addEventListener('click', () => {
-    $('padFirstW').value = 400; $('padMidW').value = 300; $('padLastW').value = 400;
+    $('padFirstW').value = 400; $('padMidW').value = 300;
     updatePadBadges(); schedule();
   });
   if ($('btnPadPresetWide')) $('btnPadPresetWide').addEventListener('click', () => {
-    $('padFirstW').value = 450; $('padMidW').value = 350; $('padLastW').value = 450;
+    $('padFirstW').value = 450; $('padMidW').value = 350;
     updatePadBadges(); schedule();
   });
   if ($('btnPadPresetEqual3')) $('btnPadPresetEqual3').addEventListener('click', () => {
-    $('padFirstW').value = 300; $('padMidW').value = 300; $('padLastW').value = 300;
+    $('padFirstW').value = 300; $('padMidW').value = 300;
     updatePadBadges(); schedule();
   });
   if ($('btnPadPresetEqual4')) $('btnPadPresetEqual4').addEventListener('click', () => {
-    $('padFirstW').value = 400; $('padMidW').value = 400; $('padLastW').value = 400;
+    $('padFirstW').value = 400; $('padMidW').value = 400;
     updatePadBadges(); schedule();
   });
 
@@ -5491,8 +5532,8 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
         length: L, width: W, height: H, hseg: C.heightSegs(H[0], $('b11').checked), b11: $('b11').checked, removed: [...removed].map(k => k.split(',').map(Number)), marks: Object.assign({}, marks), ladders: Object.assign({}, ladders), pillars: [...pillars].map(k => k.split(',').map(Number)), frame: Number($('frm').value), material: document.querySelector('input[name=mat]:checked').value,
         padFirstW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
         padMidW: $('padMidW') ? (Number($('padMidW').value) || 300) : 300,
-        padLastW: $('padLastW') ? (Number($('padLastW').value) || 400) : 400,
-        padH: 600 - (Number($('frm').value) || 75),
+        padLastW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
+        padH: ($('padH') && $('padH').value !== '' && !isNaN($('padH').value)) ? Number($('padH').value) : (600 - (Number($('frm').value) || 75)),
         padOverhang: Math.round(($('padFirstW') ? (Number($('padFirstW').value) || 400) : 400) / 2),
         rf: Number(document.querySelector('input[name=rf]:checked').value),
         userScale: $('scaleSel').value === 'auto' ? null : Number($('scaleSel').value),
@@ -5558,7 +5599,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       '<span>폭 분할 (W)</span><b>' + m.rows.join(' + ') + '</b>' +
       '<span>길이 분할 (L)</span><b>' + m.cols.join(' + ') + '</b>' +
       '<span>평면 패널 수</span><b>' + total + ' 장' + (anyRemoved ? ` (${m.removed.size}장 삭제)` : '') + '</b>' +
-      '<span>기초패드 규격</span><b>첫/끝 ' + ($('padFirstW') ? $('padFirstW').value : 400) + '/' + ($('padLastW') ? $('padLastW').value : 400) + ' mm · 일반 ' + ($('padMidW') ? $('padMidW').value : 300) + ' mm (H:' + (600 - (Number($('frm').value) || 75)) + ')</b>';
+      '<span>기초패드 규격</span><b>최외각 ' + ($('padFirstW') ? $('padFirstW').value : 400) + ' mm · 일반 ' + ($('padMidW') ? $('padMidW').value : 300) + ' mm (H:' + (($('padH') && $('padH').value !== '') ? $('padH').value : (600 - (Number($('frm').value) || 75))) + ')</b>';
     $('cnt').innerHTML = Object.entries(cnt).sort().map(([k, v]) => '<tr><td>' + k + ' mm</td><td class="n">' + v + '</td></tr>').join('');
   }
 
@@ -5601,8 +5642,9 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       frm: Number($('frm').value) || 75,
       padFirstW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
       padMidW: $('padMidW') ? (Number($('padMidW').value) || 300) : 300,
-      padLastW: $('padLastW') ? (Number($('padLastW').value) || 400) : 400,
-      padH: 600 - (Number($('frm').value) || 75),
+      padLastW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
+      padH: ($('padH') && $('padH').value !== '' && !isNaN($('padH').value)) ? Number($('padH').value) : (600 - (Number($('frm').value) || 75)),
+      isPadHCustom: isPadHCustom,
       padOverhang: Math.round(($('padFirstW') ? (Number($('padFirstW').value) || 400) : 400) / 2),
       scale: $('scaleSel').value,
       sheetOn: $('sheetOn').checked,
@@ -5677,7 +5719,14 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
 
       if (st.padFirstW && $('padFirstW')) $('padFirstW').value = st.padFirstW;
       if (st.padMidW && $('padMidW')) $('padMidW').value = st.padMidW;
-      if (st.padLastW && $('padLastW')) $('padLastW').value = st.padLastW;
+      const defH = 600 - (Number($('frm').value) || 75);
+      if (st.padH !== undefined && $('padH')) {
+        $('padH').value = st.padH;
+        isPadHCustom = (st.isPadHCustom !== undefined) ? st.isPadHCustom : (Number(st.padH) !== defH);
+      } else if ($('padH')) {
+        $('padH').value = defH;
+        isPadHCustom = false;
+      }
       updatePadBadges();
 
       if (typeof st.useNozzles === 'boolean') {
@@ -5751,7 +5800,8 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       if (st.b11) params.set('b11', '1');
       if (st.padFirstW && st.padFirstW !== 400) params.set('pf', st.padFirstW);
       if (st.padMidW && st.padMidW !== 300) params.set('pm', st.padMidW);
-      if (st.padLastW && st.padLastW !== 400) params.set('pl', st.padLastW);
+      const defH = 600 - (st.frm || 75);
+      if (st.padH && st.padH !== defH) params.set('ph', st.padH);
       if (!st.useNozzles) params.set('pipes', '0');
 
       const b64 = encodeState(st);
@@ -5795,9 +5845,10 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
             frm: sp.has('frm') ? Number(sp.get('frm')) : 75,
             padFirstW: sp.has('pf') ? Number(sp.get('pf')) : 400,
             padMidW: sp.has('pm') ? Number(sp.get('pm')) : 300,
-            padLastW: sp.has('pl') ? Number(sp.get('pl')) : 400,
-            padH: sp.has('ph') ? Number(sp.get('ph')) : 600,
-            padOverhang: sp.has('po') ? Number(sp.get('po')) : 200,
+            padLastW: sp.has('pf') ? Number(sp.get('pf')) : (sp.has('pl') ? Number(sp.get('pl')) : 400),
+            padH: sp.has('ph') ? Number(sp.get('ph')) : (600 - (sp.has('frm') ? Number(sp.get('frm')) : 75)),
+            isPadHCustom: sp.has('ph'),
+            padOverhang: Math.round((sp.has('pf') ? Number(sp.get('pf')) : 400) / 2),
             useNozzles: sp.get('pipes') !== '0'
           };
           if (applyAppState(stFromQuery)) return true;

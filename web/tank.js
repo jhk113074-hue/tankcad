@@ -667,7 +667,7 @@
     const hasCustom = opt && (opt.padFirstW !== undefined || opt.padMidW !== undefined || opt.padLastW !== undefined);
     const firstW = Number(opt && opt.padFirstW) || 400;
     const midW = Number(opt && opt.padMidW) || 300;
-    const lastW = Number(opt && opt.padLastW) || 400;
+    const lastW = Number(opt && (opt.padLastW !== undefined ? opt.padLastW : opt.padFirstW)) || firstW;
 
     if (hasCustom) {
       const out = [];
@@ -1623,7 +1623,7 @@
     // 1. 콘크리트 패드 (Concrete Pad Beams) & 베이스 프레임
     const firstW = Number(opt.padFirstW) || 400;
     const midW = Number(opt.padMidW) || 300;
-    const lastW = Number(opt.padLastW) || 400;
+    const lastW = Number(opt.padLastW !== undefined ? opt.padLastW : opt.padFirstW) || firstW;
     const th = opt.th || opt.frame || 75;
     const PAD_H = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
     const GRD = -th - PAD_H;

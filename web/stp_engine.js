@@ -347,7 +347,7 @@
       // 9. Concrete Foundation Pads
       const firstW = Number(this.opt.padFirstW) || 400;
       const midW = Number(this.opt.padMidW) || 300;
-      const lastW = Number(this.opt.padLastW) || 400;
+      const lastW = Number(this.opt.padLastW !== undefined ? this.opt.padLastW : this.opt.padFirstW) || firstW;
       const padH = (this.opt.padH !== undefined && this.opt.padH !== '') ? Number(this.opt.padH) : (600 - fH);
       const padExt = (this.opt.padOverhang !== undefined && this.opt.padOverhang !== '') ? Number(this.opt.padOverhang) : Math.round(firstW / 2);
       for (let j = 0; j <= map.cols.length; j++) {
