@@ -797,61 +797,41 @@ canvas.drag{cursor:grabbing}
         </section>
       </div>
 
-      <!-- Subtab 2: 높이별 각 단별 판넬크기 지정 테이블 (1x1패널모듈 포함) -->
+      <!-- Subtab 2: 높이별 각 단별 판넬크기 지정 (1x1패널모듈 포함) -->
       <div class="subtab-content" id="subtab-heights">
-        <section class="box">
+        <section class="box" style="padding:10px 8px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <h2 id="secTitleHeights" style="margin:0;font-size:12.5px">📏 높이별·단별 판넬크기 지정 (mm)</h2>
+            <h2 id="secTitleHeights" style="margin:0;font-size:12.5px;font-weight:700">📏 높이별 단별 판넬크기</h2>
             <div style="display:flex;gap:4px">
-              <button type="button" id="btnResetHeightTable" class="btn-sm" style="font-size:10px" title="기본 규격으로 초기화">🔄 기본값 복원</button>
-              <button type="button" id="btnSaveHeightTable" class="btn-sm" style="font-size:10px;background:var(--accent);color:#fff;border-color:var(--accent)" title="설정 저장 및 즉시 반영">💾 설정 저장</button>
+              <button type="button" id="btnResetHeightTable" class="btn-sm" style="font-size:10px;padding:2px 6px" title="기본 규격으로 초기화">🔄 초기화</button>
+              <button type="button" id="btnSaveHeightTable" class="btn-sm" style="font-size:10px;padding:2px 8px;background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700" title="설정 저장 및 즉시 반영">💾 저장</button>
             </div>
           </div>
-          <p class="hint" id="hintHeights" style="margin-bottom:10px">
-            수조의 총 높이(H)에 따라 벽체 패널이 하단(1단)부터 상단(최상단)까지 분할되는 단별 규격을 설정합니다. (1×1 패널 모듈 포함)
+          <p class="hint" id="hintHeights" style="margin-bottom:8px;font-size:10.5px">
+            수조 높이(H)에 따라 벽체 패널이 하단(1단)부터 상단까지 분할되는 단별 규격을 설정합니다.
           </p>
 
+          <!-- 와이드 표 열기 배너 버튼 -->
+          <button type="button" id="btnOpenHeightModal" class="btn-sm" style="width:100%;margin-bottom:8px;padding:6px;font-size:11px;font-weight:700;background:var(--surface-sub);border:1px solid var(--accent);color:var(--accent);display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer">
+            <span>🖥️</span> 와이드 표로 전체 편집 (모달창 열기)
+          </button>
+
           <!-- 모듈 모드 선택 버튼 (일반 규격 모듈 vs 1x1 패널 모듈) -->
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:10px;padding:6px 8px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px">
-            <div style="display:flex;gap:4px">
-              <button type="button" class="btn-sm htab-mode-btn active" id="btnHModeStd" data-mode="std" style="font-size:11px;font-weight:600;padding:4px 8px">일반 규격 모듈 (표준)</button>
-              <button type="button" class="btn-sm htab-mode-btn" id="btnHModeB11" data-mode="b11" style="font-size:11px;font-weight:600;padding:4px 8px">1×1 패널 모듈 (1000/500 기반)</button>
-            </div>
-            <div style="font-size:10.5px;color:var(--muted)">
-              <span id="hModeDesc">1000, 1300, 1500, 2000 조합</span>
-            </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:3px;margin-bottom:8px;background:var(--surface-sub);padding:3px;border-radius:6px;border:1px solid var(--line)">
+            <button type="button" class="htab-mode-btn active" id="btnHModeStd" data-mode="std" style="flex:1;font-size:10.5px;padding:5px 2px;text-align:center">일반 규격 (표준)</button>
+            <button type="button" class="htab-mode-btn" id="btnHModeB11" data-mode="b11" style="flex:1;font-size:10.5px;padding:5px 2px;text-align:center">1×1 모듈 (1000/500)</button>
           </div>
 
-          <!-- 높이별 단 구성 테이블 -->
-          <div style="max-height:480px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
-            <table id="heightTable" style="width:100%;border-collapse:collapse;font-size:11px;text-align:center">
-              <thead style="background:var(--surface-sub);position:sticky;top:0;z-index:1;box-shadow:0 1px 2px rgba(0,0,0,0.05)">
-                <tr style="border-bottom:1px solid var(--line)">
-                  <th style="padding:6px 4px;font-weight:700;width:75px">총 높이 (H)</th>
-                  <th style="padding:6px 4px;font-weight:700;width:45px">단수</th>
-                  <th style="padding:6px 4px;font-weight:700">1단 (하단)</th>
-                  <th style="padding:6px 4px;font-weight:700">2단</th>
-                  <th style="padding:6px 4px;font-weight:700">3단</th>
-                  <th style="padding:6px 4px;font-weight:700">4단</th>
-                  <th style="padding:6px 4px;font-weight:700">5단 (상단)</th>
-                  <th style="padding:6px 4px;font-weight:700;width:95px">합계 / 상태</th>
-                  <th style="padding:6px 4px;font-weight:700;width:35px">초기화</th>
-                </tr>
-              </thead>
-              <tbody id="heightTableBody">
-                <!-- Dynamically populated rows -->
-              </tbody>
-            </table>
+          <!-- 카드 리스트 컨테이너 (고도화: 숫자가 시원하고 뚜렷하게 다 보이는 카드 뷰) -->
+          <div id="heightCardList" style="max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-right:2px">
+            <!-- Dynamically populated cards -->
           </div>
 
           <!-- 하단 빠른 추가 바 -->
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:10px;padding:6px 8px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:6px">
-            <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-size:11px;font-weight:600">➕ 새 높이 추가:</span>
-              <input type="number" id="newHInput" placeholder="예: 5500" step="100" min="500" max="10000" style="width:80px;padding:3px 6px;font-size:11px;text-align:center">
-              <button type="button" id="btnAddNewH" class="btn-sm" style="font-size:11px;padding:3px 8px">행 추가</button>
-            </div>
-            <span style="font-size:10px;color:var(--muted)">mm 단위로 각 단의 판넬 높이를 입력하세요 (빈 칸은 제외)</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:8px;padding:5px 6px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:6px">
+            <span style="font-size:10.5px;font-weight:700">➕ 새 높이:</span>
+            <input type="number" id="newHInput" placeholder="예: 5500" step="100" min="500" max="10000" style="width:65px;padding:3px 4px;font-size:11px;text-align:center">
+            <button type="button" id="btnAddNewH" class="btn-sm" style="font-size:10.5px;padding:3px 6px">추가</button>
           </div>
         </section>
       </div>
@@ -1119,6 +1099,64 @@ canvas.drag{cursor:grabbing}
           <button type="button" id="closeOdaModal" style="padding:6px;font-size:12px;justify-content:center;border:0;background:transparent;color:var(--muted)">
             닫기
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Height Table Wide Modal Dialog (와이드 편집 모달창) -->
+    <div id="heightTableModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;max-width:920px;width:95%;max-height:92vh;display:flex;flex-direction:column;box-shadow:var(--shadow)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px">📏</span>
+            <h3 style="margin:0;font-size:16px;font-weight:700">높이별·단별 판넬크기 지정 (전체 와이드 표)</h3>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button type="button" id="btnModalResetH" class="btn-sm" style="font-size:11px;padding:4px 8px" title="기본 규격으로 초기화">🔄 기본값 복원</button>
+            <button type="button" id="btnModalSaveH" class="btn-sm" style="font-size:11px;padding:4px 12px;background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700">💾 저장 및 적용</button>
+            <button type="button" id="btnCloseHeightModal" class="btn-sm" style="font-size:13px;padding:2px 7px;line-height:1">✖</button>
+          </div>
+        </div>
+
+        <!-- 모드 전환 바 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:8px 12px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px">
+          <div style="display:flex;gap:6px">
+            <button type="button" class="htab-mode-btn active" id="btnModalModeStd" data-mode="std" style="font-size:12px;font-weight:700;padding:5px 12px">일반 규격 모듈 (표준: 1000, 1300, 1500, 2000)</button>
+            <button type="button" class="htab-mode-btn" id="btnModalModeB11" data-mode="b11" style="font-size:12px;font-weight:700;padding:5px 12px">1×1 패널 모듈 (1000×1000 / 1000×500 기반)</button>
+          </div>
+          <span style="font-size:11px;color:var(--muted)">각 단별 판넬 크기는 mm 단위로 입력합니다 (빈 칸은 제외)</span>
+        </div>
+
+        <!-- 와이드 테이블 본체 -->
+        <div style="flex:1;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;text-align:center">
+            <thead style="background:var(--surface-sub);position:sticky;top:0;z-index:2;box-shadow:0 1px 2px rgba(0,0,0,0.05)">
+              <tr style="border-bottom:1px solid var(--line)">
+                <th style="padding:8px 6px;font-weight:700;width:90px">총 높이 (H)</th>
+                <th style="padding:8px 6px;font-weight:700;width:55px">단수</th>
+                <th style="padding:8px 6px;font-weight:700;width:110px">1단 (하단)</th>
+                <th style="padding:8px 6px;font-weight:700;width:110px">2단</th>
+                <th style="padding:8px 6px;font-weight:700;width:110px">3단</th>
+                <th style="padding:8px 6px;font-weight:700;width:110px">4단</th>
+                <th style="padding:8px 6px;font-weight:700;width:110px">5단 (상단)</th>
+                <th style="padding:8px 6px;font-weight:700;width:110px">합계 / 상태</th>
+                <th style="padding:8px 6px;font-weight:700;width:50px">초기화</th>
+              </tr>
+            </thead>
+            <tbody id="modalHeightTableBody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 하단 추가 바 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:8px 12px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:6px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;font-weight:700">➕ 새 높이 규격 추가:</span>
+            <input type="number" id="modalNewHInput" placeholder="예: 5500" step="100" min="500" max="10000" style="width:100px;padding:4px 8px;font-size:12px;text-align:center">
+            <button type="button" id="btnModalAddNewH" class="btn-sm" style="font-size:12px;padding:4px 10px">행 추가</button>
+          </div>
+          <button type="button" id="btnModalCloseBottom" class="btn-sm" style="font-size:12px;padding:4px 12px">닫기</button>
         </div>
       </div>
     </div>
@@ -1941,72 +1979,218 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   }
   fillHeights();
 
-  function renderHeightTable() {
-    const tbody = $('heightTableBody');
+  function syncHeightModeButtons() {
+    const isStd = currentHMode === 'std';
+    if ($('btnHModeStd')) $('btnHModeStd').classList.toggle('active', isStd);
+    if ($('btnHModeB11')) $('btnHModeB11').classList.toggle('active', !isStd);
+    if ($('btnModalModeStd')) $('btnModalModeStd').classList.toggle('active', isStd);
+    if ($('btnModalModeB11')) $('btnModalModeB11').classList.toggle('active', !isStd);
+  }
+
+  function renderHeightCards() {
+    const container = $('heightCardList');
+    if (!container) return;
+    const map = (activeHeightTable && activeHeightTable[currentHMode]) || {};
+    const heights = Object.keys(map).map(Number).sort((a, b) => a - b);
+    const defMap = (C.getDefaultHeightTable && C.getDefaultHeightTable()[currentHMode]) || {};
+
+    if (heights.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:11px">등록된 높이 규격이 없습니다.</div>';
+      return;
+    }
+
+    container.innerHTML = heights.map(h => {
+      const segs = (map[h] && map[h].length > 0) ? map[h] : [h];
+      const sum = segs.reduce((a, b) => a + (Number(b) || 0), 0);
+      const isMatch = sum === h;
+      const count = segs.filter(v => Number(v) > 0).length;
+
+      const chipsHtml = segs.map((val, idx) => `
+        <div style="display:inline-flex;align-items:center;background:var(--surface-sub);border:1px solid var(--line);border-radius:4px;padding:2px 4px;gap:3px">
+          <span style="font-size:9.5px;color:var(--muted);font-weight:600">${idx + 1}단</span>
+          <input type="number" class="htier-card-input" data-h="${h}" data-idx="${idx}" value="${val}" step="50" min="0" max="${h}" style="width:50px;font-size:11.5px;font-weight:700;padding:2px 3px;text-align:center;border:1px solid var(--line);border-radius:3px;background:var(--surface);color:var(--fg)">
+        </div>
+      `).join('<span style="color:var(--muted);font-size:9.5px;font-weight:700">+</span>');
+
+      const matchBadge = isMatch
+        ? `<span class="h-card-sum" style="color:#16a34a;font-weight:700">${sum}</span> <span class="h-card-badge" style="font-size:9px;font-weight:700;color:#16a34a;background:rgba(22,163,74,0.12);padding:1px 4px;border-radius:3px">일치</span>`
+        : `<span class="h-card-sum" style="color:#ef4444;font-weight:700">${sum}</span> <span class="h-card-badge" style="font-size:9px;font-weight:700;color:#ef4444;background:rgba(239,68,68,0.12);padding:1px 4px;border-radius:3px">차이(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
+
+      return `
+        <div class="h-card" data-h="${h}" style="background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 8px;box-shadow:0 1px 2px rgba(0,0,0,0.03)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:12.5px;font-weight:800;color:var(--accent)">${h} <span style="font-size:9.5px;font-weight:400;color:var(--muted)">mm</span></span>
+              <span class="h-tier-count" style="font-size:9.5px;font-weight:700;color:var(--muted);background:var(--surface-sub);padding:1px 5px;border-radius:4px;border:1px solid var(--line)">${count}단</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px">
+              <span class="h-status-holder">${matchBadge}</span>
+              <button type="button" class="btn-sm btn-reset-card" data-h="${h}" style="padding:1px 5px;font-size:10px;line-height:1.2" title="이 높이 기본값 복원">↺</button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
+            ${chipsHtml}
+            ${segs.length < 5 ? `<button type="button" class="btn-sm btn-add-tier-card" data-h="${h}" style="font-size:9.5px;padding:2px 5px;color:var(--accent);border-style:dashed" title="단 추가">+단</button>` : ''}
+            ${segs.length > 1 ? `<button type="button" class="btn-sm btn-del-tier-card" data-h="${h}" style="font-size:9.5px;padding:2px 5px;color:#ef4444;border-style:dashed" title="마지막 단 삭제">-단</button>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Event listeners on card inputs
+    container.querySelectorAll('.htier-card-input').forEach(inp => {
+      inp.addEventListener('input', (e) => {
+        const h = Number(e.target.getAttribute('data-h'));
+        const idx = Number(e.target.getAttribute('data-idx'));
+        const card = e.target.closest('.h-card');
+        if (!activeHeightTable[currentHMode]) activeHeightTable[currentHMode] = {};
+        if (!activeHeightTable[currentHMode][h]) activeHeightTable[currentHMode][h] = [];
+        activeHeightTable[currentHMode][h][idx] = Number(e.target.value) || 0;
+
+        const segs = activeHeightTable[currentHMode][h];
+        const sum = segs.reduce((a, b) => a + (Number(b) || 0), 0);
+        const isMatch = sum === h;
+        const count = segs.filter(v => Number(v) > 0).length;
+
+        const countBadge = card.querySelector('.h-tier-count');
+        if (countBadge) countBadge.textContent = `${count}단`;
+
+        const statusHolder = card.querySelector('.h-status-holder');
+        if (statusHolder) {
+          statusHolder.innerHTML = isMatch
+            ? `<span class="h-card-sum" style="color:#16a34a;font-weight:700">${sum}</span> <span class="h-card-badge" style="font-size:9px;font-weight:700;color:#16a34a;background:rgba(22,163,74,0.12);padding:1px 4px;border-radius:3px">일치</span>`
+            : `<span class="h-card-sum" style="color:#ef4444;font-weight:700">${sum}</span> <span class="h-card-badge" style="font-size:9px;font-weight:700;color:#ef4444;background:rgba(239,68,68,0.12);padding:1px 4px;border-radius:3px">차이(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
+        }
+
+        // Also sync modal table if open
+        const modalRow = document.querySelector(`#modalHeightTableBody tr[data-h="${h}"]`);
+        if (modalRow) {
+          const mInputs = modalRow.querySelectorAll('.m-htier-input');
+          if (mInputs[idx]) mInputs[idx].value = e.target.value;
+          const mCount = modalRow.querySelector('.m-tier-count');
+          if (mCount) mCount.textContent = `${count}단`;
+          const mStatus = modalRow.querySelector('.m-status-cell');
+          if (mStatus) {
+            mStatus.innerHTML = isMatch
+              ? `<span style="color:#16a34a;font-weight:700">${sum}</span> <span style="font-size:10px;color:#16a34a;background:rgba(22,163,74,0.12);padding:2px 6px;border-radius:4px;font-weight:700">일치</span>`
+              : `<span style="color:#ef4444;font-weight:700">${sum}</span> <span style="font-size:10px;color:#ef4444;background:rgba(239,68,68,0.12);padding:2px 6px;border-radius:4px;font-weight:700">차이(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
+          }
+        }
+      });
+    });
+
+    // Reset card button
+    container.querySelectorAll('.btn-reset-card').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const h = Number(e.target.getAttribute('data-h'));
+        if (defMap[h]) {
+          activeHeightTable[currentHMode][h] = defMap[h].slice();
+          renderHeightTable();
+        }
+      });
+    });
+
+    // Add tier button
+    container.querySelectorAll('.btn-add-tier-card').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const h = Number(e.target.getAttribute('data-h'));
+        if (!activeHeightTable[currentHMode]) activeHeightTable[currentHMode] = {};
+        const segs = activeHeightTable[currentHMode][h] || [h];
+        if (segs.length < 5) {
+          segs.push(1000);
+          activeHeightTable[currentHMode][h] = segs;
+          renderHeightTable();
+        }
+      });
+    });
+
+    // Delete last tier button
+    container.querySelectorAll('.btn-del-tier-card').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const h = Number(e.target.getAttribute('data-h'));
+        if (!activeHeightTable[currentHMode]) activeHeightTable[currentHMode] = {};
+        const segs = activeHeightTable[currentHMode][h] || [h];
+        if (segs.length > 1) {
+          segs.pop();
+          activeHeightTable[currentHMode][h] = segs;
+          renderHeightTable();
+        }
+      });
+    });
+  }
+
+  function renderModalHeightTable() {
+    const tbody = $('modalHeightTableBody');
     if (!tbody) return;
     const map = (activeHeightTable && activeHeightTable[currentHMode]) || {};
     const heights = Object.keys(map).map(Number).sort((a, b) => a - b);
     const defMap = (C.getDefaultHeightTable && C.getDefaultHeightTable()[currentHMode]) || {};
 
-    const descEl = $('hModeDesc');
-    if (descEl) {
-      descEl.textContent = (currentHMode === 'std') ? '1000, 1300, 1500, 2000 조합 (표준 규격)' : '1000×1000 및 1000×500 조합 (1×1 패널 모듈)';
+    if (heights.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--muted)">등록된 높이 규격이 없습니다.</td></tr>';
+      return;
     }
 
     tbody.innerHTML = heights.map(h => {
-      const segs = map[h] || [];
+      const segs = (map[h] && map[h].length > 0) ? map[h] : [h];
       const sum = segs.reduce((a, b) => a + (Number(b) || 0), 0);
       const isMatch = sum === h;
       const count = segs.filter(v => Number(v) > 0).length;
 
-      let tierInputs = '';
+      let tierCells = '';
       for (let t = 0; t < 5; t++) {
         const val = (segs[t] !== undefined && segs[t] !== null && segs[t] !== '') ? segs[t] : '';
-        tierInputs += `<td style="padding:4px 3px">
-          <input type="number" class="htable-input htier-input" data-h="${h}" data-tier="${t}" value="${val}" min="0" max="${h}" step="50" placeholder="-">
+        tierCells += `<td style="padding:6px 4px">
+          <input type="number" class="m-htier-input" data-h="${h}" data-tier="${t}" value="${val}" min="0" max="${h}" step="50" placeholder="-" style="width:75px;font-size:12px;font-weight:700;text-align:center;padding:4px 3px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--fg)">
         </td>`;
       }
 
       const matchBadge = isMatch
-        ? `<span class="h-sum-text" style="color:#16a34a;font-weight:700">${sum}</span> <span class="h-badge" style="font-size:9.5px;color:#16a34a;background:rgba(22,163,74,0.12);padding:1px 4px;border-radius:3px">일치</span>`
-        : `<span class="h-sum-text" style="color:#ef4444;font-weight:700">${sum}</span> <span class="h-badge" style="font-size:9.5px;color:#ef4444;background:rgba(239,68,68,0.12);padding:1px 4px;border-radius:3px">차이(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
+        ? `<span style="color:#16a34a;font-weight:700">${sum}</span> <span style="font-size:10px;color:#16a34a;background:rgba(22,163,74,0.12);padding:2px 6px;border-radius:4px;font-weight:700">일치</span>`
+        : `<span style="color:#ef4444;font-weight:700">${sum}</span> <span style="font-size:10px;color:#ef4444;background:rgba(239,68,68,0.12);padding:2px 6px;border-radius:4px;font-weight:700">차이(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
 
-      return `<tr data-h="${h}" style="border-bottom:1px solid var(--line-sub)">
-        <td style="padding:5px 4px;font-weight:700;color:var(--accent)">${h}</td>
-        <td style="padding:5px 4px"><span class="h-tier-count" style="font-size:10px;font-weight:600;color:var(--muted);background:var(--surface-sub);padding:1px 5px;border-radius:4px">${count}단</span></td>
-        ${tierInputs}
-        <td class="h-status-cell" style="padding:5px 4px;white-space:nowrap">${matchBadge}</td>
-        <td style="padding:5px 4px">
-          <button type="button" class="btn-sm btn-reset-row" data-h="${h}" style="padding:1px 5px;font-size:10px" title="이 행 기본값 복원">↺</button>
-        </td>
-      </tr>`;
+      return `
+        <tr data-h="${h}" style="border-bottom:1px solid var(--line)">
+          <td style="padding:8px 6px;font-weight:800;color:var(--accent);font-size:13px">${h} mm</td>
+          <td style="padding:8px 6px"><span class="m-tier-count" style="font-size:11px;font-weight:700;color:var(--muted);background:var(--surface-sub);padding:2px 6px;border-radius:4px;border:1px solid var(--line)">${count}단</span></td>
+          ${tierCells}
+          <td class="m-status-cell" style="padding:8px 6px;white-space:nowrap">${matchBadge}</td>
+          <td style="padding:8px 6px">
+            <button type="button" class="btn-sm btn-modal-reset-row" data-h="${h}" style="padding:2px 6px;font-size:11px" title="이 행 기본값 복원">↺</button>
+          </td>
+        </tr>
+      `;
     }).join('');
 
-    tbody.querySelectorAll('.htier-input').forEach(input => {
-      input.addEventListener('input', (e) => {
+    // Modal table inputs event listeners
+    tbody.querySelectorAll('.m-htier-input').forEach(inp => {
+      inp.addEventListener('input', (e) => {
         const row = e.target.closest('tr');
         const h = Number(row.getAttribute('data-h'));
-        const inputs = Array.from(row.querySelectorAll('.htier-input'));
-        const newSegs = inputs.map(inp => Number(inp.value) || 0).filter(v => v > 0);
+        const inputs = Array.from(row.querySelectorAll('.m-htier-input'));
+        const newSegs = inputs.map(i => Number(i.value) || 0).filter(v => v > 0);
         const sum = newSegs.reduce((a, b) => a + b, 0);
         const isMatch = sum === h;
 
-        const countBadge = row.querySelector('.h-tier-count');
+        const countBadge = row.querySelector('.m-tier-count');
         if (countBadge) countBadge.textContent = `${newSegs.length}단`;
 
-        const statusCell = row.querySelector('.h-status-cell');
+        const statusCell = row.querySelector('.m-status-cell');
         if (statusCell) {
           statusCell.innerHTML = isMatch
-            ? `<span class="h-sum-text" style="color:#16a34a;font-weight:700">${sum}</span> <span class="h-badge" style="font-size:9.5px;color:#16a34a;background:rgba(22,163,74,0.12);padding:1px 4px;border-radius:3px">일치</span>`
-            : `<span class="h-sum-text" style="color:#ef4444;font-weight:700">${sum}</span> <span class="h-badge" style="font-size:9.5px;color:#ef4444;background:rgba(239,68,68,0.12);padding:1px 4px;border-radius:3px">차이(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
+            ? `<span style="color:#16a34a;font-weight:700">${sum}</span> <span style="font-size:10px;color:#16a34a;background:rgba(22,163,74,0.12);padding:2px 6px;border-radius:4px;font-weight:700">일치</span>`
+            : `<span style="color:#ef4444;font-weight:700">${sum}</span> <span style="font-size:10px;color:#ef4444;background:rgba(239,68,68,0.12);padding:2px 6px;border-radius:4px;font-weight:700">차이(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
         }
 
         if (!activeHeightTable[currentHMode]) activeHeightTable[currentHMode] = {};
         activeHeightTable[currentHMode][h] = newSegs.length > 0 ? newSegs : [h];
+
+        // Sync sidebar card view if present
+        renderHeightCards();
       });
     });
 
-    tbody.querySelectorAll('.btn-reset-row').forEach(btn => {
+    tbody.querySelectorAll('.btn-modal-reset-row').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const h = Number(e.target.getAttribute('data-h'));
         if (defMap[h]) {
@@ -2017,107 +2201,166 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     });
   }
 
-  if ($('btnSaveHeightTable')) {
-    $('btnSaveHeightTable').addEventListener('click', () => {
-      const tbody = $('heightTableBody');
-      if (tbody) {
-        tbody.querySelectorAll('tr').forEach(row => {
-          const h = Number(row.getAttribute('data-h'));
-          const inputs = Array.from(row.querySelectorAll('.htier-input'));
-          const newSegs = inputs.map(inp => Number(inp.value) || 0).filter(v => v > 0);
-          if (newSegs.length > 0) {
-            activeHeightTable[currentHMode][h] = newSegs;
-          }
-        });
-      }
+  function renderHeightTable() {
+    syncHeightModeButtons();
+    renderHeightCards();
+    renderModalHeightTable();
+  }
 
+  function saveHeightTableData(btnTrigger) {
+    try {
+      localStorage.setItem('tankcad_height_table', JSON.stringify(activeHeightTable));
+    } catch (e) {}
+
+    if (C.setCustomHeightTable) C.setCustomHeightTable(activeHeightTable);
+    fillHeights();
+    schedule();
+
+    if (btnTrigger) {
+      const origText = btnTrigger.textContent;
+      btnTrigger.textContent = '✅ 저장 완료';
+      btnTrigger.style.background = '#16a34a';
+      setTimeout(() => {
+        btnTrigger.textContent = origText;
+        btnTrigger.style.background = '';
+      }, 1500);
+    }
+  }
+
+  function resetHeightTableData() {
+    if (confirm('높이별 단 판넬 설정을 시스템 기본값으로 복원하시겠습니까?')) {
+      activeHeightTable = C.getDefaultHeightTable ? C.getDefaultHeightTable() : {
+        std: {
+          1000: [1000], 1300: [1300], 1500: [1500], 1800: [1300, 500], 2000: [2000],
+          2300: [1000, 1300], 2500: [1000, 1500], 2800: [1300, 1500], 3000: [1000, 2000],
+          3300: [1000, 1000, 1300], 3500: [1000, 1000, 1500], 3800: [1000, 1300, 1500],
+          4000: [1000, 1000, 2000], 4300: [1000, 1300, 2000], 4500: [1000, 1000, 1000, 1500],
+          4800: [1000, 1000, 1300, 1500], 5000: [1000, 1000, 1000, 2000]
+        },
+        b11: {
+          1000: [1000], 1500: [1000, 500], 2000: [1000, 1000], 2500: [1000, 500, 1000],
+          3000: [1000, 1000, 1000], 3500: [1000, 1000, 500, 1000], 4000: [1000, 1000, 1000, 1000],
+          4500: [1000, 500, 1000, 1000, 1000], 5000: [1000, 1000, 1000, 1000, 1000]
+        }
+      };
       try {
-        localStorage.setItem('tankcad_height_table', JSON.stringify(activeHeightTable));
+        localStorage.removeItem('tankcad_height_table');
       } catch (e) {}
-
       if (C.setCustomHeightTable) C.setCustomHeightTable(activeHeightTable);
       fillHeights();
+      renderHeightTable();
       schedule();
-
-      const saveBtn = $('btnSaveHeightTable');
-      const origText = saveBtn.textContent;
-      saveBtn.textContent = '✅ 저장 완료';
-      saveBtn.style.background = '#16a34a';
-      setTimeout(() => {
-        saveBtn.textContent = origText;
-        saveBtn.style.background = 'var(--accent)';
-      }, 1500);
-    });
+    }
   }
 
+  function addHeightSpecification(val) {
+    if (!val || val < 500 || val > 15000) {
+      alert('500mm ~ 15,000mm 범위의 유효한 높이를 입력하세요.');
+      return;
+    }
+    if (!activeHeightTable[currentHMode]) activeHeightTable[currentHMode] = {};
+    if (activeHeightTable[currentHMode][val]) {
+      alert('이미 등록된 높이입니다: ' + val + 'mm');
+      return;
+    }
+    const rem = val % 1000;
+    const count1000 = Math.floor(val / 1000);
+    const initialSegs = [];
+    for (let k = 0; k < count1000; k++) initialSegs.push(1000);
+    if (rem > 0) initialSegs.push(rem);
+    activeHeightTable[currentHMode][val] = initialSegs.length > 0 ? initialSegs : [val];
+    renderHeightTable();
+  }
+
+  // Sidebar Save & Reset buttons
+  if ($('btnSaveHeightTable')) {
+    $('btnSaveHeightTable').addEventListener('click', (e) => saveHeightTableData(e.target));
+  }
   if ($('btnResetHeightTable')) {
-    $('btnResetHeightTable').addEventListener('click', () => {
-      if (confirm('높이별 단 판넬 설정을 시스템 기본값으로 복원하시겠습니까?')) {
-        activeHeightTable = C.getDefaultHeightTable ? C.getDefaultHeightTable() : {
-          std: {
-            1000: [1000], 1300: [1300], 1500: [1500], 1800: [1300, 500], 2000: [2000],
-            2300: [1000, 1300], 2500: [1000, 1500], 2800: [1300, 1500], 3000: [1000, 2000],
-            3300: [1000, 1000, 1300], 3500: [1000, 1000, 1500], 3800: [1000, 1300, 1500],
-            4000: [1000, 1000, 2000], 4300: [1000, 1300, 2000], 4500: [1000, 1000, 1000, 1500],
-            4800: [1000, 1000, 1300, 1500], 5000: [1000, 1000, 1000, 2000]
-          },
-          b11: {
-            1000: [1000], 1500: [1000, 500], 2000: [1000, 1000], 2500: [1000, 500, 1000],
-            3000: [1000, 1000, 1000], 3500: [1000, 1000, 500, 1000], 4000: [1000, 1000, 1000, 1000],
-            4500: [1000, 500, 1000, 1000, 1000], 5000: [1000, 1000, 1000, 1000, 1000]
-          }
-        };
-        try {
-          localStorage.removeItem('tankcad_height_table');
-        } catch (e) {}
-        if (C.setCustomHeightTable) C.setCustomHeightTable(activeHeightTable);
-        fillHeights();
-        renderHeightTable();
-        schedule();
-      }
-    });
+    $('btnResetHeightTable').addEventListener('click', resetHeightTableData);
   }
 
+  // Modal Save & Reset buttons
+  if ($('btnModalSaveH')) {
+    $('btnModalSaveH').addEventListener('click', (e) => saveHeightTableData(e.target));
+  }
+  if ($('btnModalResetH')) {
+    $('btnModalResetH').addEventListener('click', resetHeightTableData);
+  }
+
+  // Mode switching buttons
   if ($('btnHModeStd')) {
     $('btnHModeStd').addEventListener('click', () => {
-      $('btnHModeStd').classList.add('active');
-      $('btnHModeB11').classList.remove('active');
       currentHMode = 'std';
       renderHeightTable();
     });
   }
   if ($('btnHModeB11')) {
     $('btnHModeB11').addEventListener('click', () => {
-      $('btnHModeB11').classList.add('active');
-      $('btnHModeStd').classList.remove('active');
+      currentHMode = 'b11';
+      renderHeightTable();
+    });
+  }
+  if ($('btnModalModeStd')) {
+    $('btnModalModeStd').addEventListener('click', () => {
+      currentHMode = 'std';
+      renderHeightTable();
+    });
+  }
+  if ($('btnModalModeB11')) {
+    $('btnModalModeB11').addEventListener('click', () => {
       currentHMode = 'b11';
       renderHeightTable();
     });
   }
 
+  // Sidebar add height
   if ($('btnAddNewH')) {
     $('btnAddNewH').addEventListener('click', () => {
       const inp = $('newHInput');
-      const val = Number(inp.value);
-      if (!val || val < 500 || val > 15000) {
-        alert('500mm ~ 15,000mm 범위의 유효한 높이를 입력하세요.');
-        return;
-      }
-      if (!activeHeightTable[currentHMode]) activeHeightTable[currentHMode] = {};
-      if (activeHeightTable[currentHMode][val]) {
-        alert('이미 등록된 높이입니다: ' + val + 'mm');
-        return;
-      }
-      const rem = val % 1000;
-      const count1000 = Math.floor(val / 1000);
-      const initialSegs = [];
-      for (let k = 0; k < count1000; k++) initialSegs.push(1000);
-      if (rem > 0) initialSegs.push(rem);
-      activeHeightTable[currentHMode][val] = initialSegs;
+      addHeightSpecification(Number(inp.value));
       inp.value = '';
-      renderHeightTable();
     });
   }
+
+  // Modal add height
+  if ($('btnModalAddNewH')) {
+    $('btnModalAddNewH').addEventListener('click', () => {
+      const inp = $('modalNewHInput');
+      addHeightSpecification(Number(inp.value));
+      inp.value = '';
+    });
+  }
+
+  // Modal open & close
+  if ($('btnOpenHeightModal')) {
+    $('btnOpenHeightModal').addEventListener('click', () => {
+      $('heightTableModal').style.display = 'flex';
+      renderModalHeightTable();
+      syncHeightModeButtons();
+    });
+  }
+  if ($('btnCloseHeightModal')) {
+    $('btnCloseHeightModal').addEventListener('click', () => {
+      $('heightTableModal').style.display = 'none';
+      renderHeightCards();
+    });
+  }
+  if ($('btnModalCloseBottom')) {
+    $('btnModalCloseBottom').addEventListener('click', () => {
+      $('heightTableModal').style.display = 'none';
+      renderHeightCards();
+    });
+  }
+  if ($('heightTableModal')) {
+    $('heightTableModal').addEventListener('click', (e) => {
+      if (e.target === $('heightTableModal')) {
+        $('heightTableModal').style.display = 'none';
+        renderHeightCards();
+      }
+    });
+  }
+  renderHeightTable();
   $('H').addEventListener('change', () => {
     updateNozzleUi();
     schedule();
