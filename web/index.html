@@ -3117,10 +3117,14 @@ canvas.drag{cursor:grabbing}
       }));
     }
 
-    // 기초 콘크리트 패드 및 지면 (media_1790950018151.png 완벽 반영)
+    // 기초 콘크리트 패드 및 지면 (media_1790950018151.png & media_1790950975799.png 완벽 반영)
     const list = []; { let cx0 = 0; secs.forEach(sn => { split(sn, cx0).forEach(w => list.push(w)); cx0 += sn; }); }
     const padH = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
-    const GRD = -th - padH;
+    const clearanceH = th + padH; // 탱크 하부(y=0) ~ 슬래브 상면(slabTopY) = 600mm (media_1790950975799.png)
+    const slabTopY = -clearanceH; // -600mm
+    const GRD = slabTopY; // 기준 바닥 레벨
+    const slabT = 150;
+    const slabBotY = slabTopY - slabT; // -750mm
     const cStrips = concStrips(list, opt);
     const N = opt._N || 25;
     const textH = Math.round(3.0 * N);
@@ -3129,21 +3133,19 @@ canvas.drag{cursor:grabbing}
     const nozTextH = Math.round(2.2 * N);
 
     if (cStrips.length > 0) {
-      const slabT = Math.min(150, Math.round(padH * 0.35));
-      const slabTopY = GRD + slabT;
       const px0 = cStrips[0][0];
       const pxEnd = cStrips[cStrips.length - 1][0] + cStrips[cStrips.length - 1][1];
 
       // 1. 패드 기둥(Plinths) 및 중심선(Centerlines)
       cStrips.forEach(([x, w]) => {
         const cx = x + w / 2;
-        ents.push({ t: 'line', a: [cx, -th + 80], b: [cx, GRD - 60], layer: 'CENTER' });
+        ents.push({ t: 'line', a: [cx, -th + 80], b: [cx, slabTopY - 60], layer: 'CENTER' });
         ln([x, -th], [x + w, -th], 'PANEL');
       });
 
-      // 2. 바닥 슬래브 연결 및 패드 측면 드롭
-      ln([px0, -th], [px0, GRD], 'PANEL');
-      ln([pxEnd, -th], [pxEnd, GRD], 'PANEL');
+      // 2. 바닥 슬래브 연결 및 패드 측면 드롭 (슬래브 상면 = slabTopY = -600)
+      ln([px0, -th], [px0, slabTopY], 'PANEL');
+      ln([pxEnd, -th], [pxEnd, slabTopY], 'PANEL');
       for (let k = 0; k < cStrips.length - 1; k++) {
         const curRight = cStrips[k][0] + cStrips[k][1];
         const nextLeft = cStrips[k + 1][0];
@@ -3151,47 +3153,55 @@ canvas.drag{cursor:grabbing}
         ln([curRight, slabTopY], [nextLeft, slabTopY], 'PANEL');
         ln([nextLeft, slabTopY], [nextLeft, -th], 'PANEL');
       }
-      ln([px0, GRD], [pxEnd, GRD], 'PANEL');
+      // 하부 슬래브 바닥선
+      ln([px0, slabBotY], [pxEnd, slabBotY], 'PANEL');
+      ln([px0, slabTopY], [px0, slabBotY], 'PANEL');
+      ln([pxEnd, slabTopY], [pxEnd, slabBotY], 'PANEL');
 
       // 3. 콘크리트 해치(사선 무늬)
       cStrips.forEach(([x, w]) => {
         hatchRect(ents, x, slabTopY, x + w, -th, 90, 'PANEL_DETAIL');
       });
-      hatchRect(ents, px0, GRD, pxEnd, slabTopY, 90, 'PANEL_DETAIL');
-      concDesign(ents, px0 + 40, GRD);
-      concDesign(ents, pxEnd - 220, GRD);
+      hatchRect(ents, px0, slabBotY, pxEnd, slabTopY, 90, 'PANEL_DETAIL');
+      concDesign(ents, px0 + 40, slabTopY);
+      concDesign(ents, pxEnd - 220, slabTopY);
 
       // 4. 좌측 지면 GL 및 토사 해치 (media_1790950018151.png 좌측 빨간 원)
       const glLen = Math.max(700, Math.round(18.0 * N));
       const soilH = Math.round(3.5 * N);
-      ln([px0 - glLen, GRD], [px0, GRD], 'FRAME');
+      ln([px0 - glLen, slabTopY], [px0, slabTopY], 'FRAME');
       const lSymX = px0 - glLen * 0.6;
       const triW = Math.round(2.6 * N), triH = Math.round(2.4 * N);
-      poly([[lSymX - triW / 2, GRD + triH], [lSymX + triW / 2, GRD + triH], [lSymX, GRD]], 'DIM', true);
-      ents.push({ t: 'text', p: [lSymX + triW * 0.8, GRD + triH * 0.8], h: Math.round(2.4 * N), s: 'GL', rot: 0, align: 'left', layer: 'DIM' });
+      poly([[lSymX - triW / 2, slabTopY + triH], [lSymX + triW / 2, slabTopY + triH], [lSymX, slabTopY]], 'DIM', true);
+      ents.push({ t: 'text', p: [lSymX + triW * 0.8, slabTopY + triH * 0.8], h: Math.round(2.4 * N), s: 'GL', rot: 0, align: 'left', layer: 'DIM' });
       // 토사 빗금
-      ln([px0 - glLen, GRD - soilH], [px0 - glLen * 0.15, GRD - soilH], 'PANEL_DETAIL');
-      ln([px0 - glLen, GRD], [px0 - glLen, GRD - soilH], 'PANEL_DETAIL');
-      ln([px0 - glLen * 0.15, GRD], [px0 - glLen * 0.15, GRD - soilH], 'PANEL_DETAIL');
+      ln([px0 - glLen, slabTopY - soilH], [px0 - glLen * 0.15, slabTopY - soilH], 'PANEL_DETAIL');
+      ln([px0 - glLen, slabTopY], [px0 - glLen, slabTopY - soilH], 'PANEL_DETAIL');
+      ln([px0 - glLen * 0.15, slabTopY], [px0 - glLen * 0.15, slabTopY - soilH], 'PANEL_DETAIL');
       for (let sx = px0 - glLen; sx < px0 - glLen * 0.15; sx += Math.round(1.8 * N)) {
-        ln([sx, GRD], [sx - soilH, GRD - soilH], 'PANEL_DETAIL');
+        ln([sx, slabTopY], [sx - soilH, slabTopY - soilH], 'PANEL_DETAIL');
       }
 
-      // 5. 우측 150mm 단차 및 지면 GL & 치수 (media_1790950018151.png 우측 빨간 원)
-      const stepH = 150;
-      const rGL_Y = GRD - stepH;
-      ln([pxEnd, GRD], [pxEnd, rGL_Y], 'FRAME');
+      // 5. 우측 150mm 단차 및 600mm 치수 & 지면 GL (media_1790950975799.png 완벽 반영)
+      const stepH = slabT; // 150mm
+      const rGL_Y = slabBotY; // -750mm
+      ln([pxEnd, slabTopY], [pxEnd, rGL_Y], 'FRAME');
       ln([pxEnd, rGL_Y], [pxEnd + glLen, rGL_Y], 'FRAME');
-      // 150 단차 치수선
-      const rDimX = pxEnd + Math.round(3.5 * N);
-      ln([pxEnd, GRD], [pxEnd + Math.round(4.8 * N), GRD], 'DIM');
-      ln([pxEnd, rGL_Y], [pxEnd + Math.round(4.8 * N), rGL_Y], 'DIM');
-      dimLinear(ents, [rDimX, rGL_Y], [rDimX, GRD], rDimX, true, String(stepH), Math.round(2.4 * N), 'DIM');
-      // 우측 GL 기호 및 문자
-      const rSymX = pxEnd + glLen * 0.6;
+
+      // (A) 상부 600 치수선 (탱크 하부 y=0 ~ 슬래브 상면 y=-600, media_1790950975799.png)
+      const dim600X = pxEnd + Math.round(5.5 * N);
+      dimLinear(ents, [pxEnd, slabTopY], [total, 0], dim600X, true, String(clearanceH), Math.round(2.8 * N), 'DIM');
+
+      // (B) 하부 150 단차 치수선 (슬래브 상면 y=-600 ~ 지면 y=-750)
+      const dim150X = pxEnd + Math.round(2.8 * N);
+      dimLinear(ents, [pxEnd, rGL_Y], [pxEnd, slabTopY], dim150X, true, String(stepH), Math.round(2.4 * N), 'DIM');
+
+      // (C) 우측 GL 기호 및 문자
+      const rSymX = pxEnd + glLen * 0.65;
       poly([[rSymX - triW / 2, rGL_Y + triH], [rSymX + triW / 2, rGL_Y + triH], [rSymX, rGL_Y]], 'DIM', true);
       ents.push({ t: 'text', p: [rSymX + triW * 0.8, rGL_Y + triH * 0.8], h: Math.round(2.4 * N), s: 'GL', rot: 0, align: 'left', layer: 'DIM' });
-      // 우측 토사 빗금
+
+      // (D) 우측 토사 빗금
       ln([pxEnd + glLen * 0.15, rGL_Y - soilH], [pxEnd + glLen, rGL_Y - soilH], 'PANEL_DETAIL');
       ln([pxEnd + glLen * 0.15, rGL_Y], [pxEnd + glLen * 0.15, rGL_Y - soilH], 'PANEL_DETAIL');
       ln([pxEnd + glLen, rGL_Y], [pxEnd + glLen, rGL_Y - soilH], 'PANEL_DETAIL');
@@ -3535,13 +3545,16 @@ canvas.drag{cursor:grabbing}
         return it ? it.no : '';
       };
       const padH = (typeof opt.padH === 'number' && !isNaN(opt.padH)) ? opt.padH : (600 - (opt.frame || 75));
-      const GRD = -th - padH;
+      const clearanceH = th + padH;
+      const slabTopY = -clearanceH;
       const elevTopY = nH + Math.round(18 * N);
-      const elevRightX = total + 75 + Math.round(7.5 * N);
-      const elevBotY = GRD - dimGap2 - Math.round(14 * N);
+      const cStripsElev = concStrips(list, opt);
+      const pxEndElev = cStripsElev.length > 0 ? (cStripsElev[cStripsElev.length - 1][0] + cStripsElev[cStripsElev.length - 1][1]) : (total + 200);
+      const elevRightX = Math.max(total + 75 + Math.round(10.0 * N), pxEndElev + Math.round(10.0 * N));
+      const elevBotY = slabTopY - 150 - dimGap2 - Math.round(14 * N);
 
-      // 1. 기초 콘크리트 (Concrete Foundation - NO. 1): 리드선(Leader line)을 아래쪽으로 꺾어 인출하여 NO. 2 및 치수선 간섭 원천 차단
-      const concY = GRD + padH * 0.5;
+      // 1. 기초 콘크리트 (Concrete Foundation - NO. 1): 리드선(Leader line)을 아래쪽으로 꺾어 인출하여 NO. 2 및 600 치수선 간섭 원천 차단
+      const concY = slabTopY + padH * 0.5;
       const b1_elbowY = concY - Math.round(2.0 * N);
       drawBalloonCallout(ents, [total, concY], [total + 75 + Math.round(3.5 * N), b1_elbowY], [elevRightX, b1_elbowY], getItemNo('foundation') || 1, N, 'BALLOON');
 
