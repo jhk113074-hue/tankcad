@@ -368,7 +368,6 @@ canvas.drag{cursor:grabbing}
         </div>
         <div class="rf-pills" id="rfBox">
           <label class="rf-pill"><input type="radio" name="rf" value="0" checked> <span id="lblRf0">외부 보강</span></label>
-          <label class="rf-pill"><input type="radio" name="rf" value="1"> <span id="lblRf1">내부 앵글</span></label>
           <label class="rf-pill"><input type="radio" name="rf" value="2"> <span id="lblRf2">내부 환봉</span></label>
         </div>
 
@@ -1052,6 +1051,7 @@ canvas.drag{cursor:grabbing}
           <span class="vs-icon">📑</span>
           <select id="sheetKind" class="vs-select">
             <option value="asm">조립도 (평면·패드·정면·측면·3D등각)</option>
+            <option value="pad">기초콘크리트도 (FOUNDATION PAD DWG)</option>
             <option value="iso">등각 조감도 (3D ISOMETRIC DWG)</option>
             <option value="frame">프레임도 (스키드·내부 스테이)</option>
             <option value="detail">상세도 (DETAILS DWG)</option>
@@ -1658,11 +1658,12 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     if (setTabBtn) setTabBtn.textContent = t.tabSettings;
 
     // Tab 1: Select dropdown options
-    if ($('sheetKind') && $('sheetKind').options.length >= 4) {
+    if ($('sheetKind') && $('sheetKind').options.length >= 5) {
       $('sheetKind').options[0].textContent = currentLang === 'en' ? 'General Assembly (Plan, Pad, Elev, 3D)' : '조립도 (평면·패드·정면·측면·3D등각)';
-      $('sheetKind').options[1].textContent = currentLang === 'en' ? '3D Isometric Dwg' : '등각 조감도 (3D ISOMETRIC DWG)';
-      $('sheetKind').options[2].textContent = currentLang === 'en' ? 'Frame Dwg (Skid & Stay)' : '프레임도 (스키드·내부 스테이)';
-      $('sheetKind').options[3].textContent = currentLang === 'en' ? 'Details Dwg' : '상세도 (DETAILS DWG)';
+      $('sheetKind').options[1].textContent = currentLang === 'en' ? 'Foundation Pad Dwg' : '기초콘크리트도 (FOUNDATION PAD DWG)';
+      $('sheetKind').options[2].textContent = currentLang === 'en' ? '3D Isometric Dwg' : '등각 조감도 (3D ISOMETRIC DWG)';
+      $('sheetKind').options[3].textContent = currentLang === 'en' ? 'Frame Dwg (Skid & Stay)' : '프레임도 (스키드·내부 스테이)';
+      $('sheetKind').options[4].textContent = currentLang === 'en' ? 'Details Dwg' : '상세도 (DETAILS DWG)';
     }
     if ($('drawingLangSel') && $('drawingLangSel').options.length >= 3) {
       $('drawingLangSel').options[0].textContent = currentLang === 'en' ? '🇰🇷 Korean' : '🇰🇷 한글 (Korean)';
@@ -3439,7 +3440,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
               }
             }
             renderNozzleElevationGrid(map);
-            updateSelectedPropBox();
+            if (typeof updateMiniInspector === 'function') updateMiniInspector();
             updatePreviewTbody();
           }
         } else if (mode === 'han' || mode === 'vent') {
@@ -3574,7 +3575,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     r.addEventListener('change', () => {
       currentNozFace = r.value;
       renderNozzleElevationGrid();
-      updateSelectedPropBox();
+      if (typeof updateMiniInspector === 'function') updateMiniInspector();
     });
   });
 
@@ -3794,6 +3795,9 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       } else if (opt.sheetKind === 'iso') {
         const iso = C.buildIsometric(opt, TEMPLATES, SIDE_T);
         plan = { map: C.createMap(opt), ents: iso.ents, blocks: {}, scale: 25, elev: false };
+      } else if (opt.sheetKind === 'pad') {
+        const conc = C.buildConcrete(opt);
+        plan = { map: C.createMap(opt), ents: conc.ents, blocks: {}, scale: 25, elev: false };
       } else {
         plan = C.buildPlan(opt, TEMPLATES);
       }
@@ -3801,11 +3805,11 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
       const isEn = currentLang === 'en';
       const kindText = isEn
-        ? ({ asm: 'GENERAL ASSEMBLY DWG', iso: '3D ISOMETRIC DWG', frame: 'FRAME & SKID DWG', detail: 'DETAILS DWG' }[opt.sheetKind] || 'DWG')
-        : ({ asm: '조립도 (종합)', iso: '등각 조감도 (3D ISO)', frame: '프레임도 (하부/내부)', detail: '상세도 (DETAILS)' }[opt.sheetKind] || '도면');
+        ? ({ asm: 'GENERAL ASSEMBLY DWG', pad: 'FOUNDATION PAD DWG', iso: '3D ISOMETRIC DWG', frame: 'FRAME & SKID DWG', detail: 'DETAILS DWG' }[opt.sheetKind] || 'DWG')
+        : ({ asm: '조립도 (종합)', pad: '기초콘크리트도 (FOUNDATION PAD)', iso: '등각 조감도 (3D ISO)', frame: '프레임도 (하부/내부)', detail: '상세도 (DETAILS)' }[opt.sheetKind] || '도면');
       $('viewBadge').textContent = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
-        : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰'));
+        : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -3967,7 +3971,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         if (r) r.checked = true;
       }
       if (st.rf !== undefined) {
-        const r = document.querySelector(`input[name=rf][value="${st.rf}"]`);
+        const val = (st.rf === 1 || st.rf === '1') ? 2 : st.rf;
+        const r = document.querySelector(`input[name=rf][value="${val}"]`);
         if (r) r.checked = true;
       }
       syncRf();
@@ -4804,7 +4809,10 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const st = $('status');
     if (!silent) st.textContent = '판넬 DB 동기화 중...';
     try {
-      const res = await fetch(`${API_BASE}/api/panels/templates`);
+      const controller = new AbortController();
+      const tid = setTimeout(() => controller.abort(), 600);
+      const res = await fetch(`${API_BASE}/api/panels/templates`, { signal: controller.signal });
+      clearTimeout(tid);
       if (res.ok) {
         const data = await res.json();
         if (data.panel_templates) TEMPLATES = data.panel_templates;
@@ -5582,13 +5590,23 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     draw();
   }
 
-  // 초기 시작 시 저장된 이전 상태를 최우선 복원한 후 DB 판넬 및 템플릿 로드
-  (async function init() {
+  // 초기 시작 시 저장된 이전 상태를 최우선 복원한 후 즉시 도면 렌더링 (첫 화면 블랭크 방지)
+  (function init() {
     setLanguage(currentLang, false);
     restoreAppState();
-    await loadDbPanels();
-    await syncTemplatesFromDb(true);
+    applyActiveTemplates();
     rebuild(true);
+
+    // 뷰포트 레이아웃 안정화 후 1회 추가 맞춤
+    requestAnimationFrame(() => {
+      fitView();
+    });
+
+    // 백그라운드에서 DB 판넬 및 템플릿 비동기 동기화 (초기 렌더링 블로킹 원천 차단)
+    setTimeout(() => {
+      loadDbPanels().catch(() => {});
+      syncTemplatesFromDb(true).catch(() => {});
+    }, 120);
   })();
 })();
 </script>
