@@ -5,6 +5,27 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.46] - 2026-10-02
+
+### Enhanced & Fixed (치수선 표준 정위치 유지 및 지시선/리드선 우회 배치로 간섭 원천 차단)
+- **치수선 표준 정위치 고정 ("치수는 정위치에 있고")**:
+  - 입면도(Elevation View) 좌측 높이 치수선(`X0 = -75 - dimGap1`, `overallX = -75 - dimGap2`) 및 평면도(Plan View) 좌측/하단 치수선을 CAD 표준 고정 위치로 원복.
+  - 치수선이 탱크 외곽에서 임의로 멀어지지 않고 표준 규격 간격으로 단정하게 정렬.
+
+- **지시선/리드선을 이용한 배관 및 주석 우회 인출 ("리드선을 이용해서 겹치는 것 피해가게 해주세요")**:
+  - **입면도/평면도 좌측 노즐 지시선(Leader line)**:
+    - 노즐 팁에서 치수선 영역을 깨끗하게 가로질러 치수선 최외곽 바깥(`overallX - 4N`)으로 꺾임(Elbow) 인출 후 수평 선반(Shelf) 전개.
+    - 노즐 규격 및 EL 레벨 텍스트가 치수선 및 치수 숫자 바깥에 우측 정렬되어 텍스트-치수선 간섭 원천 배제.
+  - **도면 시트(Assembly Sheet) 뷰 간 간섭 완전 해소 ("여기도 겹치치 않게 해주세요")**:
+    - **정면도 우측 풍선 기호(Balloons) 리드선 각도 분기**:
+      - NO. 1 기초 콘크리트: 리드선을 아래쪽으로 꺾어 인출 (`concY - 2N`).
+      - NO. 2 스틸 스키드: 리드선을 위쪽으로 꺾어 인출 (`skidY + 2N`).
+      - NO. 11 노즐 / NO. 3 판넬: 수직 간격을 유지하며 정돈된 X 오프셋에 일렬 정렬.
+      - 풍선 상호 간 및 뷰 타이틀과의 수직 겹침 완전 해소.
+    - **시트 열 배치(Column Spacing) 전면 개편**:
+      - 정면도 우측 풍선 가용 영역(`dim_right_1 = 75 + 16N`)과 우측면도 좌측 높이 치수 영역(`dim_left_1 = 75 + 30N`)을 열 간격 계산식에 완벽 반영.
+      - 정면도 우측 풍선과 우측면도 좌측 치수선 사이에 최소 25mm 이상의 쾌적하고 넉넉한 여백 확보.
+
 ## [1.5.45] - 2026-10-02
 
 ### Added & Enhanced (배관 전용 색상 분리 및 배관-치수 간섭 원천 차단)
