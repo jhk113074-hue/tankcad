@@ -5,6 +5,15 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.25] - 2026-10-02
+
+### Fixed (미설정 시 3D 등각도 모서리 맨홀 및 에어벤트 자동 노출 버그 수정)
+- **미설정 맨홀 및 에어벤트 강제 표시 버그 제거 ("맨홀의 위치를 설정하지 않았는데 나타납니다" 완벽 해결)**:
+  - 3D 등각 조감도 생성 루틴에서 마크가 비어 있을 때 맨홀과 에어벤트를 모서리(`[0,0]`)에 강제로 띄우던 하드코딩 기본값(`marks['0,0'] = 3`)을 완전히 제거.
+  - 이제 사용자가 **`✏️ 평면 편집`** 모드에서 `🔘 맨홀 (손잡이)`이나 `💨 에어벤트`를 클릭하여 원하는 위치에 직접 배치한 경우에만 정확히 해당 판넬 위치에 렌더링되도록 수정.
+
+---
+
 ## [1.5.24] - 2026-10-02
 
 ### Enhanced & Layout (A1 도면 시트 및 뷰 종류 선택 메뉴 사양·치수 탭으로 이동)

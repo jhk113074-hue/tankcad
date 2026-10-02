@@ -2086,11 +2086,8 @@
       }
     }
 
-    // 5. 맨홀 및 환기구 (Manhole & Air Vent on Roof)
+    // 5. 맨홀 및 환기구 (Manhole & Air Vent on Roof - 사용자가 평면 편집에서 설정한 위치에만 표시)
     const marks = Object.assign({}, opt.marks);
-    if (Object.keys(marks).length === 0) {
-      marks['0,0'] = 3; // 1 (manhole) + 2 (air vent)
-    }
     Object.entries(marks).forEach(([k, mk]) => {
       const [i, j] = k.split(',').map(Number);
       if (!map.has(i, j)) return;
