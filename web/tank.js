@@ -298,6 +298,38 @@
       else if (sd === 'R') res.push({ sd, idx: 3, x: x1, y: cy });
       else if (sd === 'L') res.push({ sd, idx: 4, x: x0, y: cy });
     });
+    // 사다리가 명시적으로 설정되지 않았거나 지정된 셀이 삭제된 경우,
+    // 실제로 존재하는 노출 외벽 셀을 자동 탐색하여 유효한 기본 사다리 위치 제공
+    if (res.length === 0 && map && map.rows && map.cols) {
+      let defLadder = null;
+      // 1순위: 전면 노출 외벽 (D) 중 가장 전면(낮은 i) 및 우측(높은 j) 셀
+      for (let i = 0; i < map.rows.length; i++) {
+        for (let j = map.cols.length - 1; j >= 0; j--) {
+          if (map.has(i, j) && !map.has(i - 1, j)) {
+            const x0 = map.xs[j], x1 = x0 + map.cols[j], y0 = map.ys[i];
+            const cx = (x0 + x1) >> 1;
+            defLadder = { sd: 'D', idx: 2, x: cx, y: y0 };
+            break;
+          }
+        }
+        if (defLadder) break;
+      }
+      // 2순위: 우측 노출 외벽 (R) 중 최상단(높은 i) 셀
+      if (!defLadder) {
+        for (let i = map.rows.length - 1; i >= 0; i--) {
+          for (let j = map.cols.length - 1; j >= 0; j--) {
+            if (map.has(i, j) && !map.has(i, j + 1)) {
+              const x1 = map.xs[j] + map.cols[j], y0 = map.ys[i], y1 = y0 + map.rows[i];
+              const cy = (y0 + y1) >> 1;
+              defLadder = { sd: 'R', idx: 3, x: x1, y: cy };
+              break;
+            }
+          }
+          if (defLadder) break;
+        }
+      }
+      if (defLadder) res.push(defLadder);
+    }
     return res;
   }
   function exposedSides(map, i, j) {
@@ -831,10 +863,19 @@
         if (map.has(i, j)) mPos = [(map.xs[j] + map.xs[j + 1]) / 2, (map.ys[i] + map.ys[i + 1]) / 2];
       }
       if (!mPos) {
-        const lj = map.cols.length - 1, li = map.rows.length - 1;
-        mPos = [(map.xs[lj] + map.xs[lj + 1]) / 2, (map.ys[li] + map.ys[li + 1]) / 2];
+        for (let i = map.rows.length - 1; i >= 0; i--) {
+          for (let j = map.cols.length - 1; j >= 0; j--) {
+            if (map.has(i, j)) {
+              mPos = [(map.xs[j] + map.xs[j + 1]) / 2, (map.ys[i] + map.ys[i + 1]) / 2];
+              break;
+            }
+          }
+          if (mPos) break;
+        }
       }
-      drawBalloonCallout(ents, [mPos[0], mPos[1] + 250], [mPos[0], topBaseY - Math.round(5 * N)], [mPos[0], topBaseY], getItemNo('manhole') || 6, N, 'BALLOON');
+      if (mPos) {
+        drawBalloonCallout(ents, [mPos[0], mPos[1] + 250], [mPos[0], topBaseY - Math.round(5 * N)], [mPos[0], topBaseY], getItemNo('manhole') || 6, N, 'BALLOON');
+      }
 
       // 2. 에어벤트 (Air Vent - NO. 5): 상단 바깥으로 지시선 인출
       let vPos = null;
@@ -844,49 +885,148 @@
         if (map.has(i, j)) vPos = [(map.xs[j] + map.xs[j + 1]) / 2, (map.ys[i] + map.ys[i + 1]) / 2];
       }
       if (!vPos) {
-        const vj = Math.max(0, map.cols.length - 2), vi = map.rows.length - 1;
-        vPos = [(map.xs[vj] + map.xs[vj + 1]) / 2, (map.ys[vi] + map.ys[vi + 1]) / 2];
+        for (let i = map.rows.length - 1; i >= 0; i--) {
+          for (let j = 0; j < map.cols.length; j++) {
+            if (map.has(i, j)) {
+              const cx = (map.xs[j] + map.xs[j + 1]) / 2, cy = (map.ys[i] + map.ys[i + 1]) / 2;
+              if (!mPos || Math.abs(cx - mPos[0]) > 50 || Math.abs(cy - mPos[1]) > 50) {
+                vPos = [cx, cy];
+                break;
+              }
+            }
+          }
+          if (vPos) break;
+        }
+        if (!vPos && mPos) vPos = [mPos[0], mPos[1]];
       }
-      const xDiff = Math.abs(vPos[0] - mPos[0]);
-      const vBalloonY = (xDiff < Math.round(15 * N)) ? topStaggerY : topBaseY;
-      drawBalloonCallout(ents, [vPos[0], vPos[1] + 120], [vPos[0], vBalloonY - Math.round(5 * N)], [vPos[0], vBalloonY], getItemNo('airvent') || 5, N, 'BALLOON');
+      if (vPos) {
+        const xDiff = mPos ? Math.abs(vPos[0] - mPos[0]) : 999;
+        const vBalloonY = (xDiff < Math.round(15 * N)) ? topStaggerY : topBaseY;
+        drawBalloonCallout(ents, [vPos[0], vPos[1] + 120], [vPos[0], vBalloonY - Math.round(5 * N)], [vPos[0], vBalloonY], getItemNo('airvent') || 5, N, 'BALLOON');
+      }
 
       // 3. 외부 사다리 (NO. 8) & 내부 사다리 (NO. 7): 외곽 치수선 바깥으로 인출
       const lList = ladderList(opt, map);
-      const l = (lList.length > 0) ? lList[0] : { sd: 'D', x: map.xs[map.cols.length - 1] + 250, y: 0 };
-      if (l.sd === 'D') {
-        const balloonY = -F - 40;
-        drawBalloonCallout(ents, [l.x + 80, -F - 20], [l.x + 100 + Math.round(4 * N), balloonY], [l.x + 100 + Math.round(10 * N), balloonY], getItemNo('exladder') || 8, N, 'BALLOON');
-        drawBalloonCallout(ents, [l.x - 80, 50], [l.x - 100 - Math.round(4 * N), balloonY], [l.x - 100 - Math.round(10 * N), balloonY], getItemNo('inladder') || 7, N, 'BALLOON');
-      } else if (l.sd === 'R') {
-        drawBalloonCallout(ents, [L + F + 20, l.y - 80], [L + F + Math.round(8 * N), l.y - 80], [rightBaseX, l.y - 80], getItemNo('exladder') || 8, N, 'BALLOON');
-        drawBalloonCallout(ents, [L - 50, l.y + 80], [L + F + Math.round(8 * N), l.y + 80], [rightBaseX, l.y + 80], getItemNo('inladder') || 7, N, 'BALLOON');
-      } else if (l.sd === 'U') {
-        drawBalloonCallout(ents, [l.x + 80, W + F + 20], [l.x + 80, topStaggerY], [l.x + 80 + Math.round(12 * N), topStaggerY], getItemNo('exladder') || 8, N, 'BALLOON');
-        drawBalloonCallout(ents, [l.x - 80, W - 50], [l.x - 80, topStaggerY], [l.x - 80 - Math.round(12 * N), topStaggerY], getItemNo('inladder') || 7, N, 'BALLOON');
-      } else {
-        drawBalloonCallout(ents, [-F - 20, l.y - 80], [leftClearX + Math.round(8 * N), l.y - 80], [leftClearX, l.y - 80], getItemNo('exladder') || 8, N, 'BALLOON');
-        drawBalloonCallout(ents, [50, l.y + 80], [leftClearX + Math.round(8 * N), l.y + 80], [leftClearX, l.y + 80], getItemNo('inladder') || 7, N, 'BALLOON');
+      if (lList.length > 0) {
+        const l = lList[0];
+        if (l.sd === 'D') {
+          const balloonY = l.y - F - 40;
+          drawBalloonCallout(ents, [l.x + 80, l.y - F - 20], [l.x + 100 + Math.round(4 * N), balloonY], [l.x + 100 + Math.round(10 * N), balloonY], getItemNo('exladder') || 8, N, 'BALLOON');
+          drawBalloonCallout(ents, [l.x - 80, l.y + 50], [l.x - 100 - Math.round(4 * N), balloonY], [l.x - 100 - Math.round(10 * N), balloonY], getItemNo('inladder') || 7, N, 'BALLOON');
+        } else if (l.sd === 'R') {
+          drawBalloonCallout(ents, [l.x + F + 20, l.y - 80], [l.x + F + Math.round(8 * N), l.y - 80], [rightBaseX, l.y - 80], getItemNo('exladder') || 8, N, 'BALLOON');
+          drawBalloonCallout(ents, [l.x - 50, l.y + 80], [l.x + F + Math.round(8 * N), l.y + 80], [rightBaseX, l.y + 80], getItemNo('inladder') || 7, N, 'BALLOON');
+        } else if (l.sd === 'U') {
+          drawBalloonCallout(ents, [l.x + 80, l.y + F + 20], [l.x + 80, topStaggerY], [l.x + 80 + Math.round(12 * N), topStaggerY], getItemNo('exladder') || 8, N, 'BALLOON');
+          drawBalloonCallout(ents, [l.x - 80, l.y - 50], [l.x - 80, topStaggerY], [l.x - 80 - Math.round(12 * N), topStaggerY], getItemNo('inladder') || 7, N, 'BALLOON');
+        } else {
+          drawBalloonCallout(ents, [l.x - F - 20, l.y - 80], [leftClearX + Math.round(8 * N), l.y - 80], [leftClearX, l.y - 80], getItemNo('exladder') || 8, N, 'BALLOON');
+          drawBalloonCallout(ents, [l.x + 50, l.y + 80], [leftClearX + Math.round(8 * N), l.y + 80], [leftClearX, l.y + 80], getItemNo('inladder') || 7, N, 'BALLOON');
+        }
       }
 
-      // 4. 지붕 판넬 (Roof Panel - NO. 3): 우측 바깥 외곽으로 인출
-      const rCellC = Math.max(0, map.cols.length - 1);
-      const rCellR = Math.min(1, map.rows.length - 1);
-      const pcx = (map.xs[rCellC] + map.xs[rCellC + 1]) / 2;
-      const pcy = (map.ys[rCellR] + map.ys[rCellR + 1]) / 2;
-      drawBalloonCallout(ents, [pcx, pcy], [L + F + Math.round(6 * N), pcy], [rightBaseX, pcy], getItemNo('panel') || 3, N, 'BALLOON');
+      // 4. 지붕 판넬 (Roof Panel - NO. 3): 실제로 존재하는 최우측 판넬 선택
+      let panelTarget = null;
+      let maxRightX = -1;
+      for (let r = 0; r < map.rows.length; r++) {
+        for (let c = map.cols.length - 1; c >= 0; c--) {
+          if (map.has(r, c)) {
+            const rx = map.xs[c + 1];
+            if (rx > maxRightX) {
+              maxRightX = rx;
+              panelTarget = { r, c };
+            }
+            break;
+          }
+        }
+      }
+      let panelPcy = null;
+      if (panelTarget) {
+        const pcx = (map.xs[panelTarget.c] + map.xs[panelTarget.c + 1]) / 2;
+        panelPcy = (map.ys[panelTarget.r] + map.ys[panelTarget.r + 1]) / 2;
+        drawBalloonCallout(ents, [pcx, panelPcy], [L + F + Math.round(6 * N), panelPcy], [rightBaseX, panelPcy], getItemNo('panel') || 3, N, 'BALLOON');
+      }
 
-      // 5. 코너 프레임 (Corner Frame - NO. 4): 좌상단 바깥 외곽으로 인출
-      drawBalloonCallout(ents, [-F, W + F], [-F - Math.round(6 * N), W + F + Math.round(8 * N)], [-F - Math.round(14 * N), W + F + Math.round(14 * N)], getItemNo('corner') || 4, N, 'BALLOON');
+      // 5. 코너 프레임 (Corner Frame - NO. 4): 실제로 존재하는 좌상단(또는 외곽) 코너 탐색
+      let cornerPt = null;
+      for (let i = map.rows.length - 1; i >= 0; i--) {
+        for (let j = 0; j < map.cols.length; j++) {
+          if (map.has(i, j) && !map.has(i + 1, j) && !map.has(i, j - 1)) {
+            cornerPt = [map.xs[j], map.ys[i + 1]];
+            break;
+          }
+        }
+        if (cornerPt) break;
+      }
+      if (!cornerPt) cornerPt = [0, W];
+      drawBalloonCallout(ents, [cornerPt[0] - F, cornerPt[1] + F], [cornerPt[0] - F - Math.round(6 * N), cornerPt[1] + F + Math.round(8 * N)], [cornerPt[0] - F - Math.round(14 * N), cornerPt[1] + F + Math.round(14 * N)], getItemNo('corner') || 4, N, 'BALLOON');
 
-      // 6. 플랜지 바 (Flange Bar - NO. 9): 상단 바깥 외곽으로 인출
-      const seamX = (map.xs[1] !== undefined) ? map.xs[1] : 1000;
-      drawBalloonCallout(ents, [seamX, W], [seamX, topStaggerY - Math.round(5 * N)], [seamX, topStaggerY], getItemNo('flangebar') || 9, N, 'BALLOON');
+      // 6. 플랜지 바 (Flange Bar - NO. 9): 상단 외벽의 실제 존재하는 판넬 분할선 탐색
+      let seamPt = null;
+      for (let i = map.rows.length - 1; i >= 0; i--) {
+        for (let j = 1; j < map.cols.length; j++) {
+          if (map.has(i, j - 1) && map.has(i, j) && !map.has(i + 1, j - 1) && !map.has(i + 1, j)) {
+            seamPt = [map.xs[j], map.ys[i + 1]];
+            break;
+          }
+        }
+        if (seamPt) break;
+      }
+      if (!seamPt) {
+        for (let i = map.rows.length - 1; i >= 0; i--) {
+          for (let j = 0; j < map.cols.length; j++) {
+            if (map.has(i, j) && !map.has(i + 1, j)) {
+              seamPt = [map.xs[j] + map.cols[j] * 0.5, map.ys[i + 1]];
+              break;
+            }
+          }
+          if (seamPt) break;
+        }
+      }
+      if (seamPt) {
+        drawBalloonCallout(ents, seamPt, [seamPt[0], topStaggerY - Math.round(5 * N)], [seamPt[0], topStaggerY], getItemNo('flangebar') || 9, N, 'BALLOON');
+      }
 
-      // 7. 내부 스테이 / 보강재 (Internal Stay - NO. 10): 우측 바깥 외곽으로 인출
-      const stayCx = L * 0.5, stayCy = W * 0.5;
-      const stayY = W * 0.75;
-      drawBalloonCallout(ents, [stayCx, stayCy], [L + F + Math.round(6 * N), stayY], [rightBaseX, stayY], getItemNo('stay') || 10, N, 'BALLOON');
+      // 7. 내부 스테이 / 보강재 (Internal Stay - NO. 10): 존재하는 내부 스테이 교차점 또는 판넬 탐색
+      let stayPt = null;
+      for (let i = Math.floor(map.rows.length / 2); i < map.rows.length; i++) {
+        for (let j = Math.floor(map.cols.length / 2); j < map.cols.length; j++) {
+          if (map.has(i, j) && map.has(i - 1, j) && map.has(i, j - 1)) {
+            stayPt = [map.xs[j], map.ys[i]];
+            break;
+          }
+        }
+        if (stayPt) break;
+      }
+      if (!stayPt) {
+        for (let i = 1; i < map.rows.length; i++) {
+          for (let j = 1; j < map.cols.length; j++) {
+            if (map.has(i, j) && (map.has(i - 1, j) || map.has(i, j - 1))) {
+              stayPt = [map.xs[j], map.ys[i]];
+              break;
+            }
+          }
+          if (stayPt) break;
+        }
+      }
+      if (!stayPt) {
+        for (let i = 0; i < map.rows.length; i++) {
+          for (let j = 0; j < map.cols.length; j++) {
+            if (map.has(i, j)) {
+              stayPt = [(map.xs[j] + map.xs[j + 1]) / 2, (map.ys[i] + map.ys[i + 1]) / 2];
+              break;
+            }
+          }
+          if (stayPt) break;
+        }
+      }
+      if (stayPt) {
+        let stayY = Math.max(stayPt[1], W * 0.75);
+        if (typeof panelPcy === 'number' && Math.abs(stayY - panelPcy) < Math.round(10 * N)) {
+          stayY = (panelPcy < W * 0.5) ? (panelPcy + Math.round(12 * N)) : (panelPcy - Math.round(12 * N));
+        }
+        drawBalloonCallout(ents, stayPt, [L + F + Math.round(6 * N), stayY], [rightBaseX, stayY], getItemNo('stay') || 10, N, 'BALLOON');
+      }
     }
 
     ents.blocks = blocks;
@@ -1868,8 +2008,15 @@
 
       // 8. 외부 사다리 (External Ladder - NO. 8) & 10. 내부 스테이 (Internal Stay - NO. 10): 상단 바깥 외곽 (상호 크로스 방지 방향 제어)
       const lads = ladderList(opt, mmap);
-      const visibleLadder = lads.find(l => (view === 'front' ? l.sd === 'D' : l.sd === 'R'));
-      const lx = visibleLadder ? (view === 'front' ? visibleLadder.x : visibleLadder.y) : (total - 300);
+      let lx = total - 300;
+      if (lads.length > 0) {
+        const l = lads[0];
+        if (view === 'front') {
+          lx = (l.sd === 'D' || l.sd === 'U') ? l.x : (l.sd === 'R' ? total : 0);
+        } else {
+          lx = (l.sd === 'R' || l.sd === 'L') ? l.y : (l.sd === 'U' ? total : 0);
+        }
+      }
       const stayX = total * 0.5;
 
       if (lx <= stayX) {
