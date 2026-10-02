@@ -16,6 +16,7 @@
   --accent-light:#e0f2fe; --warn:#ea580c; --warn-bg:#fff7ed; --success:#16a34a; --success-bg:#f0fdf4;
   --cv-bg:#0f172a; --cv-grid:#1e293b; --cv-panel:#f8fafc; --cv-detail:#94a3b8;
   --cv-frame:#fb923c; --cv-dim:#38bdf8; --cv-sheet:#e2e8f0; --cv-balloon:#f43f5e;
+  --cv-nozzle:#10b981;
   --shadow-sm:0 1px 2px 0 rgba(0,0,0,0.05);
   --shadow:0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.06);
   --font-ui:"IBM Plex Sans KR","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
@@ -25,6 +26,7 @@
 :root[data-theme="light"]{
   --cv-bg:#ffffff; --cv-grid:#f1f5f9; --cv-panel:#0f172a; --cv-detail:#64748b;
   --cv-frame:#ea580c; --cv-dim:#0284c7; --cv-sheet:#1e293b; --cv-balloon:#e11d48;
+  --cv-nozzle:#059669;
 }
 :root[data-theme="dark"]{
   --bg:#090d16; --surface:#111827; --surface-sub:#1f2937; --line:#374151; --line-sub:#1f2937;
@@ -32,6 +34,7 @@
   --accent-light:#1e293b; --warn:#fb923c; --warn-bg:#2c1810; --success:#4ade80; --success-bg:#14291e;
   --cv-bg:#090d16; --cv-grid:#1a2333; --cv-panel:#f1f5f9; --cv-detail:#94a3b8;
   --cv-frame:#fb923c; --cv-dim:#38bdf8; --cv-sheet:#e2e8f0; --cv-balloon:#f43f5e;
+  --cv-nozzle:#10b981;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -3466,8 +3469,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   $('eReset').addEventListener('click', () => { removed = new Set(); pillars = new Set(); marks = {}; ladders = {}; topInletCell = [0, 0]; rebuild(false); });
 
   const cv = $('c'), ctx = cv.getContext('2d');
-  const LY = { PANEL: 'lyPanel', PANEL_DETAIL: 'lyDetail', FRAME: 'lyFrame', REINF: 'lyReinf', WALL: 'lyWall', DIM: 'lyDim', SHEET: 'lySheet' };
-  const layerOn = e => e.layer === 'BALLOON' ? ($('balloonFeatureToggle') ? $('balloonFeatureToggle').checked : true) : ($(LY[e.layer]) ? $(LY[e.layer]).checked : true);
+  const LY = { PANEL: 'lyPanel', PANEL_DETAIL: 'lyDetail', FRAME: 'lyFrame', REINF: 'lyReinf', WALL: 'lyWall', DIM: 'lyDim', SHEET: 'lySheet', NOZZLE: 'lyNozzle' };
+  const layerOn = e => e.layer === 'BALLOON' ? ($('balloonFeatureToggle') ? $('balloonFeatureToggle').checked : true) : (e.layer === 'NOZZLE' ? ($('lyNozzle') ? $('lyNozzle').checked : true) : ($(LY[e.layer]) ? $(LY[e.layer]).checked : true));
   Object.values(LY).forEach(id => { const el = $(id); if (el) el.addEventListener('change', draw); });
   if ($('balloonFeatureToggle')) $('balloonFeatureToggle').addEventListener('change', draw);
   let isPadHCustom = false;
@@ -4165,8 +4168,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const z = size(); ctx.setTransform(z.d, 0, 0, z.d, 0, 0);
     ctx.fillStyle = css('--cv-bg'); ctx.fillRect(0, 0, z.w, z.h);
 
-    const col = { PANEL: css('--cv-panel'), PANEL_DETAIL: css('--cv-detail'), FRAME: css('--cv-frame'), REINF: css('--cv-panel'), WALL: css('--cv-frame'), DIM: css('--cv-dim'), SHEET: css('--cv-sheet'), BALLOON: css('--cv-balloon') || '#f43f5e' };
-    const lw = { PANEL: 1.4, PANEL_DETAIL: 0.9, FRAME: 1.6, REINF: 1.2, WALL: 1, DIM: 1, SHEET: 1.3, BALLOON: 1.8 };
+    const col = { PANEL: css('--cv-panel'), PANEL_DETAIL: css('--cv-detail'), FRAME: css('--cv-frame'), REINF: css('--cv-panel'), WALL: css('--cv-frame'), DIM: css('--cv-dim'), SHEET: css('--cv-sheet'), BALLOON: css('--cv-balloon') || '#f43f5e', NOZZLE: css('--cv-nozzle') || '#10b981' };
+    const lw = { PANEL: 1.4, PANEL_DETAIL: 0.9, FRAME: 1.6, REINF: 1.2, WALL: 1, DIM: 1, SHEET: 1.3, BALLOON: 1.8, NOZZLE: 1.6 };
     const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
 
     const hasFills = (plan.ents || []).some(e => e.fill);
@@ -4246,7 +4249,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         ctx.save(); ctx.translate(tx(e.p[0]), ty(e.p[1])); ctx.rotate(-e.rot * Math.PI / 180); ctx.fillText(e.s, 0, 0); ctx.restore();
       });
     } else {
-      ['PANEL_DETAIL', 'PANEL', 'WALL', 'REINF', 'FRAME', 'DIM', 'SHEET', 'BALLOON'].forEach(layer => {
+      ['PANEL_DETAIL', 'PANEL', 'WALL', 'REINF', 'FRAME', 'DIM', 'SHEET', 'BALLOON', 'NOZZLE'].forEach(layer => {
         ctx.strokeStyle = col[layer]; ctx.fillStyle = col[layer]; ctx.lineWidth = lw[layer]; ctx.beginPath();
         const texts = [];
         const renderEnt = (e, ox = 0, oy = 0) => {
@@ -4460,7 +4463,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
   $('svg').addEventListener('click', () => {
     if (!plan) return;
-    const b = bounds(), pad = plan.sheet ? 0 : 200, col = { PANEL: '#111', PANEL_DETAIL: '#888', FRAME: '#c2410c', REINF: '#111', WALL: '#c2410c', DIM: '#0b6b7a', SHEET: '#111', BALLOON: '#e11d48' };
+    const b = bounds(), pad = plan.sheet ? 0 : 200, col = { PANEL: '#111', PANEL_DETAIL: '#888', FRAME: '#c2410c', REINF: '#111', WALL: '#c2410c', DIM: '#0b6b7a', SHEET: '#111', BALLOON: '#e11d48', NOZZLE: '#059669' };
     const f = n => Math.round(n * 10) / 10; let s = '';
     const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
     const renderSvgEnt = (e, ox = 0, oy = 0) => {

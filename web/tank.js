@@ -726,25 +726,25 @@
         const cy = (map.ys[i] + map.ys[i + 1]) / 2;
         
         if (isFlg) {
-          ents.push({ t: 'circle', c: [cx, cy], r: spec.rf, layer: 'FRAME' });
-          ents.push({ t: 'circle', c: [cx, cy], r: spec.pcd, layer: 'PANEL_DETAIL' });
-          ents.push({ t: 'circle', c: [cx, cy], r: spec.r, layer: 'FRAME' });
+          ents.push({ t: 'circle', c: [cx, cy], r: spec.rf, layer: 'NOZZLE' });
+          ents.push({ t: 'circle', c: [cx, cy], r: spec.pcd, layer: 'NOZZLE' });
+          ents.push({ t: 'circle', c: [cx, cy], r: spec.r, layer: 'NOZZLE' });
           const numHoles = Math.min(8, spec.holes);
           for (let k = 0; k < numHoles; k++) {
             const ang = (k * 360 / numHoles + 45) * Math.PI / 180;
-            ents.push({ t: 'circle', c: [cx + spec.pcd * Math.cos(ang), cy + spec.pcd * Math.sin(ang)], r: spec.hr, layer: 'FRAME' });
+            ents.push({ t: 'circle', c: [cx + spec.pcd * Math.cos(ang), cy + spec.pcd * Math.sin(ang)], r: spec.hr, layer: 'NOZZLE' });
           }
         } else {
-          ents.push({ t: 'circle', c: [cx, cy], r: spec.sockR, layer: 'FRAME' });
-          ents.push({ t: 'circle', c: [cx, cy], r: spec.r, layer: 'FRAME' });
+          ents.push({ t: 'circle', c: [cx, cy], r: spec.sockR, layer: 'NOZZLE' });
+          ents.push({ t: 'circle', c: [cx, cy], r: spec.r, layer: 'NOZZLE' });
         }
         const cr = (isFlg ? spec.rf : spec.sockR) * 1.25;
-        ents.push({ t: 'line', a: [cx - cr, cy], b: [cx + cr, cy], layer: 'PANEL_DETAIL' });
-        ents.push({ t: 'line', a: [cx, cy - cr], b: [cx, cy + cr], layer: 'PANEL_DETAIL' });
+        ents.push({ t: 'line', a: [cx - cr, cy], b: [cx + cr, cy], layer: 'NOZZLE' });
+        ents.push({ t: 'line', a: [cx, cy - cr], b: [cx, cy + cr], layer: 'NOZZLE' });
         
         const leadLen = Math.max(100, 3.0 * N);
         const stagger = (idx % 3) * Math.round(1.5 * N);
-        drawLeader(ents, [cx + spec.r * 0.7, cy + spec.r * 0.7], [cx + spec.r * 0.7 + leadLen * 0.5, cy + spec.r * 0.7 + leadLen * 0.5 + stagger], [cx + spec.r * 0.7 + leadLen * 1.2, cy + spec.r * 0.7 + leadLen * 0.5 + stagger], [label], nozTextH, 'left', 'DIM');
+        drawLeader(ents, [cx + spec.r * 0.7, cy + spec.r * 0.7], [cx + spec.r * 0.7 + leadLen * 0.5, cy + spec.r * 0.7 + leadLen * 0.5 + stagger], [cx + spec.r * 0.7 + leadLen * 1.2, cy + spec.r * 0.7 + leadLen * 0.5 + stagger], [label], nozTextH, 'left', 'NOZZLE');
       } else if (n.face === 'front') {
         const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
         const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + offVal;
@@ -754,21 +754,21 @@
         if (isFlg) {
           const yPlate1 = yBase - spec.neckLen;
           const yPlate0 = yPlate1 + spec.flgThick;
-          ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'FRAME');
-          ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'FRAME');
-          chain([[cx - spec.rf, yPlate1], [cx + spec.rf, yPlate1], [cx + spec.rf, yPlate0], [cx - spec.rf, yPlate0]], 'FRAME', true);
+          ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'NOZZLE');
+          ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'NOZZLE');
+          chain([[cx - spec.rf, yPlate1], [cx + spec.rf, yPlate1], [cx + spec.rf, yPlate0], [cx - spec.rf, yPlate0]], 'NOZZLE', true);
           const ey = yPlate1 + Math.round(1.0 * N) + stagger;
           const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
           const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
-          drawLeader(ents, [cx, yPlate1], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'DIM');
+          drawLeader(ents, [cx, yPlate1], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE');
         } else {
           const yEnd = yBase - spec.sockLen;
-          chain([[cx - spec.sockR, yEnd], [cx + spec.sockR, yEnd], [cx + spec.sockR, yBase], [cx - spec.sockR, yBase]], 'FRAME', true);
-          ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'FRAME');
+          chain([[cx - spec.sockR, yEnd], [cx + spec.sockR, yEnd], [cx + spec.sockR, yBase], [cx - spec.sockR, yBase]], 'NOZZLE', true);
+          ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'NOZZLE');
           const ey = yEnd + Math.round(1.0 * N) + stagger;
           const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
           const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
-          drawLeader(ents, [cx, yEnd], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'DIM');
+          drawLeader(ents, [cx, yEnd], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE');
         }
       } else if (n.face === 'rear') {
         const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
@@ -779,21 +779,21 @@
         if (isFlg) {
           const yPlate1 = yBase + spec.neckLen;
           const yPlate0 = yPlate1 - spec.flgThick;
-          ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'FRAME');
-          ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'FRAME');
-          chain([[cx - spec.rf, yPlate0], [cx + spec.rf, yPlate0], [cx + spec.rf, yPlate1], [cx - spec.rf, yPlate1]], 'FRAME', true);
+          ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'NOZZLE');
+          ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'NOZZLE');
+          chain([[cx - spec.rf, yPlate0], [cx + spec.rf, yPlate0], [cx + spec.rf, yPlate1], [cx - spec.rf, yPlate1]], 'NOZZLE', true);
           const ey = yPlate1 - Math.round(1.0 * N) - stagger;
           const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
           const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
-          drawLeader(ents, [cx, yPlate1], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'DIM');
+          drawLeader(ents, [cx, yPlate1], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE');
         } else {
           const yEnd = yBase + spec.sockLen;
-          chain([[cx - spec.sockR, yBase], [cx + spec.sockR, yBase], [cx + spec.sockR, yEnd], [cx - spec.sockR, yEnd]], 'FRAME', true);
-          ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'FRAME');
+          chain([[cx - spec.sockR, yBase], [cx + spec.sockR, yBase], [cx + spec.sockR, yEnd], [cx - spec.sockR, yEnd]], 'NOZZLE', true);
+          ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'NOZZLE');
           const ey = yEnd - Math.round(1.0 * N) - stagger;
           const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
           const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
-          drawLeader(ents, [cx, yEnd], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'DIM');
+          drawLeader(ents, [cx, yEnd], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE');
         }
       } else if (n.face === 'left') {
         const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
@@ -804,17 +804,17 @@
         if (isFlg) {
           const xPlate1 = xBase - spec.neckLen;
           const xPlate0 = xPlate1 + spec.flgThick;
-          ln([xBase, cy - spec.r], [xPlate0, cy - spec.r], 'FRAME');
-          ln([xBase, cy + spec.r], [xPlate0, cy + spec.r], 'FRAME');
-          chain([[xPlate1, cy - spec.rf], [xPlate0, cy - spec.rf], [xPlate0, cy + spec.rf], [xPlate1, cy + spec.rf]], 'FRAME', true);
+          ln([xBase, cy - spec.r], [xPlate0, cy - spec.r], 'NOZZLE');
+          ln([xBase, cy + spec.r], [xPlate0, cy + spec.r], 'NOZZLE');
+          chain([[xPlate1, cy - spec.rf], [xPlate0, cy - spec.rf], [xPlate0, cy + spec.rf], [xPlate1, cy + spec.rf]], 'NOZZLE', true);
           const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
-          drawLeader(ents, [xPlate1, cy], [xPlate1 - Math.round(2.0 * N), ey], [xPlate1 - Math.round(4.5 * N), ey], [label], nozTextH, 'right', 'DIM');
+          drawLeader(ents, [xPlate1, cy], [xPlate1 - Math.round(2.0 * N), ey], [xPlate1 - Math.round(4.5 * N), ey], [label], nozTextH, 'right', 'NOZZLE');
         } else {
           const xEnd = xBase - spec.sockLen;
-          chain([[xEnd, cy - spec.sockR], [xBase, cy - spec.sockR], [xBase, cy + spec.sockR], [xEnd, cy + spec.sockR]], 'FRAME', true);
-          ln([xEnd, cy - spec.r], [xEnd, cy + spec.r], 'FRAME');
+          chain([[xEnd, cy - spec.sockR], [xBase, cy - spec.sockR], [xBase, cy + spec.sockR], [xEnd, cy + spec.sockR]], 'NOZZLE', true);
+          ln([xEnd, cy - spec.r], [xEnd, cy + spec.r], 'NOZZLE');
           const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
-          drawLeader(ents, [xEnd, cy], [xEnd - Math.round(2.0 * N), ey], [xEnd - Math.round(4.5 * N), ey], [label], nozTextH, 'right', 'DIM');
+          drawLeader(ents, [xEnd, cy], [xEnd - Math.round(2.0 * N), ey], [xEnd - Math.round(4.5 * N), ey], [label], nozTextH, 'right', 'NOZZLE');
         }
       } else if (n.face === 'right') {
         const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
@@ -825,17 +825,17 @@
         if (isFlg) {
           const xPlate1 = xBase + spec.neckLen;
           const xPlate0 = xPlate1 - spec.flgThick;
-          ln([xBase, cy - spec.r], [xPlate0, cy - spec.r], 'FRAME');
-          ln([xBase, cy + spec.r], [xPlate0, cy + spec.r], 'FRAME');
-          chain([[xPlate0, cy - spec.rf], [xPlate1, cy - spec.rf], [xPlate1, cy + spec.rf], [xPlate0, cy + spec.rf]], 'FRAME', true);
+          ln([xBase, cy - spec.r], [xPlate0, cy - spec.r], 'NOZZLE');
+          ln([xBase, cy + spec.r], [xPlate0, cy + spec.r], 'NOZZLE');
+          chain([[xPlate0, cy - spec.rf], [xPlate1, cy - spec.rf], [xPlate1, cy + spec.rf], [xPlate0, cy + spec.rf]], 'NOZZLE', true);
           const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
-          drawLeader(ents, [xPlate1, cy], [xPlate1 + Math.round(2.0 * N), ey], [xPlate1 + Math.round(4.5 * N), ey], [label], nozTextH, 'left', 'DIM');
+          drawLeader(ents, [xPlate1, cy], [xPlate1 + Math.round(2.0 * N), ey], [xPlate1 + Math.round(4.5 * N), ey], [label], nozTextH, 'left', 'NOZZLE');
         } else {
           const xEnd = xBase + spec.sockLen;
-          chain([[xBase, cy - spec.sockR], [xEnd, cy - spec.sockR], [xEnd, cy + spec.sockR], [xBase, cy + spec.sockR]], 'FRAME', true);
-          ln([xEnd, cy - spec.r], [xEnd, cy + spec.r], 'FRAME');
+          chain([[xBase, cy - spec.sockR], [xEnd, cy - spec.sockR], [xEnd, cy + spec.sockR], [xBase, cy + spec.sockR]], 'NOZZLE', true);
+          ln([xEnd, cy - spec.r], [xEnd, cy + spec.r], 'NOZZLE');
           const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
-          drawLeader(ents, [xEnd, cy], [xEnd + Math.round(2.0 * N), ey], [xEnd + Math.round(4.5 * N), ey], [label], nozTextH, 'left', 'DIM');
+          drawLeader(ents, [xEnd, cy], [xEnd + Math.round(2.0 * N), ey], [xEnd + Math.round(4.5 * N), ey], [label], nozTextH, 'left', 'NOZZLE');
         }
       }
     });
@@ -844,15 +844,42 @@
     const textH = Math.round(3.0 * N);
     const dimGap1 = Math.round(10.0 * N);
     const dimGap2 = Math.round(18.0 * N);
-    const baseY = -F - dimGap1, baseX = -F - dimGap1;
+
+    // 평면도 노즐(좌측/하단)과 치수선 간섭 방지 이격 계산
+    let minPlanX = -F;
+    let minPlanY = -F;
+    nozList.forEach(n => {
+      const spec = getNozzleSpec(n.size);
+      const isFlg = n.type === 'FLANGE';
+      const label = `[${n.mark}] ${n.size}`;
+      const textW = label.length * (nozTextH * 0.65) + nozTextH * 0.5;
+      if (n.face === 'left') {
+        const xTip = isFlg ? (-F - spec.neckLen) : (-F - spec.sockLen);
+        const xEnd = xTip - Math.round(4.5 * N);
+        const leftEdge = xEnd - textW;
+        if (leftEdge < minPlanX) minPlanX = leftEdge;
+      } else if (n.face === 'front') {
+        const yTip = isFlg ? (-F - spec.neckLen) : (-F - spec.sockLen);
+        const ey = yTip - Math.round(2.0 * N);
+        if (ey < minPlanY) minPlanY = ey;
+      }
+    });
+
+    const leftClearBoundary = minPlanX < -F ? (minPlanX - Math.round(3.0 * N)) : -F;
+    const botClearBoundary = minPlanY < -F ? (minPlanY - Math.round(3.0 * N)) : -F;
+    const baseX = leftClearBoundary - dimGap1;
+    const baseY = botClearBoundary - dimGap1;
+    const overallX = leftClearBoundary - dimGap2;
+    const overallY = botClearBoundary - dimGap2;
+
     dimLinear(ents, [-F, 0], [0, 0], baseY, false, String(F), textH, 'DIM');
     map.cols.forEach((c, j) => dimLinear(ents, [map.xs[j], 0], [map.xs[j + 1], 0], baseY, false, String(c), textH, 'DIM'));
     dimLinear(ents, [L, 0], [L + F, 0], baseY, false, String(F), textH, 'DIM');
-    dimLinear(ents, [-F, 0], [L + F, 0], -F - dimGap2, false, String(L + 2 * F), textH, 'DIM');
+    dimLinear(ents, [-F, 0], [L + F, 0], overallY, false, String(L + 2 * F), textH, 'DIM');
     dimLinear(ents, [0, -F], [0, 0], baseX, true, String(F), textH, 'DIM');
     map.rows.forEach((r, i) => dimLinear(ents, [0, map.ys[i]], [0, map.ys[i + 1]], baseX, true, String(r), textH, 'DIM'));
     dimLinear(ents, [0, W], [0, W + F], baseX, true, String(F), textH, 'DIM');
-    dimLinear(ents, [0, -F], [0, W + F], -F - dimGap2, true, String(W + 2 * F), textH, 'DIM');
+    dimLinear(ents, [0, -F], [0, W + F], overallX, true, String(W + 2 * F), textH, 'DIM');
 
     // 부품 풍선 기호 (Plan View Balloon Callouts - 모두 물탱크 형상 및 치수선 바깥 외곽에 정렬)
     if (opt.showBalloons !== false) {
@@ -865,8 +892,8 @@
       const topBaseY = W + F + Math.round(18 * N);
       const topStaggerY = W + F + Math.round(28 * N);
       const rightBaseX = L + F + Math.round(18 * N);
-      const botClearY = -F - dimGap2 - Math.round(14 * N);
-      const leftClearX = -F - dimGap2 - Math.round(14 * N);
+      const botClearY = overallY - Math.round(14 * N);
+      const leftClearX = overallX - Math.round(14 * N);
 
       // 1. 맨홀 (Manhole - NO. 6): 상단 바깥으로 지시선 인출
       let mPos = null;
@@ -1853,37 +1880,14 @@
     });
     ln([0, GRD], [total, GRD], 'PANEL');
 
-    // 치수 (FrontDim / SideDim: 축척 비례 계산)
     const N = opt._N || 25;
     const textH = Math.round(3.0 * N);
     const dimGap1 = Math.round(10.0 * N);
     const dimGap2 = Math.round(18.0 * N);
-    const X0 = -75 - dimGap1;
-    let yy = 0;
-    hs.forEach(hh => { dimLinear(ents, [X0, yy], [X0, yy + hh], X0 - dimGap1, true, String(hh), textH, 'DIM'); yy += hh; });
-    dimLinear(ents, [X0, nH], [X0, nH + 100], X0 - dimGap1, true, '100', textH, 'DIM');
-    dimLinear(ents, [X0, 0], [X0, -th], X0 - dimGap1, true, String(th), textH, 'DIM');
-    dimLinear(ents, [X0, -th], [X0, GRD], X0 - dimGap1, true, String(-GRD - th), textH, 'DIM');
-    dimLinear(ents, [X0, GRD], [X0, nH + 100], X0 - dimGap2, true, String(nH + 100 - GRD), textH, 'DIM');
-    const yb = GRD - dimGap1;
-    let cx = 0;
-    secs.forEach(sn => { split(sn, cx).forEach(w => { dimLinear(ents, [cx, GRD], [cx + w, GRD], yb, false, String(w), textH, 'DIM'); cx += w; }); });
-    dimLinear(ents, [-75, GRD], [total + 75, GRD], GRD - dimGap2, false, String(total + 150), textH, 'DIM');
-    const lads = ladderList(opt, mmap), done = new Set();
-    lads.forEach(l => {
-      let idx, px;
-      if (view === 'front') {
-        if (l.sd === 'D') { idx = 5; px = l.x; } else if (l.sd === 'U') { idx = 6; px = l.x; } else if (l.sd === 'R') { idx = 7; px = total; } else { idx = 8; px = 0; }
-      } else {
-        if (l.sd === 'U') { idx = 7; px = total; } else if (l.sd === 'D') { idx = 8; px = 0; } else if (l.sd === 'R') { idx = 5; px = l.y; } else { idx = 6; px = l.y; }
-      }
-      if (done.has(idx + ':' + px)) return; done.add(idx + ':' + px);
-      ents.push(...ladderShapes(idx, px, 0, nH));
-    });
+    const nozTextH = Math.round(2.2 * N);
 
     // 배관 노즐 (INLET, OUTLET, OVERFLOW, DRAIN, FIRE 등) 입면도 배치 (글로벌 표준 간결 표기 & 중복 결합)
     const nozList = getNozzleList(opt);
-    const nozTextH = Math.round(2.2 * N);
 
     // 1. 현재 뷰(view: 'front' | 'side')에 맞춰 4개 그룹으로 분류
     const faceNozzles = [];
@@ -1941,6 +1945,64 @@
       }
     });
 
+    // 치수선과 좌측 노즐 간섭 완전 방지: 좌측 노즐 돌출 및 지시선/문자 너비 사전 계산
+    let minLeftNozX = -75;
+    groupLeft.forEach(grp => {
+      const items = grp.items;
+      let bestItem = items[0];
+      items.forEach(it => { if (it.spec.r > bestItem.spec.r) bestItem = it; });
+      const spec = bestItem.spec;
+      const isFlg = items.some(it => it.isFlg);
+      const xBase = -75;
+      const xTip = isFlg ? (xBase - spec.neckLen) : (xBase - spec.sockLen);
+      const sameSize = items.every(it => it.n.size === items[0].n.size);
+      let line1;
+      if (sameSize) {
+        line1 = `[${items.map(it => it.n.mark).join(', ')}] ${items[0].n.size}`;
+      } else {
+        line1 = items.map(it => `[${it.n.mark}] ${it.n.size}`).join(', ');
+      }
+      const line2 = `EL.+${grp.elev.toLocaleString()}`;
+      const maxCharCount = Math.max(line1.length, line2.length);
+      const textW = maxCharCount * (nozTextH * 0.65) + nozTextH * 0.5;
+      const xEnd = xTip - Math.round(5.0 * N);
+      const nozLeftEdge = xEnd - textW;
+      if (nozLeftEdge < minLeftNozX) minLeftNozX = nozLeftEdge;
+    });
+
+    const lads = ladderList(opt, mmap), done = new Set();
+    const hasLeftLadder = lads.some(l => (view === 'front' ? l.sd === 'L' : l.sd === 'D'));
+    if (hasLeftLadder && (-235 < minLeftNozX)) {
+      minLeftNozX = Math.min(minLeftNozX, -235);
+    }
+
+    const leftClearBoundary = minLeftNozX < -75 ? (minLeftNozX - Math.round(3.0 * N)) : -75;
+    const X0 = leftClearBoundary - dimGap1;
+    const overallX = leftClearBoundary - dimGap2;
+
+    // 치수 (FrontDim / SideDim: 축척 비례 계산)
+    let yy = 0;
+    hs.forEach(hh => { dimLinear(ents, [X0, yy], [X0, yy + hh], X0 - dimGap1, true, String(hh), textH, 'DIM'); yy += hh; });
+    dimLinear(ents, [X0, nH], [X0, nH + 100], X0 - dimGap1, true, '100', textH, 'DIM');
+    dimLinear(ents, [X0, 0], [X0, -th], X0 - dimGap1, true, String(th), textH, 'DIM');
+    dimLinear(ents, [X0, -th], [X0, GRD], X0 - dimGap1, true, String(-GRD - th), textH, 'DIM');
+    dimLinear(ents, [X0, GRD], [X0, nH + 100], overallX, true, String(nH + 100 - GRD), textH, 'DIM');
+    const yb = GRD - dimGap1;
+    let cx = 0;
+    secs.forEach(sn => { split(sn, cx).forEach(w => { dimLinear(ents, [cx, GRD], [cx + w, GRD], yb, false, String(w), textH, 'DIM'); cx += w; }); });
+    dimLinear(ents, [-75, GRD], [total + 75, GRD], GRD - dimGap2, false, String(total + 150), textH, 'DIM');
+
+    lads.forEach(l => {
+      let idx, px;
+      if (view === 'front') {
+        if (l.sd === 'D') { idx = 5; px = l.x; } else if (l.sd === 'U') { idx = 6; px = l.x; } else if (l.sd === 'R') { idx = 7; px = total; } else { idx = 8; px = 0; }
+      } else {
+        if (l.sd === 'U') { idx = 7; px = total; } else if (l.sd === 'D') { idx = 8; px = 0; } else if (l.sd === 'R') { idx = 5; px = l.y; } else { idx = 6; px = l.y; }
+      }
+      if (done.has(idx + ':' + px)) return; done.add(idx + ':' + px);
+      ents.push(...ladderShapes(idx, px, 0, nH));
+    });
+
     let prevLeftEy = null;
     groupLeft.forEach(grp => {
       const elev = grp.elev;
@@ -1954,13 +2016,13 @@
       if (isFlg) {
         const xPlate1 = xBase - spec.neckLen;
         const xPlate0 = xPlate1 + spec.flgThick;
-        ln([xBase, elev - spec.r], [xPlate0, elev - spec.r], 'FRAME');
-        ln([xBase, elev + spec.r], [xPlate0, elev + spec.r], 'FRAME');
-        rect(xPlate1, elev - spec.rf, xPlate0, elev + spec.rf, 'FRAME');
+        ln([xBase, elev - spec.r], [xPlate0, elev - spec.r], 'NOZZLE');
+        ln([xBase, elev + spec.r], [xPlate0, elev + spec.r], 'NOZZLE');
+        rect(xPlate1, elev - spec.rf, xPlate0, elev + spec.rf, 'NOZZLE');
       } else {
         const xEnd = xBase - spec.sockLen;
-        rect(xEnd, elev - spec.sockR, xBase, elev + spec.sockR, 'FRAME');
-        ln([xEnd, elev - spec.r], [xEnd, elev + spec.r], 'FRAME');
+        rect(xEnd, elev - spec.sockR, xBase, elev + spec.sockR, 'NOZZLE');
+        ln([xEnd, elev - spec.r], [xEnd, elev + spec.r], 'NOZZLE');
       }
 
       const sameSize = items.every(it => it.n.size === items[0].n.size);
@@ -1979,7 +2041,7 @@
       prevLeftEy = ey;
 
       const xTip = isFlg ? (xBase - spec.neckLen) : (xBase - spec.sockLen);
-      drawLeader(ents, [xTip, elev], [xTip - Math.round(2.5 * N), ey], [xTip - Math.round(5.0 * N), ey], [line1, line2], nozTextH, 'right', 'DIM');
+      drawLeader(ents, [xTip, elev], [xTip - Math.round(2.5 * N), ey], [xTip - Math.round(5.0 * N), ey], [line1, line2], nozTextH, 'right', 'NOZZLE');
     });
 
     // 3. 우측 스터브 (Right Stubs) - 동일 높이 그룹화 및 수직 충돌 방지
@@ -2007,13 +2069,13 @@
       if (isFlg) {
         const xPlate1 = xBase + spec.neckLen;
         const xPlate0 = xPlate1 - spec.flgThick;
-        ln([xBase, elev - spec.r], [xPlate0, elev - spec.r], 'FRAME');
-        ln([xBase, elev + spec.r], [xPlate0, elev + spec.r], 'FRAME');
-        rect(xPlate0, elev - spec.rf, xPlate1, elev + spec.rf, 'FRAME');
+        ln([xBase, elev - spec.r], [xPlate0, elev - spec.r], 'NOZZLE');
+        ln([xBase, elev + spec.r], [xPlate0, elev + spec.r], 'NOZZLE');
+        rect(xPlate0, elev - spec.rf, xPlate1, elev + spec.rf, 'NOZZLE');
       } else {
         const xEnd = xBase + spec.sockLen;
-        rect(xBase, elev - spec.sockR, xEnd, elev + spec.sockR, 'FRAME');
-        ln([xEnd, elev - spec.r], [xEnd, elev + spec.r], 'FRAME');
+        rect(xBase, elev - spec.sockR, xEnd, elev + spec.sockR, 'NOZZLE');
+        ln([xEnd, elev - spec.r], [xEnd, elev + spec.r], 'NOZZLE');
       }
 
       const sameSize = items.every(it => it.n.size === items[0].n.size);
@@ -2032,7 +2094,7 @@
       prevRightEy = ey;
 
       const xTip = isFlg ? (xBase + spec.neckLen) : (xBase + spec.sockLen);
-      drawLeader(ents, [xTip, elev], [xTip + Math.round(2.5 * N), ey], [xTip + Math.round(5.0 * N), ey], [line1, line2], nozTextH, 'left', 'DIM');
+      drawLeader(ents, [xTip, elev], [xTip + Math.round(2.5 * N), ey], [xTip + Math.round(5.0 * N), ey], [line1, line2], nozTextH, 'left', 'NOZZLE');
     });
 
     // 4. 상부 지붕 스터브 (Top Stubs) - 동일 X좌표 그룹화
@@ -2061,13 +2123,13 @@
       if (isFlg) {
         const yPlate1 = yBase + spec.neckLen;
         const yPlate0 = yPlate1 - spec.flgThick;
-        ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'FRAME');
-        ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'FRAME');
-        rect(cx - spec.rf, yPlate0, cx + spec.rf, yPlate1, 'FRAME');
+        ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'NOZZLE');
+        ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'NOZZLE');
+        rect(cx - spec.rf, yPlate0, cx + spec.rf, yPlate1, 'NOZZLE');
       } else {
         const yEnd = yBase + spec.sockLen;
-        rect(cx - spec.sockR, yBase, cx + spec.sockR, yEnd, 'FRAME');
-        ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'FRAME');
+        rect(cx - spec.sockR, yBase, cx + spec.sockR, yEnd, 'NOZZLE');
+        ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'NOZZLE');
       }
 
       const sameSize = items.every(it => it.n.size === items[0].n.size);
@@ -2088,7 +2150,7 @@
       }
       prevTopEx = ex;
 
-      drawLeader(ents, [cx, yTip], [ex, ey], [ex + Math.round(3.0 * N), ey], [line1, line2], nozTextH, 'left', 'DIM');
+      drawLeader(ents, [cx, yTip], [ex, ey], [ex + Math.round(3.0 * N), ey], [line1, line2], nozTextH, 'left', 'NOZZLE');
     });
 
     // 5. 정면 노즐 (Face Nozzles) - 원형 및 볼트홀, 2줄 간결 지시선
@@ -2112,21 +2174,21 @@
       const isFlg = items.some(it => it.isFlg);
 
       if (isFlg) {
-        circ(cx, cy, spec.rf, 'FRAME');
-        circ(cx, cy, spec.pcd, 'PANEL_DETAIL');
-        circ(cx, cy, spec.r, 'FRAME');
+        circ(cx, cy, spec.rf, 'NOZZLE');
+        circ(cx, cy, spec.pcd, 'NOZZLE');
+        circ(cx, cy, spec.r, 'NOZZLE');
         const numHoles = Math.min(8, spec.holes);
         for (let k = 0; k < numHoles; k++) {
           const ang = (k * 360 / numHoles + 45) * Math.PI / 180;
-          circ(cx + spec.pcd * Math.cos(ang), cy + spec.pcd * Math.sin(ang), spec.hr, 'FRAME');
+          circ(cx + spec.pcd * Math.cos(ang), cy + spec.pcd * Math.sin(ang), spec.hr, 'NOZZLE');
         }
       } else {
-        circ(cx, cy, spec.sockR, 'FRAME');
-        circ(cx, cy, spec.r, 'FRAME');
+        circ(cx, cy, spec.sockR, 'NOZZLE');
+        circ(cx, cy, spec.r, 'NOZZLE');
       }
       const cr = (isFlg ? spec.rf : spec.sockR) * 1.25;
-      ln([cx - cr, cy], [cx + cr, cy], 'PANEL_DETAIL');
-      ln([cx, cy - cr], [cx, cy + cr], 'PANEL_DETAIL');
+      ln([cx - cr, cy], [cx + cr, cy], 'NOZZLE');
+      ln([cx, cy - cr], [cx, cy + cr], 'NOZZLE');
 
       const sameSize = items.every(it => it.n.size === items[0].n.size);
       let line1;
@@ -2145,7 +2207,7 @@
       const startX = cx + (toRight ? spec.r * 0.7 : -spec.r * 0.7);
       const startY = cy + (dy > 0 ? spec.r * 0.7 : -spec.r * 0.7);
 
-      drawLeader(ents, [startX, startY], [cx + dx, ey], [ex, ey], [line1, line2], nozTextH, toRight ? 'left' : 'right', 'DIM');
+      drawLeader(ents, [startX, startY], [cx + dx, ey], [ex, ey], [line1, line2], nozTextH, toRight ? 'left' : 'right', 'NOZZLE');
     });
 
     // 부품 풍선 기호 (Elevation View Balloon Callouts - 모두 물탱크 형상 및 치수선 바깥 외곽에 정렬)
@@ -2175,7 +2237,7 @@
       drawBalloonCallout(ents, [total, nH * 0.65], [total + 75 + Math.round(6 * N), nH * 0.65], [elevRightX, nH * 0.65], getItemNo('panel') || 3, N, 'BALLOON');
 
       // 4. 코너 프레임 (Corner Frame - NO. 4): 좌상단 바깥 외곽
-      drawBalloonCallout(ents, [0, nH], [-75 - Math.round(6 * N), nH + Math.round(10 * N)], [-75 - Math.round(16 * N), nH + Math.round(16 * N)], getItemNo('corner') || 4, N, 'BALLOON');
+      drawBalloonCallout(ents, [0, nH], [Math.min(X0 - dimGap1, -75 - Math.round(6 * N)), nH + Math.round(10 * N)], [Math.min(overallX - Math.round(5 * N), -75 - Math.round(16 * N)), nH + Math.round(16 * N)], getItemNo('corner') || 4, N, 'BALLOON');
 
       // 8. 외부 사다리 (External Ladder - NO. 8) & 10. 내부 스테이 (Internal Stay - NO. 10): 상단 바깥 외곽 (상호 크로스 방지 방향 제어)
       const lads = ladderList(opt, mmap);
@@ -3231,12 +3293,12 @@
           }
           const stubLen = 140;
           const nDepth = getDepth(cx, frontY - stubLen, elev);
-          ln(toIso(cx, frontY, elev), toIso(cx, frontY - stubLen, elev), 'FRAME', nDepth);
-          isoCircle(cx, frontY - stubLen, elev, spec.rf, 'XZ', 'FRAME', nDepth);
-          isoCircle(cx, frontY - stubLen, elev, spec.r, 'XZ', 'FRAME', nDepth);
+          ln(toIso(cx, frontY, elev), toIso(cx, frontY - stubLen, elev), 'NOZZLE', nDepth);
+          isoCircle(cx, frontY - stubLen, elev, spec.rf, 'XZ', 'NOZZLE', nDepth);
+          isoCircle(cx, frontY - stubLen, elev, spec.r, 'XZ', 'NOZZLE', nDepth);
           const pStart = toIso(cx, frontY - stubLen, elev);
           const pEnd = [pStart[0] - Math.round(textH * 3.5), pStart[1] + Math.round(textH * 1.8)];
-          drawLeader(ents, pStart, [pEnd[0] + textH * 1.5, pEnd[1]], pEnd, [markLabel, `(EL.+${elev})`], textH * 0.85, 'right', 'DIM');
+          drawLeader(ents, pStart, [pEnd[0] + textH * 1.5, pEnd[1]], pEnd, [markLabel, `(EL.+${elev})`], textH * 0.85, 'right', 'NOZZLE');
         } else if (n.face === 'right') {
           const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
           const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2 + (n.offset || 0);
@@ -3246,12 +3308,12 @@
           }
           const stubLen = 140;
           const nDepth = getDepth(rightX + stubLen, cy, elev);
-          ln(toIso(rightX, cy, elev), toIso(rightX + stubLen, cy, elev), 'FRAME', nDepth);
-          isoCircle(rightX + stubLen, cy, elev, spec.rf, 'YZ', 'FRAME', nDepth);
-          isoCircle(rightX + stubLen, cy, elev, spec.r, 'YZ', 'FRAME', nDepth);
+          ln(toIso(rightX, cy, elev), toIso(rightX + stubLen, cy, elev), 'NOZZLE', nDepth);
+          isoCircle(rightX + stubLen, cy, elev, spec.rf, 'YZ', 'NOZZLE', nDepth);
+          isoCircle(rightX + stubLen, cy, elev, spec.r, 'YZ', 'NOZZLE', nDepth);
           const pStart = toIso(rightX + stubLen, cy, elev);
           const pEnd = [pStart[0] + Math.round(textH * 3.5), pStart[1] + Math.round(textH * 1.8)];
-          drawLeader(ents, pStart, [pEnd[0] - textH * 1.5, pEnd[1]], pEnd, [markLabel, `(EL.+${elev})`], textH * 0.85, 'left', 'DIM');
+          drawLeader(ents, pStart, [pEnd[0] - textH * 1.5, pEnd[1]], pEnd, [markLabel, `(EL.+${elev})`], textH * 0.85, 'left', 'NOZZLE');
         } else if (n.face === 'top') {
           const colIdx = Math.max(0, Math.min((n.topCell && n.topCell[1]) || 0, map.cols.length - 1));
           const rowIdx = Math.max(0, Math.min((n.topCell && n.topCell[0]) || 0, map.rows.length - 1));
@@ -3259,12 +3321,12 @@
           const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2;
           const stubLen = 160;
           const nDepth = getDepth(cx, cy, H + stubLen);
-          ln(toIso(cx, cy, H), toIso(cx, cy, H + stubLen), 'FRAME', nDepth);
-          isoCircle(cx, cy, H + stubLen, spec.rf, 'XY', 'FRAME', nDepth);
-          isoCircle(cx, cy, H + stubLen, spec.r, 'XY', 'FRAME', nDepth);
+          ln(toIso(cx, cy, H), toIso(cx, cy, H + stubLen), 'NOZZLE', nDepth);
+          isoCircle(cx, cy, H + stubLen, spec.rf, 'XY', 'NOZZLE', nDepth);
+          isoCircle(cx, cy, H + stubLen, spec.r, 'XY', 'NOZZLE', nDepth);
           const pStart = toIso(cx, cy, H + stubLen);
           const pEnd = [pStart[0] + Math.round(textH * 3.5), pStart[1] + Math.round(textH * 2.0)];
-          drawLeader(ents, pStart, [pEnd[0] - textH * 1.5, pEnd[1]], pEnd, [markLabel, '(TOP INLET)'], textH * 0.85, 'left', 'DIM');
+          drawLeader(ents, pStart, [pEnd[0] - textH * 1.5, pEnd[1]], pEnd, [markLabel, '(TOP INLET)'], textH * 0.85, 'left', 'NOZZLE');
         }
       });
     }
@@ -4382,7 +4444,7 @@
   }
 
   /* ---------- DXF (AutoCAD R12 ASCII, mm) ---------- */
-  const LAYERS = { PANEL: 7, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6 };
+  const LAYERS = { PANEL: 7, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4 };
   const dxfText = str => Array.from(str).map(ch => { const c = ch.codePointAt(0); return c < 128 ? ch : '\\U+' + c.toString(16).toUpperCase().padStart(4, '0'); }).join('');
 
   function toDxf(ents, blocks) {

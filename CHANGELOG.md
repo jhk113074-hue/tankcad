@@ -5,6 +5,29 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.45] - 2026-10-02
+
+### Added & Enhanced (배관 전용 색상 분리 및 배관-치수 간섭 원천 차단)
+- **배관 전용 독립 레이어 (`NOZZLE`) 신설 및 색상 차별화 ("배관은 다른 색으로 표현해주세요")**:
+  - 기존 틀(`FRAME`, 오렌지색) 및 상세선(`PANEL_DETAIL`, 회색), 치수선(`DIM`, 청록색)에 혼재되어 있던 모든 배관 및 노즐 요소를 독립 레이어 `NOZZLE`로 분리.
+  - **캔버스(Canvas) 다크/라이트 테마 전용 색상 적용**:
+    - 다크 테마: 고시인성 에메랄드 그린 (`--cv-nozzle: #10b981`).
+    - 라이트 테마: 딥 포레스트 그린 (`--cv-nozzle: #059669`).
+    - 툴바 레이어 칩(`💧 배관`) 및 노즐 마커와 시각적 일체화.
+  - **SVG 및 AutoCAD DXF 표준 색상 지정**:
+    - SVG 내보내기: 선명한 그린 (`#059669`).
+    - AutoCAD DXF: 배관 전용 ACI 4번 (Cyan) 레이어 정의 (`NOZZLE: 4`).
+  - 평면도, 입면도, 3D 등각도 전 뷰에서 스터브, 플랜지, 소켓, 볼트홀, 인출선, 지시선 문자가 일관된 배관 전용 색상으로 렌더링.
+
+- **배관 및 지시선 문자와 치수선 간섭 원천 차단 ("배관이랑 치수랑도 겹쳐지지 않게 해주세요")**:
+  - **입면도 (Elevation View)**:
+    - 좌측 돌출 노즐 스터브, 지시선 선반, 문자 너비(`[N2] 150A`, `EL.+300`)를 사전 분석하여 좌측 최외곽 경계(`minLeftNozX`)를 동적 산출.
+    - 입면도 좌측 높이 치수선 시작선(`X0`) 및 1차/2차 치수선을 노즐 문자 외곽 바깥으로 자동 이동 배치하여 완벽한 안전 간격 확보.
+    - 코너 프레임 풍선 기호(NO. 4) 역시 확장된 치수선 바깥으로 자동 정렬.
+  - **평면도 (Plan View)**:
+    - 전면(Front) 및 좌측(Left) 노즐의 돌출 길이 및 문자 너비를 사전 분석하여 하단 치수(`baseY`) 및 좌측 치수(`baseX`)를 안전 구역으로 자동 밀어냄.
+    - 치수 보조선 및 치수 문자가 배관 노즐 지시선과 절대 교차하지 않도록 완벽 분리.
+
 ## [1.5.44] - 2026-10-02
 
 ### Enhanced (UI 영문 선택 시 잔여 한글 완전 제거 및 전면 다국어 다이내믹 현지화)
