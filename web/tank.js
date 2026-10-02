@@ -454,6 +454,7 @@
     const mat = (opt.material === 'STS') ? 'STS' : (opt.material === 'GRP' ? 'GRP' : 'SMC');
     const mmap = createMap(opt);
     const totalL = mmap.length, totalW = mmap.width;
+    const lang = opt.drawingLang || opt.lang || 'ko';
 
     let manholeCount = 0, ventCount = 0;
     Object.values(opt.marks || {}).forEach(m => {
@@ -464,19 +465,49 @@
     const nozzleList = getNozzleList(opt);
     const padH = (typeof opt.padH === 'number' && !isNaN(opt.padH)) ? opt.padH : (600 - (opt.frame || 75));
 
-    return [
-      { no: 1, key: 'foundation', name: 'Concrete Foundation', mat: 'CONC', qty: '1식', spec: `Refer Foundation Pad plan (H${padH})` },
-      { no: 2, key: 'skid', name: 'Skid Frame', mat: 'SS275(HDG)', qty: '1식', spec: 'Main: [-75x75x6T, Sub: [-75x40x5T' },
-      { no: 3, key: 'panel', name: 'Panel (Bottom/Side/Roof)', mat: mat, qty: '1식', spec: `All ${mat} Panels (${totalW}W x ${totalL}L x ${H}H)` },
-      { no: 4, key: 'corner', name: 'Corner Frame', mat: 'HDG', qty: '4조', spec: 'L-70x70x8.0T' },
-      { no: 5, key: 'airvent', name: 'Air Vent', mat: 'ABS', qty: `${ventCount || 1}개`, spec: 'Φ50 (합성수지 방충망 #20 부착)' },
-      { no: 6, key: 'manhole', name: 'Manhole', mat: mat, qty: `${manholeCount || 1}개`, spec: 'Ø600 쇄정식 이중덮개 부착' },
-      { no: 7, key: 'inladder', name: 'Internal Ladder', mat: 'FRP', qty: `${ladderCount}조`, spec: `L=${H}mm` },
-      { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: `${ladderCount}조`, spec: 'Vertical: 20x30x1.2T, 폭 270' },
-      { no: 9, key: 'flangebar', name: 'Flange Bar', mat: 'HDG', qty: '1식', spec: 'L-65x30x3T etc.' },
-      { no: 10, key: 'stay', name: 'Internal Stay', mat: 'SS316+PE', qty: '1식', spec: 'Φ-10.7 Tie-Rod(M12)' },
-      { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0}개`, spec: 'JIS 10K Flange / Socket' }
-    ];
+    if (lang === 'en') {
+      return [
+        { no: 1, key: 'foundation', name: 'Concrete Foundation', mat: 'CONC', qty: '1 Set', spec: `Refer Foundation Pad plan (H${padH})` },
+        { no: 2, key: 'skid', name: 'Skid Frame', mat: 'SS275(HDG)', qty: '1 Set', spec: 'Main: [-75x75x6T, Sub: [-75x40x5T' },
+        { no: 3, key: 'panel', name: 'Panel (Bottom/Side/Roof)', mat: mat, qty: '1 Set', spec: `All ${mat} Panels (${totalW}W x ${totalL}L x ${H}H)` },
+        { no: 4, key: 'corner', name: 'Corner Frame', mat: 'HDG', qty: '4 Sets', spec: 'L-70x70x8.0T' },
+        { no: 5, key: 'airvent', name: 'Air Vent', mat: 'ABS', qty: `${ventCount || 1} EA`, spec: 'Φ50 (Insect screen #20 attached)' },
+        { no: 6, key: 'manhole', name: 'Manhole', mat: mat, qty: `${manholeCount || 1} EA`, spec: 'Ø600 Double cover with lock' },
+        { no: 7, key: 'inladder', name: 'Internal Ladder', mat: 'FRP', qty: `${ladderCount} Set`, spec: `L=${H}mm` },
+        { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: `${ladderCount} Set`, spec: 'Vertical: 20x30x1.2T, W=270' },
+        { no: 9, key: 'flangebar', name: 'Flange Bar', mat: 'HDG', qty: '1 Set', spec: 'L-65x30x3T etc.' },
+        { no: 10, key: 'stay', name: 'Internal Stay', mat: 'SS316+PE', qty: '1 Set', spec: 'Φ-10.7 Tie-Rod(M12)' },
+        { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0} EA`, spec: 'JIS 10K Flange / Socket' }
+      ];
+    } else if (lang === 'ko') {
+      return [
+        { no: 1, key: 'foundation', name: '기초 콘크리트 (Foundation)', mat: 'CONC', qty: '1식', spec: `기초 패드 도면 참조 (H${padH})` },
+        { no: 2, key: 'skid', name: '스키드 프레임 (Skid Frame)', mat: 'SS275(HDG)', qty: '1식', spec: '주찬넬: [-75x75x6T, 종찬넬: [-75x40x5T' },
+        { no: 3, key: 'panel', name: '본체 판넬 (바닥/측면/지붕)', mat: mat, qty: '1식', spec: `전체 ${mat} 판넬 (${totalW}W x ${totalL}L x ${H}H)` },
+        { no: 4, key: 'corner', name: '코너 프레임 (Corner Frame)', mat: 'HDG', qty: '4조', spec: 'L-70x70x8.0T' },
+        { no: 5, key: 'airvent', name: '에어벤트 (Air Vent)', mat: 'ABS', qty: `${ventCount || 1}개`, spec: 'Φ50 (합성수지 방충망 #20 부착)' },
+        { no: 6, key: 'manhole', name: '맨홀 (Manhole)', mat: mat, qty: `${manholeCount || 1}개`, spec: 'Ø600 쇄정식 이중덮개 부착' },
+        { no: 7, key: 'inladder', name: '내부 사다리 (Internal Ladder)', mat: 'FRP', qty: `${ladderCount}조`, spec: `L=${H}mm` },
+        { no: 8, key: 'exladder', name: '외부 사다리 (External Ladder)', mat: 'HDG', qty: `${ladderCount}조`, spec: '세로대: 20x30x1.2T, 폭 270' },
+        { no: 9, key: 'flangebar', name: '플랜지 바 (Flange Bar)', mat: 'HDG', qty: '1식', spec: 'L-65x30x3T 등' },
+        { no: 10, key: 'stay', name: '내부 스테이 (Internal Stay)', mat: 'SS316+PE', qty: '1식', spec: 'Φ-10.7 Tie-Rod(M12)' },
+        { no: 11, key: 'nozzle', name: '배관 노즐 (Nozzles)', mat: 'STS304', qty: `${nozzleList.length || 0}개`, spec: 'JIS 10K Flange / Socket' }
+      ];
+    } else { // bilingual
+      return [
+        { no: 1, key: 'foundation', name: 'Concrete Foundation', mat: 'CONC', qty: '1식', spec: `Refer Foundation Pad plan (H${padH})` },
+        { no: 2, key: 'skid', name: 'Skid Frame', mat: 'SS275(HDG)', qty: '1식', spec: 'Main: [-75x75x6T, Sub: [-75x40x5T' },
+        { no: 3, key: 'panel', name: 'Panel (Bottom/Side/Roof)', mat: mat, qty: '1식', spec: `All ${mat} Panels (${totalW}W x ${totalL}L x ${H}H)` },
+        { no: 4, key: 'corner', name: 'Corner Frame', mat: 'HDG', qty: '4조', spec: 'L-70x70x8.0T' },
+        { no: 5, key: 'airvent', name: 'Air Vent', mat: 'ABS', qty: `${ventCount || 1}개`, spec: 'Φ50 (합성수지 방충망 #20 부착)' },
+        { no: 6, key: 'manhole', name: 'Manhole', mat: mat, qty: `${manholeCount || 1}개`, spec: 'Ø600 쇄정식 이중덮개 부착' },
+        { no: 7, key: 'inladder', name: 'Internal Ladder', mat: 'FRP', qty: `${ladderCount}조`, spec: `L=${H}mm` },
+        { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: `${ladderCount}조`, spec: 'Vertical: 20x30x1.2T, 폭 270' },
+        { no: 9, key: 'flangebar', name: 'Flange Bar', mat: 'HDG', qty: '1식', spec: 'L-65x30x3T etc.' },
+        { no: 10, key: 'stay', name: 'Internal Stay', mat: 'SS316+PE', qty: '1식', spec: 'Φ-10.7 Tie-Rod(M12)' },
+        { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0}개`, spec: 'JIS 10K Flange / Socket' }
+      ];
+    }
   }
 
   /* ---------- 평면도 생성 (TankPlane + TankPlaneDim 상당, 직사각형 탱크) ---------- */
@@ -3319,12 +3350,15 @@
     let ty = y0;
     const colLabelW = 60, colValW = tw - colLabelW;
 
+    const lang = opt.drawingLang || opt.lang || 'ko';
+
     // 1. TITLE (높이 32mm, 폰트 5.5 / 6.5mm)
     const titleH = 32;
     line([tx0, ty + titleH], [x1, ty + titleH]);
-    text(tx0 + colLabelW / 2, ty + titleH / 2, 5.5, 'TITLE', 'center', 0, 'middle');
+    const titleLabel = lang === 'ko' ? '도면명' : (lang === 'bilingual' ? 'TITLE (도면명)' : 'TITLE');
+    text(tx0 + colLabelW / 2, ty + titleH / 2, 5.0, titleLabel, 'center', 0, 'middle');
     line([tx0 + colLabelW, ty], [tx0 + colLabelW, ty + titleH]);
-    const titleVal = opt.sheetKind === 'frame' ? 'STEEL SKID DRAWING' : opt.sheetKind === 'detail' ? 'DETAILS DWG' : dimStr + '\n= ' + ton + ' Ton';
+    const titleVal = opt.sheetKind === 'frame' ? (lang === 'ko' ? '기초 프레임 및 스테이 도면' : 'STEEL SKID DRAWING') : opt.sheetKind === 'detail' ? (lang === 'ko' ? '탱크 상세도' : 'DETAILS DWG') : dimStr + '\n= ' + ton + ' Ton';
     const tparts = titleVal.split('\n');
     if (tparts.length > 1) {
       const maxChar = Math.max(tparts[0].length, tparts[1].length);
@@ -3339,7 +3373,8 @@
     // 2. PROJECT (높이 22mm, 폰트 5.0 / 5.2mm)
     const projH = 22;
     line([tx0, ty + projH], [x1, ty + projH]);
-    text(tx0 + colLabelW / 2, ty + projH / 2, 5.0, 'PROJECT', 'center', 0, 'middle');
+    const projLabel = lang === 'ko' ? '공사명' : (lang === 'bilingual' ? 'PROJECT (공사명)' : 'PROJECT');
+    text(tx0 + colLabelW / 2, ty + projH / 2, 5.0, projLabel, 'center', 0, 'middle');
     line([tx0 + colLabelW, ty], [tx0 + colLabelW, ty + projH]);
     text(tx0 + colLabelW + colValW / 2, ty + projH / 2, 5.2, t.project || '', 'center', 0, 'middle');
     ty += projH;
@@ -3347,17 +3382,17 @@
     // 3. 5개 사양 행 (각 13.0mm, 폰트 4.8 / 5.0mm로 대폭 확대)
     const rowH = 13.0;
     const rows = [
-      ['Client', t.client || ''],
-      ['Consultant', t.consultant || ''],
-      ['Main Contractor', t.contractor || ''],
-      ['MEP Contractor', t.mep || ''],
-      ['TANK SIZE', dimStr]
+      [lang === 'ko' ? '고객명' : (lang === 'bilingual' ? 'Client (고객명)' : 'Client'), t.client || ''],
+      [lang === 'ko' ? '설계감리' : (lang === 'bilingual' ? 'Consultant (감리)' : 'Consultant'), t.consultant || ''],
+      [lang === 'ko' ? '시공사' : (lang === 'bilingual' ? 'Contractor (시공)' : 'Main Contractor'), t.contractor || ''],
+      [lang === 'ko' ? '설비공사' : (lang === 'bilingual' ? 'MEP (설비)' : 'MEP Contractor'), t.mep || ''],
+      [lang === 'ko' ? '탱크규격' : (lang === 'bilingual' ? 'TANK SIZE (규격)' : 'TANK SIZE'), dimStr]
     ];
     rows.slice().reverse().forEach(([k, v]) => {
       line([tx0, ty + rowH], [x1, ty + rowH]);
       text(tx0 + colLabelW / 2, ty + rowH / 2, 4.8, k, 'center', 0, 'middle');
       line([tx0 + colLabelW, ty], [tx0 + colLabelW, ty + rowH]);
-      const fs = (k === 'TANK SIZE' && v && v.length > 30) ? 3.8 : (k === 'TANK SIZE' && v && v.length > 20 ? 4.3 : 5.0);
+      const fs = (k.includes('TANK SIZE') && v && v.length > 30) ? 3.8 : (k.includes('TANK SIZE') && v && v.length > 20 ? 4.3 : 5.0);
       text(tx0 + colLabelW + colValW / 2, ty + rowH / 2, fs, v, 'center', 0, 'middle');
       ty += rowH;
     });
@@ -3365,10 +3400,10 @@
     // 4. 서명란 / DATE / SCALE / Chart No. (각 13.0mm, 폰트 4.8 / 5.0mm)
     const today = new Date(), pad2 = v => String(v).padStart(2, '0');
     const info = [
-      ['DWG NO.', t.dwgNo || ''],
-      ['Chart No.', t.chartNo || ''],
-      ['SCALE', '1 / ' + N],
-      ['DATE', t.date || (today.getFullYear() + '.' + pad2(today.getMonth() + 1) + '.' + pad2(today.getDate()))]
+      [lang === 'ko' ? '도면번호' : (lang === 'bilingual' ? 'DWG NO. (도번)' : 'DWG NO.'), t.dwgNo || ''],
+      [lang === 'ko' ? '도면식별' : (lang === 'bilingual' ? 'Chart No.' : 'Chart No.'), t.chartNo || ''],
+      [lang === 'ko' ? '축척' : (lang === 'bilingual' ? 'SCALE (축척)' : 'SCALE'), '1 / ' + N],
+      [lang === 'ko' ? '일자' : (lang === 'bilingual' ? 'DATE (일자)' : 'DATE'), t.date || (today.getFullYear() + '.' + pad2(today.getMonth() + 1) + '.' + pad2(today.getDate()))]
     ];
     info.forEach(([k, v]) => {
       line([tx0, ty + rowH], [x1, ty + rowH]);
@@ -3383,7 +3418,8 @@
     line([tx0, ty + signValH], [x1, ty + signValH]);
     line([tx0, ty + signValH + signHeaderH], [x1, ty + signValH + signHeaderH]);
     const scw = tw / 3;
-    ['DRAWN', 'CHECKED', 'APPROVED'].forEach((k, i) => {
+    const signLabels = lang === 'ko' ? ['작도', '검토', '승인'] : (lang === 'bilingual' ? ['작도(DWN)', '검토(CHK)', '승인(APP)'] : ['DRAWN', 'CHECKED', 'APPROVED']);
+    signLabels.forEach((k, i) => {
       text(tx0 + scw * i + scw / 2, ty + signValH + signHeaderH / 2, 4.8, k, 'center', 0, 'middle');
       if (i > 0) line([tx0 + scw * i, ty], [tx0 + scw * i, ty + signValH + signHeaderH]);
     });
@@ -3397,10 +3433,10 @@
     if (activeBoms.length) {
       const colDefs = [
         { key: 'no', label: 'NO.', w: 12 },
-        { key: 'name', label: 'ITEMS', w: 44 },
-        { key: 'mat', label: 'MATERIAL', w: 32 },
-        { key: 'qty', label: 'QTY', w: 18 },
-        { key: 'spec', label: 'SPECIFICATIONS', w: 76 }
+        { key: 'name', label: lang === 'ko' ? '품명' : (lang === 'en' ? 'ITEMS' : 'ITEMS (품명)'), w: 44 },
+        { key: 'mat', label: lang === 'ko' ? '재질' : (lang === 'en' ? 'MATERIAL' : 'MATERIAL (재질)'), w: 32 },
+        { key: 'qty', label: lang === 'ko' ? '수량' : (lang === 'en' ? 'QTY' : 'QTY (수량)'), w: 18 },
+        { key: 'spec', label: lang === 'ko' ? '사양 및 규격' : (lang === 'en' ? 'SPECIFICATIONS' : 'SPECIFICATIONS (사양)'), w: 76 }
       ];
       const tableW = 182; // tx0 + 4 to x1 - 4
       const bCnt = activeBoms.length;
@@ -3415,8 +3451,9 @@
       const tableX0 = tx0 + 4, tableX1 = x1 - 4;
 
       // 1. 타이틀 행
+      const itemTableTitle = lang === 'en' ? '2. ITEM LIST' : (lang === 'ko' ? '2. 부품 사양 명세표' : '2. ITEM LIST (부품 사양 명세표)');
       line([tableX0, yy], [tableX1, yy]);
-      text(tableX0 + tableW / 2, yy - titleH / 2, titleFontH, '2. ITEM LIST (부품 사양 명세표)', 'center', 0, 'middle');
+      text(tableX0 + tableW / 2, yy - titleH / 2, titleFontH, itemTableTitle, 'center', 0, 'middle');
       yy -= titleH;
       line([tableX0, yy], [tableX1, yy]);
 
@@ -3462,11 +3499,11 @@
     if (activeNozzles.length) {
       const colDefs = [
         { key: 'mark', label: 'NO.', w: 16 },
-        { key: 'service', label: 'SERVICE', w: 48 },
-        { key: 'size', label: 'SIZE', w: 22 },
-        { key: 'type', label: 'TYPE', w: 30 },
-        { key: 'elev', label: 'ELEV.', w: 34 },
-        { key: 'face', label: 'LOCATION', w: 32 }
+        { key: 'service', label: lang === 'ko' ? '용도' : (lang === 'en' ? 'SERVICE' : 'SERVICE (용도)'), w: 48 },
+        { key: 'size', label: lang === 'ko' ? '구경' : (lang === 'en' ? 'SIZE' : 'SIZE (구경)'), w: 22 },
+        { key: 'type', label: lang === 'ko' ? '타입' : (lang === 'en' ? 'TYPE' : 'TYPE (타입)'), w: 30 },
+        { key: 'elev', label: lang === 'ko' ? '설치높이' : (lang === 'en' ? 'ELEV.' : 'ELEV. (높이)'), w: 34 },
+        { key: 'face', label: lang === 'ko' ? '위치' : (lang === 'en' ? 'LOCATION' : 'LOCATION (위치)'), w: 32 }
       ];
       const tableW = 182; // tx0 + 4 to x1 - 4
       const nCnt = activeNozzles.length;
@@ -3483,8 +3520,9 @@
       const tableX0 = tx0 + 4, tableX1 = x1 - 4;
 
       // 1. 타이틀 행
+      const nozTableTitle = lang === 'en' ? 'NOZZLE SCHEDULE' : (lang === 'ko' ? '배관 노즐 일람표' : 'NOZZLE SCHEDULE (배관 노즐 일람표)');
       line([tableX0, yy], [tableX1, yy]);
-      text(tableX0 + tableW / 2, yy - titleH / 2, titleFontH, 'NOZZLE SCHEDULE', 'center', 0, 'middle');
+      text(tableX0 + tableW / 2, yy - titleH / 2, titleFontH, nozTableTitle, 'center', 0, 'middle');
       yy -= titleH;
       line([tableX0, yy], [tableX1, yy]);
 
@@ -3499,7 +3537,7 @@
       line([tableX0, yy], [tableX1, yy]);
 
       // 3. 데이터 행
-      const faceNameMap = { front: 'FRONT (정면)', rear: 'REAR (배면)', left: 'LEFT (좌측)', right: 'RIGHT (우측)', top: 'TOP (상부)' };
+      const faceNameMap = lang === 'en' ? { front: 'FRONT', rear: 'REAR', left: 'LEFT', right: 'RIGHT', top: 'TOP' } : (lang === 'ko' ? { front: '정면', rear: '배면', left: '좌측', right: '우측', top: '상부' } : { front: 'FRONT (정면)', rear: 'REAR (배면)', left: 'LEFT (좌측)', right: 'RIGHT (우측)', top: 'TOP (상부)' });
       activeNozzles.forEach(n => {
         curColX = tableX0;
         const elevStr = n.face === 'top' ? 'TOP' : ('EL.+' + (typeof n.elev === 'number' ? n.elev.toLocaleString() : n.elev));
@@ -3533,7 +3571,8 @@
     if (!allNotes.length) allNotes = ['No special remarks.'];
 
     let ny = y - 8;
-    text(tx0 + 8, ny, 6.5, '<Remarks>', 'left');
+    const remarksTitle = lang === 'en' ? '<Remarks>' : (lang === 'ko' ? '<일반 사항 (Remarks)>' : '<Remarks / 일반 사항>');
+    text(tx0 + 8, ny, 6.5, remarksTitle, 'left');
     line([tx0 + 8, ny - 3], [tx0 + 85, ny - 3]);
     ny -= 11.0;
 
@@ -3643,7 +3682,8 @@
 
       const titleY = y0 + 35;
       const effScale = Math.max(5, Math.round(N / fitScale));
-      drawViewTitleBubble(cx, titleY, 1, 1, `등  각  조  감  도 (3D ISOMETRIC DWG)  [SCALE 1 : ${effScale}]`);
+      const isoSingleTitle = lang === 'en' ? `3D ISOMETRIC VIEW  [SCALE 1 : ${effScale}]` : (lang === 'bilingual' ? `등 각 조 감 도 (3D ISOMETRIC)  [SCALE 1 : ${effScale}]` : `등  각  조  감  도 (3D ISOMETRIC DWG)  [SCALE 1 : ${effScale}]`);
+      drawViewTitleBubble(cx, titleY, 1, 1, isoSingleTitle);
       return { map: mmap, ents, scale: effScale, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
     }
 
@@ -3742,8 +3782,10 @@
     // 1행 뷰 타이틀 (평면도 & 기초패드도) - 치수선과 절대 겹치지 않게 동일한 Y 선상에 수평 정렬
     const dimGap2 = Math.round(18.0 * N);
     const row1_title_y = (dy1 - PAD_OVERHANG - dimGap2) / N - 14.0;
-    drawViewTitleBubble(col1_tank_cx, row1_title_y, 1, 1, '평  면  도');
-    drawViewTitleBubble(col2_tank_cx, row1_title_y, 1, 2, '기  초  패  드  도');
+    const viewTitlePlan = lang === 'en' ? 'PLAN VIEW' : (lang === 'bilingual' ? '평 면 도 (PLAN VIEW)' : '평  면  도');
+    const viewTitlePad = lang === 'en' ? 'FOUNDATION PAD PLAN' : (lang === 'bilingual' ? '기 초 패 드 도 (FOUNDATION PLAN)' : '기  초  패  드  도');
+    drawViewTitleBubble(col1_tank_cx, row1_title_y, 1, 1, viewTitlePlan);
+    drawViewTitleBubble(col2_tank_cx, row1_title_y, 1, 2, viewTitlePad);
 
     let elev = false;
     if (front && side) {
@@ -3753,8 +3795,10 @@
 
       // 2행 뷰 타이틀 - 동일한 Y 선상에 수평 정렬
       const row2_title_y = (dy2 + GRD - dim_bottom_1) / N - 14.0;
-      drawViewTitleBubble(col1_tank_cx, row2_title_y, 1, 3, '정  면  도');
-      drawViewTitleBubble(col2_tank_cx, row2_title_y, 1, 4, '우  측  면  도');
+      const viewTitleFront = lang === 'en' ? 'FRONT ELEVATION' : (lang === 'bilingual' ? '정 면 도 (FRONT ELEVATION)' : '정  면  도');
+      const viewTitleSide = lang === 'en' ? 'RIGHT SIDE ELEVATION' : (lang === 'bilingual' ? '우 측 면 도 (SIDE ELEVATION)' : '우  측  면  도');
+      drawViewTitleBubble(col1_tank_cx, row2_title_y, 1, 3, viewTitleFront);
+      drawViewTitleBubble(col2_tank_cx, row2_title_y, 1, 4, viewTitleSide);
 
       // 5. 등각 조감도 (View 5: 3D ISOMETRIC VIEW) 배치
       if (isAsm5 && col3_avail_w) {
@@ -3777,7 +3821,8 @@
           else ents.push({ ...e, p: [e.p[0] * isoFitScale + isoDx, e.p[1] * isoFitScale + isoDy], h: e.h * isoFitScale });
         });
 
-        drawViewTitleBubble(col3_cx, row2_title_y, 1, 5, '등  각  조  감  도');
+        const viewTitleIso = lang === 'en' ? '3D ISOMETRIC VIEW' : (lang === 'bilingual' ? '등 각 조 감 도 (3D ISOMETRIC)' : '등  각  조  감  도');
+        drawViewTitleBubble(col3_cx, row2_title_y, 1, 5, viewTitleIso);
       }
       elev = true;
     }

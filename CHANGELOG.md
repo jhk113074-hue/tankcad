@@ -5,6 +5,32 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.32] - 2026-10-02
+
+### Added (한글 / 영문 다국어 UI 지원 및 도면 한·영 병기/단독 표기 전면 지원)
+- **한글 / 영문 버전 전면 지원 ("한글/영문버젼도 만들어주세요" 100% 반영)**:
+  - **웹 애플리케이션 상단 언어 전환 버튼 (`🌐 한 / EN`)**:
+    - 헤더 우측에 원클릭 언어 토글 버튼 추가.
+    - 한국어(`ko`) 선택 시: 모든 탭, 버튼, 설명, 안내 힌트, 상태 바가 직관적인 한국어로 즉시 전환.
+    - 영어(`en`) 선택 시: 모든 UI 네비게이션(`Specs`, `Plan Edit`, `Side Edit`, `BOM List`, `Settings`), 조작 버튼(`Export DXF`, `Print / PDF`, `Auto Pad` 등)이 표준 영문으로 즉시 전환.
+    - 사용자 브라우저 언어 및 `localStorage` 설정을 영구 기억하여 새로고침 시에도 선택 언어 유지.
+  - **도면 표기 언어 (Drawing Language) 3단 선택 지원**:
+    - 사양·치수 탭에 `도면 언어 (Dwg Lang)` 선택 옵션 추가 (`한글 (Korean)` / `영문 (English)` / `한·영 병기 (Bilingual)`).
+    - **도면 뷰 타이틀 (View Title Bubbles)**:
+      - `한글`: 평면도, 기초패드도, 정면도, 우측면도, 등각조감도
+      - `영문`: PLAN VIEW, FOUNDATION PAD PLAN, FRONT ELEVATION, RIGHT SIDE ELEVATION, 3D ISOMETRIC VIEW
+      - `한·영 병기`: 평 면 도 (PLAN VIEW), 기 초 패 드 도 (FOUNDATION PLAN), 정 면 도 (FRONT ELEVATION), 우 측 면 도 (SIDE ELEVATION), 등 각 조 감 도 (3D ISOMETRIC)
+    - **부품 사양 명세표 (Item List / BOM Table)**:
+      - 명세표 타이틀 및 열 헤더(`ITEMS`, `MATERIAL`, `QTY`, `SPECIFICATIONS`)를 한글, 영문, 또는 한·영 병기로 맞춤 출력.
+      - 기본 부품 목록 자동 생성 시 한글 명칭(기초 콘크리트, 스키드 프레임, 본체 판넬 등) 또는 영문 명칭(Concrete Foundation, Skid Frame, Panel 등)으로 자동 산출.
+    - **표제란 (Title Block) 및 배관 노즐 일람표 (Nozzle Schedule)**:
+      - 표제란 항목명(`TITLE`, `PROJECT`, `Client`, `TANK SIZE`, `DWG NO.`, `SCALE`, `DATE`, `DRAWN` 등)을 한글/영문/병기로 완벽 대응.
+      - 배관 노즐 일람표(`NOZZLE SCHEDULE`) 헤더 및 설치면(`FRONT`, `REAR`, `LEFT`, `RIGHT`, `TOP`) 다국어 연동.
+  - **AutoCAD DXF 호환성 유지**:
+    - 한글, 영문, 한·영 병기 모드에서 내보낸 DXF 파일 모두 캐드 프로그램에서 깨짐 없이 100% 정상 열람 및 출력 가능.
+
+---
+
 ## [1.5.31] - 2026-10-02
 
 ### Added & Enhanced (도면 전체 부품 번호 넘버링 11개 품목 완비 및 전용 탭 인터페이스 독립 분리)

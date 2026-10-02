@@ -300,7 +300,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.31</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.32</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -308,6 +308,7 @@ canvas.drag{cursor:grabbing}
     <div class="spec-pill" id="topSpecBadge">탱크 규격 로딩 중...</div>
   </div>
   <div class="header-right">
+    <button type="button" class="icon-btn" id="langBtn" title="언어 전환 / Switch Language">🌐 한 / EN</button>
     <button type="button" class="icon-btn" id="themeBtn" title="라이트/다크 테마 전환">🌙 다크</button>
   </div>
 </header>
@@ -327,7 +328,7 @@ canvas.drag{cursor:grabbing}
       <!-- 도면 뷰 및 시트 선택 카드 (사양·치수 메뉴 상단 배치) -->
       <section class="box" style="margin-bottom:10px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-          <label class="chk" style="font-weight:700;font-size:12px;cursor:pointer"><input type="checkbox" id="sheetOn" checked> A1 도면 시트 포함</label>
+          <label class="chk" style="font-weight:700;font-size:12px;cursor:pointer"><input type="checkbox" id="sheetOn" checked> <span id="lblSheetOn">A1 도면 시트 포함</span></label>
           <select id="sheetKind" style="width:auto;font-size:11px;font-weight:600">
             <option value="asm">조립도 (평면·패드·정면·측면·3D등각)</option>
             <option value="iso">등각 조감도 (3D ISOMETRIC DWG)</option>
@@ -336,7 +337,7 @@ canvas.drag{cursor:grabbing}
           </select>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">
-          <label for="scaleSel" style="font-weight:600;font-size:11px;color:var(--muted)">도면 축척 (Scale)</label>
+          <label for="scaleSel" id="lblScale" style="font-weight:600;font-size:11px;color:var(--muted)">도면 축척 (Scale)</label>
           <select id="scaleSel" style="width:auto;min-width:130px;font-weight:600;font-size:11px">
             <option value="auto" selected>⚡ 자동 맞춤 (Auto)</option>
             <option value="15">1 / 15</option>
@@ -353,6 +354,14 @@ canvas.drag{cursor:grabbing}
             <option value="200">1 / 200</option>
             <option value="250">1 / 250</option>
             <option value="300">1 / 300</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">
+          <label for="drawingLangSel" id="lblDrawingLang" style="font-weight:600;font-size:11px;color:var(--muted)">도면 언어 (Dwg Lang)</label>
+          <select id="drawingLangSel" style="width:auto;min-width:130px;font-weight:600;font-size:11px">
+            <option value="ko">🇰🇷 한글 (Korean)</option>
+            <option value="en">🇺🇸 영문 (English)</option>
+            <option value="bilingual" selected>🌐 한·영 병기 (Bilingual)</option>
           </select>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">
@@ -1246,15 +1255,194 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const cur = document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     const nx = cur === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', nx);
-    $('themeBtn').textContent = nx === 'dark' ? '🌙 다크' : '☀️ 라이트';
+    const t = I18N[currentLang];
+    $('themeBtn').textContent = nx === 'dark' ? t.themeDark : t.themeLight;
     draw();
   });
+
+  /* ---------- 다국어(한글/영문) 지원 (i18n System) ---------- */
+  let currentLang = localStorage.getItem('tank_lang') || 'ko';
+
+  const I18N = {
+    ko: {
+      subTitle: '물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 & DXF 내보내기)',
+      langBtn: '🌐 한 / EN',
+      langTitle: '언어 전환 (현재: 한국어)',
+      themeDark: '🌙 다크',
+      themeLight: '☀️ 라이트',
+      toggleSideCol: '▶ 패널',
+      toggleSideExp: '◀ 패널',
+      tabSpecs: '📐 사양·치수',
+      tabEdit: '✏️ 평면 편집',
+      tabNozzles: '📐 측면편집',
+      tabBOM: '📋 부품사양·집계',
+      tabSettings: '⚙️ 환경설정',
+      lblSheetOn: 'A1 도면 시트 포함',
+      lblScale: '도면 축척 (Scale)',
+      lblDwgLang: '도면 언어 (Dwg Lang)',
+      bomSpecTitle: '📋 부품 명세표 (Item List)',
+      bomSpecBtn: '⚙️ 사양 편집',
+      btnGotoBOM: '탭으로 이동 ➔',
+      btnOpenCht: '📁 CHT 열기',
+      btnSaveCht: '💾 CHT 저장',
+      btnAutoPad: '⚡ 패드 자동배치',
+      btnExportDxf: '📐 DXF 다운로드',
+      btnPrintPdf: '🖨️ 인쇄/PDF',
+      btnFit: '맞춤',
+      hudGuide: '휠: 확대/축소  ·  드래그: 이동  ·  더블클릭: 맞춤',
+      statusReady: '준비 완료',
+      bomTabTitle: '📋 부품 사양 명세표 (Item List)',
+      bomBadgeSuffix: '개 등록',
+      bomTabHint: '도면 표제란 상단에 표출되는 <b>AutoCAD 표준 부품 명세표(Item List)</b> 및 도면상 <b>원형 풍선 기호(①,②,③...)</b>를 직접 편집합니다.',
+      balloonToggle: '도면상 풍선 기호(①,②,③...) 표시',
+      btnAutoBOM: '⚡ 자동 재계산 (Auto BOM)',
+      btnAddBOMRow: '➕ 품목 추가',
+      bomTableHint: '* 각 칸을 직접 클릭하여 수정하면 도면에 실시간 반영됩니다.',
+      subtabPad: '🏗️ 콘크리트 패드',
+      subtabTitle: '📝 표제란',
+      subtabPanels: '🗄️ 판넬 DB',
+      miniTabProj: '📌 프로젝트',
+      miniTabHeader: '🏢 회사·서명란',
+      miniTabNotes: '📝 일반노트'
+    },
+    en: {
+      subTitle: 'Water Tank 2D CAD Drawing Generator (A1 Sheet & DXF Export)',
+      langBtn: '🌐 EN / 한',
+      langTitle: 'Switch Language (Current: English)',
+      themeDark: '🌙 Dark',
+      themeLight: '☀️ Light',
+      toggleSideCol: '▶ Panel',
+      toggleSideExp: '◀ Panel',
+      tabSpecs: '📐 Specs',
+      tabEdit: '✏️ Plan Edit',
+      tabNozzles: '📐 Side Edit',
+      tabBOM: '📋 BOM List',
+      tabSettings: '⚙️ Settings',
+      lblSheetOn: 'Include A1 Sheet',
+      lblScale: 'Drawing Scale',
+      lblDwgLang: 'Drawing Language',
+      bomSpecTitle: '📋 Item List (BOM)',
+      bomSpecBtn: '⚙️ Edit BOM',
+      btnGotoBOM: 'Go to Tab ➔',
+      btnOpenCht: '📁 Open CHT',
+      btnSaveCht: '💾 Save CHT',
+      btnAutoPad: '⚡ Auto Pad',
+      btnExportDxf: '📐 Export DXF',
+      btnPrintPdf: '🖨️ Print / PDF',
+      btnFit: 'Fit',
+      hudGuide: 'Wheel: Zoom  ·  Drag: Pan  ·  Double Click: Fit',
+      statusReady: 'Ready',
+      bomTabTitle: '📋 Item List (BOM)',
+      bomBadgeSuffix: ' items',
+      bomTabHint: 'Directly edit the <b>AutoCAD Standard Item List (BOM)</b> and on-drawing <b>Balloon Callouts (①,②,③...)</b>.',
+      balloonToggle: 'Show Balloon Callouts (①,②,③...)',
+      btnAutoBOM: '⚡ Auto BOM',
+      btnAddBOMRow: '➕ Add Item',
+      bomTableHint: '* Click each cell to edit; changes update drawings in real-time.',
+      subtabPad: '🏗️ Concrete Pad',
+      subtabTitle: '📝 Title Block',
+      subtabPanels: '🗄️ Panel DB',
+      miniTabProj: '📌 Project',
+      miniTabHeader: '🏢 Company & Signs',
+      miniTabNotes: '📝 General Notes'
+    }
+  };
+
+  function setLanguage(lang, triggerSchedule = true) {
+    currentLang = (lang === 'en') ? 'en' : 'ko';
+    localStorage.setItem('tank_lang', currentLang);
+    document.documentElement.lang = currentLang;
+
+    const t = I18N[currentLang];
+    const subTitle = document.querySelector('.header-titles p');
+    if (subTitle) subTitle.textContent = t.subTitle;
+
+    if ($('langBtn')) {
+      $('langBtn').textContent = t.langBtn;
+      $('langBtn').title = t.langTitle;
+    }
+
+    const curTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    if ($('themeBtn')) {
+      $('themeBtn').textContent = curTheme === 'dark' ? t.themeDark : t.themeLight;
+    }
+
+    // Tabs
+    const specTabBtn = document.querySelector('.tab-btn[data-tab="tab-specs"]');
+    if (specTabBtn) specTabBtn.textContent = t.tabSpecs;
+    const editTabBtn = document.querySelector('.tab-btn[data-tab="tab-edit"]');
+    if (editTabBtn) editTabBtn.textContent = t.tabEdit;
+    const nozTabBtn = document.querySelector('.tab-btn[data-tab="tab-nozzles"]');
+    if (nozTabBtn) nozTabBtn.textContent = t.tabNozzles;
+    const bomTabBtn = document.querySelector('.tab-btn[data-tab="tab-bom"]');
+    if (bomTabBtn) bomTabBtn.textContent = t.tabBOM;
+    const setTabBtn = document.querySelector('.tab-btn[data-tab="tab-settings"]');
+    if (setTabBtn) setTabBtn.textContent = t.tabSettings;
+
+    // Subtabs in settings
+    const padSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-pad"]');
+    if (padSubBtn) padSubBtn.textContent = t.subtabPad;
+    const titleSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-title"]');
+    if (titleSubBtn) titleSubBtn.textContent = t.subtabTitle;
+    const dbSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-panels"]');
+    if (dbSubBtn) dbSubBtn.textContent = t.subtabPanels;
+
+    // Mini subtabs in title block
+    const projMini = document.querySelector('.mini-subtab-btn[data-title-sec="title-sec-proj"]');
+    if (projMini) projMini.textContent = t.miniTabProj;
+    const headMini = document.querySelector('.mini-subtab-btn[data-title-sec="title-sec-header"]');
+    if (headMini) headMini.textContent = t.miniTabHeader;
+    const noteMini = document.querySelector('.mini-subtab-btn[data-title-sec="title-sec-notes"]');
+    if (noteMini) noteMini.textContent = t.miniTabNotes;
+
+    // Spec tab labels
+    if ($('lblSheetOn')) $('lblSheetOn').textContent = t.lblSheetOn;
+    if ($('lblScale')) $('lblScale').textContent = t.lblScale;
+    if ($('lblDrawingLang')) $('lblDrawingLang').textContent = t.lblDwgLang;
+    if ($('openBOMModalBtnSpec')) $('openBOMModalBtnSpec').textContent = t.bomSpecBtn;
+    if ($('gotoBOMTabBtn')) $('gotoBOMTabBtn').textContent = t.btnGotoBOM;
+
+    // Action buttons
+    if ($('chtBtn')) $('chtBtn').textContent = t.btnOpenCht;
+    if ($('saveBtn')) $('saveBtn').textContent = t.btnSaveCht;
+    if ($('padAuto')) $('padAuto').textContent = t.btnAutoPad;
+    if ($('dxf')) $('dxf').textContent = t.btnExportDxf;
+    if ($('printBtn')) $('printBtn').textContent = t.btnPrintPdf;
+    if ($('fit')) $('fit').textContent = t.btnFit;
+
+    // Canvas HUD & Status
+    const cvGuide = document.querySelector('.cv-hud-guide');
+    if (cvGuide) cvGuide.textContent = t.hudGuide;
+    if ($('status') && ($('status').textContent === '준비 완료' || $('status').textContent === 'Ready')) {
+      $('status').textContent = t.statusReady;
+    }
+
+    // BOM Tab UI
+    const bomTabH2 = document.querySelector('#tab-bom h2');
+    if (bomTabH2) bomTabH2.textContent = t.bomTabTitle;
+    const bomTabP = document.querySelector('#tab-bom .hint');
+    if (bomTabP) bomTabP.innerHTML = t.bomTabHint;
+    const balloonLbl = document.querySelector('#tab-bom label span');
+    if (balloonLbl) balloonLbl.textContent = t.balloonToggle;
+    if ($('btnAutoBOM')) $('btnAutoBOM').textContent = t.btnAutoBOM;
+    if ($('btnAddBOMRow')) $('btnAddBOMRow').textContent = t.btnAddBOMRow;
+
+    updateBOMBadge();
+    if (triggerSchedule) schedule();
+  }
+
+  if ($('langBtn')) {
+    $('langBtn').addEventListener('click', () => {
+      setLanguage(currentLang === 'ko' ? 'en' : 'ko', true);
+    });
+  }
 
   /* Sidebar Toggle */
   $('toggleSide').addEventListener('click', () => {
     const body = $('appBody');
     body.classList.toggle('collapsed');
-    $('toggleSide').textContent = body.classList.contains('collapsed') ? '▶ 패널' : '◀ 패널';
+    const t = I18N[currentLang];
+    $('toggleSide').textContent = body.classList.contains('collapsed') ? t.toggleSideCol : t.toggleSideExp;
     setTimeout(fitView, 220);
   });
 
@@ -2281,8 +2469,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     }
     updatePadBadges();
     schedule();
-  });
   $('scaleSel').addEventListener('change', () => schedule());
+  if ($('drawingLangSel')) $('drawingLangSel').addEventListener('change', () => schedule());
 
   ['padFirstW', 'padMidW'].forEach(id => {
     const el = $(id);
@@ -2531,6 +2719,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         rf: Number(document.querySelector('input[name=rf]:checked').value),
         userScale: $('scaleSel').value === 'auto' ? null : Number($('scaleSel').value),
         sidePanels: Object.assign({}, sidePanelTypes),
+        drawingLang: $('drawingLangSel') ? $('drawingLangSel').value : 'bilingual',
+        lang: currentLang || 'ko',
         useNozzles: $('pipeFeatureToggle') ? $('pipeFeatureToggle').checked : true,
         nozzles: nozzleData.filter(n => n.use !== false),
         showBalloons: $('balloonFeatureToggle') ? $('balloonFeatureToggle').checked : true,
@@ -2644,6 +2834,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       isPadHCustom: isPadHCustom,
       padOverhang: Math.round(($('padFirstW') ? (Number($('padFirstW').value) || 400) : 400) / 2),
       scale: $('scaleSel').value,
+      drawingLang: $('drawingLangSel') ? $('drawingLangSel').value : 'bilingual',
+      lang: currentLang || 'ko',
       sheetOn: $('sheetOn').checked,
       sheetKind: $('sheetKind').value,
       useNozzles: $('pipeFeatureToggle') ? $('pipeFeatureToggle').checked : true,
@@ -2770,6 +2962,10 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         if (t.parts !== undefined && $('tParts')) $('tParts').value = t.parts;
       }
 
+      if (st.drawingLang && $('drawingLangSel')) $('drawingLangSel').value = st.drawingLang;
+      if (st.lang && (st.lang === 'ko' || st.lang === 'en') && st.lang !== currentLang) {
+        setLanguage(st.lang, false);
+      }
       if (typeof st.showBalloons === 'boolean' && $('balloonFeatureToggle')) {
         $('balloonFeatureToggle').checked = st.showBalloons;
       }
@@ -2816,6 +3012,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       const defH = 600 - (st.frm || 75);
       if (st.padH && st.padH !== defH) params.set('ph', st.padH);
       if (!st.useNozzles) params.set('pipes', '0');
+      if (st.drawingLang && st.drawingLang !== 'bilingual') params.set('dlang', st.drawingLang);
+      if (st.lang && st.lang !== 'ko') params.set('lang', st.lang);
 
       const b64 = encodeState(st);
       const queryStr = params.toString() ? ('?' + params.toString()) : '';
@@ -4305,6 +4503,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
   // 초기 시작 시 저장된 이전 상태를 최우선 복원한 후 DB 판넬 및 템플릿 로드
   (async function init() {
+    setLanguage(currentLang, false);
     restoreAppState();
     await loadDbPanels();
     await syncTemplatesFromDb(true);
