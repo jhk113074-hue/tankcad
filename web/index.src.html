@@ -66,6 +66,14 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:1
 .subtab-content{display:none}
 .subtab-content.active{display:block}
 
+/* Mini Sub-Tabs inside Title Block (화면 고도화: 한 화면에 보기) */
+.mini-subtab-nav{display:flex;background:var(--surface-sub);padding:3px;border-radius:8px;border:1px solid var(--line);gap:3px;margin-bottom:10px}
+.mini-subtab-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:3px;padding:6px 2px;font-size:11px;font-weight:600;border:0;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.mini-subtab-btn:hover{color:var(--fg);background:rgba(255,255,255,0.05)}
+.mini-subtab-btn.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,0.12);border:1px solid var(--line);font-weight:700}
+.title-sec-pane{display:none}
+.title-sec-pane.active{display:block}
+
 /* Cards / Sections */
 .box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm)}
 .box h2{font-size:12px;font-weight:700;margin:0 0 10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;justify-content:space-between}
@@ -292,7 +300,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.22</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.23</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -675,102 +683,188 @@ canvas.drag{cursor:grabbing}
         </section>
       </div>
 
-      <!-- Subtab 2: 표제란 & 도면 시트 설정 -->
+      <!-- Subtab 2: 표제란 & 도면 시트 설정 (화면 고도화: 한 화면에 보기) -->
       <div class="subtab-content" id="subtab-title">
-        <!-- 1. 회사 정보 및 도면 머리글 (Header) -->
-        <section class="box" style="margin-bottom:12px">
-          <h2>🏢 회사 정보 및 도면 머리글 (Header)</h2>
-          <p class="hint" style="margin-bottom:8px">도면 우측 상단 머리글에 표기되는 회사 로고 마크, 회사명, 제품명, 본사 주소 및 연락처를 설정합니다.</p>
-          <div class="tb">
-            <label for="tLogoText">로고 마크</label><input type="text" id="tLogoText" value="Y" maxlength="3" style="width:70px;text-align:center;font-weight:700" placeholder="Y">
-            <label for="tCustomer">회사명</label><input type="text" id="tCustomer" value="YSACC CO.,LTD" placeholder="YSACC CO.,LTD">
-            <label for="tProdName">제품명 (품목)</label><input type="text" id="tProdName" placeholder="비워두면 자동: [재질] PANEL WATER TANK">
-            <label for="tAddress">본사 주소</label><input type="text" id="tAddress" value="201-1, 1251, Garosu-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28420, Republic of Korea">
-            <label for="tTel">대표 연락처</label><input type="text" id="tTel" placeholder="TEL : +82-...">
-          </div>
-        </section>
+        <!-- 표제란 세부 메뉴 탭 -->
+        <div class="mini-subtab-nav">
+          <button type="button" class="mini-subtab-btn active" data-title-sec="title-sec-proj">📋 프로젝트</button>
+          <button type="button" class="mini-subtab-btn" data-title-sec="title-sec-sheet">📐 시트·축척</button>
+          <button type="button" class="mini-subtab-btn" data-title-sec="title-sec-header">🏢 머리글</button>
+          <button type="button" class="mini-subtab-btn" data-title-sec="title-sec-notes">📝 도면노트</button>
+        </div>
+
+        <!-- 1. 프로젝트별 표제란 정보 -->
+        <div class="title-sec-pane active" id="title-sec-proj">
+          <section class="box">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <h2 style="margin:0;font-size:12px">📋 프로젝트별 표제란 정보</h2>
+              <span style="font-size:10px;color:var(--muted)">도면 우측 하단</span>
+            </div>
+            
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div>
+                <label for="tProject" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">Project (프로젝트명)</label>
+                <input type="text" id="tProject" style="width:100%;padding:5px 8px;font-size:12px;font-weight:600" placeholder="예: OO빌딩 신축공사 물탱크">
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div>
+                  <label for="tTankSize" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">TANK SIZE (규격)</label>
+                  <input type="text" id="tTankSize" style="width:100%;padding:5px 6px;font-size:11px" placeholder="자동 생성 (직접 입력 가능)">
+                </div>
+                <div>
+                  <label for="tDwgNo" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">DWG NO. (도면번호)</label>
+                  <input type="text" id="tDwgNo" style="width:100%;padding:5px 6px;font-size:11px" placeholder="예: YS-2026-001">
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div>
+                  <label for="tClient" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">Client (발주처)</label>
+                  <input type="text" id="tClient" style="width:100%;padding:5px 6px;font-size:11px">
+                </div>
+                <div>
+                  <label for="tContractor" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">Main Contractor (시공사)</label>
+                  <input type="text" id="tContractor" style="width:100%;padding:5px 6px;font-size:11px">
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div>
+                  <label for="tDate" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">DATE (작성일자)</label>
+                  <input type="text" id="tDate" style="width:100%;padding:5px 6px;font-size:11px" placeholder="비우면 오늘 날짜">
+                </div>
+                <div>
+                  <label for="tDrawn" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">DRAWN (작성자)</label>
+                  <input type="text" id="tDrawn" style="width:100%;padding:5px 6px;font-size:11px">
+                </div>
+              </div>
+
+              <div>
+                <label for="tParts" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">품명(부품표 - 한 줄에 1개씩, 최대 10개)</label>
+                <textarea id="tParts" rows="2" placeholder="한 줄에 1개씩 입력" style="width:100%;font-size:11px;padding:4px 6px"></textarea>
+              </div>
+
+              <details style="margin-top:2px;padding-top:4px;border-top:1px dashed var(--line);font-size:11px">
+                <summary style="cursor:pointer;color:var(--muted);font-weight:600">➕ 추가 상세 필드 (Consultant, MEP, Chart No.)</summary>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:6px">
+                  <div><label for="tConsultant" style="font-size:9px;color:var(--muted)">Consultant</label><input type="text" id="tConsultant" style="width:100%;padding:4px;font-size:10px"></div>
+                  <div><label for="tMep" style="font-size:9px;color:var(--muted)">MEP</label><input type="text" id="tMep" style="width:100%;padding:4px;font-size:10px"></div>
+                  <div><label for="tChart" style="font-size:9px;color:var(--muted)">Chart No.</label><input type="text" id="tChart" style="width:100%;padding:4px;font-size:10px"></div>
+                </div>
+              </details>
+            </div>
+          </section>
+        </div>
 
         <!-- 2. 도면 시트 및 축척 설정 -->
-        <section class="box" style="margin-bottom:12px">
-          <h2>📐 도면 시트 및 축척</h2>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
-            <label class="chk" style="font-weight:600;font-size:12px;cursor:pointer"><input type="checkbox" id="sheetOn" checked> A1 도면 시트 표제란 포함</label>
-            <select id="sheetKind" style="width:auto">
-              <option value="asm">조립도 (평면·콘크리트·정면·측면·3D등각)</option>
-              <option value="iso">등각 조감도 (3D ISOMETRIC DWG)</option>
-              <option value="frame">프레임도 (스키드·내부 스테이)</option>
-              <option value="detail">상세도 (DETAILS DWG)</option>
-            </select>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-            <label for="scaleSel" style="font-weight:600;font-size:12px;color:var(--fg)">도면 축척 (Scale)</label>
-            <select id="scaleSel" style="width:auto;min-width:140px">
-              <option value="auto" selected>⚡ 자동 맞춤 (Auto)</option>
-              <option value="15">1 / 15</option>
-              <option value="20">1 / 20</option>
-              <option value="25">1 / 25</option>
-              <option value="30">1 / 30</option>
-              <option value="40">1 / 40</option>
-              <option value="50">1 / 50</option>
-              <option value="60">1 / 60</option>
-              <option value="75">1 / 75</option>
-              <option value="100">1 / 100</option>
-              <option value="125">1 / 125</option>
-              <option value="150">1 / 150</option>
-              <option value="200">1 / 200</option>
-              <option value="250">1 / 250</option>
-              <option value="300">1 / 300</option>
-            </select>
-          </div>
-          <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:11px;color:var(--muted)">DWG 변환 안내 팝업 설정</span>
-            <label class="chk" style="font-size:11px;cursor:pointer;font-weight:600"><input type="checkbox" id="chkHideOdaModal"> 이미 설치됨 (안내 팝업 생략)</label>
-          </div>
-        </section>
-
-        <!-- 3. 프로젝트별 표제란 정보 -->
-        <section class="box" style="margin-bottom:12px">
-          <h2>📋 프로젝트별 표제란 정보</h2>
-          <div class="tb">
-            <label for="tProject">Project</label><input type="text" id="tProject">
-            <label for="tTankSize">TANK SIZE</label><input type="text" id="tTankSize" placeholder="자동 생성 (직접 입력 가능)">
-            <label for="tClient">Client</label><input type="text" id="tClient">
-            <label for="tContractor">Main Contractor</label><input type="text" id="tContractor">
-            <label for="tDwgNo">DWG NO.</label><input type="text" id="tDwgNo">
-            <label for="tDate">DATE</label><input type="text" id="tDate" placeholder="비우면 오늘 날짜">
-            <label for="tDrawn">DRAWN</label><input type="text" id="tDrawn">
-            <label for="tParts">품명(부품표)</label><textarea id="tParts" rows="2" placeholder="한 줄에 1개씩 입력 (최대 10개)" style="width:100%;font-size:11px;padding:5px"></textarea>
-          </div>
-          <!-- 추가 필드 (감리/MEP/ChartNo 등) 접이식 -->
-          <details style="margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);font-size:11px">
-            <summary style="cursor:pointer;color:var(--muted);font-weight:600">추가 상세 필드 (Consultant, MEP, Chart No.)</summary>
-            <div class="tb" style="margin-top:8px">
-              <label for="tConsultant">Consultant</label><input type="text" id="tConsultant">
-              <label for="tMep">MEP Contractor</label><input type="text" id="tMep">
-              <label for="tChart">Chart No.</label><input type="text" id="tChart">
+        <div class="title-sec-pane" id="title-sec-sheet">
+          <section class="box">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <h2 style="margin:0;font-size:12px">📐 도면 시트 및 축척</h2>
+              <span style="font-size:10px;color:var(--accent);font-weight:600">A1 표준 시트</span>
             </div>
-          </details>
-        </section>
 
-        <!-- 도면 공통 노트 및 특기사항 (NOTES & REMARKS) -->
-        <section class="box">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <h2 style="margin:0">📝 도면 노트 및 특기사항</h2>
-            <button type="button" id="chtBtn" class="btn-sm" style="background:var(--surface);border:1px solid var(--line)" title="고객 차트(.cht) 파일 불러오기">📁 .cht 불러오기</button>
-            <input type="file" id="chtFile" accept=".cht,.txt" hidden>
-          </div>
-          <p class="hint" style="margin-bottom:8px">A1 도면 표제란 영역에 출력되는 표준 설치 주의사항(NOTES) 및 특기사항(REMARKS)을 관리합니다.</p>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px">
+                <label class="chk" style="font-weight:700;font-size:12px;cursor:pointer"><input type="checkbox" id="sheetOn" checked> A1 도면 시트 포함</label>
+                <select id="sheetKind" style="width:auto;font-size:11px;font-weight:600">
+                  <option value="asm">조립도 (평면·패드·정면·측면·3D등각)</option>
+                  <option value="iso">등각 조감도 (3D ISOMETRIC DWG)</option>
+                  <option value="frame">프레임도 (스키드·내부 스테이)</option>
+                  <option value="detail">상세도 (DETAILS DWG)</option>
+                </select>
+              </div>
 
-          <div style="margin-bottom:8px">
-            <label for="tRemarks" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px;color:var(--fg)">REMARKS (특기사항)</label>
-            <textarea id="tRemarks" rows="2" placeholder="REMARKS (한 줄에 1개씩)" style="width:100%;font-size:11px;padding:6px 8px"></textarea>
-          </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px">
+                <label for="scaleSel" style="font-weight:700;font-size:12px;color:var(--fg)">도면 축척 (Scale)</label>
+                <select id="scaleSel" style="width:auto;min-width:140px;font-weight:600;font-size:11px">
+                  <option value="auto" selected>⚡ 자동 맞춤 (Auto)</option>
+                  <option value="15">1 / 15</option>
+                  <option value="20">1 / 20</option>
+                  <option value="25">1 / 25</option>
+                  <option value="30">1 / 30</option>
+                  <option value="40">1 / 40</option>
+                  <option value="50">1 / 50</option>
+                  <option value="60">1 / 60</option>
+                  <option value="75">1 / 75</option>
+                  <option value="100">1 / 100</option>
+                  <option value="125">1 / 125</option>
+                  <option value="150">1 / 150</option>
+                  <option value="200">1 / 200</option>
+                  <option value="250">1 / 250</option>
+                  <option value="300">1 / 300</option>
+                </select>
+              </div>
 
-          <div>
-            <label for="tNotes" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px;color:var(--fg)">NOTES (표준 주의사항)</label>
-            <textarea id="tNotes" rows="7" style="width:100%;font-size:11px;padding:6px 8px" placeholder="도면 주의사항 (한 줄에 1개씩)"></textarea>
-          </div>
-        </section>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;border-top:1px dashed var(--line);margin-top:2px">
+                <span style="font-size:11px;color:var(--muted)">DWG 변환 팝업 생략</span>
+                <label class="chk" style="font-size:11px;cursor:pointer;font-weight:600"><input type="checkbox" id="chkHideOdaModal"> 이미 설치됨 (팝업 생략)</label>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 3. 회사 정보 및 도면 머리글 (Header) -->
+        <div class="title-sec-pane" id="title-sec-header">
+          <section class="box">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <h2 style="margin:0;font-size:12px">🏢 회사 정보 및 도면 머리글 (Header)</h2>
+              <span style="font-size:10px;color:var(--muted)">도면 우측 상단</span>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;gap:6px">
+                <div style="width:75px">
+                  <label for="tLogoText" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">로고 마크</label>
+                  <input type="text" id="tLogoText" value="Y" maxlength="3" style="width:100%;text-align:center;font-weight:700;padding:5px;font-size:12px" placeholder="Y">
+                </div>
+                <div style="flex:1">
+                  <label for="tCustomer" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">회사 상호 (Company Name)</label>
+                  <input type="text" id="tCustomer" value="YSACC CO.,LTD" style="width:100%;padding:5px 8px;font-size:12px;font-weight:600" placeholder="YSACC CO.,LTD">
+                </div>
+              </div>
+
+              <div>
+                <label for="tProdName" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">제품명 (품목 타이틀)</label>
+                <input type="text" id="tProdName" style="width:100%;padding:5px 8px;font-size:11px" placeholder="비워두면 자동: [재질] PANEL WATER TANK">
+              </div>
+
+              <div>
+                <label for="tAddress" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">본사 영문/한글 주소</label>
+                <input type="text" id="tAddress" value="201-1, 1251, Garosu-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28420, Republic of Korea" style="width:100%;padding:5px 8px;font-size:10.5px">
+              </div>
+
+              <div>
+                <label for="tTel" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">대표 연락처 (TEL)</label>
+                <input type="text" id="tTel" style="width:100%;padding:5px 8px;font-size:11px" placeholder="TEL : +82-...">
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 4. 도면 공통 노트 및 특기사항 (NOTES & REMARKS) -->
+        <div class="title-sec-pane" id="title-sec-notes">
+          <section class="box">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <h2 style="margin:0;font-size:12px">📝 도면 노트 및 특기사항</h2>
+              <button type="button" id="chtBtn" class="btn-sm" style="background:var(--surface-sub);border:1px solid var(--line);padding:3px 7px;font-size:10px" title="고객 차트(.cht) 파일 불러오기">📁 .cht 불러오기</button>
+              <input type="file" id="chtFile" accept=".cht,.txt" hidden>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div>
+                <label for="tRemarks" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">REMARKS (특기사항)</label>
+                <textarea id="tRemarks" rows="3" placeholder="REMARKS (한 줄에 1개씩)" style="width:100%;font-size:11px;padding:5px 7px"></textarea>
+              </div>
+
+              <div>
+                <label for="tNotes" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">NOTES (표준 주의사항)</label>
+                <textarea id="tNotes" rows="7" style="width:100%;font-size:10.5px;padding:5px 7px" placeholder="도면 주의사항 (한 줄에 1개씩)"></textarea>
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
 
       <!-- Subtab 3: 판넬 DB 관리 -->
@@ -1080,6 +1174,17 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
           loadDbPanels();
         }
       }
+    });
+  });
+
+  /* Mini-Tab Switching inside Title Block Settings (한 화면에 보기) */
+  document.querySelectorAll('.mini-subtab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mini-subtab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.title-sec-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const sec = $(btn.getAttribute('data-title-sec'));
+      if (sec) sec.classList.add('active');
     });
   });
 

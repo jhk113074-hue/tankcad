@@ -5,6 +5,20 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.23] - 2026-10-02
+
+### Enhanced & UI Overhaul (표제란·시트 메뉴 화면 고도화: 한 화면에 보기 및 미니탭 구성)
+- **표제란·시트 메뉴 세부 미니탭 4분할 화면 고도화 ("한 화면에 보일 수 있게 해주세요" 완벽 해결)**:
+  - 기존의 4개 거대 박스를 세로로 길게 나열하던 스크롤 방식을 탈피하여, 상단 4개 서브 탭(`📋 프로젝트` / `📐 시트·축척` / `🏢 머리글` / `📝 도면노트`)으로 깔끔하게 분리.
+  - **100% 스크롤 프리(Zero Scroll)**: 각 탭 선택 시 높이가 200~300px 이내로 콤팩트하게 렌더링되어, 노트북/태블릿 등 모든 디스플레이에서 **한 화면에 모든 입력창이 한눈에 쏙 들어오도록 최적화**.
+  - **스마트 2컬럼 레이아웃**:
+    - `[📋 프로젝트]`: Tank Size & DWG No., Client & Contractor, Date & Drawn 필드를 나란히 2열 배치하여 캐드 표제란 양식과 동일한 직관성 부여.
+    - `[🏢 머리글]`: 로고 마크와 회사 상호를 한 줄에 가로 배치하여 공간 절약 극대화.
+    - `[📐 시트·축척]`: 시트 On/Off, 도면 종류, 축척(Scale), 팝업 생략 토글을 3줄로 밀착 정돈.
+    - `[📝 도면노트]`: .cht 불러오기 버튼을 헤더 우측에 배치하고 Remarks/Notes 텍스트 영역 최적화.
+
+---
+
 ## [1.5.22] - 2026-10-02
 
 ### Enhanced & UX (DWG 변환 진행 상태 시각적 피드백 및 중복 클릭 방지)
