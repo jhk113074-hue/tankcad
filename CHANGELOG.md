@@ -5,6 +5,16 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.24] - 2026-10-02
+
+### Enhanced & Layout (A1 도면 시트 및 뷰 종류 선택 메뉴 사양·치수 탭으로 이동)
+- **도면 시트 및 뷰 종류 선택 메뉴 사양·치수 상단 전진 배치 ("이 메뉴는 사양치수로 보내주세요" 완벽 반영)**:
+  - `[x] A1 도면 시트 포함` 및 도면 종류 선택 드롭다운(`조립도`, `등각 조감도 (3D ISO)`, `프레임도`, `상세도`), `도면 축척 (Scale)` 카드를 **`📐 사양·치수` 탭 최상단**으로 이동.
+  - 이제 첫 화면에서 치수를 입력하면서 도면 뷰(3D 등각도, 조립도 등)와 축척을 즉시 변경할 수 있어 워크플로우 접근성 극대화.
+  - `⚙️ 환경설정` > `📋 표제란`은 순수 표제란 본문(`📋 프로젝트`), 회사 정보(`🏢 머리글`), 주의사항(`📝 도면노트`) 3개 탭으로 더욱 깔끔하게 간소화.
+
+---
+
 ## [1.5.23] - 2026-10-02
 
 ### Enhanced & UI Overhaul (표제란·시트 메뉴 화면 고도화: 한 화면에 보기 및 미니탭 구성)
