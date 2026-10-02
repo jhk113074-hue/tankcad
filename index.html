@@ -307,7 +307,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.42</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.43</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1740,7 +1740,18 @@ canvas.drag{cursor:grabbing}
   }
 
   /* ---------- 부품 풍선 기호 (Circular Balloon Callout with Leader) ---------- */
-  function drawBalloonCallout(ents, startPt, elbowPt, balloonCenter, numStr, scaleN = 25, layer = 'BALLOON') {
+  function drawBalloonCallout(ents, startPt, elbowPt, balloonCenter, numStr, scaleN = 25, layer = 'BALLOON', usedSet = null) {
+    if (numStr === undefined || numStr === null || numStr === '') return false;
+    const str = String(numStr).trim();
+    if (!str) return false;
+
+    // 풍선 기호 중복 번호 방지: 동일 번호는 도면 전체에서 1회만 기재
+    const set = usedSet || (ents && ents._usedBalloons);
+    if (set) {
+      if (set.has(str)) return false;
+      set.add(str);
+    }
+
     if (!balloonCenter && elbowPt) {
       balloonCenter = elbowPt;
       elbowPt = null;
@@ -1750,27 +1761,28 @@ canvas.drag{cursor:grabbing}
     const textH = Math.round(2.8 * scaleN);
 
     // 단부 점 (Terminal dot)
-    ents.push({ t: 'circle', c: startPt, r: Math.max(3, Math.round(scaleN * 0.2)), layer });
+    ents.push({ t: 'circle', c: startPt, r: Math.max(3, Math.round(scaleN * 0.2)), layer, balloonNo: str });
 
     // 지시선 (Leader line)
     if (elbowPt && (elbowPt[0] !== startPt[0] || elbowPt[1] !== startPt[1])) {
       const dx = balloonCenter[0] - elbowPt[0], dy = balloonCenter[1] - elbowPt[1];
       const dist = Math.hypot(dx, dy) || 1;
       const endPt = [balloonCenter[0] - (dx / dist) * balloonR, balloonCenter[1] - (dy / dist) * balloonR];
-      ents.push({ t: 'line', a: startPt, b: elbowPt, layer });
-      ents.push({ t: 'line', a: elbowPt, b: endPt, layer });
+      ents.push({ t: 'line', a: startPt, b: elbowPt, layer, balloonNo: str });
+      ents.push({ t: 'line', a: elbowPt, b: endPt, layer, balloonNo: str });
     } else {
       const dx = balloonCenter[0] - startPt[0], dy = balloonCenter[1] - startPt[1];
       const dist = Math.hypot(dx, dy) || 1;
       const endPt = [balloonCenter[0] - (dx / dist) * balloonR, balloonCenter[1] - (dy / dist) * balloonR];
-      ents.push({ t: 'line', a: startPt, b: endPt, layer });
+      ents.push({ t: 'line', a: startPt, b: endPt, layer, balloonNo: str });
     }
 
     // 원형 풍선 (Circular balloon)
-    ents.push({ t: 'circle', c: balloonCenter, r: balloonR, layer });
+    ents.push({ t: 'circle', c: balloonCenter, r: balloonR, layer, balloonNo: str });
 
     // 풍선 내부 번호 (Center text)
-    ents.push({ t: 'text', p: balloonCenter, h: textH, s: String(numStr), rot: 0, align: 'center', valign: 'middle', layer });
+    ents.push({ t: 'text', p: balloonCenter, h: textH, s: str, rot: 0, align: 'center', valign: 'middle', layer, balloonNo: str });
+    return true;
   }
 
   /* ---------- 기본 부품 사양 명세표 생성 (Default Item List / BOM) ---------- */
@@ -1896,6 +1908,7 @@ canvas.drag{cursor:grabbing}
     const map = createMap(opt);
     const mat = opt.material === 'STS' ? 'STS' : 'SMC';
     const ents = [], blocks = {};
+    ents._usedBalloons = opt.usedBalloons || (opt.usedBalloons = new Set());
     const getTopBlock = (w, h) => {
       const blkName = `PANEL_TOP_${mat}_${w}x${h}`;
       if (!blocks[blkName]) {
@@ -2247,31 +2260,50 @@ canvas.drag{cursor:grabbing}
             elbow8 = bx8 + bR + Math.round(2.0 * N);
           }
 
-          // 지시선 시작점: 판넬 내부(y > 0)로 들어가지 않고 외벽/사다리 표면에서 시작하여 판넬 및 노즐 관통 완전 차단
-          const pStart8 = [l.x + (toRight ? 60 : -60), l.y - F - 35];
-          const pStart7 = [l.x + (toRight ? -30 : 30), l.y - Math.round(F * 0.4)];
+          const no8 = String(getItemNo('exladder') || 8).trim();
+          const no7 = String(getItemNo('inladder') || 7).trim();
+          const usedSet = ents._usedBalloons || (opt && opt.usedBalloons);
+          const has8 = usedSet && usedSet.has(no8);
+          const has7 = usedSet && usedSet.has(no7);
 
-          // 1. 사다리 지시점 원(Dot)
-          const dotR = Math.max(3, Math.round(N * 0.2));
-          ents.push({ t: 'circle', c: pStart8, r: dotR, layer: 'BALLOON' });
-          ents.push({ t: 'circle', c: pStart7, r: dotR, layer: 'BALLOON' });
+          if (!has8 || !has7) {
+            // 지시선 시작점: 판넬 내부(y > 0)로 들어가지 않고 외벽/사다리 표면에서 시작하여 판넬 및 노즐 관통 완전 차단
+            const pStart8 = [l.x + (toRight ? 60 : -60), l.y - F - 35];
+            const pStart7 = [l.x + (toRight ? -30 : 30), l.y - Math.round(F * 0.4)];
+            const dotR = Math.max(3, Math.round(N * 0.2));
 
-          // 2. 사다리 지시선 분기: 두 시작점에서 elbow8로 수렴 (도형/풍선 상호 무간섭)
-          ents.push({ t: 'line', a: pStart8, b: [elbow8, balloonY], layer: 'BALLOON' });
-          ents.push({ t: 'line', a: pStart7, b: [elbow8, balloonY], layer: 'BALLOON' });
+            if (!has8 && !has7) {
+              // 1. 사다리 지시점 원(Dot)
+              ents.push({ t: 'circle', c: pStart8, r: dotR, layer: 'BALLOON', balloonNo: no8 });
+              ents.push({ t: 'circle', c: pStart7, r: dotR, layer: 'BALLOON', balloonNo: no7 });
 
-          // 3. elbow8에서 1차 풍선(외부사다리 NO. 8) 외곽으로 진입
-          const b8Entry = toRight ? [bx8 - bR, balloonY] : [bx8 + bR, balloonY];
-          ents.push({ t: 'line', a: [elbow8, balloonY], b: b8Entry, layer: 'BALLOON' });
-          ents.push({ t: 'circle', c: [bx8, balloonY], r: bR, layer: 'BALLOON' });
-          ents.push({ t: 'text', p: [bx8, balloonY], h: bTextH, s: String(getItemNo('exladder') || 8), rot: 0, align: 'center', valign: 'middle', layer: 'BALLOON' });
+              // 2. 사다리 지시선 분기: 두 시작점에서 elbow8로 수렴 (도형/풍선 상호 무간섭)
+              ents.push({ t: 'line', a: pStart8, b: [elbow8, balloonY], layer: 'BALLOON', balloonNo: no8 });
+              ents.push({ t: 'line', a: pStart7, b: [elbow8, balloonY], layer: 'BALLOON', balloonNo: no7 });
 
-          // 4. 풍선 연계 지시선: 1차 풍선(8) 외곽에서 2차 풍선(내부사다리 NO. 7) 외곽으로 직접 연결 (풍선 내부 관통 원천 차단)
-          const b8Bridge = toRight ? [bx8 + bR, balloonY] : [bx8 - bR, balloonY];
-          const b7Bridge = toRight ? [bx7 - bR, balloonY] : [bx7 + bR, balloonY];
-          ents.push({ t: 'line', a: b8Bridge, b: b7Bridge, layer: 'BALLOON' });
-          ents.push({ t: 'circle', c: [bx7, balloonY], r: bR, layer: 'BALLOON' });
-          ents.push({ t: 'text', p: [bx7, balloonY], h: bTextH, s: String(getItemNo('inladder') || 7), rot: 0, align: 'center', valign: 'middle', layer: 'BALLOON' });
+              // 3. elbow8에서 1차 풍선(외부사다리 NO. 8) 외곽으로 진입
+              const b8Entry = toRight ? [bx8 - bR, balloonY] : [bx8 + bR, balloonY];
+              ents.push({ t: 'line', a: [elbow8, balloonY], b: b8Entry, layer: 'BALLOON', balloonNo: no8 });
+              ents.push({ t: 'circle', c: [bx8, balloonY], r: bR, layer: 'BALLOON', balloonNo: no8 });
+              ents.push({ t: 'text', p: [bx8, balloonY], h: bTextH, s: no8, rot: 0, align: 'center', valign: 'middle', layer: 'BALLOON', balloonNo: no8 });
+
+              // 4. 풍선 연계 지시선: 1차 풍선(8) 외곽에서 2차 풍선(내부사다리 NO. 7) 외곽으로 직접 연결 (풍선 내부 관통 원천 차단)
+              const b8Bridge = toRight ? [bx8 + bR, balloonY] : [bx8 - bR, balloonY];
+              const b7Bridge = toRight ? [bx7 - bR, balloonY] : [bx7 + bR, balloonY];
+              ents.push({ t: 'line', a: b8Bridge, b: b7Bridge, layer: 'BALLOON', balloonNo: no7 });
+              ents.push({ t: 'circle', c: [bx7, balloonY], r: bR, layer: 'BALLOON', balloonNo: no7 });
+              ents.push({ t: 'text', p: [bx7, balloonY], h: bTextH, s: no7, rot: 0, align: 'center', valign: 'middle', layer: 'BALLOON', balloonNo: no7 });
+
+              if (usedSet) {
+                usedSet.add(no8);
+                usedSet.add(no7);
+              }
+            } else if (!has8) {
+              drawBalloonCallout(ents, pStart8, [elbow8, balloonY], [bx8, balloonY], no8, N, 'BALLOON', usedSet);
+            } else if (!has7) {
+              drawBalloonCallout(ents, pStart7, [elbow8, balloonY], [bx7, balloonY], no7, N, 'BALLOON', usedSet);
+            }
+          }
         } else if (l.sd === 'R') {
           const ladSep = Math.max(120, Math.round(5.0 * N));
           drawBalloonCallout(ents, [l.x + F + 20, l.y - 80], [l.x + F + Math.round(8 * N), l.y - ladSep], [rightBaseX, l.y - ladSep], getItemNo('exladder') || 8, N, 'BALLOON');
@@ -2768,6 +2800,7 @@ canvas.drag{cursor:grabbing}
     const split = view === 'front' ? frontSplit : sideSplit;
     const total = secs.reduce((a, b) => a + b, 0), th = opt.frame || 75;
     const ents = [], blocks = {};
+    ents._usedBalloons = opt.usedBalloons || (opt.usedBalloons = new Set());
     const ln = (a, b, layer) => ents.push({ t: 'line', a, b, layer: layer || 'PANEL' });
     const poly = (p, layer, closed) => { for (let k = 0; k + 1 < p.length; k++) ln(p[k], p[k + 1], layer); if (closed) ln(p[p.length - 1], p[0], layer); };
     const rect = (x0, y0, x1, y1, layer) => poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]], layer, true);
@@ -5053,6 +5086,9 @@ canvas.drag{cursor:grabbing}
     return dents;
   }
   function buildSheet(opt, templates, sideT) {
+    opt = { ...opt };
+    const usedBalloons = new Set();
+    opt.usedBalloons = usedBalloons;
     const H = (opt.height || []).reduce((a, b) => a + (b || 0), 0);
     const mmap = createMap(opt);
     const totalL = mmap.length, totalW = mmap.width;
