@@ -5,6 +5,17 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.40] - 2026-10-02
+
+### Enhanced & Deployed (UI 버전 뱃지 자동 동기화 및 최신 릴리스 배포)
+- **UI 헤더 버전 뱃지(`ver-badge`) 자동 동기화 빌드 시스템 적용**:
+  - `build.py` 빌드 스크립트에서 `package.json`의 최신 버전을 자동으로 읽어와 HTML 상단 헤더의 버전 뱃지(`<span class="ver-badge">v1.5.40</span>`)에 자동 주입하도록 개선.
+  - 사용자가 웹 화면에 접속했을 때 현재 실행 중인 프로그램 버전을 직관적으로 확인 가능.
+- **사다리 및 부품 풍선 기호 비간섭 배치 최종 배포**:
+  - 판넬, 노즐(`[N2] 150A`), 치수선, 치수 보조선과 겹치지 않는 안전 완충 구역 자동 인출 엔진이 최종 반영되었습니다.
+
+---
+
 ## [1.5.39] - 2026-10-02
 
 ### Fixed & Enhanced (사다리 풍선 기호 판넬/노즐/치수선 완전 비간섭 배치)
