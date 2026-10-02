@@ -5,6 +5,15 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.26] - 2026-10-02
+
+### Fixed (3D 등각도 콘크리트 기초 패드 측면 구획선 제거)
+- **콘크리트 패드 측면 구획선(구분선) 제거 ("구획만 없애주세요" 완벽 반영)**:
+  - 3D 등각 조감도(3D Isometric)에서 콘크리트 기초 패드 빔의 배치, 길이, 위치 및 중정/노치 구조는 2D 도면 기준 그대로 유지하면서, 패드 측면 면(side face) 렌더링 시 판넬 행(row) 단위로 분할되어 나타나던 내부 수직 구획선(seam line)을 제거.
+  - 연속된 노출 구간(전면 돌출부 `yStart ~ y0` 및 연속 노출 행 구간)을 단일 다각형(unified polygon)으로 병합하여 하나의 매끄러운 줄기초 빔으로 연속되게 렌더링되도록 개선.
+
+---
+
 ## [1.5.25] - 2026-10-02
 
 ### Fixed (미설정 시 3D 등각도 모서리 맨홀 및 에어벤트 자동 노출 버그 수정)

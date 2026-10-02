@@ -1711,39 +1711,64 @@
         isoCircle(cx, yStart + 110, -th, 12, 'XY', 'FRAME', topPadDepth);
         ln(toIso(cx, yStart + 110, -th), toIso(cx, yStart + 110, -th + 30), 'FRAME', topPadDepth);
 
-        // 4) 전면 우측 돌출부 측면 (Y = yStart ~ y0)
-        const r1 = p2;
-        const r2 = p2_top;
-        const r3 = toIso(rightX, y0, GRD);
-        const r4 = p3;
-        poly([r1, r2, r3, r4], 'PANEL', true, true, rightPadDepth);
+        // 4) & 5) 우측 노출 측면 (전면 돌출부 Y = yStart ~ y0 및 탱크 구간 Y = y0 ~ y1)
+        // 구획선 없이 연속된 구간으로 병합 렌더링
+        const rowAtY0 = map.rows.findIndex((_, r) => map.ys[r] === y0);
+        const firstRowExposed = (sIdx === strips.length - 1) || (rowAtY0 >= 0 && !hasTankAtRow(idx + 1, rowAtY0));
+        const sideSpans = [];
+        let curSpan = null;
 
-        // 5) 탱크 구간 (Y = y0 ~ y1): 최우측 노출 측면
+        if (firstRowExposed) {
+          curSpan = { yA: yStart, yB: y0 };
+        } else {
+          sideSpans.push({ yA: yStart, yB: y0 });
+        }
+
         for (let r = 0; r < nR; r++) {
           if (map.ys[r] >= y0 && map.ys[r + 1] <= y1) {
             const isRightmostAtR = (sIdx === strips.length - 1) || !hasTankAtRow(idx + 1, r);
             if (isRightmostAtR) {
               const segY0 = map.ys[r], segY1 = map.ys[r + 1];
-              let xWall = totalL;
-              for (let j = map.cols.length - 1; j >= 0; j--) {
-                if (map.has(r, j)) { xWall = map.xs[j + 1]; break; }
+              if (curSpan && Math.abs(curSpan.yB - segY0) < 1e-4) {
+                curSpan.yB = segY1;
+              } else {
+                if (curSpan) sideSpans.push(curSpan);
+                curSpan = { yA: segY0, yB: segY1 };
               }
-              const sideSegDepth = (segY0 + segY1) / 2 - rightX - (-th / 2);
-              poly([
-                toIso(rightX, segY0, -th),
-                toIso(rightX, segY1, -th),
-                toIso(rightX, segY1, GRD),
-                toIso(rightX, segY0, GRD)
-              ], 'PANEL', true, true, sideSegDepth);
-              ln(toIso(rightX, segY0, -th), toIso(rightX, segY1, -th), 'PANEL', sideSegDepth);
-
-              if (segY1 === y1) {
-                ln(toIso(xWall, y1, -th), toIso(rightX, y1, -th), 'PANEL', sideSegDepth);
-                ln(toIso(rightX, y1, -th), toIso(rightX, y1, GRD), 'PANEL', sideSegDepth);
+            } else {
+              if (curSpan) {
+                sideSpans.push(curSpan);
+                curSpan = null;
               }
             }
           }
         }
+        if (curSpan) sideSpans.push(curSpan);
+
+        sideSpans.forEach(span => {
+          const sideSegDepth = (span.yA + span.yB) / 2 - rightX - (-th / 2);
+          poly([
+            toIso(rightX, span.yA, -th),
+            toIso(rightX, span.yB, -th),
+            toIso(rightX, span.yB, GRD),
+            toIso(rightX, span.yA, GRD)
+          ], 'PANEL', true, true, sideSegDepth);
+          ln(toIso(rightX, span.yA, -th), toIso(rightX, span.yB, -th), 'PANEL', sideSegDepth);
+
+          if (span.yB === y1) {
+            let xWall = totalL;
+            for (let r = map.rows.length - 1; r >= 0; r--) {
+              if (map.ys[r + 1] === y1) {
+                for (let j = map.cols.length - 1; j >= 0; j--) {
+                  if (map.has(r, j)) { xWall = map.xs[j + 1]; break; }
+                }
+                break;
+              }
+            }
+            ln(toIso(xWall, y1, -th), toIso(rightX, y1, -th), 'PANEL', sideSegDepth);
+            ln(toIso(rightX, y1, -th), toIso(rightX, y1, GRD), 'PANEL', sideSegDepth);
+          }
+        });
       });
     });
 
