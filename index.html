@@ -1853,15 +1853,13 @@ canvas.drag{cursor:grabbing}
 
     const N = opt._N || 25;
 
-    // 배관 노즐 (INLET, OUTLET, OVERFLOW, DRAIN, FIRE 등) 평면도 배치
+    // 배관 노즐 (INLET, OUTLET, OVERFLOW, DRAIN, FIRE 등) 평면도 배치 (글로벌 표준 간결 표기)
     const nozList = getNozzleList(opt);
-    const nozTextH = Math.round(2.6 * N);
+    const nozTextH = Math.round(2.2 * N);
     nozList.forEach((n, idx) => {
       const spec = getNozzleSpec(n.size);
       const isFlg = n.type === 'FLANGE';
-      const descStr = n.desc ? ` (${n.desc})` : '';
-      const label1 = `[${n.mark}] ${n.name} ${n.size}${descStr}`;
-      const label2 = `(${n.type})` + (n.face === 'top' ? ' [TOP]' : '');
+      const label = `[${n.mark}] ${n.size}`;
       const offVal = n.offset || 0;
       
       if (n.face === 'top') {
@@ -1887,88 +1885,100 @@ canvas.drag{cursor:grabbing}
         ents.push({ t: 'line', a: [cx - cr, cy], b: [cx + cr, cy], layer: 'PANEL_DETAIL' });
         ents.push({ t: 'line', a: [cx, cy - cr], b: [cx, cy + cr], layer: 'PANEL_DETAIL' });
         
-        const leadLen = Math.max(120, 3.5 * N);
+        const leadLen = Math.max(100, 3.0 * N);
         const stagger = (idx % 3) * Math.round(1.5 * N);
-        drawLeader(ents, [cx + spec.r * 0.7, cy + spec.r * 0.7], [cx + spec.r * 0.7 + leadLen * 0.6, cy + spec.r * 0.7 + leadLen * 0.6 + stagger], [cx + spec.r * 0.7 + leadLen * 1.4, cy + spec.r * 0.7 + leadLen * 0.6 + stagger], [label1, label2], nozTextH, 'left', 'DIM');
+        drawLeader(ents, [cx + spec.r * 0.7, cy + spec.r * 0.7], [cx + spec.r * 0.7 + leadLen * 0.5, cy + spec.r * 0.7 + leadLen * 0.5 + stagger], [cx + spec.r * 0.7 + leadLen * 1.2, cy + spec.r * 0.7 + leadLen * 0.5 + stagger], [label], nozTextH, 'left', 'DIM');
       } else if (n.face === 'front') {
         const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
         const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + offVal;
         const yBase = -F;
-        const stagger = (idx % 3) * Math.round(1.5 * N);
+        const toRight = cx >= map.length / 2;
+        const stagger = (idx % 2) * Math.round(1.5 * N);
         if (isFlg) {
           const yPlate1 = yBase - spec.neckLen;
           const yPlate0 = yPlate1 + spec.flgThick;
           ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'FRAME');
           ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'FRAME');
           chain([[cx - spec.rf, yPlate1], [cx + spec.rf, yPlate1], [cx + spec.rf, yPlate0], [cx - spec.rf, yPlate0]], 'FRAME', true);
-          const ey = yPlate1 - Math.round(2.5 * N) - stagger;
-          drawLeader(ents, [cx, yPlate1], [cx + Math.round(2.5 * N), ey], [cx + Math.round(5.5 * N), ey], [label1, label2], nozTextH, 'left', 'DIM');
+          const ey = yPlate1 + Math.round(1.0 * N) + stagger;
+          const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
+          const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
+          drawLeader(ents, [cx, yPlate1], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'DIM');
         } else {
           const yEnd = yBase - spec.sockLen;
           chain([[cx - spec.sockR, yEnd], [cx + spec.sockR, yEnd], [cx + spec.sockR, yBase], [cx - spec.sockR, yBase]], 'FRAME', true);
           ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'FRAME');
-          const ey = yEnd - Math.round(2.5 * N) - stagger;
-          drawLeader(ents, [cx, yEnd], [cx + Math.round(2.5 * N), ey], [cx + Math.round(5.5 * N), ey], [label1, label2], nozTextH, 'left', 'DIM');
+          const ey = yEnd + Math.round(1.0 * N) + stagger;
+          const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
+          const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
+          drawLeader(ents, [cx, yEnd], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'DIM');
         }
       } else if (n.face === 'rear') {
         const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
         const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + offVal;
         const yBase = W + F;
-        const stagger = (idx % 3) * Math.round(1.5 * N);
+        const toRight = cx >= map.length / 2;
+        const stagger = (idx % 2) * Math.round(1.5 * N);
         if (isFlg) {
           const yPlate1 = yBase + spec.neckLen;
           const yPlate0 = yPlate1 - spec.flgThick;
           ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'FRAME');
           ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'FRAME');
           chain([[cx - spec.rf, yPlate0], [cx + spec.rf, yPlate0], [cx + spec.rf, yPlate1], [cx - spec.rf, yPlate1]], 'FRAME', true);
-          const ey = yPlate1 + Math.round(2.5 * N) + stagger;
-          drawLeader(ents, [cx, yPlate1], [cx + Math.round(2.5 * N), ey], [cx + Math.round(5.5 * N), ey], [label1, label2], nozTextH, 'left', 'DIM');
+          const ey = yPlate1 - Math.round(1.0 * N) - stagger;
+          const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
+          const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
+          drawLeader(ents, [cx, yPlate1], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'DIM');
         } else {
           const yEnd = yBase + spec.sockLen;
           chain([[cx - spec.sockR, yBase], [cx + spec.sockR, yBase], [cx + spec.sockR, yEnd], [cx - spec.sockR, yEnd]], 'FRAME', true);
           ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'FRAME');
-          const ey = yEnd + Math.round(2.5 * N) + stagger;
-          drawLeader(ents, [cx, yEnd], [cx + Math.round(2.5 * N), ey], [cx + Math.round(5.5 * N), ey], [label1, label2], nozTextH, 'left', 'DIM');
+          const ey = yEnd - Math.round(1.0 * N) - stagger;
+          const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
+          const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
+          drawLeader(ents, [cx, yEnd], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'DIM');
         }
       } else if (n.face === 'left') {
         const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
         const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2 + offVal;
         const xBase = -F;
-        const stagger = (idx % 3) * Math.round(1.5 * N);
+        const toTop = cy >= map.width / 2;
+        const stagger = (idx % 2) * Math.round(1.5 * N);
         if (isFlg) {
           const xPlate1 = xBase - spec.neckLen;
           const xPlate0 = xPlate1 + spec.flgThick;
           ln([xBase, cy - spec.r], [xPlate0, cy - spec.r], 'FRAME');
           ln([xBase, cy + spec.r], [xPlate0, cy + spec.r], 'FRAME');
           chain([[xPlate1, cy - spec.rf], [xPlate0, cy - spec.rf], [xPlate0, cy + spec.rf], [xPlate1, cy + spec.rf]], 'FRAME', true);
-          const ey = cy + Math.round(2.5 * N) + stagger;
-          drawLeader(ents, [xPlate1, cy], [xPlate1 - Math.round(2.5 * N), ey], [xPlate1 - Math.round(5.5 * N), ey], [label1, label2], nozTextH, 'right', 'DIM');
+          const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
+          drawLeader(ents, [xPlate1, cy], [xPlate1 - Math.round(2.0 * N), ey], [xPlate1 - Math.round(4.5 * N), ey], [label], nozTextH, 'right', 'DIM');
         } else {
           const xEnd = xBase - spec.sockLen;
           chain([[xEnd, cy - spec.sockR], [xBase, cy - spec.sockR], [xBase, cy + spec.sockR], [xEnd, cy + spec.sockR]], 'FRAME', true);
           ln([xEnd, cy - spec.r], [xEnd, cy + spec.r], 'FRAME');
-          const ey = cy + Math.round(2.5 * N) + stagger;
-          drawLeader(ents, [xEnd, cy], [xEnd - Math.round(2.5 * N), ey], [xEnd - Math.round(5.5 * N), ey], [label1, label2], nozTextH, 'right', 'DIM');
+          const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
+          drawLeader(ents, [xEnd, cy], [xEnd - Math.round(2.0 * N), ey], [xEnd - Math.round(4.5 * N), ey], [label], nozTextH, 'right', 'DIM');
         }
       } else if (n.face === 'right') {
         const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
         const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2 + offVal;
         const xBase = L + F;
-        const stagger = (idx % 3) * Math.round(1.5 * N);
+        const toTop = cy >= map.width / 2;
+        const stagger = (idx % 2) * Math.round(1.5 * N);
         if (isFlg) {
           const xPlate1 = xBase + spec.neckLen;
           const xPlate0 = xPlate1 - spec.flgThick;
           ln([xBase, cy - spec.r], [xPlate0, cy - spec.r], 'FRAME');
           ln([xBase, cy + spec.r], [xPlate0, cy + spec.r], 'FRAME');
           chain([[xPlate0, cy - spec.rf], [xPlate1, cy - spec.rf], [xPlate1, cy + spec.rf], [xPlate0, cy + spec.rf]], 'FRAME', true);
-          const ey = cy + Math.round(2.5 * N) + stagger;
-          drawLeader(ents, [xPlate1, cy], [xPlate1 + Math.round(2.5 * N), ey], [xPlate1 + Math.round(5.5 * N), ey], [label1, label2], nozTextH, 'left', 'DIM');
+          const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
+          drawLeader(ents, [xPlate1, cy], [xPlate1 + Math.round(2.0 * N), ey], [xPlate1 + Math.round(4.5 * N), ey], [label], nozTextH, 'left', 'DIM');
         } else {
           const xEnd = xBase + spec.sockLen;
           chain([[xBase, cy - spec.sockR], [xEnd, cy - spec.sockR], [xEnd, cy + spec.sockR], [xBase, cy + spec.sockR]], 'FRAME', true);
           ln([xEnd, cy - spec.r], [xEnd, cy + spec.r], 'FRAME');
-          const ey = cy + Math.round(2.5 * N) + stagger;
-          drawLeader(ents, [xEnd, cy], [xEnd + Math.round(2.5 * N), ey], [xEnd + Math.round(5.5 * N), ey], [label1, label2], nozTextH, 'left', 'DIM');
+          const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
+          drawLeader(ents, [xEnd, cy], [xEnd + Math.round(2.0 * N), ey], [xEnd + Math.round(4.5 * N), ey], [label], nozTextH, 'left', 'DIM');
         }
       }
     });
@@ -2033,8 +2043,9 @@ canvas.drag{cursor:grabbing}
       const lList = ladderList(opt, map);
       const l = (lList.length > 0) ? lList[0] : { sd: 'D', x: map.xs[map.cols.length - 1] + 250, y: 0 };
       if (l.sd === 'D') {
-        drawBalloonCallout(ents, [l.x + 80, -F - 20], [l.x + 80, botClearY], [l.x + 80 + Math.round(12 * N), botClearY], getItemNo('exladder') || 8, N, 'BALLOON');
-        drawBalloonCallout(ents, [l.x - 80, 50], [l.x - 80, botClearY], [l.x - 80 - Math.round(12 * N), botClearY], getItemNo('inladder') || 7, N, 'BALLOON');
+        const balloonY = -F - 40;
+        drawBalloonCallout(ents, [l.x + 80, -F - 20], [l.x + 100 + Math.round(4 * N), balloonY], [l.x + 100 + Math.round(10 * N), balloonY], getItemNo('exladder') || 8, N, 'BALLOON');
+        drawBalloonCallout(ents, [l.x - 80, 50], [l.x - 100 - Math.round(4 * N), balloonY], [l.x - 100 - Math.round(10 * N), balloonY], getItemNo('inladder') || 7, N, 'BALLOON');
       } else if (l.sd === 'R') {
         drawBalloonCallout(ents, [L + F + 20, l.y - 80], [L + F + Math.round(8 * N), l.y - 80], [rightBaseX, l.y - 80], getItemNo('exladder') || 8, N, 'BALLOON');
         drawBalloonCallout(ents, [L - 50, l.y + 80], [L + F + Math.round(8 * N), l.y + 80], [rightBaseX, l.y + 80], getItemNo('inladder') || 7, N, 'BALLOON');
@@ -2747,126 +2758,271 @@ canvas.drag{cursor:grabbing}
       ents.push(...ladderShapes(idx, px, 0, nH));
     });
 
-    // 배관 노즐 (INLET, OUTLET, OVERFLOW, DRAIN, FIRE 등) 입면도 배치
+    // 배관 노즐 (INLET, OUTLET, OVERFLOW, DRAIN, FIRE 등) 입면도 배치 (글로벌 표준 간결 표기 & 중복 결합)
     const nozList = getNozzleList(opt);
-    const nozTextH = Math.round(2.6 * N);
-    nozList.forEach((n, nIdx) => {
-      const spec = getNozzleSpec(n.size);
-      const isFlg = n.type === 'FLANGE';
+    const nozTextH = Math.round(2.2 * N);
+
+    // 1. 현재 뷰(view: 'front' | 'side')에 맞춰 4개 그룹으로 분류
+    const faceNozzles = [];
+    const leftNozzles = [];
+    const rightNozzles = [];
+    const topNozzles = [];
+
+    nozList.forEach(n => {
       const elev = typeof n.elev === 'number' ? n.elev : (nH - 300);
-      const elevStr = n.face === 'top' ? '[TOP]' : `EL.+${elev.toLocaleString()}`;
-      const descTag = n.desc ? ` (${n.desc})` : '';
-      const label1 = `[${n.mark}] ${n.name} ${n.size}${descTag}`;
-      const label2 = `(${n.type}) ${elevStr}`;
-      const stagger = (nIdx % 3) * Math.round(1.5 * N);
-
-      const drawFaceNozzle = (cx, cy) => {
-        if (isFlg) {
-          circ(cx, cy, spec.rf, 'FRAME');
-          circ(cx, cy, spec.pcd, 'PANEL_DETAIL');
-          circ(cx, cy, spec.r, 'FRAME');
-          const numHoles = Math.min(8, spec.holes);
-          for (let k = 0; k < numHoles; k++) {
-            const ang = (k * 360 / numHoles + 45) * Math.PI / 180;
-            circ(cx + spec.pcd * Math.cos(ang), cy + spec.pcd * Math.sin(ang), spec.hr, 'FRAME');
-          }
-        } else {
-          circ(cx, cy, spec.sockR, 'FRAME');
-          circ(cx, cy, spec.r, 'FRAME');
-        }
-        const cr = (isFlg ? spec.rf : spec.sockR) * 1.25;
-        ln([cx - cr, cy], [cx + cr, cy], 'PANEL_DETAIL');
-        ln([cx, cy - cr], [cx, cy + cr], 'PANEL_DETAIL');
-        const toRight = cx < total / 2;
-        const dx = toRight ? Math.round(3.5 * N) : -Math.round(3.5 * N);
-        const ex = toRight ? cx + dx + Math.round(3.0 * N) : cx + dx - Math.round(3.0 * N);
-        const ey = cy + Math.round(3.0 * N) + stagger;
-        drawLeader(ents, [cx + (toRight ? spec.r * 0.7 : -spec.r * 0.7), cy + spec.r * 0.7], [cx + dx, ey], [ex, ey], [label1, label2], nozTextH, toRight ? 'left' : 'right', 'DIM');
-      };
-
-      const drawLeftStub = (ey) => {
-        const xBase = -75;
-        const eyStag = ey + Math.round(2.5 * N) + stagger;
-        if (isFlg) {
-          const xPlate1 = xBase - spec.neckLen;
-          const xPlate0 = xPlate1 + spec.flgThick;
-          ln([xBase, ey - spec.r], [xPlate0, ey - spec.r], 'FRAME');
-          ln([xBase, ey + spec.r], [xPlate0, ey + spec.r], 'FRAME');
-          rect(xPlate1, ey - spec.rf, xPlate0, ey + spec.rf, 'FRAME');
-          drawLeader(ents, [xPlate1, ey], [xPlate1 - Math.round(2.5 * N), eyStag], [xPlate1 - Math.round(5.5 * N), eyStag], [label1, label2], nozTextH, 'right', 'DIM');
-        } else {
-          const xEnd = xBase - spec.sockLen;
-          rect(xEnd, ey - spec.sockR, xBase, ey + spec.sockR, 'FRAME');
-          ln([xEnd, ey - spec.r], [xEnd, ey + spec.r], 'FRAME');
-          drawLeader(ents, [xEnd, ey], [xEnd - Math.round(2.5 * N), eyStag], [xEnd - Math.round(5.5 * N), eyStag], [label1, label2], nozTextH, 'right', 'DIM');
-        }
-      };
-
-      const drawRightStub = (ey) => {
-        const xBase = total + 75;
-        const eyStag = ey + Math.round(2.5 * N) + stagger;
-        if (isFlg) {
-          const xPlate1 = xBase + spec.neckLen;
-          const xPlate0 = xPlate1 - spec.flgThick;
-          ln([xBase, ey - spec.r], [xPlate0, ey - spec.r], 'FRAME');
-          ln([xBase, ey + spec.r], [xPlate0, ey + spec.r], 'FRAME');
-          rect(xPlate0, ey - spec.rf, xPlate1, ey + spec.rf, 'FRAME');
-          drawLeader(ents, [xPlate1, ey], [xPlate1 + Math.round(2.5 * N), eyStag], [xPlate1 + Math.round(5.5 * N), eyStag], [label1, label2], nozTextH, 'left', 'DIM');
-        } else {
-          const xEnd = xBase + spec.sockLen;
-          rect(xBase, ey - spec.sockR, xEnd, ey + spec.sockR, 'FRAME');
-          ln([xEnd, ey - spec.r], [xEnd, ey + spec.r], 'FRAME');
-          drawLeader(ents, [xEnd, ey], [xEnd + Math.round(2.5 * N), eyStag], [xEnd + Math.round(5.5 * N), eyStag], [label1, label2], nozTextH, 'left', 'DIM');
-        }
-      };
-
-      const drawTopStub = (cx) => {
-        const yBase = nH;
-        const eyStag = yBase + Math.round(2.5 * N) + stagger;
-        if (isFlg) {
-          const yPlate1 = yBase + spec.neckLen;
-          const yPlate0 = yPlate1 - spec.flgThick;
-          ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'FRAME');
-          ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'FRAME');
-          rect(cx - spec.rf, yPlate0, cx + spec.rf, yPlate1, 'FRAME');
-          drawLeader(ents, [cx, yPlate1], [cx + Math.round(2.5 * N), eyStag], [cx + Math.round(5.5 * N), eyStag], [label1, label2], nozTextH, 'left', 'DIM');
-        } else {
-          const yEnd = yBase + spec.sockLen;
-          rect(cx - spec.sockR, yBase, cx + spec.sockR, yEnd, 'FRAME');
-          ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'FRAME');
-          drawLeader(ents, [cx, yEnd], [cx + Math.round(2.5 * N), eyStag], [cx + Math.round(5.5 * N), eyStag], [label1, label2], nozTextH, 'left', 'DIM');
-        }
-      };
+      const isFlg = n.type === 'FLANGE';
+      const spec = getNozzleSpec(n.size);
 
       if (view === 'front') {
         if (n.face === 'front') {
           const colIdx = Math.max(0, Math.min(n.seg - 1, mmap.cols.length - 1));
           const cx = (mmap.xs[colIdx] + mmap.xs[colIdx + 1]) / 2 + (n.offset || 0);
-          drawFaceNozzle(cx, elev);
+          faceNozzles.push({ n, spec, isFlg, cx, cy: elev, elev });
         } else if (n.face === 'left') {
-          drawLeftStub(elev);
+          leftNozzles.push({ n, spec, isFlg, elev });
         } else if (n.face === 'right') {
-          drawRightStub(elev);
+          rightNozzles.push({ n, spec, isFlg, elev });
         } else if (n.face === 'top') {
           const colIdx = Math.max(0, Math.min(n.topCell[1], mmap.cols.length - 1));
           const cx = (mmap.xs[colIdx] + mmap.xs[colIdx + 1]) / 2 + (n.offset || 0);
-          drawTopStub(cx);
+          topNozzles.push({ n, spec, isFlg, cx, elev: 'TOP' });
         }
       } else { // side view
         if (n.face === 'right') {
           const rowIdx = Math.max(0, Math.min(n.seg - 1, mmap.rows.length - 1));
           const cy = (mmap.ys[rowIdx] + mmap.ys[rowIdx + 1]) / 2 + (n.offset || 0);
-          drawFaceNozzle(cy, elev);
+          faceNozzles.push({ n, spec, isFlg, cx: cy, cy: elev, elev });
         } else if (n.face === 'front') {
-          drawLeftStub(elev);
+          leftNozzles.push({ n, spec, isFlg, elev });
         } else if (n.face === 'rear') {
-          drawRightStub(elev);
+          rightNozzles.push({ n, spec, isFlg, elev });
         } else if (n.face === 'top') {
           const rowIdx = Math.max(0, Math.min(n.topCell[0], mmap.rows.length - 1));
           const cy = (mmap.ys[rowIdx] + mmap.ys[rowIdx + 1]) / 2 + (n.offset || 0);
-          drawTopStub(cy);
+          topNozzles.push({ n, spec, isFlg, cx: cy, elev: 'TOP' });
         }
       }
+    });
+
+    const minVertGap = Math.round(5.0 * N);
+
+    // 2. 좌측 스터브 (Left Stubs) - 동일 높이 그룹화 및 수직 충돌 방지
+    const groupLeft = [];
+    leftNozzles.sort((a, b) => b.elev - a.elev);
+    leftNozzles.forEach(item => {
+      const g = groupLeft.find(grp => Math.abs(grp.elev - item.elev) < 60);
+      if (g) {
+        g.items.push(item);
+      } else {
+        groupLeft.push({ elev: item.elev, items: [item] });
+      }
+    });
+
+    let prevLeftEy = null;
+    groupLeft.forEach(grp => {
+      const elev = grp.elev;
+      const items = grp.items;
+      let bestItem = items[0];
+      items.forEach(it => { if (it.spec.r > bestItem.spec.r) bestItem = it; });
+      const spec = bestItem.spec;
+      const isFlg = items.some(it => it.isFlg);
+
+      const xBase = -75;
+      if (isFlg) {
+        const xPlate1 = xBase - spec.neckLen;
+        const xPlate0 = xPlate1 + spec.flgThick;
+        ln([xBase, elev - spec.r], [xPlate0, elev - spec.r], 'FRAME');
+        ln([xBase, elev + spec.r], [xPlate0, elev + spec.r], 'FRAME');
+        rect(xPlate1, elev - spec.rf, xPlate0, elev + spec.rf, 'FRAME');
+      } else {
+        const xEnd = xBase - spec.sockLen;
+        rect(xEnd, elev - spec.sockR, xBase, elev + spec.sockR, 'FRAME');
+        ln([xEnd, elev - spec.r], [xEnd, elev + spec.r], 'FRAME');
+      }
+
+      const sameSize = items.every(it => it.n.size === items[0].n.size);
+      let line1;
+      if (sameSize) {
+        line1 = `[${items.map(it => it.n.mark).join(', ')}] ${items[0].n.size}`;
+      } else {
+        line1 = items.map(it => `[${it.n.mark}] ${it.n.size}`).join(', ');
+      }
+      const line2 = `EL.+${elev.toLocaleString()}`;
+
+      let ey = elev + Math.round(1.5 * N);
+      if (prevLeftEy !== null && Math.abs(ey - prevLeftEy) < minVertGap) {
+        ey = prevLeftEy - minVertGap;
+      }
+      prevLeftEy = ey;
+
+      const xTip = isFlg ? (xBase - spec.neckLen) : (xBase - spec.sockLen);
+      drawLeader(ents, [xTip, elev], [xTip - Math.round(2.5 * N), ey], [xTip - Math.round(5.0 * N), ey], [line1, line2], nozTextH, 'right', 'DIM');
+    });
+
+    // 3. 우측 스터브 (Right Stubs) - 동일 높이 그룹화 및 수직 충돌 방지
+    const groupRight = [];
+    rightNozzles.sort((a, b) => b.elev - a.elev);
+    rightNozzles.forEach(item => {
+      const g = groupRight.find(grp => Math.abs(grp.elev - item.elev) < 60);
+      if (g) {
+        g.items.push(item);
+      } else {
+        groupRight.push({ elev: item.elev, items: [item] });
+      }
+    });
+
+    let prevRightEy = null;
+    groupRight.forEach(grp => {
+      const elev = grp.elev;
+      const items = grp.items;
+      let bestItem = items[0];
+      items.forEach(it => { if (it.spec.r > bestItem.spec.r) bestItem = it; });
+      const spec = bestItem.spec;
+      const isFlg = items.some(it => it.isFlg);
+
+      const xBase = total + 75;
+      if (isFlg) {
+        const xPlate1 = xBase + spec.neckLen;
+        const xPlate0 = xPlate1 - spec.flgThick;
+        ln([xBase, elev - spec.r], [xPlate0, elev - spec.r], 'FRAME');
+        ln([xBase, elev + spec.r], [xPlate0, elev + spec.r], 'FRAME');
+        rect(xPlate0, elev - spec.rf, xPlate1, elev + spec.rf, 'FRAME');
+      } else {
+        const xEnd = xBase + spec.sockLen;
+        rect(xBase, elev - spec.sockR, xEnd, elev + spec.sockR, 'FRAME');
+        ln([xEnd, elev - spec.r], [xEnd, elev + spec.r], 'FRAME');
+      }
+
+      const sameSize = items.every(it => it.n.size === items[0].n.size);
+      let line1;
+      if (sameSize) {
+        line1 = `[${items.map(it => it.n.mark).join(', ')}] ${items[0].n.size}`;
+      } else {
+        line1 = items.map(it => `[${it.n.mark}] ${it.n.size}`).join(', ');
+      }
+      const line2 = `EL.+${elev.toLocaleString()}`;
+
+      let ey = elev + Math.round(1.5 * N);
+      if (prevRightEy !== null && Math.abs(ey - prevRightEy) < minVertGap) {
+        ey = prevRightEy - minVertGap;
+      }
+      prevRightEy = ey;
+
+      const xTip = isFlg ? (xBase + spec.neckLen) : (xBase + spec.sockLen);
+      drawLeader(ents, [xTip, elev], [xTip + Math.round(2.5 * N), ey], [xTip + Math.round(5.0 * N), ey], [line1, line2], nozTextH, 'left', 'DIM');
+    });
+
+    // 4. 상부 지붕 스터브 (Top Stubs) - 동일 X좌표 그룹화
+    const groupTop = [];
+    topNozzles.sort((a, b) => a.cx - b.cx);
+    topNozzles.forEach(item => {
+      const g = groupTop.find(grp => Math.abs(grp.cx - item.cx) < 60);
+      if (g) {
+        g.items.push(item);
+      } else {
+        groupTop.push({ cx: item.cx, items: [item] });
+      }
+    });
+
+    let prevTopEx = null;
+    const minHorizGap = Math.round(8.0 * N);
+    groupTop.forEach((grp, gIdx) => {
+      const cx = grp.cx;
+      const items = grp.items;
+      let bestItem = items[0];
+      items.forEach(it => { if (it.spec.r > bestItem.spec.r) bestItem = it; });
+      const spec = bestItem.spec;
+      const isFlg = items.some(it => it.isFlg);
+
+      const yBase = nH;
+      if (isFlg) {
+        const yPlate1 = yBase + spec.neckLen;
+        const yPlate0 = yPlate1 - spec.flgThick;
+        ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'FRAME');
+        ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'FRAME');
+        rect(cx - spec.rf, yPlate0, cx + spec.rf, yPlate1, 'FRAME');
+      } else {
+        const yEnd = yBase + spec.sockLen;
+        rect(cx - spec.sockR, yBase, cx + spec.sockR, yEnd, 'FRAME');
+        ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'FRAME');
+      }
+
+      const sameSize = items.every(it => it.n.size === items[0].n.size);
+      let line1;
+      if (sameSize) {
+        line1 = `[${items.map(it => it.n.mark).join(', ')}] ${items[0].n.size}`;
+      } else {
+        line1 = items.map(it => `[${it.n.mark}] ${it.n.size}`).join(', ');
+      }
+      const line2 = 'EL.+TOP';
+
+      const yTip = isFlg ? (yBase + spec.neckLen) : (yBase + spec.sockLen);
+      const staggerY = (gIdx % 2) * Math.round(2.0 * N);
+      const ey = yTip + Math.round(2.0 * N) + staggerY;
+      let ex = cx + Math.round(2.5 * N);
+      if (prevTopEx !== null && Math.abs(ex - prevTopEx) < minHorizGap) {
+        ex = prevTopEx + minHorizGap;
+      }
+      prevTopEx = ex;
+
+      drawLeader(ents, [cx, yTip], [ex, ey], [ex + Math.round(3.0 * N), ey], [line1, line2], nozTextH, 'left', 'DIM');
+    });
+
+    // 5. 정면 노즐 (Face Nozzles) - 원형 및 볼트홀, 2줄 간결 지시선
+    const groupFace = [];
+    faceNozzles.sort((a, b) => b.cy - a.cy || a.cx - b.cx);
+    faceNozzles.forEach(item => {
+      const g = groupFace.find(grp => Math.hypot(grp.cx - item.cx, grp.cy - item.cy) < 60);
+      if (g) {
+        g.items.push(item);
+      } else {
+        groupFace.push({ cx: item.cx, cy: item.cy, elev: item.elev, items: [item] });
+      }
+    });
+
+    groupFace.forEach((grp, gIdx) => {
+      const cx = grp.cx, cy = grp.cy, elev = grp.elev;
+      const items = grp.items;
+      let bestItem = items[0];
+      items.forEach(it => { if (it.spec.r > bestItem.spec.r) bestItem = it; });
+      const spec = bestItem.spec;
+      const isFlg = items.some(it => it.isFlg);
+
+      if (isFlg) {
+        circ(cx, cy, spec.rf, 'FRAME');
+        circ(cx, cy, spec.pcd, 'PANEL_DETAIL');
+        circ(cx, cy, spec.r, 'FRAME');
+        const numHoles = Math.min(8, spec.holes);
+        for (let k = 0; k < numHoles; k++) {
+          const ang = (k * 360 / numHoles + 45) * Math.PI / 180;
+          circ(cx + spec.pcd * Math.cos(ang), cy + spec.pcd * Math.sin(ang), spec.hr, 'FRAME');
+        }
+      } else {
+        circ(cx, cy, spec.sockR, 'FRAME');
+        circ(cx, cy, spec.r, 'FRAME');
+      }
+      const cr = (isFlg ? spec.rf : spec.sockR) * 1.25;
+      ln([cx - cr, cy], [cx + cr, cy], 'PANEL_DETAIL');
+      ln([cx, cy - cr], [cx, cy + cr], 'PANEL_DETAIL');
+
+      const sameSize = items.every(it => it.n.size === items[0].n.size);
+      let line1;
+      if (sameSize) {
+        line1 = `[${items.map(it => it.n.mark).join(', ')}] ${items[0].n.size}`;
+      } else {
+        line1 = items.map(it => `[${it.n.mark}] ${it.n.size}`).join(', ');
+      }
+      const line2 = `EL.+${elev.toLocaleString()}`;
+
+      const toRight = cx >= total / 2;
+      const dx = toRight ? Math.round(3.0 * N) : -Math.round(3.0 * N);
+      const ex = toRight ? cx + dx + Math.round(3.0 * N) : cx + dx - Math.round(3.0 * N);
+      const dy = (cy >= nH * 0.5 ? 1 : -1) * (Math.round(2.5 * N) + (gIdx % 2) * Math.round(1.5 * N));
+      const ey = cy + dy;
+      const startX = cx + (toRight ? spec.r * 0.7 : -spec.r * 0.7);
+      const startY = cy + (dy > 0 ? spec.r * 0.7 : -spec.r * 0.7);
+
+      drawLeader(ents, [startX, startY], [cx + dx, ey], [ex, ey], [line1, line2], nozTextH, toRight ? 'left' : 'right', 'DIM');
     });
 
     // 부품 풍선 기호 (Elevation View Balloon Callouts - 모두 물탱크 형상 및 치수선 바깥 외곽에 정렬)
@@ -2883,11 +3039,14 @@ canvas.drag{cursor:grabbing}
       const elevRightX = total + 75 + Math.round(18 * N);
       const elevBotY = GRD - dimGap2 - Math.round(14 * N);
 
-      // 1. 기초 콘크리트 (Concrete Foundation - NO. 1): 하단 치수선 바깥 외곽
-      drawBalloonCallout(ents, [total * 0.25, GRD + padH * 0.5], [total * 0.25, elevBotY], [total * 0.25 - Math.round(12 * N), elevBotY], getItemNo('foundation') || 1, N, 'BALLOON');
+      // 1. 기초 콘크리트 (Concrete Foundation - NO. 1): 우측 외곽 정렬 (하단 뷰 타이틀 및 치수선 충돌 완전 방지)
+      const concY = GRD + padH * 0.5;
+      drawBalloonCallout(ents, [total, concY], [total + 75 + Math.round(6 * N), concY], [elevRightX, concY], getItemNo('foundation') || 1, N, 'BALLOON');
 
-      // 2. 스키드 프레임 (Skid Frame - NO. 2): 하단 치수선 바깥 외곽
-      drawBalloonCallout(ents, [total * 0.45, -th * 0.5], [total * 0.45, elevBotY], [total * 0.45 + Math.round(12 * N), elevBotY], getItemNo('skid') || 2, N, 'BALLOON');
+      // 2. 스키드 프레임 (Skid Frame - NO. 2): 우측 외곽 정렬 (하단 뷰 타이틀 및 치수선 충돌 완전 방지)
+      const skidY = -th * 0.5;
+      const skidX = (Math.abs(skidY - concY) < Math.round(8 * N)) ? (elevRightX + Math.round(10 * N)) : elevRightX;
+      drawBalloonCallout(ents, [total + 75, skidY], [total + 75 + Math.round(6 * N), skidY], [skidX, skidY], getItemNo('skid') || 2, N, 'BALLOON');
 
       // 3. 측면 판넬 (Wall Panel - NO. 3): 우측 바깥 외곽
       drawBalloonCallout(ents, [total, nH * 0.65], [total + 75 + Math.round(6 * N), nH * 0.65], [elevRightX, nH * 0.65], getItemNo('panel') || 3, N, 'BALLOON');
@@ -6752,8 +6911,8 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       if (!off && mk) {
         if (mk & 1) {
           const tag = document.createElement('span'); tag.className = 'badge-tag badge-manhole';
-          tag.textContent = '맨홀';
-          tag.style.cssText = (mk & 2) ? 'top:2px;left:50%;transform:translateX(-50%)' : 'top:50%;left:50%;transform:translate(-50%,-50%)';
+          tag.textContent = currentLang === 'en' ? 'MANHOLE' : '맨홀';
+          tag.style.cssText = ((mk & 2) ? 'top:2px;left:50%;transform:translateX(-50%);' : 'top:50%;left:50%;transform:translate(-50%,-50%);') + (currentLang === 'en' ? 'font-size:8px;letter-spacing:-0.3px;' : '');
           b.appendChild(tag);
         }
         if (mk & 2) {
@@ -6775,7 +6934,9 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       if (ladders[key] && !off) {
         const sd = ladders[key];
         const a = document.createElement('span'); a.className = 'badge-ladder ladder-' + sd;
-        a.textContent = { U: '▲사다리', D: '▼사다리', L: '◀사다리', R: '▶사다리' }[sd];
+        const ladText = currentLang === 'en' ? 'LADDER' : '사다리';
+        a.textContent = { U: '▲' + ladText, D: '▼' + ladText, L: '◀' + ladText, R: '▶' + ladText }[sd];
+        if (currentLang === 'en') a.style.fontSize = '8px';
         b.appendChild(a);
         const borderProp = { U: 'borderTop', D: 'borderBottom', L: 'borderLeft', R: 'borderRight' }[sd];
         b.style[borderProp] = '3px solid #16a34a';

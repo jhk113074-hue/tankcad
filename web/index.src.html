@@ -2763,8 +2763,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       if (!off && mk) {
         if (mk & 1) {
           const tag = document.createElement('span'); tag.className = 'badge-tag badge-manhole';
-          tag.textContent = '맨홀';
-          tag.style.cssText = (mk & 2) ? 'top:2px;left:50%;transform:translateX(-50%)' : 'top:50%;left:50%;transform:translate(-50%,-50%)';
+          tag.textContent = currentLang === 'en' ? 'MANHOLE' : '맨홀';
+          tag.style.cssText = ((mk & 2) ? 'top:2px;left:50%;transform:translateX(-50%);' : 'top:50%;left:50%;transform:translate(-50%,-50%);') + (currentLang === 'en' ? 'font-size:8px;letter-spacing:-0.3px;' : '');
           b.appendChild(tag);
         }
         if (mk & 2) {
@@ -2786,7 +2786,9 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       if (ladders[key] && !off) {
         const sd = ladders[key];
         const a = document.createElement('span'); a.className = 'badge-ladder ladder-' + sd;
-        a.textContent = { U: '▲사다리', D: '▼사다리', L: '◀사다리', R: '▶사다리' }[sd];
+        const ladText = currentLang === 'en' ? 'LADDER' : '사다리';
+        a.textContent = { U: '▲' + ladText, D: '▼' + ladText, L: '◀' + ladText, R: '▶' + ladText }[sd];
+        if (currentLang === 'en') a.style.fontSize = '8px';
         b.appendChild(a);
         const borderProp = { U: 'borderTop', D: 'borderBottom', L: 'borderLeft', R: 'borderRight' }[sd];
         b.style[borderProp] = '3px solid #16a34a';
