@@ -331,7 +331,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.49</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.50</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2923,17 +2923,17 @@ canvas.drag{cursor:grabbing}
     circ(pxEnd - 50, slabTopY + 50, 12, 'REINF');
     ln([pxEnd, slabTopY], [pxEnd, slabBotY - 35], 'FRAME');
 
-    // 7. 좌측 치수선 525 & 600 및 좌측 지면 GL선 (media_1790951915253.png 좌측)
+    // 7. 좌측 지면 GL선 (media_1790952977248.png: 좌측 GL도 바닥 레벨 slabBotY = -750로 배치)
     const glLen = Math.max(650, Math.round(18.0 * N));
     const soilH = Math.round(3.5 * N);
     const triW = Math.round(2.6 * N), triH = Math.round(2.4 * N);
-    // 좌측 GL선 (y = slabTopY = -600)
-    ln([px0 - glLen, slabTopY], [px0, slabTopY], 'FRAME');
+    // 좌측 GL선 (y = slabBotY = -750)
+    ln([px0 - glLen, slabBotY], [px0, slabBotY], 'FRAME');
     const lSymX = px0 - Math.round(7.5 * N);
-    poly([[lSymX - triW / 2, slabTopY + triH], [lSymX + triW / 2, slabTopY + triH], [lSymX, slabTopY]], 'DIM', true);
-    ents.push({ t: 'text', p: [lSymX + triW * 0.8, slabTopY + triH * 0.8], h: Math.round(2.4 * N), s: 'GL', rot: 0, align: 'left', layer: 'DIM' });
+    poly([[lSymX - triW / 2, slabBotY + triH], [lSymX + triW / 2, slabBotY + triH], [lSymX, slabBotY]], 'DIM', true);
+    ents.push({ t: 'text', p: [lSymX + triW * 0.8, slabBotY + triH * 0.8], h: Math.round(2.4 * N), s: 'GL', rot: 0, align: 'left', layer: 'DIM' });
     for (let sx = px0 - glLen; sx < px0 - glLen * 0.1; sx += Math.round(1.8 * N)) {
-      ln([sx, slabTopY], [sx - soilH, slabTopY - soilH], 'PANEL_DETAIL');
+      ln([sx, slabBotY], [sx - soilH, slabBotY - soilH], 'PANEL_DETAIL');
     }
     // (A) 좌측 내부 525 치수선 (패드 상면 y=-th ~ 슬래브 상면 y=-600)
     const dim525X = px0 - Math.round(5.5 * N);
@@ -3411,16 +3411,16 @@ canvas.drag{cursor:grabbing}
     circ(pxEnd - 50, slabTopY + 50, 12, 'REINF');
     ln([pxEnd, slabTopY], [pxEnd, slabBotY - 35], 'FRAME');
 
-    // 7. 좌측 지면 GL선 (media_1790951915253.png 좌측)
+    // 7. 좌측 지면 GL선 (media_1790952977248.png: 좌측 GL도 바닥 레벨 slabBotY = -750로 배치)
     const glLen = Math.max(650, Math.round(18.0 * N));
     const soilH = Math.round(3.5 * N);
     const triW = Math.round(2.6 * N), triH = Math.round(2.4 * N);
-    ln([px0 - glLen, slabTopY], [px0, slabTopY], 'FRAME');
+    ln([px0 - glLen, slabBotY], [px0, slabBotY], 'FRAME');
     const lSymX = px0 - Math.round(7.5 * N);
-    poly([[lSymX - triW / 2, slabTopY + triH], [lSymX + triW / 2, slabTopY + triH], [lSymX, slabTopY]], 'DIM', true);
-    ents.push({ t: 'text', p: [lSymX + triW * 0.8, slabTopY + triH * 0.8], h: Math.round(2.4 * N), s: 'GL', rot: 0, align: 'left', layer: 'DIM' });
+    poly([[lSymX - triW / 2, slabBotY + triH], [lSymX + triW / 2, slabBotY + triH], [lSymX, slabBotY]], 'DIM', true);
+    ents.push({ t: 'text', p: [lSymX + triW * 0.8, slabBotY + triH * 0.8], h: Math.round(2.4 * N), s: 'GL', rot: 0, align: 'left', layer: 'DIM' });
     for (let sx = px0 - glLen; sx < px0 - glLen * 0.1; sx += Math.round(1.8 * N)) {
-      ln([sx, slabTopY], [sx - soilH, slabTopY - soilH], 'PANEL_DETAIL');
+      ln([sx, slabBotY], [sx - soilH, slabBotY - soilH], 'PANEL_DETAIL');
     }
 
     // 8. 우측 150 단차 치수선 및 우측 지면 GL선 (media_1790951915253.png 우측)
@@ -3540,12 +3540,12 @@ canvas.drag{cursor:grabbing}
     let yy = 0;
     hs.forEach(hh => { dimLinear(ents, [X0, yy], [X0, yy + hh], X0 - dimGap1, true, String(hh), textH, 'DIM'); yy += hh; });
     dimLinear(ents, [X0, nH], [X0, nH + 100], X0 - dimGap1, true, '100', textH, 'DIM');
-    // 좌측 내부 525 치수선 (패드 상면 y=-th ~ 슬래브 상면 y=-600)
-    dimLinear(ents, [X0, slabTopY], [X0, -th], X0 - dimGap1, true, String(padH), textH, 'DIM');
+    // 좌측 내부 525 치수선 (패드 상면 y=-th ~ 슬래브 상면 y=-600, media_1790952977248.png)
+    dimLinear(ents, [px0, slabTopY], [px0, -th], X0 - dimGap1, true, String(padH), textH, 'DIM');
     // 좌측 외부 600 치수선 (탱크 하부 y=0 ~ 슬래브 상면 y=-600)
-    dimLinear(ents, [X0, slabTopY], [X0, 0], overallX, true, String(clearanceH), textH, 'DIM');
+    dimLinear(ents, [px0, slabTopY], [0, 0], overallX, true, String(clearanceH), textH, 'DIM');
     // 탱크 전체 높이 치수선 (슬래브 상면 ~ 탱크 최상단)
-    dimLinear(ents, [X0, slabTopY], [X0, nH + 100], overallX - dimGap1, true, String(nH + 100 - slabTopY), textH, 'DIM');
+    dimLinear(ents, [px0, slabTopY], [px0, nH + 100], overallX - dimGap1, true, String(nH + 100 - slabTopY), textH, 'DIM');
 
     lads.forEach(l => {
       let idx, px;

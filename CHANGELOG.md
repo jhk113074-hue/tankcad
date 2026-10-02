@@ -5,6 +5,19 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.50] - 2026-10-03
+
+### Enhanced (기초콘크리트 좌측 GL 레벨 바닥선 일치 및 600/525 인출선 정렬 - media_1790952977248.png 완벽 반영)
+- **좌측 지면 GL선 레벨 바닥 슬래브 하단(`y=-750`)으로 통일 ("현재 위 그림인데 아래그림 같이 해주세요")**:
+  - 좌측 지면선(`GL`), 역삼각형 표식(`▽ GL`), 하부 45° 토사 해치를 기존 슬래브 상면(`y=-600`)에서 바닥 슬래브 하단(`y=-750`)으로 전격 이동.
+  - 우측 GL 레벨(`y=-750`)과 동일하게 좌우 지면 레벨이 완벽한 수평 기준선으로 일치.
+  - 좌측 외측 콘크리트 수직벽이 `y=-75`부터 `y=-750`까지 지면 위로 연속 노출되도록 도면화.
+- **525 및 600 수직 치수 기준 인출선(`y=-600`) 독립 분리**:
+  - 패드 높이(`525`) 및 공간 클리어런스(`600`)의 하부 측정 기준선인 `y=-600`(슬래브 상면 레벨)에서 좌측 외곽으로 수평 치수 보조선(`DIM` 레이어)을 깨끗하게 인출.
+  - GL 지면선(`y=-750`)과 치수 기준선(`y=-600`)의 겹침/간섭을 완전히 제거하여 캐드 가독성 극대화.
+- **전용 기초콘크리트도(`buildFoundationSection`) 및 정면/측면 입면도(`buildElevation`) 동시 반영**:
+  - 단일화된 기초콘크리트 형상 엔진으로 모든 도면 뷰에서 100% 일치하는 지면/단면 형상 보장.
+
 ## [1.5.49] - 2026-10-02
 
 ### Enhanced & Standardized (기초콘크리트 단면 및 스키드빔 캐드 표준 도면화 - media_1790951915253.png 완벽 반영)
