@@ -910,9 +910,50 @@
       if (lList.length > 0) {
         const l = lList[0];
         if (l.sd === 'D') {
-          const balloonY = l.y - F - 40;
-          drawBalloonCallout(ents, [l.x + 80, l.y - F - 20], [l.x + 100 + Math.round(4 * N), balloonY], [l.x + 100 + Math.round(10 * N), balloonY], getItemNo('exladder') || 8, N, 'BALLOON');
-          drawBalloonCallout(ents, [l.x - 80, l.y + 50], [l.x - 100 - Math.round(4 * N), balloonY], [l.x - 100 - Math.round(10 * N), balloonY], getItemNo('inladder') || 7, N, 'BALLOON');
+          // 전면 노즐(nozzles) 위치 분석하여 노즐이 없는 안전한 방향(좌/우) 자동 선택
+          const frontNoz = (getNozzleList(opt) || []).filter(n => n.face === 'front');
+          const nozXs = frontNoz.map(n => {
+            const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
+            return (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + (n.offset || 0);
+          });
+          const hasLeftNoz = nozXs.some(nx => nx < l.x && Math.abs(nx - l.x) < 1400);
+          const hasRightNoz = nozXs.some(nx => nx > l.x && Math.abs(nx - l.x) < 1400);
+          const toRight = !hasRightNoz || hasLeftNoz;
+
+          // Y 좌표: 플랜지(y = -F)와 1차 치수선(y = -F - 10*N) 사이의 정중앙에 배치하여 판넬 및 치수선 상/하 완전 비간섭
+          const balloonY = l.y - F - Math.round(5.0 * N);
+
+          // X 좌표: 치수 보조선(1000mm 그리드 경계)과 최소 150mm 이상 떨어지도록 인접 셀 중앙 구역에 배치
+          const midX = toRight ? (l.x + 1000) : (l.x - 1000);
+          let bx8, bx7, elbow8, elbow7;
+          if (toRight) {
+            if (l.x + 1000 <= L) {
+              bx8 = midX - Math.max(160, Math.round(5.0 * N));
+              bx7 = midX + Math.max(160, Math.round(5.0 * N));
+            } else {
+              bx8 = L + F + Math.round(8.0 * N);
+              bx7 = L + F + Math.round(18.0 * N);
+            }
+            elbow8 = bx8 - Math.round(6.0 * N);
+            elbow7 = bx7 - Math.round(6.0 * N);
+          } else {
+            if (l.x - 1000 >= 0) {
+              bx8 = midX + Math.max(160, Math.round(5.0 * N));
+              bx7 = midX - Math.max(160, Math.round(5.0 * N));
+            } else {
+              bx8 = -F - Math.round(8.0 * N);
+              bx7 = -F - Math.round(18.0 * N);
+            }
+            elbow8 = bx8 + Math.round(6.0 * N);
+            elbow7 = bx7 + Math.round(6.0 * N);
+          }
+
+          // 지시선 시작점: 판넬 내부(y > 0)로 들어가지 않고 외벽/사다리 표면에서 시작하여 판넬 및 노즐 관통 완전 차단
+          const pStart8 = [l.x + (toRight ? 60 : -60), l.y - F - 35];
+          const pStart7 = [l.x + (toRight ? -30 : 30), l.y - Math.round(F * 0.4)];
+
+          drawBalloonCallout(ents, pStart8, [elbow8, balloonY], [bx8, balloonY], getItemNo('exladder') || 8, N, 'BALLOON');
+          drawBalloonCallout(ents, pStart7, [elbow7, balloonY], [bx7, balloonY], getItemNo('inladder') || 7, N, 'BALLOON');
         } else if (l.sd === 'R') {
           drawBalloonCallout(ents, [l.x + F + 20, l.y - 80], [l.x + F + Math.round(8 * N), l.y - 80], [rightBaseX, l.y - 80], getItemNo('exladder') || 8, N, 'BALLOON');
           drawBalloonCallout(ents, [l.x - 50, l.y + 80], [l.x + F + Math.round(8 * N), l.y + 80], [rightBaseX, l.y + 80], getItemNo('inladder') || 7, N, 'BALLOON');
