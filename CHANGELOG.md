@@ -5,7 +5,7 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.33] - 2026-10-02
+## [1.5.34] - 2026-10-02
 
 ### Fixed & Enhanced (DWG 3D 조감도 외관 시각화 일치 및 풍선 기호 상호 교차 방지)
 - **DWG 3D 조감도 은선 배면 제거 및 외부 노출면 일치 ("DWG파일에서도 밖에서 보여지는 부분만 보이고, 보기화면 처럼 표현해주세요" 100% 반영)**:
