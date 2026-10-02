@@ -5,6 +5,20 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.27] - 2026-10-02
+
+### Enhanced & Fixed (등각조감도 치수선 생략 및 콘크리트 기초 빔 연속성 복원, 이형 규격 +/- 표기)
+- **등각조감도(3D Isometric) 치수선 기입 생략 ("등각조감도에는 치수 기입을 하지 않으셔도 됩니다" 완벽 반영)**:
+  - 3D 등각 모델 뷰 및 도면 시트 내 등각조감도에서 모델 하단에 표기되던 `L`, `W`, `H` 치수선과 치수 텍스트를 제거하여 시각적 간결함과 가독성 확보.
+- **3D 등각도 콘크리트 기초 패드 빔 연속성 완전 복원 ("현재 1번째 캡쳐로 되어 있는데...2번째 캡처처럼 만들어달라는 이야기 입니다", "콘크리트 도면 참조")**:
+  - 2D 기초 콘크리트 도면 및 AutoCAD 기준 도면과 100% 일치하도록, 인접 열 판넬 유무와 관계없이 기초 보가 지반 위에 온전히 안착된 연속 줄기초 빔(continuous beam)으로 렌더링되도록 수정.
+  - 우측 날개부 하부 보가 중간에 끊어져 공중에 뜨던 버그를 완벽 해결.
+- **이형탱크 규격 외곽 - 차감(+/-) 형식 표기 적용 ("이형탱크 규격을 + - 형식으로 보여주세요")**:
+  - `4W × 5L × 3H - (2W × 1L + 1W × 1L) × 3H` 형식으로 표제란 규격 및 모델 요약에 차감 부위를 직관적으로 표시.
+  - 긴 텍스트 입력 시 표제란 셀 너비에 맞춘 폰트 크기 자동 조절(auto-scaling) 적용.
+
+---
+
 ## [1.5.26] - 2026-10-02
 
 ### Fixed (3D 등각도 콘크리트 기초 패드 측면 구획선 제거)

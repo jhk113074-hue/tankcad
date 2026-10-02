@@ -117,6 +117,84 @@
     return { rows, cols, xs, ys, width: ys[ys.length - 1], length: xs[xs.length - 1], removed, has };
   }
 
+  // 이형탱크 제외 부위 직사각형 분할 및 규격 문자열 생성 (+ - 형식)
+  function decomposeRemoved(map) {
+    if (!map.removed || map.removed.size === 0) return [];
+    const cells = new Set(map.removed);
+    const nR = map.rows.length;
+    const nC = map.cols.length;
+    const blocks = [];
+
+    while (cells.size > 0) {
+      let best = null;
+      let bestArea = -1;
+
+      for (let r0 = 0; r0 < nR; r0++) {
+        for (let r1 = r0; r1 < nR; r1++) {
+          for (let c0 = 0; c0 < nC; c0++) {
+            for (let c1 = c0; c1 < nC; c1++) {
+              let allIn = true;
+              for (let r = r0; r <= r1; r++) {
+                for (let c = c0; c <= c1; c++) {
+                  if (!cells.has(r + ',' + c)) {
+                    allIn = false;
+                    break;
+                  }
+                }
+                if (!allIn) break;
+              }
+              if (allIn) {
+                let w = 0, l = 0;
+                for (let r = r0; r <= r1; r++) w += map.rows[r];
+                for (let c = c0; c <= c1; c++) l += map.cols[c];
+                const area = w * l;
+                if (area > bestArea) {
+                  bestArea = area;
+                  best = { r0, r1, c0, c1, w, l };
+                } else if (area === bestArea && best) {
+                  // 동률 시 세로(열) 방향 선호 (외곽 치수 괄호 묶음 형식과 일치)
+                  if ((r1 - r0) > (best.r1 - best.r0)) {
+                    best = { r0, r1, c0, c1, w, l };
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (!best) break;
+
+      for (let r = best.r0; r <= best.r1; r++) {
+        for (let c = best.c0; c <= best.c1; c++) {
+          cells.delete(r + ',' + c);
+        }
+      }
+      blocks.push({ w: best.w, l: best.l });
+    }
+
+    return blocks;
+  }
+
+  function getTankDimStr(opt, map, H) {
+    const fd = a => {
+      const v = a.filter(Boolean).map(x => x / 1000);
+      return v.length > 1 ? '(' + v.join('+') + ')' : String(v[0] || 0);
+    };
+    const fmtM = mm => (mm % 1000 === 0) ? String(mm / 1000) : String(+(mm / 1000).toFixed(2));
+    const baseDimStr = fd(opt.width || [map.width]) + 'W X ' + fd(opt.length || [map.length]) + 'L X ' + fd(opt.height || [H]) + 'H';
+    const anyRemoved = map.removed && map.removed.size > 0;
+    if (!anyRemoved) return baseDimStr;
+
+    const blocks = decomposeRemoved(map);
+    if (!blocks.length) return baseDimStr + ' (이형)';
+
+    const cutoutParts = blocks.map(b => fmtM(b.w) + 'W X ' + fmtM(b.l) + 'L').join(' + ');
+    const hStr = fd(opt.height || [H]) + 'H';
+    const cutoutStr = ' - (' + cutoutParts + ') X ' + hStr;
+    return baseDimStr + cutoutStr;
+  }
+
   /* ---------- 패널 내부 도형 (CeilLT) ---------- */
   function panelShapes(templates, mat, x, y, w, h) {
     const key = w + 'x' + h;
@@ -625,11 +703,8 @@
     dimLinear(ents, [0, W], [0, W + F], baseX, true, String(F), textH, 'DIM');
     dimLinear(ents, [0, -F], [0, W + F], -F - dimGap2, true, String(W + 2 * F), textH, 'DIM');
     ents.blocks = blocks;
-    const fd = a => { const v = a.filter(Boolean).map(x => x / 1000); return v.length > 1 ? '(' + v.join('+') + ')' : String(v[0] || 0); };
-    const anyRemoved = map.removed && map.removed.size > 0;
     const H = (opt.height || []).reduce((a, b) => a + (b || 0), 0);
-    const baseDimStr = fd(opt.width || []) + 'W X ' + fd(opt.length || []) + 'L X ' + fd(opt.height || [H]) + 'H';
-    const autoDimStr = baseDimStr + (anyRemoved ? ' (이형)' : '');
+    const autoDimStr = getTankDimStr(opt, map, H);
     const t = opt.title || {};
     const dimStr = (t.tankSize && t.tankSize.trim()) ? t.tankSize.trim() : autoDimStr;
     let activeAreaMm2 = 0;
@@ -1448,7 +1523,7 @@
     const ln = (a, b, layer, depth = 0) => ents.push({ t: 'line', a, b, layer: layer || 'PANEL', depth });
     const poly = (pts, layer, close = true, fill = false, depth = 0) => {
       if (fill) {
-        ents.push({ t: 'poly', pts, fill: true, stroke: (close !== false), layer: layer || 'PANEL', depth });
+        ents.push({ t: 'poly', pts, fill: true, stroke: (close !== false), close: (close !== false), layer: layer || 'PANEL', depth });
       } else {
         for (let i = 0; i < pts.length - 1; i++) ln(pts[i], pts[i + 1], layer, depth);
         if (close && pts.length > 2) ln(pts[pts.length - 1], pts[0], layer, depth);
@@ -1711,64 +1786,31 @@
         isoCircle(cx, yStart + 110, -th, 12, 'XY', 'FRAME', topPadDepth);
         ln(toIso(cx, yStart + 110, -th), toIso(cx, yStart + 110, -th + 30), 'FRAME', topPadDepth);
 
-        // 4) & 5) 우측 노출 측면 (전면 돌출부 Y = yStart ~ y0 및 탱크 구간 Y = y0 ~ y1)
-        // 구획선 없이 연속된 구간으로 병합 렌더링
-        const rowAtY0 = map.rows.findIndex((_, r) => map.ys[r] === y0);
-        const firstRowExposed = (sIdx === strips.length - 1) || (rowAtY0 >= 0 && !hasTankAtRow(idx + 1, rowAtY0));
-        const sideSpans = [];
-        let curSpan = null;
+        // 4) & 5) 우측 노출 측면: yStart부터 y1까지 하나의 연속된 콘크리트 보 측면으로 렌더링
+        const sideDepth = (yStart + y1) / 2 - rightX - (-th / 2);
+        poly([
+          toIso(rightX, yStart, -th),
+          toIso(rightX, y1, -th),
+          toIso(rightX, y1, GRD),
+          toIso(rightX, yStart, GRD)
+        ], 'PANEL', true, true, sideDepth);
+        ln(toIso(rightX, yStart, -th), toIso(rightX, y1, -th), 'PANEL', sideDepth);
 
-        if (firstRowExposed) {
-          curSpan = { yA: yStart, yB: y0 };
-        } else {
-          sideSpans.push({ yA: yStart, yB: y0 });
-        }
-
-        for (let r = 0; r < nR; r++) {
-          if (map.ys[r] >= y0 && map.ys[r + 1] <= y1) {
-            const isRightmostAtR = (sIdx === strips.length - 1) || !hasTankAtRow(idx + 1, r);
-            if (isRightmostAtR) {
-              const segY0 = map.ys[r], segY1 = map.ys[r + 1];
-              if (curSpan && Math.abs(curSpan.yB - segY0) < 1e-4) {
-                curSpan.yB = segY1;
-              } else {
-                if (curSpan) sideSpans.push(curSpan);
-                curSpan = { yA: segY0, yB: segY1 };
+        if (sIdx === strips.length - 1) {
+          let xWall = totalL;
+          for (let r = map.rows.length - 1; r >= 0; r--) {
+            if (map.ys[r + 1] === y1) {
+              for (let j = map.cols.length - 1; j >= 0; j--) {
+                if (map.has(r, j)) { xWall = map.xs[j + 1]; break; }
               }
-            } else {
-              if (curSpan) {
-                sideSpans.push(curSpan);
-                curSpan = null;
-              }
+              break;
             }
           }
-        }
-        if (curSpan) sideSpans.push(curSpan);
-
-        sideSpans.forEach(span => {
-          const sideSegDepth = (span.yA + span.yB) / 2 - rightX - (-th / 2);
-          poly([
-            toIso(rightX, span.yA, -th),
-            toIso(rightX, span.yB, -th),
-            toIso(rightX, span.yB, GRD),
-            toIso(rightX, span.yA, GRD)
-          ], 'PANEL', true, true, sideSegDepth);
-          ln(toIso(rightX, span.yA, -th), toIso(rightX, span.yB, -th), 'PANEL', sideSegDepth);
-
-          if (span.yB === y1) {
-            let xWall = totalL;
-            for (let r = map.rows.length - 1; r >= 0; r--) {
-              if (map.ys[r + 1] === y1) {
-                for (let j = map.cols.length - 1; j >= 0; j--) {
-                  if (map.has(r, j)) { xWall = map.xs[j + 1]; break; }
-                }
-                break;
-              }
-            }
-            ln(toIso(xWall, y1, -th), toIso(rightX, y1, -th), 'PANEL', sideSegDepth);
-            ln(toIso(rightX, y1, -th), toIso(rightX, y1, GRD), 'PANEL', sideSegDepth);
+          if (rightX > xWall) {
+            ln(toIso(xWall, y1, -th), toIso(rightX, y1, -th), 'PANEL', sideDepth);
           }
-        });
+          ln(toIso(rightX, y1, -th), toIso(rightX, y1, GRD), 'PANEL', sideDepth);
+        }
       });
     });
 
@@ -2301,28 +2343,8 @@
       });
     }
 
-    // 9. 3D 등각 치수선 (L, W, H) - 항상 최상단에 렌더링
-    const dimGap = Math.round(14.0 * N);
-    const dL0 = toIso(0, -PAD_OV - dimGap, -th);
-    const dL1 = toIso(totalL, -PAD_OV - dimGap, -th);
-    ln(toIso(0, -PAD_OV, -th), dL0, 'DIM', -1e9);
-    ln(toIso(totalL, -PAD_OV, -th), dL1, 'DIM', -1e9);
-    ln(dL0, dL1, 'DIM', -1e9);
-    ents.push({ t: 'text', p: [(dL0[0] + dL1[0]) / 2, (dL0[1] + dL1[1]) / 2 - textH * 0.9], h: textH, s: String(totalL) + ' (L)', align: 'center', rot: -30, layer: 'DIM', depth: -1e9 });
+    // 9. 3D 등각 치수선 (L, W, H) - 사용자 요청으로 등각조감도 치수선 기입 생략
 
-    const dW0 = toIso(XR + dimGap, 0, -th);
-    const dW1 = toIso(XR + dimGap, totalW, -th);
-    ln(toIso(XR, 0, -th), dW0, 'DIM', -1e9);
-    ln(toIso(XR, totalW, -th), dW1, 'DIM', -1e9);
-    ln(dW0, dW1, 'DIM', -1e9);
-    ents.push({ t: 'text', p: [(dW0[0] + dW1[0]) / 2, (dW0[1] + dW1[1]) / 2 - textH * 0.9], h: textH, s: String(totalW) + ' (W)', align: 'center', rot: 30, layer: 'DIM', depth: -1e9 });
-
-    const dH_base = toIso(totalL + dimGap * 0.7, -dimGap * 0.7, 0);
-    const dH_top = toIso(totalL + dimGap * 0.7, -dimGap * 0.7, H);
-    ln(toIso(totalL, 0, 0), dH_base, 'DIM', -1e9);
-    ln(toIso(totalL, 0, H), dH_top, 'DIM', -1e9);
-    ln(dH_base, dH_top, 'DIM', -1e9);
-    ents.push({ t: 'text', p: [(dH_base[0] + dH_top[0]) / 2 + textH * 1.2, (dH_base[1] + dH_top[1]) / 2], h: textH, s: String(H) + ' (H)', align: 'left', rot: 90, layer: 'DIM', depth: -1e9 });
 
     // 10. 화가 알고리즘 (Painter's Algorithm) 정렬: 원거리(높은 depth) -> 근거리(낮은 depth)
     ents.forEach((e, idx) => { e._idx = idx; });
@@ -2831,8 +2853,7 @@
     // 하부 표 (아래에서 위로 - 칸 대폭 확대 및 글씨 시인성/가독성 극대화)
     const fd = a => { const v = a.filter(Boolean).map(x => x / 1000); return v.length > 1 ? '(' + v.join('+') + ')' : String(v[0] || 0); };
     const anyRemoved = mmap.removed && mmap.removed.size > 0;
-    const baseDimStr = fd(opt.width || []) + 'W X ' + fd(opt.length || []) + 'L X ' + fd(opt.height || [H]) + 'H';
-    const autoDimStr = baseDimStr + (anyRemoved ? ' (이형)' : '');
+    const autoDimStr = getTankDimStr(opt, mmap, H);
     const dimStr = (t.tankSize && t.tankSize.trim()) ? t.tankSize.trim() : autoDimStr;
 
     let activeAreaMm2 = 0;
@@ -2855,7 +2876,9 @@
     const titleVal = opt.sheetKind === 'frame' ? 'STEEL SKID DRAWING' : opt.sheetKind === 'detail' ? 'DETAILS DWG' : dimStr + '\n= ' + ton + ' Ton';
     const tparts = titleVal.split('\n');
     if (tparts.length > 1) {
-      text(tx0 + colLabelW + colValW / 2, ty + titleH / 2 + 5.5, 6.2, tparts[0], 'center', 0, 'middle');
+      const maxChar = Math.max(tparts[0].length, tparts[1].length);
+      const fs = maxChar > 35 ? 4.2 : (maxChar > 24 ? 5.0 : 6.2);
+      text(tx0 + colLabelW + colValW / 2, ty + titleH / 2 + 5.5, fs, tparts[0], 'center', 0, 'middle');
       text(tx0 + colLabelW + colValW / 2, ty + titleH / 2 - 5.5, 6.2, tparts[1], 'center', 0, 'middle');
     } else {
       text(tx0 + colLabelW + colValW / 2, ty + titleH / 2, 6.5, titleVal, 'center', 0, 'middle');
@@ -2883,7 +2906,8 @@
       line([tx0, ty + rowH], [x1, ty + rowH]);
       text(tx0 + colLabelW / 2, ty + rowH / 2, 4.8, k, 'center', 0, 'middle');
       line([tx0 + colLabelW, ty], [tx0 + colLabelW, ty + rowH]);
-      text(tx0 + colLabelW + colValW / 2, ty + rowH / 2, 5.0, v, 'center', 0, 'middle');
+      const fs = (k === 'TANK SIZE' && v && v.length > 30) ? 3.8 : (k === 'TANK SIZE' && v && v.length > 20 ? 4.3 : 5.0);
+      text(tx0 + colLabelW + colValW / 2, ty + rowH / 2, fs, v, 'center', 0, 'middle');
       ty += rowH;
     });
 
