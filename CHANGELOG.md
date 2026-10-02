@@ -5,6 +5,19 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.30] - 2026-10-02
+
+### Added (부품 사양 명세표 Item List / BOM 및 도면상 풍선 기호 넘버링 Balloon Callouts 전면 구현)
+- **부품 사양 명세표(Item List / BOM) 및 도면 풍선 기호 넘버링 완비 ("각 부품별 사양 기록하고 도면상에 넘버링해주는 기능" 완벽 반영)**:
+  - **기본 부품 사양 자동 생성 엔진 (`buildDefaultBOM`)**: 현재 탱크 규격·재질·부속품 옵션을 분석하여 AutoCAD 기준 11대 부품(기초 콘크리트, 스키드 프레임, 바닥/측면/지붕 판넬, 코너 프레임, 에어벤트, 맨홀, 내·외부 사다리, 플랜지 바, 내부 스테이, 배관 노즐)의 재질, 수량, 규격을 실시간으로 자동 산출.
+  - **도면상 풍선 기호(Circular Balloon Callout) 렌더링**: AutoCAD 표준 규격의 지시선 원형 풍선(①, ②, ③...)을 평면도 및 입면도의 해당 부품(맨홀, 에어벤트, 사다리, 판넬, 프레임 등)에 자동 인출 및 번호 매핑.
+  - **A1 도면 시트 표준 부품 명세표 (`2. ITEM LIST`) 테이블 렌더링**: 사용자 기준 도면과 100% 동일한 5열 구조(`NO.`, `ITEMS`, `MATERIAL`, `QTY`, `SPECIFICATIONS`)로 도면 우측 표제란 상단에 깔끔하게 표출.
+  - **BOM 관리 및 편집 모달 UI (`bomModal`)**: 좌측 패널에 부품 개수 뱃지 및 관리 버튼 추가. 엑셀처럼 인라인으로 사양/재질/수량 직접 수정, 실시간 자동 생성(Auto BOM), 품목 추가 및 삭제 지원.
+  - **도면 넘버링 On/Off 토글 및 상태 보존**: 체크박스를 통해 풍선 기호 표출을 자유롭게 제어하며, URL 해시 및 로컬 상태에 완벽 저장/복원.
+  - **AutoCAD DXF 호환성 보장**: `toDxf` 내보내기 시 부품 명세표와 원형 풍선 기호가 AutoCAD 표준 객체로 손실 없이 내보내기 지원.
+
+---
+
 ## [1.5.29] - 2026-10-02
 
 ### Enhanced & Fixed (3D 등각도 외부 사다리 정면도·측면도 도면 표준 형상 100% 일치화 및 중간 발판 복원)

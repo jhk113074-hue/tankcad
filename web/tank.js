@@ -414,6 +414,61 @@
     });
   }
 
+  /* ---------- 부품 풍선 기호 (Circular Balloon Callout with Leader) ---------- */
+  function drawBalloonCallout(ents, startPt, elbowPt, balloonCenter, numStr, scaleN = 25, layer = 'DIM') {
+    layer = layer || 'DIM';
+    const balloonR = Math.round(3.8 * scaleN);
+    const textH = Math.round(3.0 * scaleN);
+
+    // 단부 점 (Terminal dot)
+    ents.push({ t: 'circle', c: startPt, r: Math.max(3, Math.round(scaleN * 0.18)), layer });
+
+    // 지시선 (Leader line)
+    const dx = balloonCenter[0] - elbowPt[0], dy = balloonCenter[1] - elbowPt[1];
+    const dist = Math.hypot(dx, dy) || 1;
+    const endPt = [balloonCenter[0] - (dx / dist) * balloonR, balloonCenter[1] - (dy / dist) * balloonR];
+
+    ents.push({ t: 'line', a: startPt, b: elbowPt, layer });
+    ents.push({ t: 'line', a: elbowPt, b: endPt, layer });
+
+    // 원형 풍선 (Circular balloon)
+    ents.push({ t: 'circle', c: balloonCenter, r: balloonR, layer });
+
+    // 풍선 내부 번호 (Center text)
+    ents.push({ t: 'text', p: balloonCenter, h: textH, s: String(numStr), rot: 0, align: 'center', valign: 'middle', layer });
+  }
+
+  /* ---------- 기본 부품 사양 명세표 생성 (Default Item List / BOM) ---------- */
+  function buildDefaultBOM(opt) {
+    const H = (opt.height || []).reduce((a, b) => a + (b || 0), 0) || 3000;
+    const mat = (opt.material === 'STS') ? 'STS' : (opt.material === 'GRP' ? 'GRP' : 'SMC');
+    const mmap = createMap(opt);
+    const totalL = mmap.length, totalW = mmap.width;
+
+    let manholeCount = 0, ventCount = 0;
+    Object.values(opt.marks || {}).forEach(m => {
+      if (m === 1) manholeCount++;
+      else if (m === 2) ventCount++;
+    });
+    const ladderCount = Object.keys(opt.ladders || {}).length || 1;
+    const nozzleList = getNozzleList(opt);
+    const padH = (typeof opt.padH === 'number' && !isNaN(opt.padH)) ? opt.padH : (600 - (opt.frame || 75));
+
+    return [
+      { no: 1, key: 'foundation', name: 'Concrete Foundation', mat: 'CONC', qty: '1식', spec: `Refer Foundation Pad plan (H${padH})` },
+      { no: 2, key: 'skid', name: 'Skid Frame', mat: 'SS275(HDG)', qty: '1식', spec: 'Main: [-75x75x6T, Sub: [-75x40x5T' },
+      { no: 3, key: 'panel', name: 'Panel (Bottom/Side/Roof)', mat: mat, qty: '1식', spec: `All ${mat} Panels (${totalW}W x ${totalL}L x ${H}H)` },
+      { no: 4, key: 'corner', name: 'Corner Frame', mat: 'HDG', qty: '4조', spec: 'L-70x70x8.0T' },
+      { no: 5, key: 'airvent', name: 'Air Vent', mat: 'ABS', qty: `${ventCount || 1}개`, spec: 'Φ50 (합성수지 방충망 #20 부착)' },
+      { no: 6, key: 'manhole', name: 'Manhole', mat: mat, qty: `${manholeCount || 1}개`, spec: 'Ø600 쇄정식 이중덮개 부착' },
+      { no: 7, key: 'inladder', name: 'Internal Ladder', mat: 'FRP', qty: `${ladderCount}조`, spec: `L=${H}mm` },
+      { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: `${ladderCount}조`, spec: 'Vertical: 20x30x1.2T, 폭 270' },
+      { no: 9, key: 'flangebar', name: 'Flange Bar', mat: 'HDG', qty: '1식', spec: 'L-65x30x3T etc.' },
+      { no: 10, key: 'stay', name: 'Internal Stay', mat: 'SS316+PE', qty: '1식', spec: 'Φ-10.7 Tie-Rod(M12)' },
+      { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0}개`, spec: 'JIS 10K Flange / Socket' }
+    ];
+  }
+
   /* ---------- 평면도 생성 (TankPlane + TankPlaneDim 상당, 직사각형 탱크) ---------- */
   const FRAME = 75, DIM_OFF = 140;   // 원본 상수: 틀 75, 외부보강 140
   function dimLinear(ents, p1, p2, off, vertical, text, textH, layer) {
@@ -702,6 +757,68 @@
     map.rows.forEach((r, i) => dimLinear(ents, [0, map.ys[i]], [0, map.ys[i + 1]], baseX, true, String(r), textH, 'DIM'));
     dimLinear(ents, [0, W], [0, W + F], baseX, true, String(F), textH, 'DIM');
     dimLinear(ents, [0, -F], [0, W + F], -F - dimGap2, true, String(W + 2 * F), textH, 'DIM');
+
+    // 부품 풍선 기호 (Plan View Balloon Callouts)
+    if (opt.showBalloons !== false) {
+      const boms = (opt.itemList && opt.itemList.length) ? opt.itemList : buildDefaultBOM(opt);
+      const getItemNo = key => {
+        const it = boms.find(b => b.key === key);
+        return it ? it.no : '';
+      };
+
+      // 1. 맨홀 (Manhole)
+      const mEntries = Object.entries(opt.marks || {}).filter(([_, m]) => m === 1);
+      if (mEntries.length > 0) {
+        const [i, j] = mEntries[0][0].split(',').map(Number);
+        if (map.has(i, j)) {
+          const cx = (map.xs[j] + map.xs[j + 1]) / 2;
+          const cy = (map.ys[i] + map.ys[i + 1]) / 2;
+          drawBalloonCallout(ents, [cx + 250, cy + 250], [cx + 450, cy + 450], [cx + 650, cy + 450], getItemNo('manhole') || 6, N);
+        }
+      }
+
+      // 2. 에어벤트 (Air Vent)
+      const vEntries = Object.entries(opt.marks || {}).filter(([_, m]) => m === 2);
+      if (vEntries.length > 0) {
+        const [i, j] = vEntries[0][0].split(',').map(Number);
+        if (map.has(i, j)) {
+          const cx = (map.xs[j] + map.xs[j + 1]) / 2;
+          const cy = (map.ys[i] + map.ys[i + 1]) / 2;
+          drawBalloonCallout(ents, [cx - 150, cy + 150], [cx - 350, cy + 350], [cx - 550, cy + 350], getItemNo('airvent') || 5, N);
+        }
+      }
+
+      // 3. 외부 사다리 & 내부 사다리
+      const lList = ladderList(opt, map);
+      if (lList.length > 0) {
+        const l = lList[0];
+        if (l.sd === 'D') {
+          drawBalloonCallout(ents, [l.x + 135, -150], [l.x + 350, -350], [l.x + 550, -350], getItemNo('exladder') || 8, N);
+          drawBalloonCallout(ents, [l.x - 100, 150], [l.x - 300, 350], [l.x - 500, 350], getItemNo('inladder') || 7, N);
+        } else if (l.sd === 'R') {
+          drawBalloonCallout(ents, [l.x + 150, l.y + 135], [l.x + 350, l.y + 350], [l.x + 550, l.y + 350], getItemNo('exladder') || 8, N);
+          drawBalloonCallout(ents, [l.x - 150, l.y - 100], [l.x - 350, l.y - 300], [l.x - 550, l.y - 300], getItemNo('inladder') || 7, N);
+        }
+      }
+
+      // 4. 지붕/본체 판넬 (Panel)
+      let firstCell = null;
+      for (let r = 0; r < map.rows.length; r++) {
+        for (let c = 0; c < map.cols.length; c++) {
+          if (map.has(r, c)) { firstCell = { r, c }; break; }
+        }
+        if (firstCell) break;
+      }
+      if (firstCell) {
+        const cx = (map.xs[firstCell.c] + map.xs[firstCell.c + 1]) / 2;
+        const cy = (map.ys[firstCell.r] + map.ys[firstCell.r + 1]) / 2;
+        drawBalloonCallout(ents, [cx, cy], [map.xs[firstCell.c] - 250, cy], [map.xs[firstCell.c] - 450, cy], getItemNo('panel') || 3, N);
+      }
+
+      // 5. 코너 프레임 (Corner Frame)
+      drawBalloonCallout(ents, [0, 0], [-200, -100], [-400, -100], getItemNo('corner') || 4, N);
+    }
+
     ents.blocks = blocks;
     const H = (opt.height || []).reduce((a, b) => a + (b || 0), 0);
     const autoDimStr = getTankDimStr(opt, map, H);
@@ -1504,6 +1621,38 @@
         }
       }
     });
+
+    // 부품 풍선 기호 (Elevation View Balloon Callouts)
+    if (opt.showBalloons !== false) {
+      const N = opt._N || 25;
+      const boms = (opt.itemList && opt.itemList.length) ? opt.itemList : buildDefaultBOM(opt);
+      const getItemNo = key => {
+        const it = boms.find(b => b.key === key);
+        return it ? it.no : '';
+      };
+      const padH = (typeof opt.padH === 'number' && !isNaN(opt.padH)) ? opt.padH : (600 - (opt.frame || 75));
+
+      // 1. 기초 콘크리트 (Concrete Foundation)
+      drawBalloonCallout(ents, [total * 0.15, -padH * 0.5], [total * 0.15 - 250, -padH - 200], [total * 0.15 - 450, -padH - 200], getItemNo('foundation') || 1, N);
+
+      // 2. 스키드 프레임 (Skid Frame)
+      drawBalloonCallout(ents, [total * 0.25, th * 0.5], [total * 0.25 - 200, -150], [total * 0.25 - 400, -150], getItemNo('skid') || 2, N);
+
+      // 3. 측면 판넬 (Wall Panel)
+      drawBalloonCallout(ents, [total * 0.45, nH * 0.45], [-200, nH * 0.45], [-400, nH * 0.45], getItemNo('panel') || 3, N);
+
+      // 4. 코너 프레임 (Corner Frame)
+      drawBalloonCallout(ents, [0, nH * 0.85], [-200, nH * 0.85 + 150], [-400, nH * 0.85 + 150], getItemNo('corner') || 4, N);
+
+      // 8. 외부 사다리 (External Ladder)
+      const lads = ladderList(opt, mmap);
+      const visibleLadder = lads.find(l => (view === 'front' ? l.sd === 'D' : l.sd === 'R'));
+      if (visibleLadder) {
+        const lx = view === 'front' ? visibleLadder.x : visibleLadder.y;
+        drawBalloonCallout(ents, [lx, nH * 0.65], [lx + 300, nH * 0.65 + 200], [lx + 500, nH * 0.65 + 200], getItemNo('exladder') || 8, N);
+      }
+    }
+
     ents.blocks = blocks;
     return { ents, textH, blocks };
   }
@@ -3220,30 +3369,75 @@
     if (t.drawn) text(tx0 + scw / 2, ty + signValH / 2, 5.0, t.drawn, 'center', 0, 'middle');
     ty += signValH + signHeaderH;
 
-    // 품명 표 (No. | ITEM) - 있을 경우 중간 하단에 품격있게 배치
-    let partsTop = ty;
-    if ((t.parts || []).length) {
-      const ph = 8.5, n = Math.min(10, t.parts.length);
-      partsTop = ty + (n + 1) * ph + 6;
-      let yy = partsTop;
-      const rowLn = () => line([tx0 + 4, yy], [x1 - 4, yy]);
-      rowLn();
-      text(tx0 + 16, yy - ph / 2, 4.2, 'No.', 'center', 0, 'middle');
-      text(tx0 + tw / 2 + 10, yy - ph / 2, 4.2, 'ITEM', 'center', 0, 'middle');
-      yy -= ph; rowLn();
-      t.parts.slice(0, 10).forEach((p, i) => {
-        text(tx0 + 16, yy - ph / 2, 4.0, String(i + 1), 'center', 0, 'middle');
-        text(tx0 + 32, yy - ph / 2, 4.0, p, 'left', 0, 'middle');
-        yy -= ph; rowLn();
+    // 2. 부품 사양 명세표 (ITEM LIST / BOM Table)
+    const boms = (opt.itemList && opt.itemList.length) ? opt.itemList : buildDefaultBOM(opt);
+    const activeBoms = boms.filter(b => b && (b.name || b.items));
+    let itemTableTop = ty;
+    if (activeBoms.length) {
+      const colDefs = [
+        { key: 'no', label: 'NO.', w: 12 },
+        { key: 'name', label: 'ITEMS', w: 44 },
+        { key: 'mat', label: 'MATERIAL', w: 32 },
+        { key: 'qty', label: 'QTY', w: 18 },
+        { key: 'spec', label: 'SPECIFICATIONS', w: 76 }
+      ];
+      const tableW = 182; // tx0 + 4 to x1 - 4
+      const bCnt = activeBoms.length;
+      const rowH = bCnt > 12 ? 4.4 : (bCnt > 8 ? 4.8 : 5.5);
+      const headH = 5.5, titleH = 6.5;
+      const dataFontH = bCnt > 12 ? 2.5 : (bCnt > 8 ? 2.8 : 3.2);
+      const headFontH = 3.2, titleFontH = 4.2;
+
+      const totalTblH = titleH + headH + bCnt * rowH;
+      itemTableTop = ty + totalTblH + 6;
+      let yy = itemTableTop;
+      const tableX0 = tx0 + 4, tableX1 = x1 - 4;
+
+      // 1. 타이틀 행
+      line([tableX0, yy], [tableX1, yy]);
+      text(tableX0 + tableW / 2, yy - titleH / 2, titleFontH, '2. ITEM LIST (부품 사양 명세표)', 'center', 0, 'middle');
+      yy -= titleH;
+      line([tableX0, yy], [tableX1, yy]);
+
+      // 2. 헤더 행
+      let curColX = tableX0;
+      colDefs.forEach(cd => {
+        text(curColX + cd.w / 2, yy - headH / 2, headFontH, cd.label, 'center', 0, 'middle');
+        curColX += cd.w;
+        if (curColX < tableX1) line([curColX, yy], [curColX, yy - headH - bCnt * rowH]);
       });
-      line([tx0 + 4, partsTop], [tx0 + 4, yy]);
-      line([tx0 + 28, partsTop], [tx0 + 28, yy]);
-      line([x1 - 4, partsTop], [x1 - 4, yy]);
+      yy -= headH;
+      line([tableX0, yy], [tableX1, yy]);
+
+      // 3. 데이터 행
+      activeBoms.forEach(b => {
+        curColX = tableX0;
+        const rowVals = [
+          String(b.no || ''),
+          b.name || b.items || '',
+          b.mat || b.material || '',
+          b.qty || '',
+          b.spec || b.specifications || ''
+        ];
+        colDefs.forEach((cd, cidx) => {
+          const val = rowVals[cidx];
+          const align = (cd.key === 'name' || cd.key === 'spec') ? 'left' : 'center';
+          const px = align === 'left' ? curColX + 2 : curColX + cd.w / 2;
+          text(px, yy - rowH / 2, dataFontH, val, align, 0, 'middle');
+          curColX += cd.w;
+        });
+        yy -= rowH;
+        line([tableX0, yy], [tableX1, yy]);
+      });
+
+      // 좌우 외곽 테두리
+      line([tableX0, itemTableTop], [tableX0, yy]);
+      line([tableX1, itemTableTop], [tableX1, yy]);
     }
 
     // 배관 노즐 일람표 (NOZZLE SCHEDULE)
     const activeNozzles = getNozzleList(opt);
-    let nozTableTop = partsTop;
+    let nozTableTop = itemTableTop;
     if (activeNozzles.length) {
       const colDefs = [
         { key: 'mark', label: 'NO.', w: 16 },
@@ -3263,7 +3457,7 @@
       const titleFontH = nCnt > 6 ? 4.0 : 4.4;
 
       const totalTblH = titleH + headH + nCnt * rowH;
-      nozTableTop = partsTop + totalTblH + 6;
+      nozTableTop = itemTableTop + totalTblH + 6;
       let yy = nozTableTop;
       const tableX0 = tx0 + 4, tableX1 = x1 - 4;
 
@@ -3322,7 +3516,7 @@
     line([tx0 + 8, ny - 3], [tx0 + 85, ny - 3]);
     ny -= 11.0;
 
-    const bottomLimit = Math.max(partsTop, nozTableTop) > ty ? (Math.max(partsTop, nozTableTop) + 10) : (ty + 10);
+    const bottomLimit = Math.max(itemTableTop, nozTableTop) > ty ? (Math.max(itemTableTop, nozTableTop) + 10) : (ty + 10);
     const availNotesH = ny - bottomLimit;
     const noteFontH = 4.8;
     const textStartX = tx0 + 18;
@@ -3709,6 +3903,6 @@
     return o.join('\r\n') + '\r\n';
   }
 
-  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME };
+  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, drawBalloonCallout };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TankCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

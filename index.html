@@ -300,7 +300,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.29</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.30</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -772,9 +772,18 @@ canvas.drag{cursor:grabbing}
                 </div>
               </div>
 
-              <div>
-                <label for="tParts" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">품명(부품표 - 한 줄에 1개씩, 최대 10개)</label>
-                <textarea id="tParts" rows="2" placeholder="한 줄에 1개씩 입력" style="width:100%;font-size:11px;padding:4px 6px"></textarea>
+              <div style="background:var(--surface-sub);padding:8px;border-radius:6px;border:1px solid var(--line);margin-top:4px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                  <span style="font-size:11px;font-weight:700;color:var(--text)">📋 부품 사양 명세표 (Item List / BOM)</span>
+                  <span id="bomCountBadge" style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700">11개</span>
+                </div>
+                <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--text);cursor:pointer;margin-bottom:8px">
+                  <input type="checkbox" id="balloonFeatureToggle" checked>
+                  <span>도면 부품 넘버링(풍선 기호 ①,②,③...) 표시</span>
+                </label>
+                <button type="button" id="openBOMModalBtn" class="btn-sm" style="width:100%;background:var(--accent);color:#fff;font-weight:700;padding:6px;border-radius:4px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+                  <span>⚙️ 부품 사양 및 규격 편집 (BOM 관리)</span>
+                </button>
               </div>
 
               <details style="margin-top:2px;padding-top:4px;border-top:1px dashed var(--line);font-size:11px">
@@ -1084,6 +1093,53 @@ canvas.drag{cursor:grabbing}
         <div style="display:flex;justify-content:flex-end;gap:8px">
           <button type="button" id="closePanelModal" class="btn-sm">취소</button>
           <button type="button" id="savePanelBtn" class="pri" style="padding:6px 16px">💾 DB에 저장</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOM (Item List) Management Modal -->
+    <div id="bomModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;max-width:820px;width:95%;max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--shadow)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px">
+          <h3 style="margin:0;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px">
+            <span>📋</span> 부품 사양 명세표 (Item List / BOM) & 도면 넘버링 관리
+          </h3>
+          <button type="button" id="closeBOMModalX" style="background:transparent;border:none;font-size:18px;cursor:pointer;color:var(--muted)">&times;</button>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+          <div style="display:flex;gap:8px">
+            <button type="button" id="btnAutoBOM" class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600" title="현재 탱크 규격 및 부속품 옵션에 맞추어 기본 부품 목록을 자동 재계산합니다">
+              ⚡ 현재 탱크 사양으로 자동 생성 (Auto BOM)
+            </button>
+            <button type="button" id="btnAddBOMRow" class="btn-sm" style="font-weight:600">
+              ➕ 품목 추가
+            </button>
+          </div>
+          <div style="font-size:11px;color:var(--muted)">
+            * 번호(NO)는 도면상 원형 풍선 기호(①,②,③...)와 1:1로 자동 연동됩니다.
+          </div>
+        </div>
+
+        <div style="flex:1;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--bg);margin-bottom:12px">
+          <table style="width:100%;font-size:12px;border-collapse:collapse;text-align:left">
+            <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
+              <tr>
+                <th style="padding:8px 6px;width:45px;text-align:center">NO.</th>
+                <th style="padding:8px 6px;width:170px">ITEMS (품명)</th>
+                <th style="padding:8px 6px;width:120px">MATERIAL (재질)</th>
+                <th style="padding:8px 6px;width:70px;text-align:center">QTY (수량)</th>
+                <th style="padding:8px 6px">SPECIFICATIONS (사양 및 비고)</th>
+                <th style="padding:8px 6px;width:40px;text-align:center">삭제</th>
+              </tr>
+            </thead>
+            <tbody id="bomTableBody">
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button type="button" id="closeBOMModalBtn" class="pri" style="padding:6px 20px">✅ 확인 및 도면 적용</button>
         </div>
       </div>
     </div>
@@ -1522,6 +1578,61 @@ canvas.drag{cursor:grabbing}
     });
   }
 
+  /* ---------- 부품 풍선 기호 (Circular Balloon Callout with Leader) ---------- */
+  function drawBalloonCallout(ents, startPt, elbowPt, balloonCenter, numStr, scaleN = 25, layer = 'DIM') {
+    layer = layer || 'DIM';
+    const balloonR = Math.round(3.8 * scaleN);
+    const textH = Math.round(3.0 * scaleN);
+
+    // 단부 점 (Terminal dot)
+    ents.push({ t: 'circle', c: startPt, r: Math.max(3, Math.round(scaleN * 0.18)), layer });
+
+    // 지시선 (Leader line)
+    const dx = balloonCenter[0] - elbowPt[0], dy = balloonCenter[1] - elbowPt[1];
+    const dist = Math.hypot(dx, dy) || 1;
+    const endPt = [balloonCenter[0] - (dx / dist) * balloonR, balloonCenter[1] - (dy / dist) * balloonR];
+
+    ents.push({ t: 'line', a: startPt, b: elbowPt, layer });
+    ents.push({ t: 'line', a: elbowPt, b: endPt, layer });
+
+    // 원형 풍선 (Circular balloon)
+    ents.push({ t: 'circle', c: balloonCenter, r: balloonR, layer });
+
+    // 풍선 내부 번호 (Center text)
+    ents.push({ t: 'text', p: balloonCenter, h: textH, s: String(numStr), rot: 0, align: 'center', valign: 'middle', layer });
+  }
+
+  /* ---------- 기본 부품 사양 명세표 생성 (Default Item List / BOM) ---------- */
+  function buildDefaultBOM(opt) {
+    const H = (opt.height || []).reduce((a, b) => a + (b || 0), 0) || 3000;
+    const mat = (opt.material === 'STS') ? 'STS' : (opt.material === 'GRP' ? 'GRP' : 'SMC');
+    const mmap = createMap(opt);
+    const totalL = mmap.length, totalW = mmap.width;
+
+    let manholeCount = 0, ventCount = 0;
+    Object.values(opt.marks || {}).forEach(m => {
+      if (m === 1) manholeCount++;
+      else if (m === 2) ventCount++;
+    });
+    const ladderCount = Object.keys(opt.ladders || {}).length || 1;
+    const nozzleList = getNozzleList(opt);
+    const padH = (typeof opt.padH === 'number' && !isNaN(opt.padH)) ? opt.padH : (600 - (opt.frame || 75));
+
+    return [
+      { no: 1, key: 'foundation', name: 'Concrete Foundation', mat: 'CONC', qty: '1식', spec: `Refer Foundation Pad plan (H${padH})` },
+      { no: 2, key: 'skid', name: 'Skid Frame', mat: 'SS275(HDG)', qty: '1식', spec: 'Main: [-75x75x6T, Sub: [-75x40x5T' },
+      { no: 3, key: 'panel', name: 'Panel (Bottom/Side/Roof)', mat: mat, qty: '1식', spec: `All ${mat} Panels (${totalW}W x ${totalL}L x ${H}H)` },
+      { no: 4, key: 'corner', name: 'Corner Frame', mat: 'HDG', qty: '4조', spec: 'L-70x70x8.0T' },
+      { no: 5, key: 'airvent', name: 'Air Vent', mat: 'ABS', qty: `${ventCount || 1}개`, spec: 'Φ50 (합성수지 방충망 #20 부착)' },
+      { no: 6, key: 'manhole', name: 'Manhole', mat: mat, qty: `${manholeCount || 1}개`, spec: 'Ø600 쇄정식 이중덮개 부착' },
+      { no: 7, key: 'inladder', name: 'Internal Ladder', mat: 'FRP', qty: `${ladderCount}조`, spec: `L=${H}mm` },
+      { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: `${ladderCount}조`, spec: 'Vertical: 20x30x1.2T, 폭 270' },
+      { no: 9, key: 'flangebar', name: 'Flange Bar', mat: 'HDG', qty: '1식', spec: 'L-65x30x3T etc.' },
+      { no: 10, key: 'stay', name: 'Internal Stay', mat: 'SS316+PE', qty: '1식', spec: 'Φ-10.7 Tie-Rod(M12)' },
+      { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0}개`, spec: 'JIS 10K Flange / Socket' }
+    ];
+  }
+
   /* ---------- 평면도 생성 (TankPlane + TankPlaneDim 상당, 직사각형 탱크) ---------- */
   const FRAME = 75, DIM_OFF = 140;   // 원본 상수: 틀 75, 외부보강 140
   function dimLinear(ents, p1, p2, off, vertical, text, textH, layer) {
@@ -1810,6 +1921,68 @@ canvas.drag{cursor:grabbing}
     map.rows.forEach((r, i) => dimLinear(ents, [0, map.ys[i]], [0, map.ys[i + 1]], baseX, true, String(r), textH, 'DIM'));
     dimLinear(ents, [0, W], [0, W + F], baseX, true, String(F), textH, 'DIM');
     dimLinear(ents, [0, -F], [0, W + F], -F - dimGap2, true, String(W + 2 * F), textH, 'DIM');
+
+    // 부품 풍선 기호 (Plan View Balloon Callouts)
+    if (opt.showBalloons !== false) {
+      const boms = (opt.itemList && opt.itemList.length) ? opt.itemList : buildDefaultBOM(opt);
+      const getItemNo = key => {
+        const it = boms.find(b => b.key === key);
+        return it ? it.no : '';
+      };
+
+      // 1. 맨홀 (Manhole)
+      const mEntries = Object.entries(opt.marks || {}).filter(([_, m]) => m === 1);
+      if (mEntries.length > 0) {
+        const [i, j] = mEntries[0][0].split(',').map(Number);
+        if (map.has(i, j)) {
+          const cx = (map.xs[j] + map.xs[j + 1]) / 2;
+          const cy = (map.ys[i] + map.ys[i + 1]) / 2;
+          drawBalloonCallout(ents, [cx + 250, cy + 250], [cx + 450, cy + 450], [cx + 650, cy + 450], getItemNo('manhole') || 6, N);
+        }
+      }
+
+      // 2. 에어벤트 (Air Vent)
+      const vEntries = Object.entries(opt.marks || {}).filter(([_, m]) => m === 2);
+      if (vEntries.length > 0) {
+        const [i, j] = vEntries[0][0].split(',').map(Number);
+        if (map.has(i, j)) {
+          const cx = (map.xs[j] + map.xs[j + 1]) / 2;
+          const cy = (map.ys[i] + map.ys[i + 1]) / 2;
+          drawBalloonCallout(ents, [cx - 150, cy + 150], [cx - 350, cy + 350], [cx - 550, cy + 350], getItemNo('airvent') || 5, N);
+        }
+      }
+
+      // 3. 외부 사다리 & 내부 사다리
+      const lList = ladderList(opt, map);
+      if (lList.length > 0) {
+        const l = lList[0];
+        if (l.sd === 'D') {
+          drawBalloonCallout(ents, [l.x + 135, -150], [l.x + 350, -350], [l.x + 550, -350], getItemNo('exladder') || 8, N);
+          drawBalloonCallout(ents, [l.x - 100, 150], [l.x - 300, 350], [l.x - 500, 350], getItemNo('inladder') || 7, N);
+        } else if (l.sd === 'R') {
+          drawBalloonCallout(ents, [l.x + 150, l.y + 135], [l.x + 350, l.y + 350], [l.x + 550, l.y + 350], getItemNo('exladder') || 8, N);
+          drawBalloonCallout(ents, [l.x - 150, l.y - 100], [l.x - 350, l.y - 300], [l.x - 550, l.y - 300], getItemNo('inladder') || 7, N);
+        }
+      }
+
+      // 4. 지붕/본체 판넬 (Panel)
+      let firstCell = null;
+      for (let r = 0; r < map.rows.length; r++) {
+        for (let c = 0; c < map.cols.length; c++) {
+          if (map.has(r, c)) { firstCell = { r, c }; break; }
+        }
+        if (firstCell) break;
+      }
+      if (firstCell) {
+        const cx = (map.xs[firstCell.c] + map.xs[firstCell.c + 1]) / 2;
+        const cy = (map.ys[firstCell.r] + map.ys[firstCell.r + 1]) / 2;
+        drawBalloonCallout(ents, [cx, cy], [map.xs[firstCell.c] - 250, cy], [map.xs[firstCell.c] - 450, cy], getItemNo('panel') || 3, N);
+      }
+
+      // 5. 코너 프레임 (Corner Frame)
+      drawBalloonCallout(ents, [0, 0], [-200, -100], [-400, -100], getItemNo('corner') || 4, N);
+    }
+
     ents.blocks = blocks;
     const H = (opt.height || []).reduce((a, b) => a + (b || 0), 0);
     const autoDimStr = getTankDimStr(opt, map, H);
@@ -2612,6 +2785,38 @@ canvas.drag{cursor:grabbing}
         }
       }
     });
+
+    // 부품 풍선 기호 (Elevation View Balloon Callouts)
+    if (opt.showBalloons !== false) {
+      const N = opt._N || 25;
+      const boms = (opt.itemList && opt.itemList.length) ? opt.itemList : buildDefaultBOM(opt);
+      const getItemNo = key => {
+        const it = boms.find(b => b.key === key);
+        return it ? it.no : '';
+      };
+      const padH = (typeof opt.padH === 'number' && !isNaN(opt.padH)) ? opt.padH : (600 - (opt.frame || 75));
+
+      // 1. 기초 콘크리트 (Concrete Foundation)
+      drawBalloonCallout(ents, [total * 0.15, -padH * 0.5], [total * 0.15 - 250, -padH - 200], [total * 0.15 - 450, -padH - 200], getItemNo('foundation') || 1, N);
+
+      // 2. 스키드 프레임 (Skid Frame)
+      drawBalloonCallout(ents, [total * 0.25, th * 0.5], [total * 0.25 - 200, -150], [total * 0.25 - 400, -150], getItemNo('skid') || 2, N);
+
+      // 3. 측면 판넬 (Wall Panel)
+      drawBalloonCallout(ents, [total * 0.45, nH * 0.45], [-200, nH * 0.45], [-400, nH * 0.45], getItemNo('panel') || 3, N);
+
+      // 4. 코너 프레임 (Corner Frame)
+      drawBalloonCallout(ents, [0, nH * 0.85], [-200, nH * 0.85 + 150], [-400, nH * 0.85 + 150], getItemNo('corner') || 4, N);
+
+      // 8. 외부 사다리 (External Ladder)
+      const lads = ladderList(opt, mmap);
+      const visibleLadder = lads.find(l => (view === 'front' ? l.sd === 'D' : l.sd === 'R'));
+      if (visibleLadder) {
+        const lx = view === 'front' ? visibleLadder.x : visibleLadder.y;
+        drawBalloonCallout(ents, [lx, nH * 0.65], [lx + 300, nH * 0.65 + 200], [lx + 500, nH * 0.65 + 200], getItemNo('exladder') || 8, N);
+      }
+    }
+
     ents.blocks = blocks;
     return { ents, textH, blocks };
   }
@@ -4328,30 +4533,75 @@ canvas.drag{cursor:grabbing}
     if (t.drawn) text(tx0 + scw / 2, ty + signValH / 2, 5.0, t.drawn, 'center', 0, 'middle');
     ty += signValH + signHeaderH;
 
-    // 품명 표 (No. | ITEM) - 있을 경우 중간 하단에 품격있게 배치
-    let partsTop = ty;
-    if ((t.parts || []).length) {
-      const ph = 8.5, n = Math.min(10, t.parts.length);
-      partsTop = ty + (n + 1) * ph + 6;
-      let yy = partsTop;
-      const rowLn = () => line([tx0 + 4, yy], [x1 - 4, yy]);
-      rowLn();
-      text(tx0 + 16, yy - ph / 2, 4.2, 'No.', 'center', 0, 'middle');
-      text(tx0 + tw / 2 + 10, yy - ph / 2, 4.2, 'ITEM', 'center', 0, 'middle');
-      yy -= ph; rowLn();
-      t.parts.slice(0, 10).forEach((p, i) => {
-        text(tx0 + 16, yy - ph / 2, 4.0, String(i + 1), 'center', 0, 'middle');
-        text(tx0 + 32, yy - ph / 2, 4.0, p, 'left', 0, 'middle');
-        yy -= ph; rowLn();
+    // 2. 부품 사양 명세표 (ITEM LIST / BOM Table)
+    const boms = (opt.itemList && opt.itemList.length) ? opt.itemList : buildDefaultBOM(opt);
+    const activeBoms = boms.filter(b => b && (b.name || b.items));
+    let itemTableTop = ty;
+    if (activeBoms.length) {
+      const colDefs = [
+        { key: 'no', label: 'NO.', w: 12 },
+        { key: 'name', label: 'ITEMS', w: 44 },
+        { key: 'mat', label: 'MATERIAL', w: 32 },
+        { key: 'qty', label: 'QTY', w: 18 },
+        { key: 'spec', label: 'SPECIFICATIONS', w: 76 }
+      ];
+      const tableW = 182; // tx0 + 4 to x1 - 4
+      const bCnt = activeBoms.length;
+      const rowH = bCnt > 12 ? 4.4 : (bCnt > 8 ? 4.8 : 5.5);
+      const headH = 5.5, titleH = 6.5;
+      const dataFontH = bCnt > 12 ? 2.5 : (bCnt > 8 ? 2.8 : 3.2);
+      const headFontH = 3.2, titleFontH = 4.2;
+
+      const totalTblH = titleH + headH + bCnt * rowH;
+      itemTableTop = ty + totalTblH + 6;
+      let yy = itemTableTop;
+      const tableX0 = tx0 + 4, tableX1 = x1 - 4;
+
+      // 1. 타이틀 행
+      line([tableX0, yy], [tableX1, yy]);
+      text(tableX0 + tableW / 2, yy - titleH / 2, titleFontH, '2. ITEM LIST (부품 사양 명세표)', 'center', 0, 'middle');
+      yy -= titleH;
+      line([tableX0, yy], [tableX1, yy]);
+
+      // 2. 헤더 행
+      let curColX = tableX0;
+      colDefs.forEach(cd => {
+        text(curColX + cd.w / 2, yy - headH / 2, headFontH, cd.label, 'center', 0, 'middle');
+        curColX += cd.w;
+        if (curColX < tableX1) line([curColX, yy], [curColX, yy - headH - bCnt * rowH]);
       });
-      line([tx0 + 4, partsTop], [tx0 + 4, yy]);
-      line([tx0 + 28, partsTop], [tx0 + 28, yy]);
-      line([x1 - 4, partsTop], [x1 - 4, yy]);
+      yy -= headH;
+      line([tableX0, yy], [tableX1, yy]);
+
+      // 3. 데이터 행
+      activeBoms.forEach(b => {
+        curColX = tableX0;
+        const rowVals = [
+          String(b.no || ''),
+          b.name || b.items || '',
+          b.mat || b.material || '',
+          b.qty || '',
+          b.spec || b.specifications || ''
+        ];
+        colDefs.forEach((cd, cidx) => {
+          const val = rowVals[cidx];
+          const align = (cd.key === 'name' || cd.key === 'spec') ? 'left' : 'center';
+          const px = align === 'left' ? curColX + 2 : curColX + cd.w / 2;
+          text(px, yy - rowH / 2, dataFontH, val, align, 0, 'middle');
+          curColX += cd.w;
+        });
+        yy -= rowH;
+        line([tableX0, yy], [tableX1, yy]);
+      });
+
+      // 좌우 외곽 테두리
+      line([tableX0, itemTableTop], [tableX0, yy]);
+      line([tableX1, itemTableTop], [tableX1, yy]);
     }
 
     // 배관 노즐 일람표 (NOZZLE SCHEDULE)
     const activeNozzles = getNozzleList(opt);
-    let nozTableTop = partsTop;
+    let nozTableTop = itemTableTop;
     if (activeNozzles.length) {
       const colDefs = [
         { key: 'mark', label: 'NO.', w: 16 },
@@ -4371,7 +4621,7 @@ canvas.drag{cursor:grabbing}
       const titleFontH = nCnt > 6 ? 4.0 : 4.4;
 
       const totalTblH = titleH + headH + nCnt * rowH;
-      nozTableTop = partsTop + totalTblH + 6;
+      nozTableTop = itemTableTop + totalTblH + 6;
       let yy = nozTableTop;
       const tableX0 = tx0 + 4, tableX1 = x1 - 4;
 
@@ -4430,7 +4680,7 @@ canvas.drag{cursor:grabbing}
     line([tx0 + 8, ny - 3], [tx0 + 85, ny - 3]);
     ny -= 11.0;
 
-    const bottomLimit = Math.max(partsTop, nozTableTop) > ty ? (Math.max(partsTop, nozTableTop) + 10) : (ty + 10);
+    const bottomLimit = Math.max(itemTableTop, nozTableTop) > ty ? (Math.max(itemTableTop, nozTableTop) + 10) : (ty + 10);
     const availNotesH = ny - bottomLimit;
     const noteFontH = 4.8;
     const textStartX = tx0 + 18;
@@ -4817,7 +5067,7 @@ canvas.drag{cursor:grabbing}
     return o.join('\r\n') + '\r\n';
   }
 
-  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME };
+  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, drawBalloonCallout };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TankCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -4936,6 +5186,111 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
   });
   $('sheetOn').addEventListener('change', schedule);
   $('sheetKind').addEventListener('change', schedule);
+
+  /* ---------- 부품 사양 명세표 (Item List / BOM) & 도면 넘버링 관리 ---------- */
+  let itemList = [];
+
+  function updateBOMBadge() {
+    const badge = $('bomCountBadge');
+    if (badge) badge.textContent = `${(itemList || []).length}개`;
+  }
+
+  function initBOM(forceReset = false) {
+    if (forceReset || !itemList || !itemList.length) {
+      itemList = C.buildDefaultBOM(getAppState());
+    }
+    renderBOMTable();
+    updateBOMBadge();
+  }
+
+  function renderBOMTable() {
+    const tbody = $('bomTableBody');
+    if (!tbody) return;
+    if (!itemList || !itemList.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--muted)">등록된 부품이 없습니다. [자동 생성] 버튼을 누르세요.</td></tr>';
+      updateBOMBadge();
+      return;
+    }
+    tbody.innerHTML = itemList.map((it, idx) => `
+      <tr style="border-bottom:1px solid var(--line)">
+        <td style="padding:4px;text-align:center">
+          <input type="number" value="${it.no || (idx + 1)}" style="width:36px;text-align:center;padding:3px 2px;font-size:11px" onchange="updateBOMField(${idx}, 'no', Number(this.value))">
+        </td>
+        <td style="padding:4px">
+          <input type="text" value="${it.name || it.items || ''}" style="width:100%;padding:3px 4px;font-size:11px" onchange="updateBOMField(${idx}, 'name', this.value)">
+        </td>
+        <td style="padding:4px">
+          <input type="text" value="${it.mat || it.material || ''}" style="width:100%;padding:3px 4px;font-size:11px" onchange="updateBOMField(${idx}, 'mat', this.value)">
+        </td>
+        <td style="padding:4px">
+          <input type="text" value="${it.qty || ''}" style="width:100%;text-align:center;padding:3px 2px;font-size:11px" onchange="updateBOMField(${idx}, 'qty', this.value)">
+        </td>
+        <td style="padding:4px">
+          <input type="text" value="${it.spec || it.specifications || ''}" style="width:100%;padding:3px 4px;font-size:11px" onchange="updateBOMField(${idx}, 'spec', this.value)">
+        </td>
+        <td style="padding:4px;text-align:center">
+          <button type="button" class="btn-sm" style="padding:2px 6px;color:#ef4444;background:transparent;border:none;cursor:pointer" onclick="deleteBOMRow(${idx})" title="삭제">✕</button>
+        </td>
+      </tr>
+    `).join('');
+    updateBOMBadge();
+  }
+
+  window.updateBOMField = (idx, field, val) => {
+    if (itemList[idx]) {
+      itemList[idx][field] = val;
+      schedule();
+    }
+  };
+
+  window.deleteBOMRow = idx => {
+    itemList.splice(idx, 1);
+    itemList.forEach((it, i) => it.no = i + 1);
+    renderBOMTable();
+    schedule();
+  };
+
+  if ($('openBOMModalBtn')) {
+    $('openBOMModalBtn').addEventListener('click', () => {
+      if (!itemList.length) initBOM();
+      $('bomModal').style.display = 'flex';
+      renderBOMTable();
+    });
+  }
+  if ($('closeBOMModalBtn')) {
+    $('closeBOMModalBtn').addEventListener('click', () => {
+      $('bomModal').style.display = 'none';
+      schedule();
+    });
+  }
+  if ($('closeBOMModalX')) {
+    $('closeBOMModalX').addEventListener('click', () => {
+      $('bomModal').style.display = 'none';
+    });
+  }
+  if ($('btnAutoBOM')) {
+    $('btnAutoBOM').addEventListener('click', () => {
+      initBOM(true);
+      schedule();
+    });
+  }
+  if ($('btnAddBOMRow')) {
+    $('btnAddBOMRow').addEventListener('click', () => {
+      itemList.push({
+        no: itemList.length + 1,
+        key: 'custom_' + Date.now(),
+        name: 'Custom Item',
+        mat: 'HDG',
+        qty: '1식',
+        spec: ''
+      });
+      renderBOMTable();
+      schedule();
+    });
+  }
+  if ($('balloonFeatureToggle')) {
+    $('balloonFeatureToggle').addEventListener('change', schedule);
+  }
 
   /* CHT File Loader */
   $('chtBtn').addEventListener('click', () => $('chtFile').click());
@@ -6082,12 +6437,14 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
         sidePanels: Object.assign({}, sidePanelTypes),
         useNozzles: $('pipeFeatureToggle') ? $('pipeFeatureToggle').checked : true,
         nozzles: nozzleData.filter(n => n.use !== false),
+        showBalloons: $('balloonFeatureToggle') ? $('balloonFeatureToggle').checked : true,
+        itemList: (itemList && itemList.length) ? itemList : null,
         notes: $('tNotes').value.split('\n').map(x => x.trim()).filter(Boolean),
         remarks: $('tRemarks').value.split('\n').map(x => x.trim()).filter(Boolean),
         title: { logoText: $('tLogoText') ? $('tLogoText').value : 'Y',
                  prodName: $('tProdName') ? $('tProdName').value : '',
                  customer: $('tCustomer').value, address: $('tAddress').value, tankSize: $('tTankSize').value, client: $('tClient').value, consultant: $('tConsultant').value,
-                 contractor: $('tContractor').value, project: $('tProject').value, mep: $('tMep').value, chartNo: $('tChart').value, date: $('tDate').value, drawn: $('tDrawn').value, tel: $('tTel').value, dwgNo: $('tDwgNo').value, parts: $('tParts').value.split('\n').map(x => x.trim()).filter(Boolean).slice(0, 10) }
+                 contractor: $('tContractor').value, project: $('tProject').value, mep: $('tMep').value, chartNo: $('tChart').value, date: $('tDate').value, drawn: $('tDrawn').value, tel: $('tTel').value, dwgNo: $('tDwgNo').value }
       };
       const sheet = $('sheetOn').checked;
       opt.sheetKind = $('sheetKind').value;
@@ -6194,6 +6551,8 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       sheetOn: $('sheetOn').checked,
       sheetKind: $('sheetKind').value,
       useNozzles: $('pipeFeatureToggle') ? $('pipeFeatureToggle').checked : true,
+      showBalloons: $('balloonFeatureToggle') ? $('balloonFeatureToggle').checked : true,
+      itemList: (itemList && itemList.length) ? itemList.map(x => Object.assign({}, x)) : [],
       removed: [...removed],
       pillars: [...pillars],
       marks: Object.assign({}, marks),
@@ -6218,7 +6577,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
         dwgNo: $('tDwgNo').value,
         notes: $('tNotes').value,
         remarks: $('tRemarks').value,
-        parts: $('tParts').value
+        parts: ''
       }
     };
   }
@@ -6312,8 +6671,18 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
         if (t.dwgNo !== undefined) $('tDwgNo').value = t.dwgNo;
         if (t.notes !== undefined) $('tNotes').value = t.notes;
         if (t.remarks !== undefined) $('tRemarks').value = t.remarks;
-        if (t.parts !== undefined) $('tParts').value = t.parts;
+        if (t.parts !== undefined && $('tParts')) $('tParts').value = t.parts;
       }
+
+      if (typeof st.showBalloons === 'boolean' && $('balloonFeatureToggle')) {
+        $('balloonFeatureToggle').checked = st.showBalloons;
+      }
+      if (Array.isArray(st.itemList)) {
+        itemList = st.itemList.map(x => Object.assign({}, x));
+      } else {
+        itemList = [];
+      }
+      updateBOMBadge();
 
       try {
         const mL = vals('L'), mW = vals('W');
