@@ -5,6 +5,16 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.21] - 2026-10-02
+
+### Fixed & Cloud (Render 클라우드 서버 ODA 변환기 OpenGL 종속성 완벽 해결)
+- **클라우드 Linux 컨테이너 ODA File Converter 실행 오류(libOpenGL.so.0) 수정**:
+  - Linux 기반 클라우드(Render/Docker)에서 ODA File Converter가 필요로 하는 OpenGL 및 그래픽 런타임 종속성(`libopengl0`, `libgl1`, `libglx0`, `libegl1`, `libglu1-mesa`)을 `Dockerfile`에 완벽하게 추가 탑재.
+  - 가상 디스플레이 `DISPLAY=:99` 환경변수 이중 안전장치(`server.py`) 적용.
+  - 클라우드 변환 에러 발생 시 상세 메시지 표출 개선.
+
+---
+
 ## [1.5.20] - 2026-10-02
 
 ### Added & Enhanced (클라우드 서버 Render/Railway/Docker 100% 자동 DWG 변환 지원)

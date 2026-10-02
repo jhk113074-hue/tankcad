@@ -5,11 +5,16 @@ WORKDIR /app
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 
-# Install system dependencies (curl, xvfb for headless ODA execution, Qt libraries)
+# Install system dependencies (curl, xvfb for headless ODA execution, Qt libraries, OpenGL)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     xvfb \
+    libopengl0 \
+    libgl1 \
+    libglx0 \
+    libegl1 \
+    libglu1-mesa \
     libqt5core5a \
     libqt5gui5 \
     libqt5widgets5 \

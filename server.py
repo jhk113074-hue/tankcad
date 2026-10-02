@@ -147,6 +147,9 @@ class TankCADHandler(SimpleHTTPRequestHandler):
                 with open(in_dxf, "w", encoding="utf-8", newline="\n") as f:
                     f.write(dxf_text)
 
+                if not sys.platform.startswith("win") and "DISPLAY" not in os.environ:
+                    os.environ["DISPLAY"] = ":99"
+
                 try:
                     odafc.convert(in_dxf, out_dwg, version="ACAD2018")
                 except Exception as e:

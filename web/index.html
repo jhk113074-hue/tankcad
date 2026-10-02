@@ -292,7 +292,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.20</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.21</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -6283,7 +6283,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
             st.textContent = 'DWG 변환기 설치가 필요합니다.';
           }
         } else {
-          alert('DWG 변환 실패: ' + (data.message || res.statusText));
+          alert('DWG 변환 실패: ' + (data.message || data.error || res.statusText));
           st.textContent = 'DWG 변환 실패';
         }
       }
