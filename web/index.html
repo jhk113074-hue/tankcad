@@ -4919,8 +4919,7 @@ canvas.drag{cursor:grabbing}
     let ny = y - 8;
     const remarksTitle = lang === 'en' ? '<Remarks>' : (lang === 'ko' ? '<일반 사항 (Remarks)>' : '<Remarks / 일반 사항>');
     text(tx0 + 8, ny, 6.5, remarksTitle, 'left');
-    line([tx0 + 8, ny - 3], [tx0 + 85, ny - 3]);
-    ny -= 11.0;
+    ny -= 10.0;
 
     const bottomLimit = Math.max(itemTableTop, nozTableTop) > ty ? (Math.max(itemTableTop, nozTableTop) + 10) : (ty + 10);
     const availNotesH = ny - bottomLimit;
