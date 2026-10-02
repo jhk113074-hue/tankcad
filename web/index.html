@@ -12,7 +12,7 @@
   --fg:#0f172a; --muted:#64748b; --accent:#0284c7; --accent-hover:#0369a1; --accent-fg:#ffffff;
   --accent-light:#e0f2fe; --warn:#ea580c; --warn-bg:#fff7ed; --success:#16a34a; --success-bg:#f0fdf4;
   --cv-bg:#0f172a; --cv-grid:#1e293b; --cv-panel:#f8fafc; --cv-detail:#94a3b8;
-  --cv-frame:#fb923c; --cv-dim:#38bdf8; --cv-sheet:#e2e8f0;
+  --cv-frame:#fb923c; --cv-dim:#38bdf8; --cv-sheet:#e2e8f0; --cv-balloon:#f43f5e;
   --shadow-sm:0 1px 2px 0 rgba(0,0,0,0.05);
   --shadow:0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.06);
   --font-ui:"IBM Plex Sans KR","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
@@ -21,14 +21,14 @@
 }
 :root[data-theme="light"]{
   --cv-bg:#ffffff; --cv-grid:#f1f5f9; --cv-panel:#0f172a; --cv-detail:#64748b;
-  --cv-frame:#ea580c; --cv-dim:#0284c7; --cv-sheet:#1e293b;
+  --cv-frame:#ea580c; --cv-dim:#0284c7; --cv-sheet:#1e293b; --cv-balloon:#e11d48;
 }
 :root[data-theme="dark"]{
   --bg:#090d16; --surface:#111827; --surface-sub:#1f2937; --line:#374151; --line-sub:#1f2937;
   --fg:#f3f4f6; --muted:#9ca3af; --accent:#38bdf8; --accent-hover:#0284c7; --accent-fg:#0b1329;
   --accent-light:#1e293b; --warn:#fb923c; --warn-bg:#2c1810; --success:#4ade80; --success-bg:#14291e;
   --cv-bg:#090d16; --cv-grid:#1a2333; --cv-panel:#f1f5f9; --cv-detail:#94a3b8;
-  --cv-frame:#fb923c; --cv-dim:#38bdf8; --cv-sheet:#e2e8f0;
+  --cv-frame:#fb923c; --cv-dim:#38bdf8; --cv-sheet:#e2e8f0; --cv-balloon:#f43f5e;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -564,7 +564,7 @@ canvas.drag{cursor:grabbing}
           </div>
           <div class="noz-insp-fields">
             <div class="noz-field">
-              <label>구경 (Size)</label>
+              <label id="lblMiniSize">구경 (Size)</label>
               <select id="miniSize">
                 <option value="25A">25A (1")</option>
                 <option value="32A">32A (1-1/4")</option>
@@ -581,14 +581,14 @@ canvas.drag{cursor:grabbing}
               </select>
             </div>
             <div class="noz-field">
-              <label>연결 타입</label>
+              <label id="lblMiniType">연결 타입</label>
               <select id="miniType">
                 <option value="FLANGE">FLANGE 10K</option>
                 <option value="SOCKET">SOCKET (나사식)</option>
               </select>
             </div>
             <div class="noz-field">
-              <label>설치 높이 (EL)</label>
+              <label id="lblMiniElev">설치 높이 (EL)</label>
               <div class="input-unit-wrap">
                 <input type="number" id="miniElev" step="50" min="0">
                 <div class="stepper-btns">
@@ -599,7 +599,7 @@ canvas.drag{cursor:grabbing}
               </div>
             </div>
             <div class="noz-field">
-              <label>수평 위치</label>
+              <label id="lblMiniOffset">수평 위치</label>
               <select id="miniOffset">
                 <option value="-250">◀ 좌 (-250)</option>
                 <option value="0">● 중앙 (0)</option>
@@ -608,12 +608,12 @@ canvas.drag{cursor:grabbing}
             </div>
           </div>
           <div class="noz-el-presets">
-            <span class="el-hint">빠른 EL:</span>
-            <button type="button" class="btn-el-quick" data-val="100">바닥 100</button>
-            <button type="button" class="btn-el-quick" data-val="200">소방 200</button>
-            <button type="button" class="btn-el-quick" data-val="300">토출 300</button>
-            <button type="button" class="btn-el-quick" data-mode="top-overflow">월류 H-200</button>
-            <button type="button" class="btn-el-quick" data-mode="top-inlet">유입 H-300</button>
+            <span class="el-hint" id="lblQuickElHint">빠른 EL:</span>
+            <button type="button" class="btn-el-quick" id="btnQuickEl1" data-val="100">바닥 100</button>
+            <button type="button" class="btn-el-quick" id="btnQuickEl2" data-val="200">소방 200</button>
+            <button type="button" class="btn-el-quick" id="btnQuickEl3" data-val="300">토출 300</button>
+            <button type="button" class="btn-el-quick" id="btnQuickEl4" data-mode="top-overflow">월류 H-200</button>
+            <button type="button" class="btn-el-quick" id="btnQuickEl5" data-mode="top-inlet">유입 H-300</button>
           </div>
         </div>
         <div id="nozMiniBarEmpty" class="noz-inspector-empty">
@@ -624,7 +624,7 @@ canvas.drag{cursor:grabbing}
         <details class="noz-sched-details">
           <summary class="noz-sched-summary">
             <span id="nozSchedSummaryTitle">📋 배관 노즐 일람표 (NOZZLE SCHEDULE)</span>
-            <span style="font-size:10px;color:var(--muted);font-weight:normal">펼치기 / 접기 ▼</span>
+            <span id="lblSchedToggle" style="font-size:10px;color:var(--muted);font-weight:normal">펼치기 / 접기 ▼</span>
           </summary>
           <div style="padding:8px;border-top:1px solid var(--line)">
             <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
@@ -640,7 +640,7 @@ canvas.drag{cursor:grabbing}
                     <th style="padding:4px 6px">TYPE</th>
                     <th style="padding:4px 6px">ELEV.</th>
                     <th style="padding:4px 6px">LOCATION</th>
-                    <th style="padding:4px 6px;text-align:center">선택</th>
+                    <th id="thNozSelect" style="padding:4px 6px;text-align:center">선택</th>
                   </tr>
                 </thead>
                 <tbody id="nozPreviewTbody"></tbody>
@@ -720,25 +720,25 @@ canvas.drag{cursor:grabbing}
       <div class="subtab-content active" id="subtab-pad">
         <section class="box">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <h2 style="margin:0">🏗️ 기초 콘크리트 패드 설정 (mm)</h2>
-            <span style="font-size:10px;color:var(--accent);font-weight:600">콘크리트 패드</span>
+            <h2 id="secTitlePad" style="margin:0">🏗️ 기초 콘크리트 패드 설정 (mm)</h2>
+            <span id="lblSubPadBadge" style="font-size:10px;color:var(--accent);font-weight:600">콘크리트 패드</span>
           </div>
-          <p class="hint" style="margin-bottom:10px">수조 하부 기초 콘크리트 패드 빔의 폭·높이 규격 및 전후면 돌출 길이를 설정합니다.</p>
+          <p class="hint" id="hintPad" style="margin-bottom:10px">수조 하부 기초 콘크리트 패드 빔의 폭·높이 규격 및 전후면 돌출 길이를 설정합니다.</p>
 
           <!-- 패드 도식화 / 시각 프리뷰 바 -->
           <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:8px 6px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;margin-bottom:10px;text-align:center">
             <div style="flex:1">
-              <div style="font-size:10px;color:var(--muted);margin-bottom:2px">최외각 첫번째</div>
+              <div id="lblPadFirstBadge" style="font-size:10px;color:var(--muted);margin-bottom:2px">최외각 첫번째</div>
               <div id="badgePadFirst" style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 4px;border-radius:4px">400mm</div>
             </div>
             <div style="color:var(--muted);font-size:10px">─·─</div>
             <div style="flex:1">
-              <div style="font-size:10px;color:var(--muted);margin-bottom:2px">일반 (내부)</div>
+              <div id="lblPadMidBadge" style="font-size:10px;color:var(--muted);margin-bottom:2px">일반 (내부)</div>
               <div id="badgePadMid" style="font-size:11px;font-weight:700;color:var(--fg);background:rgba(100,116,139,0.12);padding:2px 4px;border-radius:4px">300mm</div>
             </div>
             <div style="color:var(--muted);font-size:10px">─·─</div>
             <div style="flex:1">
-              <div style="font-size:10px;color:var(--muted);margin-bottom:2px">최외각 마지막</div>
+              <div id="lblPadLastBadge" style="font-size:10px;color:var(--muted);margin-bottom:2px">최외각 마지막</div>
               <div id="badgePadLast" style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 4px;border-radius:4px">400mm</div>
             </div>
           </div>
@@ -746,36 +746,36 @@ canvas.drag{cursor:grabbing}
           <!-- 패드 규격 설정 (최외각 패드 폭, 일반 패드 폭, 패드 높이) -->
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
             <div>
-              <label for="padFirstW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">최외각 패드 폭</label>
+              <label for="padFirstW" id="lblPadFirstW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">최외각 패드 폭</label>
               <input type="number" id="padFirstW" value="400" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="400">
-              <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">첫번째·마지막 동일</div>
+              <div id="hintPadFirstW" style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">첫번째·마지막 동일</div>
             </div>
             <div>
-              <label for="padMidW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">일반 패드 폭</label>
+              <label for="padMidW" id="lblPadMidW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">일반 패드 폭</label>
               <input type="number" id="padMidW" value="300" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="300">
-              <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">내부 패드 폭</div>
+              <div id="hintPadMidW" style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">내부 패드 폭</div>
             </div>
             <div>
-              <label for="padH" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">패드 높이 (H)</label>
+              <label for="padH" id="lblPadH" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">패드 높이 (H)</label>
               <input type="number" id="padH" value="525" min="100" max="3000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="525">
-              <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">기본: 600 - 스키드</div>
+              <div id="hintPadH" style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">기본: 600 - 스키드</div>
             </div>
           </div>
 
           <!-- 자동 계산 정보 표시 -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;padding:8px 10px;background:var(--surface);border:1px dashed var(--line);border-radius:6px;font-size:11px">
             <div>
-              <div style="color:var(--muted);margin-bottom:2px">전·후면 돌출 (자동)</div>
+              <div id="lblPadOverhang" style="color:var(--muted);margin-bottom:2px">전·후면 돌출 (자동)</div>
               <div style="font-size:13px;font-weight:700;color:var(--accent)"><span id="calcPadOverhang">200</span> mm</div>
-              <div style="font-size:9px;color:var(--muted)">최외각 폭(<span id="calcEdgeW">400</span>) / 2</div>
+              <div id="hintPadOverhang" style="font-size:9px;color:var(--muted)">최외각 폭(<span id="calcEdgeW">400</span>) / 2</div>
             </div>
             <div>
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-                <span style="color:var(--muted)">패드높이 기본식</span>
+                <span id="lblPadHFormula" style="color:var(--muted)">패드높이 기본식</span>
                 <button type="button" id="btnResetPadH" class="btn-sm" style="padding:1px 5px;font-size:9px;line-height:1.2;background:rgba(2,132,199,0.08);color:var(--accent)" title="기본 계산값(600 - 스키드)으로 재설정">기본값 적용</button>
               </div>
               <div style="font-size:13px;font-weight:700;color:var(--text)"><span id="calcDefaultPadH">525</span> mm</div>
-              <div style="font-size:9px;color:var(--muted)">600 - 스키드(<span id="calcSkidH">75</span>)</div>
+              <div id="hintPadHFormula" style="font-size:9px;color:var(--muted)">600 - 스키드(<span id="calcSkidH">75</span>)</div>
             </div>
           </div>
 
@@ -802,53 +802,53 @@ canvas.drag{cursor:grabbing}
         <div class="title-sec-pane active" id="title-sec-proj">
           <section class="box">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <h2 style="margin:0;font-size:12px">📋 프로젝트별 표제란 정보</h2>
-              <span style="font-size:10px;color:var(--muted)">도면 우측 하단</span>
+              <h2 id="secTitleProj" style="margin:0;font-size:12px">📋 프로젝트별 표제란 정보</h2>
+              <span id="lblProjSub" style="font-size:10px;color:var(--muted)">도면 우측 하단</span>
             </div>
             
             <div style="display:flex;flex-direction:column;gap:6px">
               <div>
-                <label for="tProject" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">Project (프로젝트명)</label>
+                <label for="tProject" id="lblProject" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">Project (프로젝트명)</label>
                 <input type="text" id="tProject" style="width:100%;padding:5px 8px;font-size:12px;font-weight:600" placeholder="예: OO빌딩 신축공사 물탱크">
               </div>
 
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
                 <div>
-                  <label for="tTankSize" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">TANK SIZE (규격)</label>
+                  <label for="tTankSize" id="lblTankSize" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">TANK SIZE (규격)</label>
                   <input type="text" id="tTankSize" style="width:100%;padding:5px 6px;font-size:11px" placeholder="자동 생성 (직접 입력 가능)">
                 </div>
                 <div>
-                  <label for="tDwgNo" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">DWG NO. (도면번호)</label>
+                  <label for="tDwgNo" id="lblDwgNo" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">DWG NO. (도면번호)</label>
                   <input type="text" id="tDwgNo" style="width:100%;padding:5px 6px;font-size:11px" placeholder="예: YS-2026-001">
                 </div>
               </div>
 
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
                 <div>
-                  <label for="tClient" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">Client (발주처)</label>
+                  <label for="tClient" id="lblClient" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">Client (발주처)</label>
                   <input type="text" id="tClient" style="width:100%;padding:5px 6px;font-size:11px">
                 </div>
                 <div>
-                  <label for="tContractor" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">Main Contractor (시공사)</label>
+                  <label for="tContractor" id="lblContractor" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">Main Contractor (시공사)</label>
                   <input type="text" id="tContractor" style="width:100%;padding:5px 6px;font-size:11px">
                 </div>
               </div>
 
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
                 <div>
-                  <label for="tDate" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">DATE (작성일자)</label>
+                  <label for="tDate" id="lblDate" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">DATE (작성일자)</label>
                   <input type="text" id="tDate" style="width:100%;padding:5px 6px;font-size:11px" placeholder="비우면 오늘 날짜">
                 </div>
                 <div>
-                  <label for="tDrawn" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">DRAWN (작성자)</label>
+                  <label for="tDrawn" id="lblDrawn" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">DRAWN (작성자)</label>
                   <input type="text" id="tDrawn" style="width:100%;padding:5px 6px;font-size:11px">
                 </div>
               </div>
 
               <div style="background:var(--surface-sub);padding:8px 10px;border-radius:6px;border:1px solid var(--line);margin-top:4px;display:flex;justify-content:space-between;align-items:center">
                 <div>
-                  <span style="font-size:11px;font-weight:700;color:var(--text);display:block">📋 부품 사양 명세표 (Item List)</span>
-                  <span style="font-size:10px;color:var(--muted)">상단 [📋 부품사양(BOM)] 탭에서 전용 편집</span>
+                  <span id="lblBomNavTitle" style="font-size:11px;font-weight:700;color:var(--text);display:block">📋 부품 사양 명세표 (Item List)</span>
+                  <span id="lblBomNavCard" style="font-size:10px;color:var(--muted)">상단 [📋 부품사양(BOM)] 탭에서 전용 편집</span>
                 </div>
                 <button type="button" id="gotoBOMTabBtn" class="btn-sm" style="background:var(--accent);color:#fff;font-weight:700;padding:4px 10px;font-size:11px;border-radius:4px;border:none;cursor:pointer">
                   탭으로 이동 ➔
@@ -856,11 +856,11 @@ canvas.drag{cursor:grabbing}
               </div>
 
               <details style="margin-top:2px;padding-top:4px;border-top:1px dashed var(--line);font-size:11px">
-                <summary style="cursor:pointer;color:var(--muted);font-weight:600">➕ 추가 상세 필드 (Consultant, MEP, Chart No.)</summary>
+                <summary id="summaryExtraFields" style="cursor:pointer;color:var(--muted);font-weight:600">➕ 추가 상세 필드 (Consultant, MEP, Chart No.)</summary>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:6px">
-                  <div><label for="tConsultant" style="font-size:9px;color:var(--muted)">Consultant</label><input type="text" id="tConsultant" style="width:100%;padding:4px;font-size:10px"></div>
-                  <div><label for="tMep" style="font-size:9px;color:var(--muted)">MEP</label><input type="text" id="tMep" style="width:100%;padding:4px;font-size:10px"></div>
-                  <div><label for="tChart" style="font-size:9px;color:var(--muted)">Chart No.</label><input type="text" id="tChart" style="width:100%;padding:4px;font-size:10px"></div>
+                  <div><label for="tConsultant" id="lblConsultant" style="font-size:9px;color:var(--muted)">Consultant</label><input type="text" id="tConsultant" style="width:100%;padding:4px;font-size:10px"></div>
+                  <div><label for="tMep" id="lblMep" style="font-size:9px;color:var(--muted)">MEP</label><input type="text" id="tMep" style="width:100%;padding:4px;font-size:10px"></div>
+                  <div><label for="tChart" id="lblChart" style="font-size:9px;color:var(--muted)">Chart No.</label><input type="text" id="tChart" style="width:100%;padding:4px;font-size:10px"></div>
                 </div>
               </details>
             </div>
@@ -871,40 +871,40 @@ canvas.drag{cursor:grabbing}
         <div class="title-sec-pane" id="title-sec-header">
           <section class="box">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <h2 style="margin:0;font-size:12px">🏢 회사 정보 및 도면 머리글 (Header)</h2>
-              <span style="font-size:10px;color:var(--muted)">도면 우측 상단</span>
+              <h2 id="secTitleHeader" style="margin:0;font-size:12px">🏢 회사 정보 및 도면 머리글 (Header)</h2>
+              <span id="lblHeaderSub" style="font-size:10px;color:var(--muted)">도면 우측 상단</span>
             </div>
 
             <div style="display:flex;flex-direction:column;gap:6px">
               <div style="display:flex;gap:6px">
                 <div style="width:75px">
-                  <label for="tLogoText" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">로고 마크</label>
+                  <label for="tLogoText" id="lblLogoText" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">로고 마크</label>
                   <input type="text" id="tLogoText" value="Y" maxlength="3" style="width:100%;text-align:center;font-weight:700;padding:5px;font-size:12px" placeholder="Y">
                 </div>
                 <div style="flex:1">
-                  <label for="tCustomer" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">회사 상호 (Company Name)</label>
+                  <label for="tCustomer" id="lblCustomer" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">회사 상호 (Company Name)</label>
                   <input type="text" id="tCustomer" value="YSACC CO.,LTD" style="width:100%;padding:5px 8px;font-size:12px;font-weight:600" placeholder="YSACC CO.,LTD">
                 </div>
               </div>
 
               <div>
-                <label for="tProdName" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">제품명 (품목 타이틀)</label>
+                <label for="tProdName" id="lblProdName" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">제품명 (품목 타이틀)</label>
                 <input type="text" id="tProdName" style="width:100%;padding:5px 8px;font-size:11px" placeholder="비워두면 자동: [재질] PANEL WATER TANK">
               </div>
 
               <div>
-                <label for="tAddress" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">본사 영문/한글 주소</label>
+                <label for="tAddress" id="lblAddress" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">본사 영문/한글 주소</label>
                 <input type="text" id="tAddress" value="201-1, 1251, Garosu-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28420, Republic of Korea" style="width:100%;padding:5px 8px;font-size:10.5px">
               </div>
 
               <div>
-                <label for="tTel" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">대표 연락처 (TEL)</label>
+                <label for="tTel" id="lblTel" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">대표 연락처 (TEL)</label>
                 <input type="text" id="tTel" style="width:100%;padding:5px 8px;font-size:11px" placeholder="TEL : +82-...">
               </div>
 
               <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 2px;border-top:1px dashed var(--line);margin-top:4px">
-                <span style="font-size:11px;color:var(--muted)">DWG 변환 팝업 생략</span>
-                <label class="chk" style="font-size:11px;cursor:pointer;font-weight:600"><input type="checkbox" id="chkHideOdaModal"> 이미 설치됨 (팝업 생략)</label>
+                <span id="lblOdaSkip" style="font-size:11px;color:var(--muted)">DWG 변환 팝업 생략</span>
+                <label class="chk" style="font-size:11px;cursor:pointer;font-weight:600"><input type="checkbox" id="chkHideOdaModal"> <span id="lblChkHideOdaModal">이미 설치됨 (팝업 생략)</span></label>
               </div>
             </div>
           </section>
@@ -914,19 +914,19 @@ canvas.drag{cursor:grabbing}
         <div class="title-sec-pane" id="title-sec-notes">
           <section class="box">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <h2 style="margin:0;font-size:12px">📝 도면 노트 및 특기사항</h2>
+              <h2 id="secTitleNotes" style="margin:0;font-size:12px">📝 도면 노트 및 특기사항</h2>
               <button type="button" id="chtBtn" class="btn-sm" style="background:var(--surface-sub);border:1px solid var(--line);padding:3px 7px;font-size:10px" title="고객 차트(.cht) 파일 불러오기">📁 .cht 불러오기</button>
               <input type="file" id="chtFile" accept=".cht,.txt" hidden>
             </div>
 
             <div style="display:flex;flex-direction:column;gap:6px">
               <div>
-                <label for="tRemarks" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">REMARKS (특기사항)</label>
+                <label for="tRemarks" id="lblRemarks" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">REMARKS (특기사항)</label>
                 <textarea id="tRemarks" rows="3" placeholder="REMARKS (한 줄에 1개씩)" style="width:100%;font-size:11px;padding:5px 7px"></textarea>
               </div>
 
               <div>
-                <label for="tNotes" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">NOTES (표준 주의사항)</label>
+                <label for="tNotes" id="lblNotes" style="font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px">NOTES (표준 주의사항)</label>
                 <textarea id="tNotes" rows="7" style="width:100%;font-size:10.5px;padding:5px 7px" placeholder="도면 주의사항 (한 줄에 1개씩)"></textarea>
               </div>
             </div>
@@ -938,14 +938,14 @@ canvas.drag{cursor:grabbing}
       <div class="subtab-content" id="subtab-panels">
         <section class="box">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <h2 style="margin:0">🧩 탱크 판넬 DB 관리</h2>
+            <h2 id="secTitlePanelDb" style="margin:0">🧩 탱크 판넬 DB 관리</h2>
             <button type="button" id="openPanelModal" class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent)">➕ 판넬 등록</button>
           </div>
-          <p class="hint" style="margin-bottom:10px">탱크 규격별 판넬의 형상(엠보싱, 무늬, 보강)을 등록하고 관리합니다.</p>
+          <p class="hint" id="hintPanelDb" style="margin-bottom:10px">탱크 규격별 판넬의 형상(엠보싱, 무늬, 보강)을 등록하고 관리합니다.</p>
           
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
             <div>
-              <label style="font-size:11px;color:var(--muted)">재질 필터</label>
+              <label id="lblFilterMat" style="font-size:11px;color:var(--muted)">재질 필터</label>
               <select id="dbFilterMat" style="width:100%;font-size:12px;padding:4px">
                 <option value="ALL">전체 재질</option>
                 <option value="SMC">SMC (GRP)</option>
@@ -953,7 +953,7 @@ canvas.drag{cursor:grabbing}
               </select>
             </div>
             <div>
-              <label style="font-size:11px;color:var(--muted)">위치 필터</label>
+              <label id="lblFilterCat" style="font-size:11px;color:var(--muted)">위치 필터</label>
               <select id="dbFilterCat" style="width:100%;font-size:12px;padding:4px">
                 <option value="ALL">전체 위치</option>
                 <option value="top_bottom">평면 (상·하부)</option>
@@ -966,10 +966,10 @@ canvas.drag{cursor:grabbing}
             <table style="width:100%;font-size:11px;border-collapse:collapse" id="panelTable">
               <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
                 <tr>
-                  <th style="padding:6px 4px;text-align:left">재질/구분</th>
-                  <th style="padding:6px 4px;text-align:left">규격</th>
-                  <th style="padding:6px 4px;text-align:left">명칭</th>
-                  <th style="padding:6px 4px;text-align:center">관리</th>
+                  <th id="thDbMat" style="padding:6px 4px;text-align:left">재질/구분</th>
+                  <th id="thDbSpec" style="padding:6px 4px;text-align:left">규격</th>
+                  <th id="thDbName" style="padding:6px 4px;text-align:left">명칭</th>
+                  <th id="thDbAct" style="padding:6px 4px;text-align:center">관리</th>
                 </tr>
               </thead>
               <tbody id="panelTableBody">
@@ -1603,17 +1603,17 @@ canvas.drag{cursor:grabbing}
   }
 
   /* ---------- 부품 풍선 기호 (Circular Balloon Callout with Leader) ---------- */
-  function drawBalloonCallout(ents, startPt, elbowPt, balloonCenter, numStr, scaleN = 25, layer = 'DIM') {
+  function drawBalloonCallout(ents, startPt, elbowPt, balloonCenter, numStr, scaleN = 25, layer = 'BALLOON') {
     if (!balloonCenter && elbowPt) {
       balloonCenter = elbowPt;
       elbowPt = null;
     }
-    layer = layer || 'DIM';
+    layer = layer || 'BALLOON';
     const balloonR = Math.round(3.8 * scaleN);
     const textH = Math.round(2.8 * scaleN);
 
     // 단부 점 (Terminal dot)
-    ents.push({ t: 'circle', c: startPt, r: Math.max(3, Math.round(scaleN * 0.18)), layer });
+    ents.push({ t: 'circle', c: startPt, r: Math.max(3, Math.round(scaleN * 0.2)), layer });
 
     // 지시선 (Leader line)
     if (elbowPt && (elbowPt[0] !== startPt[0] || elbowPt[1] !== startPt[1])) {
@@ -1683,17 +1683,17 @@ canvas.drag{cursor:grabbing}
       ];
     } else { // bilingual
       return [
-        { no: 1, key: 'foundation', name: 'Concrete Foundation', mat: 'CONC', qty: '1식', spec: `Refer Foundation Pad plan (H${padH})` },
-        { no: 2, key: 'skid', name: 'Skid Frame', mat: 'SS275(HDG)', qty: '1식', spec: 'Main: [-75x75x6T, Sub: [-75x40x5T' },
-        { no: 3, key: 'panel', name: 'Panel (Bottom/Side/Roof)', mat: mat, qty: '1식', spec: `All ${mat} Panels (${totalW}W x ${totalL}L x ${H}H)` },
-        { no: 4, key: 'corner', name: 'Corner Frame', mat: 'HDG', qty: '4조', spec: 'L-70x70x8.0T' },
-        { no: 5, key: 'airvent', name: 'Air Vent', mat: 'ABS', qty: `${ventCount || 1}개`, spec: 'Φ50 (합성수지 방충망 #20 부착)' },
-        { no: 6, key: 'manhole', name: 'Manhole', mat: mat, qty: `${manholeCount || 1}개`, spec: 'Ø600 쇄정식 이중덮개 부착' },
-        { no: 7, key: 'inladder', name: 'Internal Ladder', mat: 'FRP', qty: `${ladderCount}조`, spec: `L=${H}mm` },
-        { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: `${ladderCount}조`, spec: 'Vertical: 20x30x1.2T, 폭 270' },
-        { no: 9, key: 'flangebar', name: 'Flange Bar', mat: 'HDG', qty: '1식', spec: 'L-65x30x3T etc.' },
-        { no: 10, key: 'stay', name: 'Internal Stay', mat: 'SS316+PE', qty: '1식', spec: 'Φ-10.7 Tie-Rod(M12)' },
-        { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0}개`, spec: 'JIS 10K Flange / Socket' }
+        { no: 1, key: 'foundation', name: 'Concrete Foundation', mat: 'CONC', qty: '1 Set (1식)', spec: `Refer Foundation Pad plan (H${padH})` },
+        { no: 2, key: 'skid', name: 'Skid Frame', mat: 'SS275(HDG)', qty: '1 Set (1식)', spec: 'Main: [-75x75x6T, Sub: [-75x40x5T' },
+        { no: 3, key: 'panel', name: 'Panel (Bottom/Side/Roof)', mat: mat, qty: '1 Set (1식)', spec: `All ${mat} Panels (${totalW}W x ${totalL}L x ${H}H)` },
+        { no: 4, key: 'corner', name: 'Corner Frame', mat: 'HDG', qty: '4 Sets (4조)', spec: 'L-70x70x8.0T' },
+        { no: 5, key: 'airvent', name: 'Air Vent', mat: 'ABS', qty: `${ventCount || 1} EA`, spec: 'Φ50 (Insect screen #20 attached)' },
+        { no: 6, key: 'manhole', name: 'Manhole', mat: mat, qty: `${manholeCount || 1} EA`, spec: 'Ø600 Double cover with lock' },
+        { no: 7, key: 'inladder', name: 'Internal Ladder', mat: 'FRP', qty: `${ladderCount} Set (조)`, spec: `L=${H}mm` },
+        { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: `${ladderCount} Set (조)`, spec: 'Vertical: 20x30x1.2T, W=270' },
+        { no: 9, key: 'flangebar', name: 'Flange Bar', mat: 'HDG', qty: '1 Set (1식)', spec: 'L-65x30x3T etc.' },
+        { no: 10, key: 'stay', name: 'Internal Stay', mat: 'SS316+PE', qty: '1 Set (1식)', spec: 'Φ-10.7 Tie-Rod(M12)' },
+        { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0} EA`, spec: 'JIS 10K Flange / Socket' }
       ];
     }
   }
@@ -1987,7 +1987,7 @@ canvas.drag{cursor:grabbing}
     dimLinear(ents, [0, W], [0, W + F], baseX, true, String(F), textH, 'DIM');
     dimLinear(ents, [0, -F], [0, W + F], -F - dimGap2, true, String(W + 2 * F), textH, 'DIM');
 
-    // 부품 풍선 기호 (Plan View Balloon Callouts)
+    // 부품 풍선 기호 (Plan View Balloon Callouts - 모두 물탱크 형상 및 치수선 바깥 외곽에 정렬)
     if (opt.showBalloons !== false) {
       const boms = (opt.itemList && opt.itemList.length) ? opt.itemList : buildDefaultBOM(opt);
       const getItemNo = key => {
@@ -1995,7 +1995,13 @@ canvas.drag{cursor:grabbing}
         return it ? it.no : '';
       };
 
-      // 1. 맨홀 (Manhole - NO. 6)
+      const topBaseY = W + F + Math.round(18 * N);
+      const topStaggerY = W + F + Math.round(28 * N);
+      const rightBaseX = L + F + Math.round(18 * N);
+      const botClearY = -F - dimGap2 - Math.round(14 * N);
+      const leftClearX = -F - dimGap2 - Math.round(14 * N);
+
+      // 1. 맨홀 (Manhole - NO. 6): 상단 바깥으로 지시선 인출
       let mPos = null;
       const mEntries = Object.entries(opt.marks || {}).filter(([_, m]) => m === 1);
       if (mEntries.length > 0) {
@@ -2006,9 +2012,9 @@ canvas.drag{cursor:grabbing}
         const lj = map.cols.length - 1, li = map.rows.length - 1;
         mPos = [(map.xs[lj] + map.xs[lj + 1]) / 2, (map.ys[li] + map.ys[li + 1]) / 2];
       }
-      drawBalloonCallout(ents, [mPos[0] + 160, mPos[1] + 160], [mPos[0] + 320, mPos[1] + 320], [mPos[0] + 500, mPos[1] + 320], getItemNo('manhole') || 6, N);
+      drawBalloonCallout(ents, [mPos[0], mPos[1] + 250], [mPos[0], topBaseY - Math.round(5 * N)], [mPos[0], topBaseY], getItemNo('manhole') || 6, N, 'BALLOON');
 
-      // 2. 에어벤트 (Air Vent - NO. 5)
+      // 2. 에어벤트 (Air Vent - NO. 5): 상단 바깥으로 지시선 인출
       let vPos = null;
       const vEntries = Object.entries(opt.marks || {}).filter(([_, m]) => m === 2);
       if (vEntries.length > 0) {
@@ -2019,39 +2025,45 @@ canvas.drag{cursor:grabbing}
         const vj = Math.max(0, map.cols.length - 2), vi = map.rows.length - 1;
         vPos = [(map.xs[vj] + map.xs[vj + 1]) / 2, (map.ys[vi] + map.ys[vi + 1]) / 2];
       }
-      drawBalloonCallout(ents, [vPos[0] - 120, vPos[1] + 120], [vPos[0] - 280, vPos[1] + 280], [vPos[0] - 460, vPos[1] + 280], getItemNo('airvent') || 5, N);
+      const xDiff = Math.abs(vPos[0] - mPos[0]);
+      const vBalloonY = (xDiff < Math.round(15 * N)) ? topStaggerY : topBaseY;
+      drawBalloonCallout(ents, [vPos[0], vPos[1] + 120], [vPos[0], vBalloonY - Math.round(5 * N)], [vPos[0], vBalloonY], getItemNo('airvent') || 5, N, 'BALLOON');
 
-      // 3. 외부 사다리 (NO. 8) & 내부 사다리 (NO. 7)
+      // 3. 외부 사다리 (NO. 8) & 내부 사다리 (NO. 7): 외곽 치수선 바깥으로 인출
       const lList = ladderList(opt, map);
       const l = (lList.length > 0) ? lList[0] : { sd: 'D', x: map.xs[map.cols.length - 1] + 250, y: 0 };
       if (l.sd === 'D') {
-        drawBalloonCallout(ents, [l.x + 120, -50], [l.x + 260, -220], [l.x + 440, -220], getItemNo('exladder') || 8, N);
-        drawBalloonCallout(ents, [l.x - 70, 70], [l.x - 200, 240], [l.x - 380, 240], getItemNo('inladder') || 7, N);
+        drawBalloonCallout(ents, [l.x + 80, -F - 20], [l.x + 80, botClearY], [l.x + 80 + Math.round(12 * N), botClearY], getItemNo('exladder') || 8, N, 'BALLOON');
+        drawBalloonCallout(ents, [l.x - 80, 50], [l.x - 80, botClearY], [l.x - 80 - Math.round(12 * N), botClearY], getItemNo('inladder') || 7, N, 'BALLOON');
       } else if (l.sd === 'R') {
-        drawBalloonCallout(ents, [l.x + 50, l.y + 120], [l.x + 220, l.y + 260], [l.x + 400, l.y + 260], getItemNo('exladder') || 8, N);
-        drawBalloonCallout(ents, [l.x - 70, l.y - 70], [l.x - 200, l.y - 220], [l.x - 380, l.y - 220], getItemNo('inladder') || 7, N);
+        drawBalloonCallout(ents, [L + F + 20, l.y - 80], [L + F + Math.round(8 * N), l.y - 80], [rightBaseX, l.y - 80], getItemNo('exladder') || 8, N, 'BALLOON');
+        drawBalloonCallout(ents, [L - 50, l.y + 80], [L + F + Math.round(8 * N), l.y + 80], [rightBaseX, l.y + 80], getItemNo('inladder') || 7, N, 'BALLOON');
+      } else if (l.sd === 'U') {
+        drawBalloonCallout(ents, [l.x + 80, W + F + 20], [l.x + 80, topStaggerY], [l.x + 80 + Math.round(12 * N), topStaggerY], getItemNo('exladder') || 8, N, 'BALLOON');
+        drawBalloonCallout(ents, [l.x - 80, W - 50], [l.x - 80, topStaggerY], [l.x - 80 - Math.round(12 * N), topStaggerY], getItemNo('inladder') || 7, N, 'BALLOON');
       } else {
-        drawBalloonCallout(ents, [l.x + 80, l.y + 80], [l.x + 220, l.y + 220], [l.x + 400, l.y + 220], getItemNo('exladder') || 8, N);
-        drawBalloonCallout(ents, [l.x - 60, l.y - 60], [l.x - 200, l.y - 200], [l.x - 380, l.y - 200], getItemNo('inladder') || 7, N);
+        drawBalloonCallout(ents, [-F - 20, l.y - 80], [leftClearX + Math.round(8 * N), l.y - 80], [leftClearX, l.y - 80], getItemNo('exladder') || 8, N, 'BALLOON');
+        drawBalloonCallout(ents, [50, l.y + 80], [leftClearX + Math.round(8 * N), l.y + 80], [leftClearX, l.y + 80], getItemNo('inladder') || 7, N, 'BALLOON');
       }
 
-      // 4. 지붕 판넬 (Roof Panel - NO. 3)
+      // 4. 지붕 판넬 (Roof Panel - NO. 3): 우측 바깥 외곽으로 인출
       const rCellC = Math.max(0, map.cols.length - 1);
-      const rCellR = 0;
+      const rCellR = Math.min(1, map.rows.length - 1);
       const pcx = (map.xs[rCellC] + map.xs[rCellC + 1]) / 2;
       const pcy = (map.ys[rCellR] + map.ys[rCellR + 1]) / 2;
-      drawBalloonCallout(ents, [pcx, pcy], [L + 200, pcy], [L + 380, pcy], getItemNo('panel') || 3, N);
+      drawBalloonCallout(ents, [pcx, pcy], [L + F + Math.round(6 * N), pcy], [rightBaseX, pcy], getItemNo('panel') || 3, N, 'BALLOON');
 
-      // 5. 코너 프레임 (Corner Frame - NO. 4)
-      drawBalloonCallout(ents, [-15, -15], [-160, -160], [-340, -160], getItemNo('corner') || 4, N);
+      // 5. 코너 프레임 (Corner Frame - NO. 4): 좌상단 바깥 외곽으로 인출
+      drawBalloonCallout(ents, [-F, W + F], [-F - Math.round(6 * N), W + F + Math.round(8 * N)], [-F - Math.round(14 * N), W + F + Math.round(14 * N)], getItemNo('corner') || 4, N, 'BALLOON');
 
-      // 6. 플랜지 바 (Flange Bar - NO. 9)
+      // 6. 플랜지 바 (Flange Bar - NO. 9): 상단 바깥 외곽으로 인출
       const seamX = (map.xs[1] !== undefined) ? map.xs[1] : 1000;
-      drawBalloonCallout(ents, [seamX, 0], [seamX - 120, -220], [seamX - 300, -220], getItemNo('flangebar') || 9, N);
+      drawBalloonCallout(ents, [seamX, W], [seamX, topStaggerY - Math.round(5 * N)], [seamX, topStaggerY], getItemNo('flangebar') || 9, N, 'BALLOON');
 
-      // 7. 내부 스테이 / 보강재 (Internal Stay - NO. 10)
+      // 7. 내부 스테이 / 보강재 (Internal Stay - NO. 10): 우측 바깥 외곽으로 인출
       const stayCx = L * 0.5, stayCy = W * 0.5;
-      drawBalloonCallout(ents, [stayCx, stayCy], [stayCx, W + 220], [stayCx, W + 380], getItemNo('stay') || 10, N);
+      const stayY = W * 0.75;
+      drawBalloonCallout(ents, [stayCx, stayCy], [L + F + Math.round(6 * N), stayY], [rightBaseX, stayY], getItemNo('stay') || 10, N, 'BALLOON');
     }
 
     ents.blocks = blocks;
@@ -2857,7 +2869,7 @@ canvas.drag{cursor:grabbing}
       }
     });
 
-    // 부품 풍선 기호 (Elevation View Balloon Callouts)
+    // 부품 풍선 기호 (Elevation View Balloon Callouts - 모두 물탱크 형상 및 치수선 바깥 외곽에 정렬)
     if (opt.showBalloons !== false) {
       const N = opt._N || 25;
       const boms = (opt.itemList && opt.itemList.length) ? opt.itemList : buildDefaultBOM(opt);
@@ -2867,30 +2879,33 @@ canvas.drag{cursor:grabbing}
       };
       const padH = (typeof opt.padH === 'number' && !isNaN(opt.padH)) ? opt.padH : (600 - (opt.frame || 75));
       const GRD = -th - padH;
+      const elevTopY = nH + Math.round(18 * N);
+      const elevRightX = total + 75 + Math.round(18 * N);
+      const elevBotY = GRD - dimGap2 - Math.round(14 * N);
 
-      // 1. 기초 콘크리트 (Concrete Foundation - NO. 1)
-      drawBalloonCallout(ents, [total * 0.18, -th - padH * 0.5], [total * 0.18 - 180, GRD - 150], [total * 0.18 - 360, GRD - 150], getItemNo('foundation') || 1, N);
+      // 1. 기초 콘크리트 (Concrete Foundation - NO. 1): 하단 치수선 바깥 외곽
+      drawBalloonCallout(ents, [total * 0.25, GRD + padH * 0.5], [total * 0.25, elevBotY], [total * 0.25 - Math.round(12 * N), elevBotY], getItemNo('foundation') || 1, N, 'BALLOON');
 
-      // 2. 스키드 프레임 (Skid Frame - NO. 2)
-      drawBalloonCallout(ents, [total * 0.32, -th * 0.5], [total * 0.32 - 160, -th - 120], [total * 0.32 - 340, -th - 120], getItemNo('skid') || 2, N);
+      // 2. 스키드 프레임 (Skid Frame - NO. 2): 하단 치수선 바깥 외곽
+      drawBalloonCallout(ents, [total * 0.45, -th * 0.5], [total * 0.45, elevBotY], [total * 0.45 + Math.round(12 * N), elevBotY], getItemNo('skid') || 2, N, 'BALLOON');
 
-      // 3. 측면 판넬 (Wall Panel - NO. 3)
-      drawBalloonCallout(ents, [total * 0.45, nH * 0.45], [-180, nH * 0.45], [-360, nH * 0.45], getItemNo('panel') || 3, N);
+      // 3. 측면 판넬 (Wall Panel - NO. 3): 우측 바깥 외곽
+      drawBalloonCallout(ents, [total, nH * 0.65], [total + 75 + Math.round(6 * N), nH * 0.65], [elevRightX, nH * 0.65], getItemNo('panel') || 3, N, 'BALLOON');
 
-      // 4. 코너 프레임 (Corner Frame - NO. 4)
-      drawBalloonCallout(ents, [0, nH * 0.82], [-180, nH * 0.82 + 150], [-360, nH * 0.82 + 150], getItemNo('corner') || 4, N);
+      // 4. 코너 프레임 (Corner Frame - NO. 4): 좌상단 바깥 외곽
+      drawBalloonCallout(ents, [0, nH], [-75 - Math.round(6 * N), nH + Math.round(10 * N)], [-75 - Math.round(16 * N), nH + Math.round(16 * N)], getItemNo('corner') || 4, N, 'BALLOON');
 
-      // 8. 외부 사다리 (External Ladder - NO. 8)
+      // 8. 외부 사다리 (External Ladder - NO. 8): 상단 바깥 외곽
       const lads = ladderList(opt, mmap);
       const visibleLadder = lads.find(l => (view === 'front' ? l.sd === 'D' : l.sd === 'R'));
       const lx = visibleLadder ? (view === 'front' ? visibleLadder.x : visibleLadder.y) : (total - 300);
-      drawBalloonCallout(ents, [lx, nH + 120], [lx + 180, nH + 280], [lx + 360, nH + 280], getItemNo('exladder') || 8, N);
+      drawBalloonCallout(ents, [lx, nH + 100], [lx, elevTopY - Math.round(5 * N)], [lx + Math.round(10 * N), elevTopY], getItemNo('exladder') || 8, N, 'BALLOON');
 
-      // 10. 내부 스테이 (Internal Stay - NO. 10)
-      drawBalloonCallout(ents, [total * 0.55, nH * 0.33], [total * 0.55 - 120, -th - 80], [total * 0.55 - 300, GRD - 120], getItemNo('stay') || 10, N);
+      // 10. 내부 스테이 (Internal Stay - NO. 10): 상단 바깥 외곽
+      drawBalloonCallout(ents, [total * 0.5, nH * 0.5], [total * 0.5, elevTopY - Math.round(5 * N)], [total * 0.5 - Math.round(10 * N), elevTopY], getItemNo('stay') || 10, N, 'BALLOON');
 
-      // 11. 노즐 (Nozzles - NO. 11)
-      drawBalloonCallout(ents, [total + 75, nH * 0.28], [total + 220, nH * 0.28 + 140], [total + 380, nH * 0.28 + 140], getItemNo('nozzle') || 11, N);
+      // 11. 노즐 (Nozzles - NO. 11): 우측 바깥 외곽
+      drawBalloonCallout(ents, [total + 75, nH * 0.3], [total + 75 + Math.round(6 * N), nH * 0.3], [elevRightX, nH * 0.3], getItemNo('nozzle') || 11, N, 'BALLOON');
     }
 
     ents.blocks = blocks;
@@ -5020,7 +5035,7 @@ canvas.drag{cursor:grabbing}
   }
 
   /* ---------- DXF (AutoCAD R12 ASCII, mm) ---------- */
-  const LAYERS = { PANEL: 7, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7 };
+  const LAYERS = { PANEL: 7, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6 };
   const dxfText = str => Array.from(str).map(ch => { const c = ch.codePointAt(0); return c < 128 ? ch : '\\U+' + c.toString(16).toUpperCase().padStart(4, '0'); }).join('');
 
   function toDxf(ents, blocks) {
@@ -5502,6 +5517,48 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     const setTabBtn = document.querySelector('.tab-btn[data-tab="tab-settings"]');
     if (setTabBtn) setTabBtn.textContent = t.tabSettings;
 
+    // Tab 1: Select dropdown options
+    if ($('sheetKind') && $('sheetKind').options.length >= 4) {
+      $('sheetKind').options[0].textContent = currentLang === 'en' ? 'General Assembly (Plan, Pad, Elev, 3D)' : '조립도 (평면·패드·정면·측면·3D등각)';
+      $('sheetKind').options[1].textContent = currentLang === 'en' ? '3D Isometric Dwg' : '등각 조감도 (3D ISOMETRIC DWG)';
+      $('sheetKind').options[2].textContent = currentLang === 'en' ? 'Frame Dwg (Skid & Stay)' : '프레임도 (스키드·내부 스테이)';
+      $('sheetKind').options[3].textContent = currentLang === 'en' ? 'Details Dwg' : '상세도 (DETAILS DWG)';
+    }
+    if ($('drawingLangSel') && $('drawingLangSel').options.length >= 3) {
+      $('drawingLangSel').options[0].textContent = currentLang === 'en' ? '🇰🇷 Korean' : '🇰🇷 한글 (Korean)';
+      $('drawingLangSel').options[1].textContent = currentLang === 'en' ? '🇺🇸 English' : '🇺🇸 영문 (English)';
+      $('drawingLangSel').options[2].textContent = currentLang === 'en' ? '🌐 Bilingual (KR/EN)' : '🌐 한·영 병기 (Bilingual)';
+    }
+    if ($('uiLangSel') && $('uiLangSel').options.length >= 2) {
+      $('uiLangSel').options[0].textContent = currentLang === 'en' ? '🇰🇷 Korean' : '🇰🇷 한국어 (Korean)';
+      $('uiLangSel').options[1].textContent = currentLang === 'en' ? '🇺🇸 English' : '🇺🇸 English';
+    }
+    if ($('frm') && $('frm').options.length >= 4) {
+      $('frm').options[0].textContent = '50 (SHS)';
+      $('frm').options[1].textContent = currentLang === 'en' ? '75 (Angle)' : '75 (앵글)';
+      $('frm').options[2].textContent = currentLang === 'en' ? '125 (Channel)' : '125 (채널)';
+      $('frm').options[3].textContent = currentLang === 'en' ? '150 (Channel)' : '150 (채널)';
+    }
+    if ($('miniType') && $('miniType').options.length >= 2) {
+      $('miniType').options[0].textContent = 'FLANGE 10K';
+      $('miniType').options[1].textContent = currentLang === 'en' ? 'SOCKET (Threaded)' : 'SOCKET (나사식)';
+    }
+    if ($('miniOffset') && $('miniOffset').options.length >= 3) {
+      $('miniOffset').options[0].textContent = currentLang === 'en' ? '◀ Left (-250)' : '◀ 좌 (-250)';
+      $('miniOffset').options[1].textContent = currentLang === 'en' ? '● Center (0)' : '● 중앙 (0)';
+      $('miniOffset').options[2].textContent = currentLang === 'en' ? '▶ Right (+250)' : '▶ 우 (+250)';
+    }
+    if ($('dbFilterMat') && $('dbFilterMat').options.length >= 3) {
+      $('dbFilterMat').options[0].textContent = currentLang === 'en' ? 'All Materials' : '전체 재질';
+      $('dbFilterMat').options[1].textContent = 'SMC (GRP)';
+      $('dbFilterMat').options[2].textContent = currentLang === 'en' ? 'STS (Stainless)' : 'STS (스텐)';
+    }
+    if ($('dbFilterCat') && $('dbFilterCat').options.length >= 3) {
+      $('dbFilterCat').options[0].textContent = currentLang === 'en' ? 'All Categories' : '전체 위치';
+      $('dbFilterCat').options[1].textContent = currentLang === 'en' ? 'Plan (Top/Bottom)' : '평면 (상·하부)';
+      $('dbFilterCat').options[2].textContent = currentLang === 'en' ? 'Elevation (Side)' : '입면 (측면)';
+    }
+
     // Tab 1: Specs & Dims
     if ($('lblSheetOn')) $('lblSheetOn').textContent = t.lblSheetOn;
     if ($('lblScale')) $('lblScale').textContent = t.lblScale;
@@ -5558,6 +5615,20 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     if ($('nozClearAll')) $('nozClearAll').textContent = t.nozClearAll;
     if ($('nozAddCustomBtn')) $('nozAddCustomBtn').textContent = t.nozAddCustomBtn;
     if ($('nozSchedSummaryTitle')) $('nozSchedSummaryTitle').textContent = t.nozSchedTitle;
+    if ($('lblMiniSize')) $('lblMiniSize').textContent = currentLang === 'en' ? 'Size' : '구경 (Size)';
+    if ($('lblMiniType')) $('lblMiniType').textContent = currentLang === 'en' ? 'Connection Type' : '연결 타입';
+    if ($('lblMiniElev')) $('lblMiniElev').textContent = currentLang === 'en' ? 'Elevation (EL)' : '설치 높이 (EL)';
+    if ($('lblMiniOffset')) $('lblMiniOffset').textContent = currentLang === 'en' ? 'Horizontal Offset' : '수평 위치';
+    if ($('miniDel')) $('miniDel').textContent = currentLang === 'en' ? '🗑️ Delete Nozzle' : '🗑️ 노즐 삭제';
+    if ($('lblQuickElHint')) $('lblQuickElHint').textContent = currentLang === 'en' ? 'Quick EL:' : '빠른 EL:';
+    if ($('btnQuickEl1')) $('btnQuickEl1').textContent = currentLang === 'en' ? 'Bottom 100' : '바닥 100';
+    if ($('btnQuickEl2')) $('btnQuickEl2').textContent = currentLang === 'en' ? 'Fire 200' : '소방 200';
+    if ($('btnQuickEl3')) $('btnQuickEl3').textContent = currentLang === 'en' ? 'Outlet 300' : '토출 300';
+    if ($('btnQuickEl4')) $('btnQuickEl4').textContent = currentLang === 'en' ? 'Overflow H-200' : '월류 H-200';
+    if ($('btnQuickEl5')) $('btnQuickEl5').textContent = currentLang === 'en' ? 'Inlet H-300' : '유입 H-300';
+    if ($('nozMiniBarEmpty')) $('nozMiniBarEmpty').textContent = currentLang === 'en' ? '💡 Select a tool and click a grid cell to change panel type or place nozzles.' : '💡 도구를 선택하고 측면 격자 칸을 클릭하면 판넬 종류 변경 및 배관 노즐이 배치됩니다.';
+    if ($('lblSchedToggle')) $('lblSchedToggle').textContent = currentLang === 'en' ? 'Expand / Collapse ▼' : '펼치기 / 접기 ▼';
+    if ($('thNozSelect')) $('thNozSelect').textContent = currentLang === 'en' ? 'Select' : '선택';
 
     // Tab 4: BOM
     if ($('secTitleBOM')) $('secTitleBOM').textContent = t.bomTabTitle;
@@ -5575,7 +5646,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     if ($('thCntSpec')) $('thCntSpec').textContent = t.thCntSpec;
     if ($('thCntQty')) $('thCntQty').textContent = t.thCntQty;
 
-    // Tab 5: Settings
+    // Tab 5: Settings Subtabs
     const padSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-pad"]');
     if (padSubBtn) padSubBtn.textContent = t.subtabPad;
     const titleSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-title"]');
@@ -5583,6 +5654,28 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     const dbSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-panels"]');
     if (dbSubBtn) dbSubBtn.textContent = t.subtabPanels;
 
+    // Tab 5: Concrete Pad
+    if ($('secTitlePad')) $('secTitlePad').textContent = currentLang === 'en' ? '🏗️ Concrete Pad (Foundation) Settings (mm)' : '🏗️ 기초 콘크리트 패드 설정 (mm)';
+    if ($('lblSubPadBadge')) $('lblSubPadBadge').textContent = currentLang === 'en' ? 'Concrete Pad' : '콘크리트 패드';
+    if ($('hintPad')) $('hintPad').textContent = currentLang === 'en' ? 'Configure foundation concrete beam pad width, height, and spacing.' : '수조 하부 기초 콘크리트 패드 빔의 폭·높이 규격 및 전후면 돌출 길이를 설정합니다.';
+    if ($('lblPadFirstBadge')) $('lblPadFirstBadge').textContent = currentLang === 'en' ? '1st Edge Pad' : '최외각 첫번째';
+    if ($('lblPadMidBadge')) $('lblPadMidBadge').textContent = currentLang === 'en' ? 'Mid (Internal)' : '일반 (내부)';
+    if ($('lblPadLastBadge')) $('lblPadLastBadge').textContent = currentLang === 'en' ? 'Last Edge Pad' : '최외각 마지막';
+    if ($('lblPadFirstW')) $('lblPadFirstW').textContent = currentLang === 'en' ? 'Edge Pad Width' : '최외각 패드 폭';
+    if ($('hintPadFirstW')) $('hintPadFirstW').textContent = currentLang === 'en' ? 'First & Last identical' : '첫번째·마지막 동일';
+    if ($('lblPadMidW')) $('lblPadMidW').textContent = currentLang === 'en' ? 'Mid Pad Width' : '일반 패드 폭';
+    if ($('hintPadMidW')) $('hintPadMidW').textContent = currentLang === 'en' ? 'Internal pad width' : '내부 패드 폭';
+    if ($('lblPadH')) $('lblPadH').textContent = currentLang === 'en' ? 'Pad Height (H)' : '패드 높이 (H)';
+    if ($('hintPadH')) $('hintPadH').textContent = currentLang === 'en' ? 'Default: 600 - Skid' : '기본: 600 - 스키드';
+    if ($('lblPadOverhang')) $('lblPadOverhang').textContent = currentLang === 'en' ? 'Front/Rear Overhang (Auto)' : '전·후면 돌출 (자동)';
+    if ($('lblPadHFormula')) $('lblPadHFormula').textContent = currentLang === 'en' ? 'Pad Height Formula' : '패드높이 기본식';
+    if ($('btnResetPadH')) $('btnResetPadH').textContent = currentLang === 'en' ? 'Apply Default' : '기본값 적용';
+    if ($('btnPadPresetStd')) $('btnPadPresetStd').textContent = currentLang === 'en' ? 'Std 400/300' : '표준 400/300';
+    if ($('btnPadPresetWide')) $('btnPadPresetWide').textContent = currentLang === 'en' ? 'Wide 450/350' : '광폭 450/350';
+    if ($('btnPadPresetEqual3')) $('btnPadPresetEqual3').textContent = currentLang === 'en' ? 'Equal 300' : '동일 300';
+    if ($('btnPadPresetEqual4')) $('btnPadPresetEqual4').textContent = currentLang === 'en' ? 'Equal 400' : '동일 400';
+
+    // Tab 5: Title Block
     const projMini = document.querySelector('.mini-subtab-btn[data-title-sec="title-sec-proj"]');
     if (projMini) projMini.textContent = t.miniTabProj;
     const headMini = document.querySelector('.mini-subtab-btn[data-title-sec="title-sec-header"]');
@@ -5590,6 +5683,56 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     const noteMini = document.querySelector('.mini-subtab-btn[data-title-sec="title-sec-notes"]');
     if (noteMini) noteMini.textContent = t.miniTabNotes;
     if ($('gotoBOMTabBtn')) $('gotoBOMTabBtn').textContent = t.btnGotoBOM;
+
+    if ($('secTitleProj')) $('secTitleProj').textContent = currentLang === 'en' ? '📋 Project Title Block Info' : '📋 프로젝트별 표제란 정보';
+    if ($('lblProjSub')) $('lblProjSub').textContent = currentLang === 'en' ? 'Bottom Right of Dwg' : '도면 우측 하단';
+    if ($('lblProject')) $('lblProject').textContent = currentLang === 'en' ? 'Project Title' : 'Project (프로젝트명)';
+    if ($('tProject')) $('tProject').placeholder = currentLang === 'en' ? 'e.g. Building Water Tank Project' : '예: OO빌딩 신축공사 물탱크';
+    if ($('lblTankSize')) $('lblTankSize').textContent = currentLang === 'en' ? 'TANK SIZE' : 'TANK SIZE (규격)';
+    if ($('tTankSize')) $('tTankSize').placeholder = currentLang === 'en' ? 'Auto Generated (Editable)' : '자동 생성 (직접 입력 가능)';
+    if ($('lblDwgNo')) $('lblDwgNo').textContent = currentLang === 'en' ? 'DWG NO.' : 'DWG NO. (도면번호)';
+    if ($('tDwgNo')) $('tDwgNo').placeholder = currentLang === 'en' ? 'e.g. YS-2026-001' : '예: YS-2026-001';
+    if ($('lblClient')) $('lblClient').textContent = currentLang === 'en' ? 'Client' : 'Client (발주처)';
+    if ($('lblContractor')) $('lblContractor').textContent = currentLang === 'en' ? 'Main Contractor' : 'Main Contractor (시공사)';
+    if ($('lblDate')) $('lblDate').textContent = currentLang === 'en' ? 'DATE' : 'DATE (작성일자)';
+    if ($('tDate')) $('tDate').placeholder = currentLang === 'en' ? 'Leave empty for today' : '비우면 오늘 날짜';
+    if ($('lblDrawn')) $('lblDrawn').textContent = currentLang === 'en' ? 'DRAWN' : 'DRAWN (작성자)';
+    if ($('lblBomNavTitle')) $('lblBomNavTitle').textContent = currentLang === 'en' ? '📋 AutoCAD Standard Item List (BOM)' : '📋 부품 사양 명세표 (Item List)';
+    if ($('lblBomNavCard')) $('lblBomNavCard').textContent = currentLang === 'en' ? 'Dedicated editing in [📋 BOM] tab' : '상단 [📋 부품사양(BOM)] 탭에서 전용 편집';
+    if ($('summaryExtraFields')) $('summaryExtraFields').textContent = currentLang === 'en' ? '➕ Extra Fields (Consultant, MEP, Chart No.)' : '➕ 추가 상세 필드 (Consultant, MEP, Chart No.)';
+    if ($('secTitleHeader')) $('secTitleHeader').textContent = currentLang === 'en' ? '🏢 Company Info & Header' : '🏢 회사 정보 및 도면 머리글 (Header)';
+    if ($('lblHeaderSub')) $('lblHeaderSub').textContent = currentLang === 'en' ? 'Top Right of Dwg' : '도면 우측 상단';
+    if ($('lblLogoText')) $('lblLogoText').textContent = currentLang === 'en' ? 'Logo Mark' : '로고 마크';
+    if ($('lblCustomer')) $('lblCustomer').textContent = currentLang === 'en' ? 'Company Name' : '회사 상호 (Company Name)';
+    if ($('lblProdName')) $('lblProdName').textContent = currentLang === 'en' ? 'Product Title' : '제품명 (품목 타이틀)';
+    if ($('tProdName')) $('tProdName').placeholder = currentLang === 'en' ? 'Auto: [MAT] PANEL WATER TANK' : '비워두면 자동: [재질] PANEL WATER TANK';
+    if ($('lblAddress')) $('lblAddress').textContent = currentLang === 'en' ? 'Company Address' : '본사 영문/한글 주소';
+    if ($('lblTel')) $('lblTel').textContent = currentLang === 'en' ? 'Telephone (TEL)' : '대표 연락처 (TEL)';
+    if ($('lblOdaSkip')) $('lblOdaSkip').textContent = currentLang === 'en' ? 'Skip DWG Convert Popup' : 'DWG 변환 팝업 생략';
+    if ($('lblChkHideOdaModal')) $('lblChkHideOdaModal').textContent = currentLang === 'en' ? 'Already Installed (Skip)' : '이미 설치됨 (팝업 생략)';
+    if ($('secTitleNotes')) $('secTitleNotes').textContent = currentLang === 'en' ? '📝 Drawing Notes & Remarks' : '📝 도면 노트 및 특기사항';
+    if ($('chtBtn')) $('chtBtn').textContent = currentLang === 'en' ? '📁 Open .cht' : '📁 .cht 불러오기';
+    if ($('tRemarks')) $('tRemarks').placeholder = currentLang === 'en' ? 'REMARKS (1 per line)' : 'REMARKS (한 줄에 1개씩)';
+    if ($('tNotes')) $('tNotes').placeholder = currentLang === 'en' ? 'Drawing Notes (1 per line)' : '도면 주의사항 (한 줄에 1개씩)';
+
+    // Tab 5: Panel DB
+    if ($('secTitlePanelDb')) $('secTitlePanelDb').textContent = currentLang === 'en' ? '🧩 Tank Panel DB' : '🧩 탱크 판넬 DB 관리';
+    if ($('openPanelModal')) $('openPanelModal').textContent = currentLang === 'en' ? '➕ Register Panel' : '➕ 판넬 등록';
+    if ($('hintPanelDb')) $('hintPanelDb').textContent = currentLang === 'en' ? 'Manage embossing, pattern and shape templates for tank panels.' : '탱크 규격별 판넬의 형상(엠보싱, 무늬, 보강)을 등록하고 관리합니다.';
+    if ($('lblFilterMat')) $('lblFilterMat').textContent = currentLang === 'en' ? 'Material Filter' : '재질 필터';
+    if ($('lblFilterCat')) $('lblFilterCat').textContent = currentLang === 'en' ? 'Category Filter' : '위치 필터';
+    if ($('thDbMat')) $('thDbMat').textContent = currentLang === 'en' ? 'MAT / CAT' : '재질/구분';
+    if ($('thDbSpec')) $('thDbSpec').textContent = currentLang === 'en' ? 'SPEC' : '규격';
+    if ($('thDbName')) $('thDbName').textContent = currentLang === 'en' ? 'NAME' : '명칭';
+    if ($('thDbAct')) $('thDbAct').textContent = currentLang === 'en' ? 'ACTION' : '관리';
+    if ($('previewPanelTitle')) $('previewPanelTitle').textContent = currentLang === 'en' ? 'Selected Panel Preview' : '선택된 판넬 형상';
+    if ($('syncDbBtn')) $('syncDbBtn').textContent = currentLang === 'en' ? '🔄 Sync to Dwg' : '🔄 도면 동기화';
+    if ($('resetDbBtn')) $('resetDbBtn').textContent = currentLang === 'en' ? 'Reset' : '초기화';
+
+    // ODA Modal Guide
+    if ($('modalDxfBtn')) $('modalDxfBtn').textContent = currentLang === 'en' ? '💾 Instant DXF Download (AutoCAD Compatible)' : '💾 DXF 파일로 즉시 다운로드 (AutoCAD 바로 열림)';
+    if ($('btnOdaAlreadyInstalled')) $('btnOdaAlreadyInstalled').textContent = currentLang === 'en' ? '✅ Already Installed (Do not show again)' : '✅ 이미 설치되어 있음 (다음부터 이 창 보지 않기)';
+    if ($('odaLink')) $('odaLink').textContent = currentLang === 'en' ? 'Download ODA File Converter if not installed' : 'ODA File Converter 미설치 시 다운로드 링크 열기';
 
     // Toolbar & Layer chips
     if ($('toggleSide')) {
@@ -5614,6 +5757,23 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     if ($('status') && ($('status').textContent === '준비 완료' || $('status').textContent === 'Ready')) {
       $('status').textContent = t.statusReady;
     }
+
+    // Auto-sync Drawing Language and refresh BOM
+    if (currentLang === 'en') {
+      if ($('drawingLangSel') && $('drawingLangSel').value === 'ko') {
+        $('drawingLangSel').value = 'en';
+      }
+    } else if (currentLang === 'ko') {
+      if ($('drawingLangSel') && $('drawingLangSel').value === 'en') {
+        $('drawingLangSel').value = 'ko';
+      }
+    }
+    initBOM(true);
+
+    if (plan && plan.map) renderGrid(plan.map);
+    renderNozzleElevationGrid();
+    updateMiniInspector();
+    updatePreviewTbody();
 
     updateBOMBadge();
     if (triggerSchedule) schedule();
@@ -6629,8 +6789,9 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
 
   const cv = $('c'), ctx = cv.getContext('2d');
   const LY = { PANEL: 'lyPanel', PANEL_DETAIL: 'lyDetail', FRAME: 'lyFrame', REINF: 'lyReinf', WALL: 'lyWall', DIM: 'lyDim', SHEET: 'lySheet' };
-  const layerOn = e => $(LY[e.layer]).checked;
-  Object.values(LY).forEach(id => $(id).addEventListener('change', draw));
+  const layerOn = e => e.layer === 'BALLOON' ? ($('balloonFeatureToggle') ? $('balloonFeatureToggle').checked : true) : ($(LY[e.layer]) ? $(LY[e.layer]).checked : true);
+  Object.values(LY).forEach(id => { const el = $(id); if (el) el.addEventListener('change', draw); });
+  if ($('balloonFeatureToggle')) $('balloonFeatureToggle').addEventListener('change', draw);
   let isPadHCustom = false;
 
   function updatePadBadges() {
@@ -6937,8 +7098,13 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       }
       plan.sheet = sheet;
 
-      const kindText = { asm: '조립도 (종합)', iso: '등각 조감도 (3D ISO)', frame: '프레임도 (하부/내부)', detail: '상세도 (DETAILS)' }[opt.sheetKind] || '도면';
-      $('viewBadge').textContent = sheet ? `A1 ${kindText} (1/${plan.scale})` : (opt.sheetKind === 'iso' ? '3D 등각 모델 뷰' : '평면도 모델 뷰');
+      const isEn = currentLang === 'en';
+      const kindText = isEn
+        ? ({ asm: 'GENERAL ASSEMBLY DWG', iso: '3D ISOMETRIC DWG', frame: 'FRAME & SKID DWG', detail: 'DETAILS DWG' }[opt.sheetKind] || 'DWG')
+        : ({ asm: '조립도 (종합)', iso: '등각 조감도 (3D ISO)', frame: '프레임도 (하부/내부)', detail: '상세도 (DETAILS)' }[opt.sheetKind] || '도면');
+      $('viewBadge').textContent = sheet
+        ? `A1 ${kindText} (1/${plan.scale})`
+        : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰'));
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -6946,12 +7112,13 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
   }
 
   function summary(p, L, W, H) {
+    const isEn = currentLang === 'en';
     const m = p.map, cnt = {};
     m.rows.forEach(r => m.cols.forEach(c => { const k = c + ' × ' + r; cnt[k] = (cnt[k] || 0) + 1; }));
     const anyRemoved = m.removed && m.removed.size > 0;
     const total = m.rows.length * m.cols.length - (m.removed ? m.removed.size : 0);
     const h = H.reduce((a, b) => a + b, 0);
-    const fmt = n => n.toLocaleString('ko-KR');
+    const fmt = n => n.toLocaleString(isEn ? 'en-US' : 'ko-KR');
 
     let activeAreaMm2 = 0;
     m.rows.forEach((rh, i) => {
@@ -6963,23 +7130,24 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     });
     const activeAreaM2 = activeAreaMm2 / 1e6;
     const ton = (activeAreaMm2 * h / 1e9).toFixed(1);
-    const specText = `${fmt(m.width)}W × ${fmt(m.length)}L × ${fmt(h)}H mm` + (anyRemoved ? ' (이형)' : '');
+    const isCustom = anyRemoved ? (isEn ? ' (Custom/L-Shape)' : ' (이형)') : '';
+    const specText = `${fmt(m.width)}W × ${fmt(m.length)}L × ${fmt(h)}H mm` + isCustom;
 
     $('topSpecBadge').innerHTML = `<b>${specText}</b> · ${ton} Ton (${document.querySelector('input[name=mat]:checked').value})`;
 
     const dimStr = p.tank ? p.tank.dimStr : specText;
     $('kv').innerHTML =
-      '<span>탱크 규격 (폭 × 길이)</span><b>' + fmt(m.width) + ' × ' + fmt(m.length) + ' mm' + (anyRemoved ? ' (이형)' : '') + '</b>' +
-      '<span>높이</span><b>' + (h ? fmt(h) + ' mm' : '-') + '</b>' +
-      '<span>표제란 규격</span><b>' + dimStr + '</b>' +
-      '<span>설계 용량</span><b>' + ton + ' Ton</b>' +
-      (p.scale ? '<span>도면 축척</span><b>1 : ' + p.scale + '</b>' : '') +
-      '<span>바닥 면적</span><b>' + activeAreaM2.toFixed(2) + ' m²' + (anyRemoved ? ` (패널 ${total}장)` : '') + '</b>' +
-      (h ? '<span>유효 체적</span><b>' + ton + ' m³</b>' : '') +
-      '<span>폭 분할 (W)</span><b>' + m.rows.join(' + ') + '</b>' +
-      '<span>길이 분할 (L)</span><b>' + m.cols.join(' + ') + '</b>' +
-      '<span>평면 패널 수</span><b>' + total + ' 장' + (anyRemoved ? ` (${m.removed.size}장 삭제)` : '') + '</b>' +
-      '<span>기초패드 규격</span><b>최외각 ' + ($('padFirstW') ? $('padFirstW').value : 400) + ' mm · 일반 ' + ($('padMidW') ? $('padMidW').value : 300) + ' mm (H:' + (($('padH') && $('padH').value !== '') ? $('padH').value : (600 - (Number($('frm').value) || 75))) + ')</b>';
+      '<span>' + (isEn ? 'Tank Size (W × L)' : '탱크 규격 (폭 × 길이)') + '</span><b>' + fmt(m.width) + ' × ' + fmt(m.length) + ' mm' + isCustom + '</b>' +
+      '<span>' + (isEn ? 'Height' : '높이') + '</span><b>' + (h ? fmt(h) + ' mm' : '-') + '</b>' +
+      '<span>' + (isEn ? 'Title Block Size' : '표제란 규격') + '</span><b>' + dimStr + '</b>' +
+      '<span>' + (isEn ? 'Designed Capacity' : '설계 용량') + '</span><b>' + ton + ' Ton</b>' +
+      (p.scale ? '<span>' + (isEn ? 'Drawing Scale' : '도면 축척') + '</span><b>1 : ' + p.scale + '</b>' : '') +
+      '<span>' + (isEn ? 'Base Area' : '바닥 면적') + '</span><b>' + activeAreaM2.toFixed(2) + ' m²' + (anyRemoved ? (isEn ? ` (${total} panels)` : ` (패널 ${total}장)`) : '') + '</b>' +
+      (h ? '<span>' + (isEn ? 'Effective Volume' : '유효 체적') + '</span><b>' + ton + ' m³</b>' : '') +
+      '<span>' + (isEn ? 'Width Segments (W)' : '폭 분할 (W)') + '</span><b>' + m.rows.join(' + ') + '</b>' +
+      '<span>' + (isEn ? 'Length Segments (L)' : '길이 분할 (L)') + '</span><b>' + m.cols.join(' + ') + '</b>' +
+      '<span>' + (isEn ? 'Plan Panels Count' : '평면 패널 수') + '</span><b>' + total + (isEn ? ' Panels' : ' 장') + (anyRemoved ? (isEn ? ` (${m.removed.size} removed)` : ` (${m.removed.size}장 삭제)`) : '') + '</b>' +
+      '<span>' + (isEn ? 'Foundation Pad Spec' : '기초패드 규격') + '</span><b>' + (isEn ? 'Edge ' : '최외각 ') + ($('padFirstW') ? $('padFirstW').value : 400) + ' mm · ' + (isEn ? 'Mid ' : '일반 ') + ($('padMidW') ? $('padMidW').value : 300) + ' mm (H:' + (($('padH') && $('padH').value !== '') ? $('padH').value : (600 - (Number($('frm').value) || 75))) + ')</b>';
     $('cnt').innerHTML = Object.entries(cnt).sort().map(([k, v]) => '<tr><td>' + k + ' mm</td><td class="n">' + v + '</td></tr>').join('');
   }
 
@@ -7311,8 +7479,8 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     const z = size(); ctx.setTransform(z.d, 0, 0, z.d, 0, 0);
     ctx.fillStyle = css('--cv-bg'); ctx.fillRect(0, 0, z.w, z.h);
 
-    const col = { PANEL: css('--cv-panel'), PANEL_DETAIL: css('--cv-detail'), FRAME: css('--cv-frame'), REINF: css('--cv-panel'), WALL: css('--cv-frame'), DIM: css('--cv-dim'), SHEET: css('--cv-sheet') };
-    const lw = { PANEL: 1.4, PANEL_DETAIL: 0.9, FRAME: 1.6, REINF: 1.2, WALL: 1, DIM: 1, SHEET: 1.3 };
+    const col = { PANEL: css('--cv-panel'), PANEL_DETAIL: css('--cv-detail'), FRAME: css('--cv-frame'), REINF: css('--cv-panel'), WALL: css('--cv-frame'), DIM: css('--cv-dim'), SHEET: css('--cv-sheet'), BALLOON: css('--cv-balloon') || '#f43f5e' };
+    const lw = { PANEL: 1.4, PANEL_DETAIL: 0.9, FRAME: 1.6, REINF: 1.2, WALL: 1, DIM: 1, SHEET: 1.3, BALLOON: 1.8 };
     const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
 
     const hasFills = (plan.ents || []).some(e => e.fill);
@@ -7392,7 +7560,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
         ctx.save(); ctx.translate(tx(e.p[0]), ty(e.p[1])); ctx.rotate(-e.rot * Math.PI / 180); ctx.fillText(e.s, 0, 0); ctx.restore();
       });
     } else {
-      ['PANEL_DETAIL', 'PANEL', 'WALL', 'REINF', 'FRAME', 'DIM', 'SHEET'].forEach(layer => {
+      ['PANEL_DETAIL', 'PANEL', 'WALL', 'REINF', 'FRAME', 'DIM', 'SHEET', 'BALLOON'].forEach(layer => {
         ctx.strokeStyle = col[layer]; ctx.fillStyle = col[layer]; ctx.lineWidth = lw[layer]; ctx.beginPath();
         const texts = [];
         const renderEnt = (e, ox = 0, oy = 0) => {
@@ -7599,7 +7767,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
 
   $('svg').addEventListener('click', () => {
     if (!plan) return;
-    const b = bounds(), pad = plan.sheet ? 0 : 200, col = { PANEL: '#111', PANEL_DETAIL: '#888', FRAME: '#c2410c', REINF: '#111', WALL: '#c2410c', DIM: '#0b6b7a', SHEET: '#111' };
+    const b = bounds(), pad = plan.sheet ? 0 : 200, col = { PANEL: '#111', PANEL_DETAIL: '#888', FRAME: '#c2410c', REINF: '#111', WALL: '#c2410c', DIM: '#0b6b7a', SHEET: '#111', BALLOON: '#e11d48' };
     const f = n => Math.round(n * 10) / 10; let s = '';
     const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
     const renderSvgEnt = (e, ox = 0, oy = 0) => {

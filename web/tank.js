@@ -415,17 +415,17 @@
   }
 
   /* ---------- 부품 풍선 기호 (Circular Balloon Callout with Leader) ---------- */
-  function drawBalloonCallout(ents, startPt, elbowPt, balloonCenter, numStr, scaleN = 25, layer = 'DIM') {
+  function drawBalloonCallout(ents, startPt, elbowPt, balloonCenter, numStr, scaleN = 25, layer = 'BALLOON') {
     if (!balloonCenter && elbowPt) {
       balloonCenter = elbowPt;
       elbowPt = null;
     }
-    layer = layer || 'DIM';
+    layer = layer || 'BALLOON';
     const balloonR = Math.round(3.8 * scaleN);
     const textH = Math.round(2.8 * scaleN);
 
     // 단부 점 (Terminal dot)
-    ents.push({ t: 'circle', c: startPt, r: Math.max(3, Math.round(scaleN * 0.18)), layer });
+    ents.push({ t: 'circle', c: startPt, r: Math.max(3, Math.round(scaleN * 0.2)), layer });
 
     // 지시선 (Leader line)
     if (elbowPt && (elbowPt[0] !== startPt[0] || elbowPt[1] !== startPt[1])) {
@@ -495,17 +495,17 @@
       ];
     } else { // bilingual
       return [
-        { no: 1, key: 'foundation', name: 'Concrete Foundation', mat: 'CONC', qty: '1식', spec: `Refer Foundation Pad plan (H${padH})` },
-        { no: 2, key: 'skid', name: 'Skid Frame', mat: 'SS275(HDG)', qty: '1식', spec: 'Main: [-75x75x6T, Sub: [-75x40x5T' },
-        { no: 3, key: 'panel', name: 'Panel (Bottom/Side/Roof)', mat: mat, qty: '1식', spec: `All ${mat} Panels (${totalW}W x ${totalL}L x ${H}H)` },
-        { no: 4, key: 'corner', name: 'Corner Frame', mat: 'HDG', qty: '4조', spec: 'L-70x70x8.0T' },
-        { no: 5, key: 'airvent', name: 'Air Vent', mat: 'ABS', qty: `${ventCount || 1}개`, spec: 'Φ50 (합성수지 방충망 #20 부착)' },
-        { no: 6, key: 'manhole', name: 'Manhole', mat: mat, qty: `${manholeCount || 1}개`, spec: 'Ø600 쇄정식 이중덮개 부착' },
-        { no: 7, key: 'inladder', name: 'Internal Ladder', mat: 'FRP', qty: `${ladderCount}조`, spec: `L=${H}mm` },
-        { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: `${ladderCount}조`, spec: 'Vertical: 20x30x1.2T, 폭 270' },
-        { no: 9, key: 'flangebar', name: 'Flange Bar', mat: 'HDG', qty: '1식', spec: 'L-65x30x3T etc.' },
-        { no: 10, key: 'stay', name: 'Internal Stay', mat: 'SS316+PE', qty: '1식', spec: 'Φ-10.7 Tie-Rod(M12)' },
-        { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0}개`, spec: 'JIS 10K Flange / Socket' }
+        { no: 1, key: 'foundation', name: 'Concrete Foundation', mat: 'CONC', qty: '1 Set (1식)', spec: `Refer Foundation Pad plan (H${padH})` },
+        { no: 2, key: 'skid', name: 'Skid Frame', mat: 'SS275(HDG)', qty: '1 Set (1식)', spec: 'Main: [-75x75x6T, Sub: [-75x40x5T' },
+        { no: 3, key: 'panel', name: 'Panel (Bottom/Side/Roof)', mat: mat, qty: '1 Set (1식)', spec: `All ${mat} Panels (${totalW}W x ${totalL}L x ${H}H)` },
+        { no: 4, key: 'corner', name: 'Corner Frame', mat: 'HDG', qty: '4 Sets (4조)', spec: 'L-70x70x8.0T' },
+        { no: 5, key: 'airvent', name: 'Air Vent', mat: 'ABS', qty: `${ventCount || 1} EA`, spec: 'Φ50 (Insect screen #20 attached)' },
+        { no: 6, key: 'manhole', name: 'Manhole', mat: mat, qty: `${manholeCount || 1} EA`, spec: 'Ø600 Double cover with lock' },
+        { no: 7, key: 'inladder', name: 'Internal Ladder', mat: 'FRP', qty: `${ladderCount} Set (조)`, spec: `L=${H}mm` },
+        { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: `${ladderCount} Set (조)`, spec: 'Vertical: 20x30x1.2T, W=270' },
+        { no: 9, key: 'flangebar', name: 'Flange Bar', mat: 'HDG', qty: '1 Set (1식)', spec: 'L-65x30x3T etc.' },
+        { no: 10, key: 'stay', name: 'Internal Stay', mat: 'SS316+PE', qty: '1 Set (1식)', spec: 'Φ-10.7 Tie-Rod(M12)' },
+        { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0} EA`, spec: 'JIS 10K Flange / Socket' }
       ];
     }
   }
@@ -799,7 +799,7 @@
     dimLinear(ents, [0, W], [0, W + F], baseX, true, String(F), textH, 'DIM');
     dimLinear(ents, [0, -F], [0, W + F], -F - dimGap2, true, String(W + 2 * F), textH, 'DIM');
 
-    // 부품 풍선 기호 (Plan View Balloon Callouts)
+    // 부품 풍선 기호 (Plan View Balloon Callouts - 모두 물탱크 형상 및 치수선 바깥 외곽에 정렬)
     if (opt.showBalloons !== false) {
       const boms = (opt.itemList && opt.itemList.length) ? opt.itemList : buildDefaultBOM(opt);
       const getItemNo = key => {
@@ -807,7 +807,13 @@
         return it ? it.no : '';
       };
 
-      // 1. 맨홀 (Manhole - NO. 6)
+      const topBaseY = W + F + Math.round(18 * N);
+      const topStaggerY = W + F + Math.round(28 * N);
+      const rightBaseX = L + F + Math.round(18 * N);
+      const botClearY = -F - dimGap2 - Math.round(14 * N);
+      const leftClearX = -F - dimGap2 - Math.round(14 * N);
+
+      // 1. 맨홀 (Manhole - NO. 6): 상단 바깥으로 지시선 인출
       let mPos = null;
       const mEntries = Object.entries(opt.marks || {}).filter(([_, m]) => m === 1);
       if (mEntries.length > 0) {
@@ -818,9 +824,9 @@
         const lj = map.cols.length - 1, li = map.rows.length - 1;
         mPos = [(map.xs[lj] + map.xs[lj + 1]) / 2, (map.ys[li] + map.ys[li + 1]) / 2];
       }
-      drawBalloonCallout(ents, [mPos[0] + 160, mPos[1] + 160], [mPos[0] + 320, mPos[1] + 320], [mPos[0] + 500, mPos[1] + 320], getItemNo('manhole') || 6, N);
+      drawBalloonCallout(ents, [mPos[0], mPos[1] + 250], [mPos[0], topBaseY - Math.round(5 * N)], [mPos[0], topBaseY], getItemNo('manhole') || 6, N, 'BALLOON');
 
-      // 2. 에어벤트 (Air Vent - NO. 5)
+      // 2. 에어벤트 (Air Vent - NO. 5): 상단 바깥으로 지시선 인출
       let vPos = null;
       const vEntries = Object.entries(opt.marks || {}).filter(([_, m]) => m === 2);
       if (vEntries.length > 0) {
@@ -831,39 +837,45 @@
         const vj = Math.max(0, map.cols.length - 2), vi = map.rows.length - 1;
         vPos = [(map.xs[vj] + map.xs[vj + 1]) / 2, (map.ys[vi] + map.ys[vi + 1]) / 2];
       }
-      drawBalloonCallout(ents, [vPos[0] - 120, vPos[1] + 120], [vPos[0] - 280, vPos[1] + 280], [vPos[0] - 460, vPos[1] + 280], getItemNo('airvent') || 5, N);
+      const xDiff = Math.abs(vPos[0] - mPos[0]);
+      const vBalloonY = (xDiff < Math.round(15 * N)) ? topStaggerY : topBaseY;
+      drawBalloonCallout(ents, [vPos[0], vPos[1] + 120], [vPos[0], vBalloonY - Math.round(5 * N)], [vPos[0], vBalloonY], getItemNo('airvent') || 5, N, 'BALLOON');
 
-      // 3. 외부 사다리 (NO. 8) & 내부 사다리 (NO. 7)
+      // 3. 외부 사다리 (NO. 8) & 내부 사다리 (NO. 7): 외곽 치수선 바깥으로 인출
       const lList = ladderList(opt, map);
       const l = (lList.length > 0) ? lList[0] : { sd: 'D', x: map.xs[map.cols.length - 1] + 250, y: 0 };
       if (l.sd === 'D') {
-        drawBalloonCallout(ents, [l.x + 120, -50], [l.x + 260, -220], [l.x + 440, -220], getItemNo('exladder') || 8, N);
-        drawBalloonCallout(ents, [l.x - 70, 70], [l.x - 200, 240], [l.x - 380, 240], getItemNo('inladder') || 7, N);
+        drawBalloonCallout(ents, [l.x + 80, -F - 20], [l.x + 80, botClearY], [l.x + 80 + Math.round(12 * N), botClearY], getItemNo('exladder') || 8, N, 'BALLOON');
+        drawBalloonCallout(ents, [l.x - 80, 50], [l.x - 80, botClearY], [l.x - 80 - Math.round(12 * N), botClearY], getItemNo('inladder') || 7, N, 'BALLOON');
       } else if (l.sd === 'R') {
-        drawBalloonCallout(ents, [l.x + 50, l.y + 120], [l.x + 220, l.y + 260], [l.x + 400, l.y + 260], getItemNo('exladder') || 8, N);
-        drawBalloonCallout(ents, [l.x - 70, l.y - 70], [l.x - 200, l.y - 220], [l.x - 380, l.y - 220], getItemNo('inladder') || 7, N);
+        drawBalloonCallout(ents, [L + F + 20, l.y - 80], [L + F + Math.round(8 * N), l.y - 80], [rightBaseX, l.y - 80], getItemNo('exladder') || 8, N, 'BALLOON');
+        drawBalloonCallout(ents, [L - 50, l.y + 80], [L + F + Math.round(8 * N), l.y + 80], [rightBaseX, l.y + 80], getItemNo('inladder') || 7, N, 'BALLOON');
+      } else if (l.sd === 'U') {
+        drawBalloonCallout(ents, [l.x + 80, W + F + 20], [l.x + 80, topStaggerY], [l.x + 80 + Math.round(12 * N), topStaggerY], getItemNo('exladder') || 8, N, 'BALLOON');
+        drawBalloonCallout(ents, [l.x - 80, W - 50], [l.x - 80, topStaggerY], [l.x - 80 - Math.round(12 * N), topStaggerY], getItemNo('inladder') || 7, N, 'BALLOON');
       } else {
-        drawBalloonCallout(ents, [l.x + 80, l.y + 80], [l.x + 220, l.y + 220], [l.x + 400, l.y + 220], getItemNo('exladder') || 8, N);
-        drawBalloonCallout(ents, [l.x - 60, l.y - 60], [l.x - 200, l.y - 200], [l.x - 380, l.y - 200], getItemNo('inladder') || 7, N);
+        drawBalloonCallout(ents, [-F - 20, l.y - 80], [leftClearX + Math.round(8 * N), l.y - 80], [leftClearX, l.y - 80], getItemNo('exladder') || 8, N, 'BALLOON');
+        drawBalloonCallout(ents, [50, l.y + 80], [leftClearX + Math.round(8 * N), l.y + 80], [leftClearX, l.y + 80], getItemNo('inladder') || 7, N, 'BALLOON');
       }
 
-      // 4. 지붕 판넬 (Roof Panel - NO. 3)
+      // 4. 지붕 판넬 (Roof Panel - NO. 3): 우측 바깥 외곽으로 인출
       const rCellC = Math.max(0, map.cols.length - 1);
-      const rCellR = 0;
+      const rCellR = Math.min(1, map.rows.length - 1);
       const pcx = (map.xs[rCellC] + map.xs[rCellC + 1]) / 2;
       const pcy = (map.ys[rCellR] + map.ys[rCellR + 1]) / 2;
-      drawBalloonCallout(ents, [pcx, pcy], [L + 200, pcy], [L + 380, pcy], getItemNo('panel') || 3, N);
+      drawBalloonCallout(ents, [pcx, pcy], [L + F + Math.round(6 * N), pcy], [rightBaseX, pcy], getItemNo('panel') || 3, N, 'BALLOON');
 
-      // 5. 코너 프레임 (Corner Frame - NO. 4)
-      drawBalloonCallout(ents, [-15, -15], [-160, -160], [-340, -160], getItemNo('corner') || 4, N);
+      // 5. 코너 프레임 (Corner Frame - NO. 4): 좌상단 바깥 외곽으로 인출
+      drawBalloonCallout(ents, [-F, W + F], [-F - Math.round(6 * N), W + F + Math.round(8 * N)], [-F - Math.round(14 * N), W + F + Math.round(14 * N)], getItemNo('corner') || 4, N, 'BALLOON');
 
-      // 6. 플랜지 바 (Flange Bar - NO. 9)
+      // 6. 플랜지 바 (Flange Bar - NO. 9): 상단 바깥 외곽으로 인출
       const seamX = (map.xs[1] !== undefined) ? map.xs[1] : 1000;
-      drawBalloonCallout(ents, [seamX, 0], [seamX - 120, -220], [seamX - 300, -220], getItemNo('flangebar') || 9, N);
+      drawBalloonCallout(ents, [seamX, W], [seamX, topStaggerY - Math.round(5 * N)], [seamX, topStaggerY], getItemNo('flangebar') || 9, N, 'BALLOON');
 
-      // 7. 내부 스테이 / 보강재 (Internal Stay - NO. 10)
+      // 7. 내부 스테이 / 보강재 (Internal Stay - NO. 10): 우측 바깥 외곽으로 인출
       const stayCx = L * 0.5, stayCy = W * 0.5;
-      drawBalloonCallout(ents, [stayCx, stayCy], [stayCx, W + 220], [stayCx, W + 380], getItemNo('stay') || 10, N);
+      const stayY = W * 0.75;
+      drawBalloonCallout(ents, [stayCx, stayCy], [L + F + Math.round(6 * N), stayY], [rightBaseX, stayY], getItemNo('stay') || 10, N, 'BALLOON');
     }
 
     ents.blocks = blocks;
@@ -1669,7 +1681,7 @@
       }
     });
 
-    // 부품 풍선 기호 (Elevation View Balloon Callouts)
+    // 부품 풍선 기호 (Elevation View Balloon Callouts - 모두 물탱크 형상 및 치수선 바깥 외곽에 정렬)
     if (opt.showBalloons !== false) {
       const N = opt._N || 25;
       const boms = (opt.itemList && opt.itemList.length) ? opt.itemList : buildDefaultBOM(opt);
@@ -1679,30 +1691,33 @@
       };
       const padH = (typeof opt.padH === 'number' && !isNaN(opt.padH)) ? opt.padH : (600 - (opt.frame || 75));
       const GRD = -th - padH;
+      const elevTopY = nH + Math.round(18 * N);
+      const elevRightX = total + 75 + Math.round(18 * N);
+      const elevBotY = GRD - dimGap2 - Math.round(14 * N);
 
-      // 1. 기초 콘크리트 (Concrete Foundation - NO. 1)
-      drawBalloonCallout(ents, [total * 0.18, -th - padH * 0.5], [total * 0.18 - 180, GRD - 150], [total * 0.18 - 360, GRD - 150], getItemNo('foundation') || 1, N);
+      // 1. 기초 콘크리트 (Concrete Foundation - NO. 1): 하단 치수선 바깥 외곽
+      drawBalloonCallout(ents, [total * 0.25, GRD + padH * 0.5], [total * 0.25, elevBotY], [total * 0.25 - Math.round(12 * N), elevBotY], getItemNo('foundation') || 1, N, 'BALLOON');
 
-      // 2. 스키드 프레임 (Skid Frame - NO. 2)
-      drawBalloonCallout(ents, [total * 0.32, -th * 0.5], [total * 0.32 - 160, -th - 120], [total * 0.32 - 340, -th - 120], getItemNo('skid') || 2, N);
+      // 2. 스키드 프레임 (Skid Frame - NO. 2): 하단 치수선 바깥 외곽
+      drawBalloonCallout(ents, [total * 0.45, -th * 0.5], [total * 0.45, elevBotY], [total * 0.45 + Math.round(12 * N), elevBotY], getItemNo('skid') || 2, N, 'BALLOON');
 
-      // 3. 측면 판넬 (Wall Panel - NO. 3)
-      drawBalloonCallout(ents, [total * 0.45, nH * 0.45], [-180, nH * 0.45], [-360, nH * 0.45], getItemNo('panel') || 3, N);
+      // 3. 측면 판넬 (Wall Panel - NO. 3): 우측 바깥 외곽
+      drawBalloonCallout(ents, [total, nH * 0.65], [total + 75 + Math.round(6 * N), nH * 0.65], [elevRightX, nH * 0.65], getItemNo('panel') || 3, N, 'BALLOON');
 
-      // 4. 코너 프레임 (Corner Frame - NO. 4)
-      drawBalloonCallout(ents, [0, nH * 0.82], [-180, nH * 0.82 + 150], [-360, nH * 0.82 + 150], getItemNo('corner') || 4, N);
+      // 4. 코너 프레임 (Corner Frame - NO. 4): 좌상단 바깥 외곽
+      drawBalloonCallout(ents, [0, nH], [-75 - Math.round(6 * N), nH + Math.round(10 * N)], [-75 - Math.round(16 * N), nH + Math.round(16 * N)], getItemNo('corner') || 4, N, 'BALLOON');
 
-      // 8. 외부 사다리 (External Ladder - NO. 8)
+      // 8. 외부 사다리 (External Ladder - NO. 8): 상단 바깥 외곽
       const lads = ladderList(opt, mmap);
       const visibleLadder = lads.find(l => (view === 'front' ? l.sd === 'D' : l.sd === 'R'));
       const lx = visibleLadder ? (view === 'front' ? visibleLadder.x : visibleLadder.y) : (total - 300);
-      drawBalloonCallout(ents, [lx, nH + 120], [lx + 180, nH + 280], [lx + 360, nH + 280], getItemNo('exladder') || 8, N);
+      drawBalloonCallout(ents, [lx, nH + 100], [lx, elevTopY - Math.round(5 * N)], [lx + Math.round(10 * N), elevTopY], getItemNo('exladder') || 8, N, 'BALLOON');
 
-      // 10. 내부 스테이 (Internal Stay - NO. 10)
-      drawBalloonCallout(ents, [total * 0.55, nH * 0.33], [total * 0.55 - 120, -th - 80], [total * 0.55 - 300, GRD - 120], getItemNo('stay') || 10, N);
+      // 10. 내부 스테이 (Internal Stay - NO. 10): 상단 바깥 외곽
+      drawBalloonCallout(ents, [total * 0.5, nH * 0.5], [total * 0.5, elevTopY - Math.round(5 * N)], [total * 0.5 - Math.round(10 * N), elevTopY], getItemNo('stay') || 10, N, 'BALLOON');
 
-      // 11. 노즐 (Nozzles - NO. 11)
-      drawBalloonCallout(ents, [total + 75, nH * 0.28], [total + 220, nH * 0.28 + 140], [total + 380, nH * 0.28 + 140], getItemNo('nozzle') || 11, N);
+      // 11. 노즐 (Nozzles - NO. 11): 우측 바깥 외곽
+      drawBalloonCallout(ents, [total + 75, nH * 0.3], [total + 75 + Math.round(6 * N), nH * 0.3], [elevRightX, nH * 0.3], getItemNo('nozzle') || 11, N, 'BALLOON');
     }
 
     ents.blocks = blocks;
@@ -3832,7 +3847,7 @@
   }
 
   /* ---------- DXF (AutoCAD R12 ASCII, mm) ---------- */
-  const LAYERS = { PANEL: 7, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7 };
+  const LAYERS = { PANEL: 7, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6 };
   const dxfText = str => Array.from(str).map(ch => { const c = ch.codePointAt(0); return c < 128 ? ch : '\\U+' + c.toString(16).toUpperCase().padStart(4, '0'); }).join('');
 
   function toDxf(ents, blocks) {
