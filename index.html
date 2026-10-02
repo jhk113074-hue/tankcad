@@ -87,9 +87,30 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:1
 .tab-content.active{display:block}
 .app-body.show-all .tab-content{display:block;margin-bottom:10px}
 
-/* Form Controls */
-.seg{display:grid;grid-template-columns:78px repeat(5,minmax(0,1fr));gap:5px;align-items:center;margin-bottom:8px}
-.seg label{font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap}
+/* Form Controls - Modern & Clean */
+.seg{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.seg > label{width:95px;min-width:95px;font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;letter-spacing:-0.2px}
+.seg > input[type=number]{flex:1;min-width:0;text-align:center;font-family:var(--font-num);font-size:12.5px;font-weight:600;padding:6px 3px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--fg);transition:border-color .15s}
+.seg > input[type=number]:first-of-type{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--bg));font-weight:700}
+.seg > select{flex:1;min-width:0;font-size:12px;padding:6px 6px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--fg)}
+.chk-b11-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;padding:5px 7px;border-radius:5px;background:var(--surface-sub);border:1px solid var(--line);color:var(--fg);user-select:none;transition:all .15s}
+.chk-b11-pill:hover{border-color:var(--accent)}
+.chk-b11-pill input{accent-color:var(--accent);margin:0}
+
+/* Modern View & Sheet Control Bar (캔버스 상단 배치) */
+.view-sheet-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:8px;box-shadow:var(--shadow-sm);gap:8px;flex-wrap:wrap}
+.vs-left,.vs-right{display:flex;align-items:center;gap:8px}
+.vs-chk{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--fg);cursor:pointer;user-select:none}
+.vs-chk input{accent-color:var(--accent);cursor:pointer}
+.vs-sep{width:1px;height:16px;background:var(--line)}
+.vs-item{display:inline-flex;align-items:center;gap:5px}
+.vs-icon{font-size:12px;opacity:0.85}
+.vs-select{font-size:11.5px;font-weight:600;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface-sub);color:var(--fg);cursor:pointer;transition:all .15s ease}
+.vs-select:hover{border-color:var(--accent)}
+.vs-bom-btn{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;font-size:11.5px;font-weight:700;border:1px solid var(--line);border-radius:6px;background:var(--surface-sub);color:var(--fg);cursor:pointer;transition:all .15s ease}
+.vs-bom-btn:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface-sub));color:var(--accent)}
+.vs-bom-badge{font-size:10px;font-weight:700;background:var(--accent);color:#fff;padding:1px 6px;border-radius:10px}
+
 input[type=number]{-moz-appearance:textfield;appearance:textfield;width:100%;text-align:right;min-width:0;font-family:var(--font-num);font-size:13px;font-weight:500;padding:6px 5px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--fg);transition:border-color .15s}
 input[type=number]:focus,input[type=text]:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-light)}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
@@ -310,7 +331,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.46</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.47</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -338,63 +359,7 @@ canvas.drag{cursor:grabbing}
 
     <!-- Tab 1: Specs (사양·치수) -->
     <div class="tab-content active" id="tab-specs">
-      <!-- 도면 뷰 및 시트 선택 카드 (사양·치수 메뉴 상단 배치) -->
-      <section class="box" style="margin-bottom:10px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-          <label class="chk" style="font-weight:700;font-size:12px;cursor:pointer"><input type="checkbox" id="sheetOn" checked> <span id="lblSheetOn">A1 도면 시트 포함</span></label>
-          <select id="sheetKind" style="width:auto;font-size:11px;font-weight:600">
-            <option value="asm">조립도 (평면·패드·정면·측면·3D등각)</option>
-            <option value="iso">등각 조감도 (3D ISOMETRIC DWG)</option>
-            <option value="frame">프레임도 (스키드·내부 스테이)</option>
-            <option value="detail">상세도 (DETAILS DWG)</option>
-          </select>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">
-          <label for="scaleSel" id="lblScale" style="font-weight:600;font-size:11px;color:var(--muted)">도면 축척 (Scale)</label>
-          <select id="scaleSel" style="width:auto;min-width:130px;font-weight:600;font-size:11px">
-            <option value="auto" selected>⚡ 자동 맞춤 (Auto)</option>
-            <option value="15">1 / 15</option>
-            <option value="20">1 / 20</option>
-            <option value="25">1 / 25</option>
-            <option value="30">1 / 30</option>
-            <option value="40">1 / 40</option>
-            <option value="50">1 / 50</option>
-            <option value="60">1 / 60</option>
-            <option value="75">1 / 75</option>
-            <option value="100">1 / 100</option>
-            <option value="125">1 / 125</option>
-            <option value="150">1 / 150</option>
-            <option value="200">1 / 200</option>
-            <option value="250">1 / 250</option>
-            <option value="300">1 / 300</option>
-          </select>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">
-          <label for="drawingLangSel" id="lblDrawingLang" style="font-weight:600;font-size:11px;color:var(--muted)">도면 언어 (Dwg Lang)</label>
-          <select id="drawingLangSel" style="width:auto;min-width:130px;font-weight:600;font-size:11px">
-            <option value="ko">🇰🇷 한글 (Korean)</option>
-            <option value="en">🇺🇸 영문 (English)</option>
-            <option value="bilingual" selected>🌐 한·영 병기 (Bilingual)</option>
-          </select>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">
-          <label for="uiLangSel" id="lblUiLang" style="font-weight:600;font-size:11px;color:var(--muted)">프로그램 언어 (UI Lang)</label>
-          <select id="uiLangSel" style="width:auto;min-width:130px;font-weight:600;font-size:11px">
-            <option value="ko" selected>🇰🇷 한국어 (Korean)</option>
-            <option value="en">🇺🇸 English</option>
-          </select>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">
-          <div style="display:flex;align-items:center;gap:6px">
-            <span id="lblBomSpecTitle" style="font-weight:700;font-size:11px;color:var(--text)">📋 부품 명세표 (Item List)</span>
-            <span id="bomCountBadgeSpec" style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700">11개</span>
-          </div>
-          <button type="button" id="openBOMModalBtnSpec" class="btn-sm" style="background:var(--accent);color:#fff;font-weight:600;padding:3px 9px;font-size:11px;border-radius:4px;border:none;cursor:pointer">
-            ⚙️ 사양 편집
-          </button>
-        </div>
-      </section>
-
+      <!-- 1. 재질 및 보강 방식 (최상단 첫 번째 입력) -->
       <section class="box">
         <h2 id="secTitleMat">재질 및 보강 방식</h2>
         <div class="opts-grid">
@@ -412,12 +377,12 @@ canvas.drag{cursor:grabbing}
         <div class="seg" id="segW"><label id="lblWid">폭(WIDTH)</label></div>
         <div class="seg" id="segH">
           <label for="H" id="lblHei">높이(HEIGHT)</label>
-          <select id="H" style="grid-column:span 2"></select>
-          <label class="chk" style="grid-column:span 3;font-size:12px;cursor:pointer"><input type="checkbox" id="b11" checked> <span id="lblB11">1×1 패널 모듈</span></label>
+          <select id="H"></select>
+          <label class="chk-b11-pill" title="1000/500 모듈 조합 토글"><input type="checkbox" id="b11" checked> <span id="lblB11">1×1 패널 모듈</span></label>
         </div>
         <div class="seg">
           <label for="frm" id="lblFrm">프레임</label>
-          <select id="frm" style="grid-column:span 2">
+          <select id="frm">
             <option value="50">50 (SHS)</option>
             <option value="75" selected>75 (앵글)</option>
             <option value="125">125 (채널)</option>
@@ -1073,6 +1038,57 @@ canvas.drag{cursor:grabbing}
       <button type="button" id="dxfDirect" title="AutoCAD/CADian에서 바로 열리는 DXF 파일 다운로드">💾 DXF (.dxf)</button>
       <button type="button" id="dwgBtn" class="pri" title="AutoCAD 표준 DWG 바이너리 파일 다운로드">💾 DWG 저장 (.dwg)</button>
       <button type="button" id="dxf" title="DXF 파일 압축(zip) 다운로드">📦 zip</button>
+    </div>
+
+    <!-- View & Sheet Quick Control Bar (도면 뷰 및 시트 제어 바 - 상단 고도화 배치) -->
+    <div class="view-sheet-bar" id="viewSheetBar">
+      <div class="vs-left">
+        <label class="vs-chk" title="A1 표준 도면 시트 테두리 및 표제란 출력 여부">
+          <input type="checkbox" id="sheetOn" checked>
+          <span id="lblSheetOn">A1 도면 시트 포함</span>
+        </label>
+        <div class="vs-sep"></div>
+        <div class="vs-item" title="도면 뷰 선택">
+          <span class="vs-icon">📑</span>
+          <select id="sheetKind" class="vs-select">
+            <option value="asm">조립도 (평면·패드·정면·측면·3D등각)</option>
+            <option value="iso">등각 조감도 (3D ISOMETRIC DWG)</option>
+            <option value="frame">프레임도 (스키드·내부 스테이)</option>
+            <option value="detail">상세도 (DETAILS DWG)</option>
+          </select>
+        </div>
+        <div class="vs-sep"></div>
+        <div class="vs-item" title="도면 축척 (Scale)">
+          <span class="vs-icon">⚡</span>
+          <select id="scaleSel" class="vs-select">
+            <option value="auto" selected>⚡ 자동 맞춤 (Auto)</option>
+            <option value="15">1 / 15</option>
+            <option value="20">1 / 20</option>
+            <option value="25">1 / 25</option>
+            <option value="30">1 / 30</option>
+            <option value="40">1 / 40</option>
+            <option value="50">1 / 50</option>
+            <option value="60">1 / 60</option>
+            <option value="75">1 / 75</option>
+            <option value="100">1 / 100</option>
+            <option value="125">1 / 125</option>
+            <option value="150">1 / 150</option>
+            <option value="200">1 / 200</option>
+            <option value="250">1 / 250</option>
+            <option value="300">1 / 300</option>
+          </select>
+        </div>
+      </div>
+      <div class="vs-right">
+        <button type="button" id="openBOMModalBtnSpec" class="vs-bom-btn" title="부품 사양 명세표 (Item List) 열기">
+          <span>📋 부품표</span>
+          <span class="vs-bom-badge" id="bomCountBadgeSpec">11개</span>
+          <span style="font-size:10px">⚙️</span>
+        </button>
+      </div>
+      <!-- Hidden inputs for backward compatibility -->
+      <input type="hidden" id="drawingLangSel" value="bilingual">
+      <input type="hidden" id="uiLangSel" value="ko">
     </div>
 
     <!-- ODA Guide Modal -->
@@ -5975,11 +5991,11 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       rf1: '내부 앵글',
       rf2: '내부 환봉',
       secTitleDims: '탱크 치수 입력 (mm)',
-      lblLen: '길이(LENGTH)',
-      lblWid: '폭(WIDTH)',
-      lblHei: '높이(HEIGHT)',
+      lblLen: '길이 (LENGTH)',
+      lblWid: '폭 (WIDTH)',
+      lblHei: '높이 (HEIGHT)',
       lblB11: '1×1 패널 모듈',
-      lblFrm: '프레임',
+      lblFrm: '하부 프레임',
       hintDims: '💡 길이는 여러 칸에 입력 시 구간별 분할(예: 3000 + 2000)됩니다. 폭은 단일 치수(mm)입니다.',
       secTitlePlan: '📐 평면도 편집 모드',
       btnResetEdit: '🔄 편집 초기화',
@@ -6161,10 +6177,9 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     localStorage.setItem('tank_lang', currentLang);
     document.documentElement.lang = currentLang;
 
-    // Synchronize UI Lang Select
-    if ($('uiLangSel') && $('uiLangSel').value !== currentLang) {
-      $('uiLangSel').value = currentLang;
-    }
+    // Synchronize UI Lang & Drawing Lang automatically
+    if ($('uiLangSel')) $('uiLangSel').value = currentLang;
+    if ($('drawingLangSel')) $('drawingLangSel').value = currentLang === 'en' ? 'en' : 'bilingual';
 
     // Synchronize Header Quick Buttons
     if ($('btnLangKo') && $('btnLangEn')) {
@@ -6254,8 +6269,12 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     if ($('scaleSel') && $('scaleSel').options.length > 0) $('scaleSel').options[0].textContent = t.scaleAuto;
     if ($('lblDrawingLang')) $('lblDrawingLang').textContent = t.lblDwgLang;
     if ($('lblUiLang')) $('lblUiLang').textContent = t.lblUiLang;
-    if ($('lblBomSpecTitle')) $('lblBomSpecTitle').textContent = t.bomSpecTitle;
-    if ($('openBOMModalBtnSpec')) $('openBOMModalBtnSpec').textContent = t.bomSpecBtn;
+    if ($('openBOMModalBtnSpec')) {
+      const cnt = (itemList || []).length;
+      const bTxt = currentLang === 'en' ? `${cnt} items` : `${cnt}개`;
+      const btnTxt = currentLang === 'en' ? 'BOM' : '부품표';
+      $('openBOMModalBtnSpec').innerHTML = `<span>📋 ${btnTxt}</span><span class="vs-bom-badge" id="bomCountBadgeSpec">${bTxt}</span><span style="font-size:10px">⚙️</span>`;
+    }
     if ($('secTitleMat')) $('secTitleMat').textContent = t.secTitleMat;
     if ($('lblMatSMC')) $('lblMatSMC').textContent = t.matSMC;
     if ($('lblMatSTS')) $('lblMatSTS').textContent = t.matSTS;
