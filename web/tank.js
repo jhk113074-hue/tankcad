@@ -2707,32 +2707,24 @@
       }
     };
 
-    // 1. 콘크리트 패드 (Concrete Pad Beams) & 베이스 프레임
-    const firstW = Number(opt.padFirstW) || 400;
-    const midW = Number(opt.padMidW) || 300;
-    const lastW = Number(opt.padLastW !== undefined ? opt.padLastW : opt.padFirstW) || firstW;
+    // 1. 콘크리트 패드 (Concrete Foundation & Plinths: 300mm 기둥, 150mm 연속 바닥 슬래브, GL -750)
     const th = opt.th || opt.frame || 75;
-    const PAD_H = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
-    const GRD = -th - PAD_H;
-    const PAD_OV = (opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : Math.round(firstW / 2);
+    const padH = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
+    const clearanceH = th + padH; // 600mm
+    const slabTopY = -clearanceH; // -600mm
+    const slabT = 150;
+    const slabBotY = slabTopY - slabT; // -750mm
+    const GRD = slabBotY; // -750mm
+    const px0 = -75;
+    const pxEnd = totalL + 75;
+    const PAD_OV = (opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : 200;
     const padPitch = (opt.pitch === 'custom' && opt.customPitch) ? opt.customPitch : ((opt.padPitch || opt.pitch) === 500 ? 500 : 1000);
 
-    const strips = [];
-    let curX = 0;
-    const numCols = map.cols.length;
-    map.cols.forEach((colW, cIdx) => {
-      const pw = (cIdx === 0) ? firstW : midW;
-      strips.push([curX - pw / 2, pw, cIdx]);
-      if (padPitch === 500 && colW >= 1000) {
-        strips.push([curX + colW / 2 - midW / 2, midW, cIdx + 0.5]);
-      }
-      curX += colW;
-    });
-    strips.push([totalL - lastW / 2, lastW, numCols]);
+    const firstW = Number(opt.padFirstW) || 300;
+    const midW = Number(opt.padMidW) || 300;
+    const lastW = Number(opt.padLastW !== undefined ? opt.padLastW : opt.padFirstW) || firstW;
 
-    const XR = strips[strips.length - 1][0] + strips[strips.length - 1][1];
     const nR = map.rows.length;
-
     const hasTankAtRow = (idx, r) => {
       if (Number.isInteger(idx)) {
         return (idx > 0 && map.has(r, idx - 1)) || (idx < map.cols.length && map.has(r, idx));
@@ -2758,57 +2750,146 @@
       return out;
     };
 
-    // 지반 기준선 (GL Line)
-    const glDepth = -PAD_OV - (strips[0][0] - 150) - GRD;
-    ln(toIso(strips[0][0] - 150, -PAD_OV, GRD), toIso(XR + 150, -PAD_OV, GRD), 'PANEL_DETAIL', glDepth);
-    ln(toIso(XR, -PAD_OV, GRD), toIso(XR, totalW + 150, GRD), 'PANEL_DETAIL', glDepth);
+    // 패드 기둥 목록 생성 (Centerlines, bounds [lx, rx], map col idx)
+    const cxs = [{ x: 0, idx: 0 }];
+    let curX = 0;
+    map.cols.forEach((colW, cIdx) => {
+      if (padPitch === 500 && colW >= 1000) {
+        cxs.push({ x: curX + colW / 2, idx: cIdx + 0.5 });
+      }
+      curX += colW;
+      cxs.push({ x: curX, idx: cIdx + 1 });
+    });
 
-    // 각 패드 조각 (piece) 렌더링
-    strips.forEach(([px, pw, idx], sIdx) => {
-      const rightX = px + pw;
-      const runs = runsForStrip(idx);
+    const numPlinths = cxs.length;
+    const plinths = [];
+    for (let i = 0; i < numPlinths; i++) {
+      const { x: cx, idx } = cxs[i];
+      let lx, rx;
+      if (i === 0) {
+        lx = px0;
+        rx = px0 + firstW;
+      } else if (i === numPlinths - 1) {
+        rx = pxEnd;
+        lx = pxEnd - lastW;
+      } else {
+        lx = cx - midW / 2;
+        rx = cx + midW / 2;
+      }
+      plinths.push({ lx, rx, cx, idx });
+    }
+
+    // 지반 기준선 (GL Line at z = slabBotY = -750)
+    const glDepth = getDepth(px0 - 150, -PAD_OV, slabBotY);
+    ln(toIso(px0 - 150, -PAD_OV, slabBotY), toIso(pxEnd + 150, -PAD_OV, slabBotY), 'PANEL_DETAIL', glDepth);
+    ln(toIso(pxEnd, -PAD_OV, slabBotY), toIso(pxEnd, totalW + 150, slabBotY), 'PANEL_DETAIL', glDepth);
+
+    // 하부 150mm 연속 바닥 슬래브 (Continuous 150mm Bottom Slab: z = slabBotY ~ slabTopY)
+    // 기둥 및 기둥 간 개구부 구간별 면 분할 렌더링 (화가 알고리즘 정확도 유지, 내부 수직선 없는 단일 슬래브)
+    const frontY = -PAD_OV;
+    plinths.forEach((p, pIdx) => {
+      const sDepth = getDepth((p.lx + p.rx) / 2, frontY, (slabTopY + slabBotY) / 2);
+      poly([
+        toIso(p.lx, frontY, slabTopY),
+        toIso(p.rx, frontY, slabTopY),
+        toIso(p.rx, frontY, slabBotY),
+        toIso(p.lx, frontY, slabBotY)
+      ], 'PANEL', false, true, sDepth);
+
+      if (pIdx < numPlinths - 1) {
+        const curRx = p.rx;
+        const nextLx = plinths[pIdx + 1].lx;
+        const cDepth = getDepth((curRx + nextLx) / 2, frontY, (slabTopY + slabBotY) / 2);
+        poly([
+          toIso(curRx, frontY, slabTopY),
+          toIso(nextLx, frontY, slabTopY),
+          toIso(nextLx, frontY, slabBotY),
+          toIso(curRx, frontY, slabBotY)
+        ], 'PANEL', false, true, cDepth);
+        // 기둥 사이 개구부 바닥 상단 전면 모서리선
+        ln(toIso(curRx, frontY, slabTopY), toIso(nextLx, frontY, slabTopY), 'PANEL', cDepth);
+      }
+    });
+    // 슬래브 전면 외곽 테두리선 (하단 GL선 및 양측 단부 수직선)
+    ln(toIso(px0, frontY, slabBotY), toIso(pxEnd, frontY, slabBotY), 'PANEL', glDepth);
+    ln(toIso(px0, frontY, slabTopY), toIso(px0, frontY, slabBotY), 'PANEL', getDepth(px0, frontY, (slabTopY + slabBotY) / 2));
+    ln(toIso(pxEnd, frontY, slabTopY), toIso(pxEnd, frontY, slabBotY), 'PANEL', getDepth(pxEnd, frontY, (slabTopY + slabBotY) / 2));
+
+    // 각 기둥 (Plinth) 및 기둥 사이 캐비티 바닥/측벽 렌더링
+    plinths.forEach((p, sIdx) => {
+      const runs = runsForStrip(p.idx);
 
       runs.forEach(([y0, y1]) => {
         const yStart = y0 - PAD_OV;
-        const frontPadDepth = yStart - (px + pw / 2) - (-th / 2);
-        const topPadDepth = (yStart + y0) / 2 - (px + pw / 2) - (-th);
-        const rightPadDepth = (yStart + y0) / 2 - rightX - (-th / 2);
+        const frontPadDepth = getDepth((p.lx + p.rx) / 2, yStart, (slabTopY + -th) / 2);
+        const topPadDepth = getDepth((p.lx + p.rx) / 2, (yStart + y0) / 2, -th);
 
-        // 1) 전면 직사각형 (Front Face: Y = yStart)
-        const p1 = toIso(px, yStart, -th);
-        const p2 = toIso(rightX, yStart, -th);
-        const p3 = toIso(rightX, yStart, GRD);
-        const p4 = toIso(px, yStart, GRD);
-        poly([p1, p2, p3, p4], 'PANEL', true, true, frontPadDepth);
-
-        // 2) 전면 상판면 (Top Face: Y = yStart ~ y0)
-        const p1_top = toIso(px, y0, -th);
-        const p2_top = toIso(rightX, y0, -th);
-        poly([p1, p2, p2_top, p1_top], 'PANEL', true, true, topPadDepth);
-
-        // 3) 앵커 플레이트 & 볼트
-        const cx = px + pw / 2;
-        const acW = Math.min(35, pw / 4);
+        // 1) 기둥 전면 직사각형 (Front Face: Y = yStart, Z = slabTopY ~ -th)
         poly([
-          toIso(cx - acW, yStart + 70, -th),
-          toIso(cx + acW, yStart + 70, -th),
-          toIso(cx + acW, yStart + 150, -th),
-          toIso(cx - acW, yStart + 150, -th)
+          toIso(p.lx, yStart, -th),
+          toIso(p.rx, yStart, -th),
+          toIso(p.rx, yStart, slabTopY),
+          toIso(p.lx, yStart, slabTopY)
+        ], 'PANEL', true, true, frontPadDepth);
+
+        // 2) 전면 상판면 (Top Face: Y = yStart ~ y0, Z = -th)
+        poly([
+          toIso(p.lx, y0, -th),
+          toIso(p.rx, y0, -th),
+          toIso(p.rx, yStart, -th),
+          toIso(p.lx, yStart, -th)
+        ], 'PANEL', true, true, topPadDepth);
+
+        // 3) 앵커 플레이트 & 볼트 (기둥 중심선 cx에 정렬)
+        const acW = Math.min(35, (p.rx - p.lx) / 4);
+        poly([
+          toIso(p.cx - acW, yStart + 70, -th),
+          toIso(p.cx + acW, yStart + 70, -th),
+          toIso(p.cx + acW, yStart + 150, -th),
+          toIso(p.cx - acW, yStart + 150, -th)
         ], 'FRAME', true, false, topPadDepth);
-        isoCircle(cx, yStart + 110, -th, 12, 'XY', 'FRAME', topPadDepth);
-        ln(toIso(cx, yStart + 110, -th), toIso(cx, yStart + 110, -th + 30), 'FRAME', topPadDepth);
+        isoCircle(p.cx, yStart + 110, -th, 12, 'XY', 'FRAME', topPadDepth);
+        ln(toIso(p.cx, yStart + 110, -th), toIso(p.cx, yStart + 110, -th + 30), 'FRAME', topPadDepth);
 
-        // 4) & 5) 우측 노출 측면: yStart부터 y1까지 하나의 연속된 콘크리트 보 측면으로 렌더링
-        const sideDepth = (yStart + y1) / 2 - rightX - (-th / 2);
-        poly([
-          toIso(rightX, yStart, -th),
-          toIso(rightX, y1, -th),
-          toIso(rightX, y1, GRD),
-          toIso(rightX, yStart, GRD)
-        ], 'PANEL', true, true, sideDepth);
-        ln(toIso(rightX, yStart, -th), toIso(rightX, y1, -th), 'PANEL', sideDepth);
+        // 4) 기둥 간 캐비티 바닥 (Slab Top Floor at z = slabTopY) 및 기둥 우측 측벽 (Right-facing Wall)
+        if (sIdx < numPlinths - 1) {
+          const nextP = plinths[sIdx + 1];
+          const curRx = p.rx;
+          const nextLx = nextP.lx;
 
-        if (sIdx === strips.length - 1) {
+          // 기둥 우측 측벽 (Inner vertical cavity wall: x = curRx, z = slabTopY ~ -th, y = yStart ~ y1)
+          const sideDepth = getDepth(curRx, (yStart + y1) / 2, (-th + slabTopY) / 2);
+          poly([
+            toIso(curRx, yStart, -th),
+            toIso(curRx, y1, -th),
+            toIso(curRx, y1, slabTopY),
+            toIso(curRx, yStart, slabTopY)
+          ], 'PANEL', true, true, sideDepth);
+          ln(toIso(curRx, yStart, -th), toIso(curRx, y1, -th), 'PANEL', sideDepth);
+
+          // 캐비티 바닥면 (Cavity floor on top of 150mm slab: z = slabTopY, x = curRx ~ nextLx, y = yStart ~ y1)
+          const floorDepth = getDepth((curRx + nextLx) / 2, (yStart + y1) / 2, slabTopY);
+          poly([
+            toIso(curRx, yStart, slabTopY),
+            toIso(nextLx, yStart, slabTopY),
+            toIso(nextLx, y1, slabTopY),
+            toIso(curRx, y1, slabTopY)
+          ], 'PANEL', true, true, floorDepth);
+        }
+
+        // 5) 우측 최외곽 콘크리트 측면 (x = pxEnd, z = slabBotY ~ -th, y = yStart ~ y1)
+        if (sIdx === numPlinths - 1) {
+          const rightOuterDepth = getDepth(p.rx, (yStart + y1) / 2, (-th + slabBotY) / 2);
+          poly([
+            toIso(p.rx, yStart, -th),
+            toIso(p.rx, y1, -th),
+            toIso(p.rx, y1, slabBotY),
+            toIso(p.rx, yStart, slabBotY)
+          ], 'PANEL', true, true, rightOuterDepth);
+          ln(toIso(p.rx, yStart, -th), toIso(p.rx, y1, -th), 'PANEL', rightOuterDepth);
+          // 150mm 슬래브 경계선 표시
+          ln(toIso(p.rx, yStart, slabTopY), toIso(p.rx, y1, slabTopY), 'PANEL', rightOuterDepth);
+
           let xWall = totalL;
           for (let r = map.rows.length - 1; r >= 0; r--) {
             if (map.ys[r + 1] === y1) {
@@ -2818,10 +2899,12 @@
               break;
             }
           }
-          if (rightX > xWall) {
-            ln(toIso(xWall, y1, -th), toIso(rightX, y1, -th), 'PANEL', sideDepth);
+          if (p.rx > xWall) {
+            ln(toIso(xWall, y1, -th), toIso(p.rx, y1, -th), 'PANEL', rightOuterDepth);
+            ln(toIso(xWall, y1, slabTopY), toIso(p.rx, y1, slabTopY), 'PANEL', rightOuterDepth);
+            ln(toIso(xWall, y1, slabBotY), toIso(p.rx, y1, slabBotY), 'PANEL', rightOuterDepth);
           }
-          ln(toIso(rightX, y1, -th), toIso(rightX, y1, GRD), 'PANEL', sideDepth);
+          ln(toIso(p.rx, y1, -th), toIso(p.rx, y1, slabBotY), 'PANEL', rightOuterDepth);
         }
       });
     });

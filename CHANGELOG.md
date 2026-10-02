@@ -5,6 +5,18 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.52] - 2026-10-03
+
+### Fixed & Enhanced (3D 등각투영 조감도 콘크리트 패드 300mm 기둥 및 150mm 연속 바닥 슬래브 업데이트 - media_1790953862546.png 완벽 반영)
+- **3D 등각투영 조감도(`buildIsometric`) 기초 콘크리트 패드 2D 도면 기준 동기화 ("여기 콘크리트 패드도 업데이트해주세요")**:
+  - 기존 400mm 단부 보 및 개별 분리된 보 형태에서, 최신 2D 기초 콘크리트 단면도와 완벽히 일치하는 구조로 전면 개편.
+  - **300mm 패드 기둥 체계**: 좌측 단부 기둥(`[-75, 225]`), 중간 기둥(`[cx-150, cx+150]`), 우측 단부 기둥(`[totalL-225, totalL+75]`)으로 300mm 폭 규격 통일.
+  - **하부 150mm 연속 바닥 슬래브**: 기둥 하부 및 기둥 사이 개구부 구간 전체를 아우르는 연속 150mm 슬래브(`z = -600` ~ `-750`)를 3D로 형성.
+  - **개구부 바닥 및 내측벽 3D 입체 구현**: 기둥 사이 통풍 개구부의 슬래브 바닥면(`z = -600`) 및 기둥 우측 수직벽(`z = -600` ~ `-th`)을 3D 입체 폴리곤으로 충실히 렌더링.
+  - **우측 외곽 측면 연속 벽체 및 슬래브 분할선**: 우측 최외단 벽체를 `z = -th`부터 바닥 `z = -750`까지 일체화하고 150mm 슬래브 접합선 표시.
+  - **지면 기준선(GL) 레벨 정렬**: 3D 지면 기준선을 바닥 슬래브 하단(`z = -750`)에 정확히 배치.
+  - **화가 알고리즘(Painter's Algorithm) 깊이 최적화**: 다중 기둥 및 슬래브 전면의 깊이값(depth)을 정밀 계산하여 면 가림 및 은선 처리 완벽 유지.
+
 ## [1.5.51] - 2026-10-03
 
 ### Fixed & Enhanced (좌측 600 치수 삭제 및 프레임 높이 50/75/125/150mm 분리 표기 - media_1790953596700.png 완벽 반영)
