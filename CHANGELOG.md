@@ -5,6 +5,16 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.51] - 2026-10-03
+
+### Fixed & Enhanced (좌측 600 치수 삭제 및 프레임 높이 50/75/125/150mm 분리 표기 - media_1790953596700.png 완벽 반영)
+- **600 전체 높이 치수 제거 및 베이스 프레임 높이(`th`) 개별 치수선 배치 ("여기에 600은 지우고 프레임 높이(50,75,125,150mm)를 표시해주세요")**:
+  - 기존 패드 높이(`padH`)와 600 전체 높이 치수선이 동일 선상에서 겹쳐져 발생하던 글씨 겹침 현상(`475 600`, `525 600`)을 원천 해소.
+  - `600` 치수선을 완전히 삭제하고, 대신 **프레임 높이 `th`**(`50`, `75`, `125`, `150mm`)를 `y=-th` ~ `y=0` 구간의 직렬 수직 치수선으로 명확히 표기.
+  - 패드 높이(`padH`: `450`, `475`, `525`, `550mm`)와 프레임 높이(`th`: `50`, `75`, `125`, `150mm`)가 단일 직렬 치수 체계로 정렬되어 시인성과 가독성 극대화.
+- **`buildFoundationSection` 및 `buildElevation` 전체 도면 동시 적용**:
+  - 기초콘크리트 전용도 및 조립도 정면/측면 입면도 모두 600 삭제 및 프레임 높이 독립 치수선 반영.
+
 ## [1.5.50] - 2026-10-03
 
 ### Enhanced (기초콘크리트 좌측 GL 레벨 바닥선 일치 및 600/525 인출선 정렬 - media_1790952977248.png 완벽 반영)
