@@ -416,20 +416,30 @@
 
   /* ---------- 부품 풍선 기호 (Circular Balloon Callout with Leader) ---------- */
   function drawBalloonCallout(ents, startPt, elbowPt, balloonCenter, numStr, scaleN = 25, layer = 'DIM') {
+    if (!balloonCenter && elbowPt) {
+      balloonCenter = elbowPt;
+      elbowPt = null;
+    }
     layer = layer || 'DIM';
     const balloonR = Math.round(3.8 * scaleN);
-    const textH = Math.round(3.0 * scaleN);
+    const textH = Math.round(2.8 * scaleN);
 
     // 단부 점 (Terminal dot)
     ents.push({ t: 'circle', c: startPt, r: Math.max(3, Math.round(scaleN * 0.18)), layer });
 
     // 지시선 (Leader line)
-    const dx = balloonCenter[0] - elbowPt[0], dy = balloonCenter[1] - elbowPt[1];
-    const dist = Math.hypot(dx, dy) || 1;
-    const endPt = [balloonCenter[0] - (dx / dist) * balloonR, balloonCenter[1] - (dy / dist) * balloonR];
-
-    ents.push({ t: 'line', a: startPt, b: elbowPt, layer });
-    ents.push({ t: 'line', a: elbowPt, b: endPt, layer });
+    if (elbowPt && (elbowPt[0] !== startPt[0] || elbowPt[1] !== startPt[1])) {
+      const dx = balloonCenter[0] - elbowPt[0], dy = balloonCenter[1] - elbowPt[1];
+      const dist = Math.hypot(dx, dy) || 1;
+      const endPt = [balloonCenter[0] - (dx / dist) * balloonR, balloonCenter[1] - (dy / dist) * balloonR];
+      ents.push({ t: 'line', a: startPt, b: elbowPt, layer });
+      ents.push({ t: 'line', a: elbowPt, b: endPt, layer });
+    } else {
+      const dx = balloonCenter[0] - startPt[0], dy = balloonCenter[1] - startPt[1];
+      const dist = Math.hypot(dx, dy) || 1;
+      const endPt = [balloonCenter[0] - (dx / dist) * balloonR, balloonCenter[1] - (dy / dist) * balloonR];
+      ents.push({ t: 'line', a: startPt, b: endPt, layer });
+    }
 
     // 원형 풍선 (Circular balloon)
     ents.push({ t: 'circle', c: balloonCenter, r: balloonR, layer });
@@ -766,57 +776,63 @@
         return it ? it.no : '';
       };
 
-      // 1. 맨홀 (Manhole)
+      // 1. 맨홀 (Manhole - NO. 6)
+      let mPos = null;
       const mEntries = Object.entries(opt.marks || {}).filter(([_, m]) => m === 1);
       if (mEntries.length > 0) {
         const [i, j] = mEntries[0][0].split(',').map(Number);
-        if (map.has(i, j)) {
-          const cx = (map.xs[j] + map.xs[j + 1]) / 2;
-          const cy = (map.ys[i] + map.ys[i + 1]) / 2;
-          drawBalloonCallout(ents, [cx + 250, cy + 250], [cx + 450, cy + 450], [cx + 650, cy + 450], getItemNo('manhole') || 6, N);
-        }
+        if (map.has(i, j)) mPos = [(map.xs[j] + map.xs[j + 1]) / 2, (map.ys[i] + map.ys[i + 1]) / 2];
       }
+      if (!mPos) {
+        const lj = map.cols.length - 1, li = map.rows.length - 1;
+        mPos = [(map.xs[lj] + map.xs[lj + 1]) / 2, (map.ys[li] + map.ys[li + 1]) / 2];
+      }
+      drawBalloonCallout(ents, [mPos[0] + 160, mPos[1] + 160], [mPos[0] + 320, mPos[1] + 320], [mPos[0] + 500, mPos[1] + 320], getItemNo('manhole') || 6, N);
 
-      // 2. 에어벤트 (Air Vent)
+      // 2. 에어벤트 (Air Vent - NO. 5)
+      let vPos = null;
       const vEntries = Object.entries(opt.marks || {}).filter(([_, m]) => m === 2);
       if (vEntries.length > 0) {
         const [i, j] = vEntries[0][0].split(',').map(Number);
-        if (map.has(i, j)) {
-          const cx = (map.xs[j] + map.xs[j + 1]) / 2;
-          const cy = (map.ys[i] + map.ys[i + 1]) / 2;
-          drawBalloonCallout(ents, [cx - 150, cy + 150], [cx - 350, cy + 350], [cx - 550, cy + 350], getItemNo('airvent') || 5, N);
-        }
+        if (map.has(i, j)) vPos = [(map.xs[j] + map.xs[j + 1]) / 2, (map.ys[i] + map.ys[i + 1]) / 2];
       }
+      if (!vPos) {
+        const vj = Math.max(0, map.cols.length - 2), vi = map.rows.length - 1;
+        vPos = [(map.xs[vj] + map.xs[vj + 1]) / 2, (map.ys[vi] + map.ys[vi + 1]) / 2];
+      }
+      drawBalloonCallout(ents, [vPos[0] - 120, vPos[1] + 120], [vPos[0] - 280, vPos[1] + 280], [vPos[0] - 460, vPos[1] + 280], getItemNo('airvent') || 5, N);
 
-      // 3. 외부 사다리 & 내부 사다리
+      // 3. 외부 사다리 (NO. 8) & 내부 사다리 (NO. 7)
       const lList = ladderList(opt, map);
-      if (lList.length > 0) {
-        const l = lList[0];
-        if (l.sd === 'D') {
-          drawBalloonCallout(ents, [l.x + 135, -150], [l.x + 350, -350], [l.x + 550, -350], getItemNo('exladder') || 8, N);
-          drawBalloonCallout(ents, [l.x - 100, 150], [l.x - 300, 350], [l.x - 500, 350], getItemNo('inladder') || 7, N);
-        } else if (l.sd === 'R') {
-          drawBalloonCallout(ents, [l.x + 150, l.y + 135], [l.x + 350, l.y + 350], [l.x + 550, l.y + 350], getItemNo('exladder') || 8, N);
-          drawBalloonCallout(ents, [l.x - 150, l.y - 100], [l.x - 350, l.y - 300], [l.x - 550, l.y - 300], getItemNo('inladder') || 7, N);
-        }
+      const l = (lList.length > 0) ? lList[0] : { sd: 'D', x: map.xs[map.cols.length - 1] + 250, y: 0 };
+      if (l.sd === 'D') {
+        drawBalloonCallout(ents, [l.x + 120, -50], [l.x + 260, -220], [l.x + 440, -220], getItemNo('exladder') || 8, N);
+        drawBalloonCallout(ents, [l.x - 70, 70], [l.x - 200, 240], [l.x - 380, 240], getItemNo('inladder') || 7, N);
+      } else if (l.sd === 'R') {
+        drawBalloonCallout(ents, [l.x + 50, l.y + 120], [l.x + 220, l.y + 260], [l.x + 400, l.y + 260], getItemNo('exladder') || 8, N);
+        drawBalloonCallout(ents, [l.x - 70, l.y - 70], [l.x - 200, l.y - 220], [l.x - 380, l.y - 220], getItemNo('inladder') || 7, N);
+      } else {
+        drawBalloonCallout(ents, [l.x + 80, l.y + 80], [l.x + 220, l.y + 220], [l.x + 400, l.y + 220], getItemNo('exladder') || 8, N);
+        drawBalloonCallout(ents, [l.x - 60, l.y - 60], [l.x - 200, l.y - 200], [l.x - 380, l.y - 200], getItemNo('inladder') || 7, N);
       }
 
-      // 4. 지붕/본체 판넬 (Panel)
-      let firstCell = null;
-      for (let r = 0; r < map.rows.length; r++) {
-        for (let c = 0; c < map.cols.length; c++) {
-          if (map.has(r, c)) { firstCell = { r, c }; break; }
-        }
-        if (firstCell) break;
-      }
-      if (firstCell) {
-        const cx = (map.xs[firstCell.c] + map.xs[firstCell.c + 1]) / 2;
-        const cy = (map.ys[firstCell.r] + map.ys[firstCell.r + 1]) / 2;
-        drawBalloonCallout(ents, [cx, cy], [map.xs[firstCell.c] - 250, cy], [map.xs[firstCell.c] - 450, cy], getItemNo('panel') || 3, N);
-      }
+      // 4. 지붕 판넬 (Roof Panel - NO. 3)
+      const rCellC = Math.max(0, map.cols.length - 1);
+      const rCellR = 0;
+      const pcx = (map.xs[rCellC] + map.xs[rCellC + 1]) / 2;
+      const pcy = (map.ys[rCellR] + map.ys[rCellR + 1]) / 2;
+      drawBalloonCallout(ents, [pcx, pcy], [L + 200, pcy], [L + 380, pcy], getItemNo('panel') || 3, N);
 
-      // 5. 코너 프레임 (Corner Frame)
-      drawBalloonCallout(ents, [0, 0], [-200, -100], [-400, -100], getItemNo('corner') || 4, N);
+      // 5. 코너 프레임 (Corner Frame - NO. 4)
+      drawBalloonCallout(ents, [-15, -15], [-160, -160], [-340, -160], getItemNo('corner') || 4, N);
+
+      // 6. 플랜지 바 (Flange Bar - NO. 9)
+      const seamX = (map.xs[1] !== undefined) ? map.xs[1] : 1000;
+      drawBalloonCallout(ents, [seamX, 0], [seamX - 120, -220], [seamX - 300, -220], getItemNo('flangebar') || 9, N);
+
+      // 7. 내부 스테이 / 보강재 (Internal Stay - NO. 10)
+      const stayCx = L * 0.5, stayCy = W * 0.5;
+      drawBalloonCallout(ents, [stayCx, stayCy], [stayCx, W + 220], [stayCx, W + 380], getItemNo('stay') || 10, N);
     }
 
     ents.blocks = blocks;
@@ -1631,26 +1647,31 @@
         return it ? it.no : '';
       };
       const padH = (typeof opt.padH === 'number' && !isNaN(opt.padH)) ? opt.padH : (600 - (opt.frame || 75));
+      const GRD = -th - padH;
 
-      // 1. 기초 콘크리트 (Concrete Foundation)
-      drawBalloonCallout(ents, [total * 0.15, -padH * 0.5], [total * 0.15 - 250, -padH - 200], [total * 0.15 - 450, -padH - 200], getItemNo('foundation') || 1, N);
+      // 1. 기초 콘크리트 (Concrete Foundation - NO. 1)
+      drawBalloonCallout(ents, [total * 0.18, -th - padH * 0.5], [total * 0.18 - 180, GRD - 150], [total * 0.18 - 360, GRD - 150], getItemNo('foundation') || 1, N);
 
-      // 2. 스키드 프레임 (Skid Frame)
-      drawBalloonCallout(ents, [total * 0.25, th * 0.5], [total * 0.25 - 200, -150], [total * 0.25 - 400, -150], getItemNo('skid') || 2, N);
+      // 2. 스키드 프레임 (Skid Frame - NO. 2)
+      drawBalloonCallout(ents, [total * 0.32, -th * 0.5], [total * 0.32 - 160, -th - 120], [total * 0.32 - 340, -th - 120], getItemNo('skid') || 2, N);
 
-      // 3. 측면 판넬 (Wall Panel)
-      drawBalloonCallout(ents, [total * 0.45, nH * 0.45], [-200, nH * 0.45], [-400, nH * 0.45], getItemNo('panel') || 3, N);
+      // 3. 측면 판넬 (Wall Panel - NO. 3)
+      drawBalloonCallout(ents, [total * 0.45, nH * 0.45], [-180, nH * 0.45], [-360, nH * 0.45], getItemNo('panel') || 3, N);
 
-      // 4. 코너 프레임 (Corner Frame)
-      drawBalloonCallout(ents, [0, nH * 0.85], [-200, nH * 0.85 + 150], [-400, nH * 0.85 + 150], getItemNo('corner') || 4, N);
+      // 4. 코너 프레임 (Corner Frame - NO. 4)
+      drawBalloonCallout(ents, [0, nH * 0.82], [-180, nH * 0.82 + 150], [-360, nH * 0.82 + 150], getItemNo('corner') || 4, N);
 
-      // 8. 외부 사다리 (External Ladder)
+      // 8. 외부 사다리 (External Ladder - NO. 8)
       const lads = ladderList(opt, mmap);
       const visibleLadder = lads.find(l => (view === 'front' ? l.sd === 'D' : l.sd === 'R'));
-      if (visibleLadder) {
-        const lx = view === 'front' ? visibleLadder.x : visibleLadder.y;
-        drawBalloonCallout(ents, [lx, nH * 0.65], [lx + 300, nH * 0.65 + 200], [lx + 500, nH * 0.65 + 200], getItemNo('exladder') || 8, N);
-      }
+      const lx = visibleLadder ? (view === 'front' ? visibleLadder.x : visibleLadder.y) : (total - 300);
+      drawBalloonCallout(ents, [lx, nH + 120], [lx + 180, nH + 280], [lx + 360, nH + 280], getItemNo('exladder') || 8, N);
+
+      // 10. 내부 스테이 (Internal Stay - NO. 10)
+      drawBalloonCallout(ents, [total * 0.55, nH * 0.33], [total * 0.55 - 120, -th - 80], [total * 0.55 - 300, GRD - 120], getItemNo('stay') || 10, N);
+
+      // 11. 노즐 (Nozzles - NO. 11)
+      drawBalloonCallout(ents, [total + 75, nH * 0.28], [total + 220, nH * 0.28 + 140], [total + 380, nH * 0.28 + 140], getItemNo('nozzle') || 11, N);
     }
 
     ents.blocks = blocks;
