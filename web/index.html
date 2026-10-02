@@ -292,7 +292,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.18</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.19</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -677,7 +677,20 @@ canvas.drag{cursor:grabbing}
 
       <!-- Subtab 2: 표제란 & 도면 시트 설정 -->
       <div class="subtab-content" id="subtab-title">
-        <!-- 도면 시트 및 축척 설정 -->
+        <!-- 1. 회사 정보 및 도면 머리글 (Header) -->
+        <section class="box" style="margin-bottom:12px">
+          <h2>🏢 회사 정보 및 도면 머리글 (Header)</h2>
+          <p class="hint" style="margin-bottom:8px">도면 우측 상단 머리글에 표기되는 회사 로고 마크, 회사명, 제품명, 본사 주소 및 연락처를 설정합니다.</p>
+          <div class="tb">
+            <label for="tLogoText">로고 마크</label><input type="text" id="tLogoText" value="Y" maxlength="3" style="width:70px;text-align:center;font-weight:700" placeholder="Y">
+            <label for="tCustomer">회사명</label><input type="text" id="tCustomer" value="YSACC CO.,LTD" placeholder="YSACC CO.,LTD">
+            <label for="tProdName">제품명 (품목)</label><input type="text" id="tProdName" placeholder="비워두면 자동: [재질] PANEL WATER TANK">
+            <label for="tAddress">본사 주소</label><input type="text" id="tAddress" value="201-1, 1251, Garosu-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28420, Republic of Korea">
+            <label for="tTel">대표 연락처</label><input type="text" id="tTel" placeholder="TEL : +82-...">
+          </div>
+        </section>
+
+        <!-- 2. 도면 시트 및 축척 설정 -->
         <section class="box" style="margin-bottom:12px">
           <h2>📐 도면 시트 및 축척</h2>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
@@ -709,22 +722,23 @@ canvas.drag{cursor:grabbing}
               <option value="300">1 / 300</option>
             </select>
           </div>
+          <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:11px;color:var(--muted)">DWG 변환 안내 팝업 설정</span>
+            <label class="chk" style="font-size:11px;cursor:pointer;font-weight:600"><input type="checkbox" id="chkHideOdaModal"> 이미 설치됨 (안내 팝업 생략)</label>
+          </div>
         </section>
 
-        <!-- 표제란 기본 정보 -->
+        <!-- 3. 프로젝트별 표제란 정보 -->
         <section class="box" style="margin-bottom:12px">
-          <h2>📋 표제란 기본 정보</h2>
+          <h2>📋 프로젝트별 표제란 정보</h2>
           <div class="tb">
-            <label for="tCustomer">회사명</label><input type="text" id="tCustomer" placeholder="YSACC CO.,LTD">
             <label for="tProject">Project</label><input type="text" id="tProject">
             <label for="tTankSize">TANK SIZE</label><input type="text" id="tTankSize" placeholder="자동 생성 (직접 입력 가능)">
             <label for="tClient">Client</label><input type="text" id="tClient">
             <label for="tContractor">Main Contractor</label><input type="text" id="tContractor">
-            <label for="tAddress">주소</label><input type="text" id="tAddress" placeholder="201-1, 1251, Garosu-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28420, Republic of Korea">
             <label for="tDwgNo">DWG NO.</label><input type="text" id="tDwgNo">
             <label for="tDate">DATE</label><input type="text" id="tDate" placeholder="비우면 오늘 날짜">
             <label for="tDrawn">DRAWN</label><input type="text" id="tDrawn">
-            <label for="tTel">TEL</label><input type="text" id="tTel" placeholder="연락처 (선택)">
             <label for="tParts">품명(부품표)</label><textarea id="tParts" rows="2" placeholder="한 줄에 1개씩 입력 (최대 10개)" style="width:100%;font-size:11px;padding:5px"></textarea>
           </div>
           <!-- 추가 필드 (감리/MEP/ChartNo 등) 접이식 -->
@@ -868,8 +882,11 @@ canvas.drag{cursor:grabbing}
           <button type="button" id="modalDxfBtn" style="padding:10px;font-size:13px;font-weight:600;background:var(--accent);color:#fff;border-color:var(--accent);justify-content:center">
             💾 DXF 파일로 즉시 다운로드 (AutoCAD 바로 열림)
           </button>
-          <a id="odaLink" href="https://www.opendesign.com/guestfiles/oda_file_converter" target="_blank" style="text-align:center;padding:8px;background:var(--surface-sub);color:var(--fg);border:1px solid var(--line);border-radius:6px;font-weight:500;text-decoration:none;font-size:12px">
-            📥 ODA File Converter 미설치 시 다운로드 (무료)
+          <button type="button" id="btnOdaAlreadyInstalled" style="padding:8px;font-size:12px;font-weight:600;background:var(--surface-sub);color:var(--fg);border:1px solid var(--line);border-radius:6px;justify-content:center;cursor:pointer" title="이미 설치되어 있으므로 다음부터 이 안내창을 표시하지 않고 바로 다운로드합니다">
+            ✅ 이미 설치되어 있음 (다음부터 이 창 보지 않기)
+          </button>
+          <a id="odaLink" href="https://www.opendesign.com/guestfiles/oda_file_converter" target="_blank" style="text-align:center;padding:6px;background:transparent;color:var(--muted);border:0;font-size:11px;text-decoration:underline">
+            ODA File Converter 미설치 시 다운로드 링크 열기
           </a>
           <button type="button" id="closeOdaModal" style="padding:6px;font-size:12px;justify-content:center;border:0;background:transparent;color:var(--muted)">
             닫기
@@ -3760,18 +3777,22 @@ canvas.drag{cursor:grabbing}
     // 1. 회사명 및 로고 (높이 16mm)
     y -= 16;
     line([tx0, y], [x1, y]);
-    // 회사 로고 마크 (원형 Y 이니셜 엠블럼)
+    // 회사 로고 마크 (원형 이니셜 엠블럼 - 설정값 연동)
     const logoX = tx0 + 15, logoY = y + 8;
-    circle([logoX, logoY], 5.8);
-    circle([logoX, logoY], 5.0);
-    text(logoX, logoY, 5.5, 'Y', 'center', 0, 'middle');
+    const logoTxt = (t.logoText !== undefined && t.logoText !== null) ? t.logoText : 'Y';
+    if (logoTxt) {
+      circle([logoX, logoY], 5.8);
+      circle([logoX, logoY], 5.0);
+      text(logoX, logoY, 5.5, logoTxt, 'center', 0, 'middle');
+    }
     const compName = t.customer || 'YSACC CO.,LTD';
     text(tx0 + 28 + (tw - 28) / 2, y + 8, 6.2, compName, 'center', 0, 'middle');
 
-    // 2. 제품명 (높이 12mm)
+    // 2. 제품명 (높이 12mm - 설정값 연동)
     y -= 12;
     line([tx0, y], [x1, y]);
-    const prodName = (opt.material === 'STS' ? 'STS' : 'GRP') + ' PANEL WATER TANK';
+    const defProd = (opt.material === 'STS' ? 'STS' : 'GRP') + ' PANEL WATER TANK';
+    const prodName = (t.prodName && t.prodName.trim()) ? t.prodName.trim() : defProd;
     text(tx0 + tw / 2, y + 6, 5.5, prodName, 'center', 0, 'middle');
 
     // 3. 영문 주소 및 연락처 (높이 16mm)
@@ -4489,7 +4510,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     schedule();
   });
   $('b11').addEventListener('change', () => { fillHeights(); schedule(); });
-  ['tCustomer', 'tAddress', 'tTankSize', 'tClient', 'tConsultant', 'tContractor', 'tProject', 'tMep', 'tChart', 'tDate', 'tDrawn', 'tNotes', 'tTel', 'tDwgNo', 'tParts', 'tRemarks'].forEach(id => {
+  ['tLogoText', 'tProdName', 'tCustomer', 'tAddress', 'tTankSize', 'tClient', 'tConsultant', 'tContractor', 'tProject', 'tMep', 'tChart', 'tDate', 'tDrawn', 'tNotes', 'tTel', 'tDwgNo', 'tParts', 'tRemarks'].forEach(id => {
     const el = $(id); if (el) el.addEventListener('input', schedule);
   });
   $('sheetOn').addEventListener('change', schedule);
@@ -5642,7 +5663,9 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
         nozzles: nozzleData.filter(n => n.use !== false),
         notes: $('tNotes').value.split('\n').map(x => x.trim()).filter(Boolean),
         remarks: $('tRemarks').value.split('\n').map(x => x.trim()).filter(Boolean),
-        title: { customer: $('tCustomer').value, address: $('tAddress').value, tankSize: $('tTankSize').value, client: $('tClient').value, consultant: $('tConsultant').value,
+        title: { logoText: $('tLogoText') ? $('tLogoText').value : 'Y',
+                 prodName: $('tProdName') ? $('tProdName').value : '',
+                 customer: $('tCustomer').value, address: $('tAddress').value, tankSize: $('tTankSize').value, client: $('tClient').value, consultant: $('tConsultant').value,
                  contractor: $('tContractor').value, project: $('tProject').value, mep: $('tMep').value, chartNo: $('tChart').value, date: $('tDate').value, drawn: $('tDrawn').value, tel: $('tTel').value, dwgNo: $('tDwgNo').value, parts: $('tParts').value.split('\n').map(x => x.trim()).filter(Boolean).slice(0, 10) }
       };
       const sheet = $('sheetOn').checked;
@@ -5757,6 +5780,8 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       sidePanels: Object.assign({}, sidePanelTypes),
       nozzles: nozzleData.map(n => Object.assign({}, n)),
       title: {
+        logoText: $('tLogoText') ? $('tLogoText').value : 'Y',
+        prodName: $('tProdName') ? $('tProdName').value : '',
         customer: $('tCustomer').value,
         address: $('tAddress').value,
         tankSize: $('tTankSize').value,
@@ -5849,6 +5874,8 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
 
       if (st.title && typeof st.title === 'object') {
         const t = st.title;
+        if (t.logoText !== undefined && $('tLogoText')) $('tLogoText').value = t.logoText;
+        if (t.prodName !== undefined && $('tProdName')) $('tProdName').value = t.prodName;
         if (t.customer !== undefined) $('tCustomer').value = t.customer;
         if (t.address !== undefined) $('tAddress').value = t.address;
         if (t.tankSize !== undefined) $('tTankSize').value = t.tankSize;
@@ -6189,7 +6216,15 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
   }
 
   /* ODA Guide Modal Controls */
+  const isOdaModalSuppressed = () => {
+    return localStorage.getItem('hide_oda_modal') === 'true' || ($('chkHideOdaModal') && $('chkHideOdaModal').checked);
+  };
+
   const showOdaGuide = url => {
+    if (isOdaModalSuppressed()) {
+      if (plan) save(stamp() + '.dxf', C.toDxf(plan.ents, plan.blocks));
+      return;
+    }
     if (url) $('odaLink').href = url;
     $('odaModal').style.display = 'flex';
   };
@@ -6198,15 +6233,32 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     $('odaModal').style.display = 'none';
     if (plan) save(stamp() + '.dxf', C.toDxf(plan.ents, plan.blocks));
   });
+  if ($('btnOdaAlreadyInstalled')) {
+    $('btnOdaAlreadyInstalled').addEventListener('click', () => {
+      localStorage.setItem('hide_oda_modal', 'true');
+      if ($('chkHideOdaModal')) $('chkHideOdaModal').checked = true;
+      $('odaModal').style.display = 'none';
+      if (plan) {
+        save(stamp() + '.dxf', C.toDxf(plan.ents, plan.blocks));
+        $('status').textContent = 'AutoCAD 호환 도면(.dxf) 다운로드 완료 (다음부터 안내창 숨김)';
+      }
+    });
+  }
+  if ($('chkHideOdaModal')) {
+    $('chkHideOdaModal').checked = localStorage.getItem('hide_oda_modal') === 'true';
+    $('chkHideOdaModal').addEventListener('change', (e) => {
+      localStorage.setItem('hide_oda_modal', e.target.checked ? 'true' : 'false');
+    });
+  }
 
   /* DWG Direct Conversion & Download */
   $('dwgBtn').addEventListener('click', async () => {
     if (!plan) return;
     const st = $('status');
     st.textContent = 'DWG 변환 중...';
+    const dxfContent = C.toDxf(plan.ents, plan.blocks);
+    const filename = stamp();
     try {
-      const dxfContent = C.toDxf(plan.ents, plan.blocks);
-      const filename = stamp();
       const apiUrl = (location.protocol === 'file:' || !location.port || location.port !== '8000') ? 'http://localhost:8000/api/convert-dwg' : '/api/convert-dwg';
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -6220,16 +6272,26 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       } else {
         const data = await res.json().catch(() => ({}));
         if (data.error === 'ODA_NOT_INSTALLED') {
-          showOdaGuide(data.download_url);
-          st.textContent = 'DWG 변환기 설치가 필요합니다.';
+          if (isOdaModalSuppressed()) {
+            save(filename + '.dxf', dxfContent);
+            st.textContent = filename + '.dxf 다운로드 완료 (AutoCAD 바로 열림)';
+          } else {
+            showOdaGuide(data.download_url);
+            st.textContent = 'DWG 변환기 설치가 필요합니다.';
+          }
         } else {
           alert('DWG 변환 실패: ' + (data.message || res.statusText));
           st.textContent = 'DWG 변환 실패';
         }
       }
     } catch (e) {
-      showOdaGuide();
-      st.textContent = 'DWG 변환기 연결 대기 (DXF 저장을 권장합니다)';
+      if (isOdaModalSuppressed()) {
+        save(filename + '.dxf', dxfContent);
+        st.textContent = filename + '.dxf 다운로드 완료 (AutoCAD 바로 열림)';
+      } else {
+        showOdaGuide();
+        st.textContent = 'DWG 변환기 연결 대기 (DXF 저장을 권장합니다)';
+      }
     }
   });
 

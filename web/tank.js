@@ -2752,18 +2752,22 @@
     // 1. 회사명 및 로고 (높이 16mm)
     y -= 16;
     line([tx0, y], [x1, y]);
-    // 회사 로고 마크 (원형 Y 이니셜 엠블럼)
+    // 회사 로고 마크 (원형 이니셜 엠블럼 - 설정값 연동)
     const logoX = tx0 + 15, logoY = y + 8;
-    circle([logoX, logoY], 5.8);
-    circle([logoX, logoY], 5.0);
-    text(logoX, logoY, 5.5, 'Y', 'center', 0, 'middle');
+    const logoTxt = (t.logoText !== undefined && t.logoText !== null) ? t.logoText : 'Y';
+    if (logoTxt) {
+      circle([logoX, logoY], 5.8);
+      circle([logoX, logoY], 5.0);
+      text(logoX, logoY, 5.5, logoTxt, 'center', 0, 'middle');
+    }
     const compName = t.customer || 'YSACC CO.,LTD';
     text(tx0 + 28 + (tw - 28) / 2, y + 8, 6.2, compName, 'center', 0, 'middle');
 
-    // 2. 제품명 (높이 12mm)
+    // 2. 제품명 (높이 12mm - 설정값 연동)
     y -= 12;
     line([tx0, y], [x1, y]);
-    const prodName = (opt.material === 'STS' ? 'STS' : 'GRP') + ' PANEL WATER TANK';
+    const defProd = (opt.material === 'STS' ? 'STS' : 'GRP') + ' PANEL WATER TANK';
+    const prodName = (t.prodName && t.prodName.trim()) ? t.prodName.trim() : defProd;
     text(tx0 + tw / 2, y + 6, 5.5, prodName, 'center', 0, 'middle');
 
     // 3. 영문 주소 및 연락처 (높이 16mm)

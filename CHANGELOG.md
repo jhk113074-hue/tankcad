@@ -5,6 +5,24 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.19] - 2026-10-02
+
+### Added & Enhanced (도면 머리글/회사 정보 환경설정 등록 및 변환 팝업 생략 기능)
+- **도면 상단 머리글(Header) 환경설정 직접 등록 지원**:
+  - `⚙️ 환경설정` > `📋 표제란` 탭 최상단에 **[🏢 회사 정보 및 도면 머리글 (Header)]** 설정 섹션 신설.
+  - **로고 마크 (`tLogoText`)**: 원형 엠블럼 내 이니셜 텍스트 직접 변경 가능 (기본값: `Y`).
+  - **회사명 (`tCustomer`)**: 회사 영문/한글 상호 등록 (기본값: `YSACC CO.,LTD`).
+  - **제품명 (`tProdName`)**: 도면 머리글 품목명 직접 지정 (미입력 시 재질별 `[SMC/STS] PANEL WATER TANK` 자동 표기).
+  - **본사 주소 (`tAddress`)**: 회사 주소 직접 변경 지원 (청주 가로수로 주소 기본 제공).
+  - **대표 연락처 (`tTel`)**: 전화번호/연락처 등록 필드 연동.
+  - 입력된 머리글 정보는 웹 캔버스 실시간 미리보기, DXF/DWG 캐드 파일 출력, 브라우저 `localStorage` 및 URL 공유에 완벽하게 자동 보존/복원.
+- **DWG 변환기 설치 시 안내 팝업 생략 및 원클릭 즉시 다운로드**:
+  - 이미 PC에 변환기가 설치된 사용자를 위해 팝업 내 **[✅ 이미 설치되어 있음 (다음부터 이 창 보지 않기)]** 버튼 추가.
+  - 환경설정 시트 설정 내 **`[x] 이미 설치됨 (안내 팝업 생략)`** 체크박스 제공.
+  - 체크 또는 설정 시, [DWG 도면] 버튼 클릭 시 불필요한 안내 팝업을 띄우지 않고 로컬 서버 연동 시 즉시 `.dwg` 변환, 서버 미실행(GitHub 배포 사이트 등) 시 캐드 호환 `.dxf`로 중단 없이 1초 만에 즉시 다운로드.
+
+---
+
 ## [1.5.18] - 2026-10-02
 
 ### Fixed & Parity (AutoCAD DWG와 웹 화면 1:1 완벽 일치 및 우측 외곽선 침범 수정)
