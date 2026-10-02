@@ -292,7 +292,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.21</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.22</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2867,8 +2867,12 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   /* DWG Direct Conversion & Download */
   $('dwgBtn').addEventListener('click', async () => {
     if (!plan) return;
+    const btn = $('dwgBtn');
+    const origHtml = btn.innerHTML;
     const st = $('status');
-    st.textContent = 'DWG 변환 중...';
+    btn.disabled = true;
+    btn.innerHTML = '⏳ 변환 중...';
+    st.textContent = '⚡ 클라우드 서버에서 DWG 도면 변환 중... (약 3~7초 소요)';
     const dxfContent = C.toDxf(plan.ents, plan.blocks);
     const filename = stamp();
     try {
@@ -2884,7 +2888,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       if (res.ok) {
         const blob = await res.blob();
         save(filename + '.dwg', blob);
-        st.textContent = filename + '.dwg 다운로드 완료';
+        st.textContent = '✅ ' + filename + '.dwg 다운로드 완료!';
       } else {
         const data = await res.json().catch(() => ({}));
         if (data.error === 'ODA_NOT_INSTALLED') {
@@ -2908,6 +2912,9 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         showOdaGuide();
         st.textContent = 'DWG 변환기 연결 대기 (DXF 저장을 권장합니다)';
       }
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
     }
   });
 

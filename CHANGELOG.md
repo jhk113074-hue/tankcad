@@ -5,6 +5,16 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.22] - 2026-10-02
+
+### Enhanced & UX (DWG 변환 진행 상태 시각적 피드백 및 중복 클릭 방지)
+- **DWG 다운로드 진행 상태 UI 개선**:
+  - 변환 버튼 클릭 시 버튼을 `⏳ 변환 중...`으로 전환하고 비활성화하여 중복 클릭 방지.
+  - 상태 표시줄에 `⚡ 클라우드 서버에서 DWG 도면 변환 중... (약 3~7초 소요)` 안내 문구 표출.
+  - 완료 시 `✅ [파일명.dwg] 다운로드 완료!` 메시지 표출 및 버튼 원상 복구.
+
+---
+
 ## [1.5.21] - 2026-10-02
 
 ### Fixed & Cloud (Render 클라우드 서버 ODA 변환기 OpenGL 종속성 완벽 해결)
