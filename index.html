@@ -300,7 +300,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.32</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.34</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -308,7 +308,10 @@ canvas.drag{cursor:grabbing}
     <div class="spec-pill" id="topSpecBadge">탱크 규격 로딩 중...</div>
   </div>
   <div class="header-right">
-    <button type="button" class="icon-btn" id="langBtn" title="언어 전환 / Switch Language">🌐 한 / EN</button>
+    <div class="lang-switch-box" id="langSwitchBox" style="display:inline-flex;align-items:center;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:2px;gap:2px">
+      <button type="button" class="lang-btn active" id="btnLangKo" title="프로그램 언어: 한국어 (Korean)" style="border:none;border-radius:4px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;transition:all .15s">🇰🇷 한국어</button>
+      <button type="button" class="lang-btn" id="btnLangEn" title="UI Language: English" style="border:none;border-radius:4px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted);transition:all .15s">🇺🇸 English</button>
+    </div>
     <button type="button" class="icon-btn" id="themeBtn" title="라이트/다크 테마 전환">🌙 다크</button>
   </div>
 </header>
@@ -365,8 +368,15 @@ canvas.drag{cursor:grabbing}
           </select>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">
+          <label for="uiLangSel" id="lblUiLang" style="font-weight:600;font-size:11px;color:var(--muted)">프로그램 언어 (UI Lang)</label>
+          <select id="uiLangSel" style="width:auto;min-width:130px;font-weight:600;font-size:11px">
+            <option value="ko" selected>🇰🇷 한국어 (Korean)</option>
+            <option value="en">🇺🇸 English</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">
           <div style="display:flex;align-items:center;gap:6px">
-            <span style="font-weight:700;font-size:11px;color:var(--text)">📋 부품 명세표 (Item List)</span>
+            <span id="lblBomSpecTitle" style="font-weight:700;font-size:11px;color:var(--text)">📋 부품 명세표 (Item List)</span>
             <span id="bomCountBadgeSpec" style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700">11개</span>
           </div>
           <button type="button" id="openBOMModalBtnSpec" class="btn-sm" style="background:var(--accent);color:#fff;font-weight:600;padding:3px 9px;font-size:11px;border-radius:4px;border:none;cursor:pointer">
@@ -376,27 +386,27 @@ canvas.drag{cursor:grabbing}
       </section>
 
       <section class="box">
-        <h2>재질 및 보강 방식</h2>
+        <h2 id="secTitleMat">재질 및 보강 방식</h2>
         <div class="opts-grid">
-          <label class="opt-card"><input type="radio" name="mat" value="SMC" checked> GRP (SMC)</label>
-          <label class="opt-card"><input type="radio" name="mat" value="STS"> STS (스텐)</label>
+          <label class="opt-card"><input type="radio" name="mat" value="SMC" checked> <span id="lblMatSMC">GRP (SMC)</span></label>
+          <label class="opt-card"><input type="radio" name="mat" value="STS"> <span id="lblMatSTS">STS (스텐)</span></label>
         </div>
         <div class="rf-pills" id="rfBox">
-          <label class="rf-pill"><input type="radio" name="rf" value="0" checked> 외부 보강</label>
-          <label class="rf-pill"><input type="radio" name="rf" value="1"> 내부 앵글</label>
-          <label class="rf-pill"><input type="radio" name="rf" value="2"> 내부 환봉</label>
+          <label class="rf-pill"><input type="radio" name="rf" value="0" checked> <span id="lblRf0">외부 보강</span></label>
+          <label class="rf-pill"><input type="radio" name="rf" value="1"> <span id="lblRf1">내부 앵글</span></label>
+          <label class="rf-pill"><input type="radio" name="rf" value="2"> <span id="lblRf2">내부 환봉</span></label>
         </div>
 
-        <h2 style="margin-top:14px">탱크 치수 입력 (mm)</h2>
-        <div class="seg" id="segL"><label>길이(LENGTH)</label></div>
-        <div class="seg" id="segW"><label>폭(WIDTH)</label></div>
+        <h2 id="secTitleDims" style="margin-top:14px">탱크 치수 입력 (mm)</h2>
+        <div class="seg" id="segL"><label id="lblLen">길이(LENGTH)</label></div>
+        <div class="seg" id="segW"><label id="lblWid">폭(WIDTH)</label></div>
         <div class="seg" id="segH">
-          <label for="H">높이(HEIGHT)</label>
+          <label for="H" id="lblHei">높이(HEIGHT)</label>
           <select id="H" style="grid-column:span 2"></select>
-          <label class="chk" style="grid-column:span 3;font-size:12px;cursor:pointer"><input type="checkbox" id="b11" checked> 1×1 패널 모듈</label>
+          <label class="chk" style="grid-column:span 3;font-size:12px;cursor:pointer"><input type="checkbox" id="b11" checked> <span id="lblB11">1×1 패널 모듈</span></label>
         </div>
         <div class="seg">
-          <label for="frm">프레임</label>
+          <label for="frm" id="lblFrm">프레임</label>
           <select id="frm" style="grid-column:span 2">
             <option value="50">50 (SHS)</option>
             <option value="75" selected>75 (앵글)</option>
@@ -404,7 +414,7 @@ canvas.drag{cursor:grabbing}
             <option value="150">150 (채널)</option>
           </select>
         </div>
-        <p class="hint">💡 길이는 여러 칸에 입력 시 구간별 분할(예: 3000 + 2000)됩니다. 폭은 단일 치수(mm)입니다.</p>
+        <p class="hint" id="hintDims">💡 길이는 여러 칸에 입력 시 구간별 분할(예: 3000 + 2000)됩니다. 폭은 단일 치수(mm)입니다.</p>
         <div class="err" id="err" hidden></div>
       </section>
     </div>
@@ -413,20 +423,20 @@ canvas.drag{cursor:grabbing}
     <div class="tab-content" id="tab-edit">
       <section class="box">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2 style="margin:0">📐 평면도 편집 모드</h2>
+          <h2 id="secTitlePlan" style="margin:0">📐 평면도 편집 모드</h2>
           <button type="button" id="eReset" class="btn-preset danger" style="padding:3px 8px;font-size:11px">🔄 편집 초기화</button>
         </div>
-        <p class="hint" style="margin-bottom:8px">도구를 선택하고 평면 격자를 클릭하여 <b>패널 삭제</b>, <b>맨홀</b>, <b>벤트</b>, <b>사다리</b>, <b>급수구</b>를 지정합니다. (위쪽: 탱크 배면)</p>
+        <p class="hint" id="hintPlan" style="margin-bottom:8px">도구를 선택하고 평면 격자를 클릭하여 <b>패널 삭제</b>, <b>맨홀</b>, <b>벤트</b>, <b>사다리</b>, <b>급수구</b>를 지정합니다. (위쪽: 탱크 배면)</p>
 
         <!-- 정돈된 평면도 도구 팔레트 카드 -->
         <div class="plan-tool-card">
           <div class="plan-tool-grid">
-            <label class="plan-tool-chip"><input type="radio" name="emode" value="del" checked><span>❌ 패널 삭제</span></label>
-            <label class="plan-tool-chip"><input type="radio" name="emode" value="han"><span>🔘 맨홀 (손잡이)</span></label>
-            <label class="plan-tool-chip"><input type="radio" name="emode" value="vent"><span>💨 에어벤트</span></label>
-            <label class="plan-tool-chip"><input type="radio" name="emode" value="lad"><span>🪜 사다리</span></label>
-            <label class="plan-tool-chip"><input type="radio" name="emode" value="inlet"><span>💧 급수구(INLET)</span></label>
-            <label class="plan-tool-chip"><input type="radio" name="emode" value="pil"><span>🏛️ 기둥 (삭제칸)</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode" value="del" checked><span id="lblToolDel">❌ 패널 삭제</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode" value="han"><span id="lblToolHan">🔘 맨홀 (손잡이)</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode" value="vent"><span id="lblToolVent">💨 에어벤트</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode" value="lad"><span id="lblToolLad">🪜 사다리</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode" value="inlet"><span id="lblToolInlet">💧 급수구(INLET)</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode" value="pil"><span id="lblToolPil">🏛️ 기둥 (삭제칸)</span></label>
           </div>
         </div>
 
@@ -438,7 +448,7 @@ canvas.drag{cursor:grabbing}
             <div id="egrid" class="egrid" aria-label="평면도 패널 격자"></div>
           </div>
         </div>
-        <p class="hint" style="margin-top:6px">💡 칸막이가 있는 경우 각 구획별로 급수구(INLET)를 별도 설치할 수 있습니다.</p>
+        <p class="hint" id="hintPartition" style="margin-top:6px">💡 칸막이가 있는 경우 각 구획별로 급수구(INLET)를 별도 설치할 수 있습니다.</p>
       </section>
     </div>
 
@@ -446,34 +456,34 @@ canvas.drag{cursor:grabbing}
     <div class="tab-content" id="tab-nozzles">
       <section class="box">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2 style="margin:0">📐 측면 편집 (판넬 및 배관)</h2>
+          <h2 id="secTitleSide" style="margin:0">📐 측면 편집 (판넬 및 배관)</h2>
           <label class="pipe-master-toggle" title="도면 상 배관 노즐 및 일람표 표시 여부를 전환합니다">
             <input type="checkbox" id="pipeFeatureToggle" checked>
             <span id="pipeToggleText">💧 배관 ON</span>
           </label>
         </div>
-        <p class="hint" style="margin-bottom:8px">도구를 선택한 후 아래 측면 격자 칸을 클릭하여 <b>판넬 변경</b> 또는 <b>배관 노즐</b>을 배치합니다.</p>
+        <p class="hint" id="hintSide" style="margin-bottom:8px">도구를 선택한 후 아래 측면 격자 칸을 클릭하여 <b>판넬 변경</b> 또는 <b>배관 노즐</b>을 배치합니다.</p>
 
         <!-- 1. 뷰 선택 세그먼트 (정면 / 우측면 / 배면 / 좌측면) -->
         <div class="face-seg-control">
           <label class="face-seg-btn">
             <input type="radio" name="nozViewFace" value="front" checked>
-            <span>🏢 정면</span>
+            <span id="lblFaceFront">🏢 정면</span>
             <span class="face-sub">Front</span>
           </label>
           <label class="face-seg-btn">
             <input type="radio" name="nozViewFace" value="right">
-            <span>🏢 우측면</span>
+            <span id="lblFaceRight">🏢 우측면</span>
             <span class="face-sub">Right</span>
           </label>
           <label class="face-seg-btn">
             <input type="radio" name="nozViewFace" value="rear">
-            <span>🏢 배면</span>
+            <span id="lblFaceRear">🏢 배면</span>
             <span class="face-sub">Rear</span>
           </label>
           <label class="face-seg-btn">
             <input type="radio" name="nozViewFace" value="left">
-            <span>🏢 좌측면</span>
+            <span id="lblFaceLeft">🏢 좌측면</span>
             <span class="face-sub">Left</span>
           </label>
         </div>
@@ -482,17 +492,17 @@ canvas.drag{cursor:grabbing}
         <div class="side-tool-card">
           <!-- 섹션 1: 판넬 종류 변경 (4열 균등 정렬, 줄바꿈 없음) -->
           <div>
-            <div class="side-tool-sec-title"><span>🔲 판넬 종류 선택</span></div>
+            <div class="side-tool-sec-title"><span id="lblSecPanelTool">🔲 판넬 종류 선택</span></div>
             <div class="side-panel-grid">
-              <label class="side-tool-btn"><input type="radio" name="nozTool" value="panel-std" checked><span>기본</span></label>
-              <label class="side-tool-btn"><input type="radio" name="nozTool" value="panel-flat-1x1"><span>1×1평판</span></label>
-              <label class="side-tool-btn"><input type="radio" name="nozTool" value="panel-flat-half2"><span>0.5×1(2장)</span></label>
-              <label class="side-tool-btn"><input type="radio" name="nozTool" value="panel-fitting"><span>피팅판넬</span></label>
+              <label class="side-tool-btn"><input type="radio" name="nozTool" value="panel-std" checked><span id="lblToolStd">기본</span></label>
+              <label class="side-tool-btn"><input type="radio" name="nozTool" value="panel-flat-1x1"><span id="lblToolFlat1">1×1평판</span></label>
+              <label class="side-tool-btn"><input type="radio" name="nozTool" value="panel-flat-half2"><span id="lblToolFlatHalf">0.5×1(2장)</span></label>
+              <label class="side-tool-btn"><input type="radio" name="nozTool" value="panel-fitting"><span id="lblToolFitting">피팅판넬</span></label>
             </div>
           </div>
           <!-- 섹션 2: 배관 노즐 배치 (3열 2행 균등 정렬, 줄바꿈 없음) -->
           <div>
-            <div class="side-tool-sec-title"><span>💧 배관 노즐 선택</span></div>
+            <div class="side-tool-sec-title"><span id="lblSecNozTool">💧 배관 노즐 선택</span></div>
             <div class="side-nozzle-grid">
               <label class="side-tool-btn" title="유입구 (INLET)"><input type="radio" name="nozTool" value="INLET"><span>💧 IN</span></label>
               <label class="side-tool-btn" title="유출구 (OUTLET)"><input type="radio" name="nozTool" value="OUTLET"><span>🚰 OUT</span></label>
@@ -646,17 +656,17 @@ canvas.drag{cursor:grabbing}
     <div class="tab-content" id="tab-bom">
       <section class="box" style="margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2 style="margin:0;font-size:13px">📋 부품 사양 명세표 (Item List)</h2>
+          <h2 id="secTitleBOM" style="margin:0;font-size:13px">📋 부품 사양 명세표 (Item List)</h2>
           <span id="bomCountBadge" style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700">11개 등록</span>
         </div>
-        <p class="hint" style="margin-bottom:10px">도면 표제란 상단에 표출되는 <b>AutoCAD 표준 부품 명세표(Item List)</b> 및 도면상 <b>원형 풍선 기호(①,②,③...)</b>를 직접 편집합니다.</p>
+        <p class="hint" id="hintBOM" style="margin-bottom:10px">도면 표제란 상단에 표출되는 <b>AutoCAD 표준 부품 명세표(Item List)</b> 및 도면상 <b>원형 풍선 기호(①,②,③...)</b>를 직접 편집합니다.</p>
 
         <!-- 상단 옵션 및 컨트롤 버튼 -->
         <div style="background:var(--surface-sub);padding:8px 10px;border-radius:6px;border:1px solid var(--line);margin-bottom:10px">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
             <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--text);cursor:pointer">
               <input type="checkbox" id="balloonFeatureToggle" checked>
-              <span>도면상 풍선 기호(①,②,③...) 표시</span>
+              <span id="lblBalloonToggle">도면상 풍선 기호(①,②,③...) 표시</span>
             </label>
             <button type="button" id="btnAutoBOM" class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;padding:4px 10px;font-size:11px" title="현재 탱크 규격·옵션으로 기본 부품 사양을 자동 재계산합니다">
               ⚡ 자동 재계산 (Auto BOM)
@@ -666,7 +676,7 @@ canvas.drag{cursor:grabbing}
             <button type="button" id="btnAddBOMRow" class="btn-sm" style="font-weight:600;padding:4px 10px;font-size:11px">
               ➕ 품목 추가
             </button>
-            <span style="font-size:10px;color:var(--muted)">* 각 칸을 직접 클릭하여 수정하면 도면에 실시간 반영됩니다.</span>
+            <span id="lblBomTableHint" style="font-size:10px;color:var(--muted)">* 각 칸을 직접 클릭하여 수정하면 도면에 실시간 반영됩니다.</span>
           </div>
         </div>
 
@@ -676,10 +686,10 @@ canvas.drag{cursor:grabbing}
             <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
               <tr>
                 <th style="padding:6px 4px;width:38px;text-align:center">NO.</th>
-                <th style="padding:6px 4px;width:115px">ITEMS (품명)</th>
-                <th style="padding:6px 4px;width:75px">MATERIAL</th>
-                <th style="padding:6px 4px;width:48px;text-align:center">QTY</th>
-                <th style="padding:6px 4px">SPECIFICATIONS</th>
+                <th id="thBomItems" style="padding:6px 4px;width:115px">ITEMS (품명)</th>
+                <th id="thBomMat" style="padding:6px 4px;width:75px">MATERIAL</th>
+                <th id="thBomQty" style="padding:6px 4px;width:48px;text-align:center">QTY</th>
+                <th id="thBomSpec" style="padding:6px 4px">SPECIFICATIONS</th>
                 <th style="padding:6px 4px;width:26px;text-align:center">✕</th>
               </tr>
             </thead>
@@ -690,10 +700,10 @@ canvas.drag{cursor:grabbing}
       </section>
 
       <section class="box">
-        <h2>탱크 제원 요약</h2>
+        <h2 id="secTitleKv">탱크 제원 요약</h2>
         <div class="kv" id="kv"></div>
-        <h2 style="margin-top:14px">패널 수량 집계 (평면)</h2>
-        <table><thead><tr><th>패널 규격 (폭×길이)</th><th class="n">수량</th></tr></thead><tbody id="cnt"></tbody></table>
+        <h2 id="secTitleCnt" style="margin-top:14px">패널 수량 집계 (평면)</h2>
+        <table><thead><tr><th id="thCntSpec">패널 규격 (폭×길이)</th><th class="n" id="thCntQty">수량</th></tr></thead><tbody id="cnt"></tbody></table>
       </section>
     </div>
 
@@ -992,14 +1002,14 @@ canvas.drag{cursor:grabbing}
     <div class="toolbar">
       <button type="button" id="toggleSide" title="사이드바 접기/펼치기">◀ 패널</button>
       <div class="tool-group">
-        <label class="layer-chip"><input type="checkbox" id="lyPanel" checked> 패널</label>
-        <label class="layer-chip"><input type="checkbox" id="lyNozzle" checked> 💧 배관</label>
-        <label class="layer-chip"><input type="checkbox" id="lyDetail" checked> 상세</label>
-        <label class="layer-chip"><input type="checkbox" id="lyFrame" checked> 틀</label>
-        <label class="layer-chip"><input type="checkbox" id="lyReinf" checked> 보강재</label>
-        <label class="layer-chip"><input type="checkbox" id="lyWall" checked> 벽</label>
-        <label class="layer-chip"><input type="checkbox" id="lySheet" checked> 시트</label>
-        <label class="layer-chip"><input type="checkbox" id="lyDim" checked> 치수</label>
+        <label class="layer-chip"><input type="checkbox" id="lyPanel" checked> <span id="lblLyPanel">패널</span></label>
+        <label class="layer-chip"><input type="checkbox" id="lyNozzle" checked> <span id="lblLyNozzle">💧 배관</span></label>
+        <label class="layer-chip"><input type="checkbox" id="lyDetail" checked> <span id="lblLyDetail">상세</span></label>
+        <label class="layer-chip"><input type="checkbox" id="lyFrame" checked> <span id="lblLyFrame">틀</span></label>
+        <label class="layer-chip"><input type="checkbox" id="lyReinf" checked> <span id="lblLyReinf">보강재</span></label>
+        <label class="layer-chip"><input type="checkbox" id="lyWall" checked> <span id="lblLyWall">벽</span></label>
+        <label class="layer-chip"><input type="checkbox" id="lySheet" checked> <span id="lblLySheet">시트</span></label>
+        <label class="layer-chip"><input type="checkbox" id="lyDim" checked> <span id="lblLyDim">치수</span></label>
       </div>
       <div class="tool-group">
         <button type="button" id="fit" title="도면 화면 맞춤">⛶ 맞춤</button>
@@ -5240,8 +5250,6 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
   const I18N = {
     ko: {
       subTitle: '물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 & DXF 내보내기)',
-      langBtn: '🌐 한 / EN',
-      langTitle: '언어 전환 (현재: 한국어)',
       themeDark: '🌙 다크',
       themeLight: '☀️ 라이트',
       toggleSideCol: '▶ 패널',
@@ -5253,18 +5261,53 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       tabSettings: '⚙️ 환경설정',
       lblSheetOn: 'A1 도면 시트 포함',
       lblScale: '도면 축척 (Scale)',
+      scaleAuto: '⚡ 자동 맞춤 (Auto)',
       lblDwgLang: '도면 언어 (Dwg Lang)',
+      lblUiLang: '프로그램 언어 (UI Lang)',
       bomSpecTitle: '📋 부품 명세표 (Item List)',
       bomSpecBtn: '⚙️ 사양 편집',
-      btnGotoBOM: '탭으로 이동 ➔',
-      btnOpenCht: '📁 CHT 열기',
-      btnSaveCht: '💾 CHT 저장',
-      btnAutoPad: '⚡ 패드 자동배치',
-      btnExportDxf: '📐 DXF 다운로드',
-      btnPrintPdf: '🖨️ 인쇄/PDF',
-      btnFit: '맞춤',
-      hudGuide: '휠: 확대/축소  ·  드래그: 이동  ·  더블클릭: 맞춤',
-      statusReady: '준비 완료',
+      secTitleMat: '재질 및 보강 방식',
+      matSMC: 'GRP (SMC)',
+      matSTS: 'STS (스텐)',
+      rf0: '외부 보강',
+      rf1: '내부 앵글',
+      rf2: '내부 환봉',
+      secTitleDims: '탱크 치수 입력 (mm)',
+      lblLen: '길이(LENGTH)',
+      lblWid: '폭(WIDTH)',
+      lblHei: '높이(HEIGHT)',
+      lblB11: '1×1 패널 모듈',
+      lblFrm: '프레임',
+      hintDims: '💡 길이는 여러 칸에 입력 시 구간별 분할(예: 3000 + 2000)됩니다. 폭은 단일 치수(mm)입니다.',
+      secTitlePlan: '📐 평면도 편집 모드',
+      btnResetEdit: '🔄 편집 초기화',
+      hintPlan: '도구를 선택하고 평면 격자를 클릭하여 <b>패널 삭제</b>, <b>맨홀</b>, <b>벤트</b>, <b>사다리</b>, <b>급수구</b>를 지정합니다. (위쪽: 탱크 배면)',
+      toolDel: '❌ 패널 삭제',
+      toolHan: '🔘 맨홀 (손잡이)',
+      toolVent: '💨 에어벤트',
+      toolLad: '🪜 사다리',
+      toolInlet: '💧 급수구(INLET)',
+      toolPil: '🏛️ 기둥 (삭제칸)',
+      hintPartition: '💡 칸막이가 있는 경우 각 구획별로 급수구(INLET)를 별도 설치할 수 있습니다.',
+      secTitleSide: '📐 측면 편집 (판넬 및 배관)',
+      pipeToggleOn: '💧 배관 ON',
+      pipeToggleOff: '💧 배관 OFF',
+      hintSide: '도구를 선택한 후 아래 측면 격자 칸을 클릭하여 <b>판넬 변경</b> 또는 <b>배관 노즐</b>을 배치합니다.',
+      faceFront: '🏢 정면',
+      faceRight: '🏢 우측면',
+      faceRear: '🏢 배면',
+      faceLeft: '🏢 좌측면',
+      secPanelTool: '🔲 판넬 종류 선택',
+      toolStd: '기본',
+      toolFlat1: '1×1평판',
+      toolFlatHalf: '0.5×1(2장)',
+      toolFitting: '피팅판넬',
+      secNozTool: '💧 배관 노즐 선택',
+      nozPresetSingle: '⚡ 1구획 기본배관',
+      nozPresetDouble: '⚡ 2구획 기본배관',
+      nozClearAll: '전체 비우기',
+      nozAddCustomBtn: '➕ 새 노즐 직접 등록',
+      nozSchedTitle: '📋 배관 노즐 일람표 (NOZZLE SCHEDULE)',
       bomTabTitle: '📋 부품 사양 명세표 (Item List)',
       bomBadgeSuffix: '개 등록',
       bomTabHint: '도면 표제란 상단에 표출되는 <b>AutoCAD 표준 부품 명세표(Item List)</b> 및 도면상 <b>원형 풍선 기호(①,②,③...)</b>를 직접 편집합니다.',
@@ -5272,53 +5315,140 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       btnAutoBOM: '⚡ 자동 재계산 (Auto BOM)',
       btnAddBOMRow: '➕ 품목 추가',
       bomTableHint: '* 각 칸을 직접 클릭하여 수정하면 도면에 실시간 반영됩니다.',
+      thBomItems: 'ITEMS (품명)',
+      thBomMat: 'MATERIAL',
+      thBomQty: 'QTY',
+      thBomSpec: 'SPECIFICATIONS',
+      secTitleKv: '탱크 제원 요약',
+      secTitleCnt: '패널 수량 집계 (평면)',
+      thCntSpec: '패널 규격 (폭×길이)',
+      thCntQty: '수량',
       subtabPad: '🏗️ 콘크리트 패드',
       subtabTitle: '📝 표제란',
       subtabPanels: '🗄️ 판넬 DB',
       miniTabProj: '📌 프로젝트',
       miniTabHeader: '🏢 회사·서명란',
-      miniTabNotes: '📝 일반노트'
+      miniTabNotes: '📝 일반노트',
+      btnGotoBOM: '탭으로 이동 ➔',
+      btnOpenCht: '📁 CHT 열기',
+      btnSaveCht: '💾 CHT 저장',
+      btnAutoPad: '⚡ 패드 자동배치',
+      btnExportDxf: '📐 DXF 다운로드',
+      btnPrintPdf: '🖨️ 인쇄/PDF',
+      btnFit: '⛶ 맞춤',
+      btnShareUrl: '🔗 공유 링크',
+      btnSaveDwg: '💾 DWG 저장 (.dwg)',
+      lyPanel: '패널',
+      lyNozzle: '💧 배관',
+      lyDetail: '상세',
+      lyFrame: '틀',
+      lyReinf: '보강재',
+      lyWall: '벽',
+      lySheet: '시트',
+      lyDim: '치수',
+      hudGuide: '휠: 확대/축소  ·  드래그: 이동  ·  더블클릭: 맞춤',
+      statusReady: '준비 완료'
     },
     en: {
       subTitle: 'Water Tank 2D CAD Drawing Generator (A1 Sheet & DXF Export)',
-      langBtn: '🌐 EN / 한',
-      langTitle: 'Switch Language (Current: English)',
       themeDark: '🌙 Dark',
       themeLight: '☀️ Light',
       toggleSideCol: '▶ Panel',
       toggleSideExp: '◀ Panel',
-      tabSpecs: '📐 Specs',
+      tabSpecs: '📐 Specs & Dims',
       tabEdit: '✏️ Plan Edit',
-      tabNozzles: '📐 Side Edit',
-      tabBOM: '📋 BOM List',
-      tabSettings: '⚙️ Settings',
+      tabNozzles: '📐 Side & Nozzles',
+      tabBOM: '📋 BOM / Item List',
+      tabSettings: '⚙️ Settings & DB',
       lblSheetOn: 'Include A1 Sheet',
       lblScale: 'Drawing Scale',
+      scaleAuto: '⚡ Auto Fit (Scale)',
       lblDwgLang: 'Drawing Language',
+      lblUiLang: 'Program Language (UI)',
       bomSpecTitle: '📋 Item List (BOM)',
       bomSpecBtn: '⚙️ Edit BOM',
-      btnGotoBOM: 'Go to Tab ➔',
-      btnOpenCht: '📁 Open CHT',
-      btnSaveCht: '💾 Save CHT',
-      btnAutoPad: '⚡ Auto Pad',
-      btnExportDxf: '📐 Export DXF',
-      btnPrintPdf: '🖨️ Print / PDF',
-      btnFit: 'Fit',
-      hudGuide: 'Wheel: Zoom  ·  Drag: Pan  ·  Double Click: Fit',
-      statusReady: 'Ready',
-      bomTabTitle: '📋 Item List (BOM)',
+      secTitleMat: 'Material & Reinforcement Type',
+      matSMC: 'GRP (SMC)',
+      matSTS: 'STS (Stainless)',
+      rf0: 'External Reinf.',
+      rf1: 'Internal Angle',
+      rf2: 'Internal Tie-rod',
+      secTitleDims: 'Tank Dimensions (mm)',
+      lblLen: 'Length (LENGTH)',
+      lblWid: 'Width (WIDTH)',
+      lblHei: 'Height (HEIGHT)',
+      lblB11: '1×1 Panel Module',
+      lblFrm: 'Base Frame',
+      hintDims: '💡 Multi-entry length (e.g. 3000 + 2000) creates partitions. Width is single dimension (mm).',
+      secTitlePlan: '📐 Plan View Edit Mode',
+      btnResetEdit: '🔄 Reset Edit',
+      hintPlan: 'Select a tool and click the grid to <b>delete panels</b> or assign <b>manhole</b>, <b>vent</b>, <b>ladder</b>, <b>inlet</b>. (Top: Rear face)',
+      toolDel: '❌ Delete Panel',
+      toolHan: '🔘 Manhole (Handle)',
+      toolVent: '💨 Air Vent',
+      toolLad: '🪜 Ladder',
+      toolInlet: '💧 Water Inlet',
+      toolPil: '🏛️ Pillar (Void)',
+      hintPartition: '💡 With partitions, each compartment can have an individual Water Inlet (INLET).',
+      secTitleSide: '📐 Side Elevation & Nozzles',
+      pipeToggleOn: '💧 Nozzles ON',
+      pipeToggleOff: '💧 Nozzles OFF',
+      hintSide: 'Select a tool and click a grid cell below to <b>change panel</b> or place <b>pipe nozzles</b>.',
+      faceFront: '🏢 Front',
+      faceRight: '🏢 Right',
+      faceRear: '🏢 Rear',
+      faceLeft: '🏢 Left',
+      secPanelTool: '🔲 Select Panel Type',
+      toolStd: 'Standard',
+      toolFlat1: '1×1 Flat',
+      toolFlatHalf: '0.5×1 (x2)',
+      toolFitting: 'Fitting Panel',
+      secNozTool: '💧 Select Pipe Nozzle',
+      nozPresetSingle: '⚡ 1-Comp. Preset',
+      nozPresetDouble: '⚡ 2-Comp. Preset',
+      nozClearAll: 'Clear All',
+      nozAddCustomBtn: '➕ Add New Nozzle',
+      nozSchedTitle: '📋 Nozzle Schedule (NOZZLE SCHEDULE)',
+      bomTabTitle: '📋 AutoCAD Standard Item List (BOM)',
       bomBadgeSuffix: ' items',
       bomTabHint: 'Directly edit the <b>AutoCAD Standard Item List (BOM)</b> and on-drawing <b>Balloon Callouts (①,②,③...)</b>.',
       balloonToggle: 'Show Balloon Callouts (①,②,③...)',
       btnAutoBOM: '⚡ Auto BOM',
       btnAddBOMRow: '➕ Add Item',
       bomTableHint: '* Click each cell to edit; changes update drawings in real-time.',
+      thBomItems: 'ITEMS (Description)',
+      thBomMat: 'MATERIAL',
+      thBomQty: 'QTY',
+      thBomSpec: 'SPECIFICATIONS',
+      secTitleKv: 'Tank Specifications Summary',
+      secTitleCnt: 'Panel Quantity Summary (Plan)',
+      thCntSpec: 'Panel Size (W×L)',
+      thCntQty: 'Qty',
       subtabPad: '🏗️ Concrete Pad',
       subtabTitle: '📝 Title Block',
       subtabPanels: '🗄️ Panel DB',
       miniTabProj: '📌 Project',
       miniTabHeader: '🏢 Company & Signs',
-      miniTabNotes: '📝 General Notes'
+      miniTabNotes: '📝 General Notes',
+      btnGotoBOM: 'Go to Tab ➔',
+      btnOpenCht: '📁 Open CHT',
+      btnSaveCht: '💾 Save CHT',
+      btnAutoPad: '⚡ Auto Pad',
+      btnExportDxf: '📐 Export DXF',
+      btnPrintPdf: '🖨️ Print / PDF',
+      btnFit: '⛶ Fit',
+      btnShareUrl: '🔗 Share URL',
+      btnSaveDwg: '💾 Save DWG (.dwg)',
+      lyPanel: 'Panel',
+      lyNozzle: '💧 Pipe',
+      lyDetail: 'Detail',
+      lyFrame: 'Frame',
+      lyReinf: 'Reinf',
+      lyWall: 'Wall',
+      lySheet: 'Sheet',
+      lyDim: 'Dim',
+      hudGuide: 'Wheel: Zoom  ·  Drag: Pan  ·  Double Click: Fit',
+      statusReady: 'Ready'
     }
   };
 
@@ -5327,14 +5457,33 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     localStorage.setItem('tank_lang', currentLang);
     document.documentElement.lang = currentLang;
 
+    // Synchronize UI Lang Select
+    if ($('uiLangSel') && $('uiLangSel').value !== currentLang) {
+      $('uiLangSel').value = currentLang;
+    }
+
+    // Synchronize Header Quick Buttons
+    if ($('btnLangKo') && $('btnLangEn')) {
+      if (currentLang === 'ko') {
+        $('btnLangKo').style.background = 'var(--accent)';
+        $('btnLangKo').style.color = '#fff';
+        $('btnLangKo').style.fontWeight = '700';
+        $('btnLangEn').style.background = 'transparent';
+        $('btnLangEn').style.color = 'var(--muted)';
+        $('btnLangEn').style.fontWeight = '600';
+      } else {
+        $('btnLangEn').style.background = 'var(--accent)';
+        $('btnLangEn').style.color = '#fff';
+        $('btnLangEn').style.fontWeight = '700';
+        $('btnLangKo').style.background = 'transparent';
+        $('btnLangKo').style.color = 'var(--muted)';
+        $('btnLangKo').style.fontWeight = '600';
+      }
+    }
+
     const t = I18N[currentLang];
     const subTitle = document.querySelector('.header-titles p');
     if (subTitle) subTitle.textContent = t.subTitle;
-
-    if ($('langBtn')) {
-      $('langBtn').textContent = t.langBtn;
-      $('langBtn').title = t.langTitle;
-    }
 
     const curTheme = document.documentElement.getAttribute('data-theme') || 'dark';
     if ($('themeBtn')) {
@@ -5353,7 +5502,80 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     const setTabBtn = document.querySelector('.tab-btn[data-tab="tab-settings"]');
     if (setTabBtn) setTabBtn.textContent = t.tabSettings;
 
-    // Subtabs in settings
+    // Tab 1: Specs & Dims
+    if ($('lblSheetOn')) $('lblSheetOn').textContent = t.lblSheetOn;
+    if ($('lblScale')) $('lblScale').textContent = t.lblScale;
+    if ($('scaleSel') && $('scaleSel').options.length > 0) $('scaleSel').options[0].textContent = t.scaleAuto;
+    if ($('lblDrawingLang')) $('lblDrawingLang').textContent = t.lblDwgLang;
+    if ($('lblUiLang')) $('lblUiLang').textContent = t.lblUiLang;
+    if ($('lblBomSpecTitle')) $('lblBomSpecTitle').textContent = t.bomSpecTitle;
+    if ($('openBOMModalBtnSpec')) $('openBOMModalBtnSpec').textContent = t.bomSpecBtn;
+    if ($('secTitleMat')) $('secTitleMat').textContent = t.secTitleMat;
+    if ($('lblMatSMC')) $('lblMatSMC').textContent = t.matSMC;
+    if ($('lblMatSTS')) $('lblMatSTS').textContent = t.matSTS;
+    if ($('lblRf0')) $('lblRf0').textContent = t.rf0;
+    if ($('lblRf1')) $('lblRf1').textContent = t.rf1;
+    if ($('lblRf2')) $('lblRf2').textContent = t.rf2;
+    if ($('secTitleDims')) $('secTitleDims').textContent = t.secTitleDims;
+    if ($('lblLen')) $('lblLen').textContent = t.lblLen;
+    if ($('lblWid')) $('lblWid').textContent = t.lblWid;
+    if ($('lblHei')) $('lblHei').textContent = t.lblHei;
+    if ($('lblB11')) $('lblB11').textContent = t.lblB11;
+    if ($('lblFrm')) $('lblFrm').textContent = t.lblFrm;
+    if ($('hintDims')) $('hintDims').textContent = t.hintDims;
+
+    // Tab 2: Plan Edit
+    if ($('secTitlePlan')) $('secTitlePlan').textContent = t.secTitlePlan;
+    if ($('eReset')) $('eReset').textContent = t.btnResetEdit;
+    if ($('hintPlan')) $('hintPlan').innerHTML = t.hintPlan;
+    if ($('lblToolDel')) $('lblToolDel').textContent = t.toolDel;
+    if ($('lblToolHan')) $('lblToolHan').textContent = t.toolHan;
+    if ($('lblToolVent')) $('lblToolVent').textContent = t.toolVent;
+    if ($('lblToolLad')) $('lblToolLad').textContent = t.toolLad;
+    if ($('lblToolInlet')) $('lblToolInlet').textContent = t.toolInlet;
+    if ($('lblToolPil')) $('lblToolPil').textContent = t.toolPil;
+    if ($('hintPartition')) $('hintPartition').textContent = t.hintPartition;
+
+    // Tab 3: Side & Nozzles
+    if ($('secTitleSide')) $('secTitleSide').textContent = t.secTitleSide;
+    if ($('pipeToggleText')) {
+      const on = $('pipeFeatureToggle') ? $('pipeFeatureToggle').checked : true;
+      $('pipeToggleText').textContent = on ? t.pipeToggleOn : t.pipeToggleOff;
+    }
+    if ($('hintSide')) $('hintSide').innerHTML = t.hintSide;
+    if ($('lblFaceFront')) $('lblFaceFront').textContent = t.faceFront;
+    if ($('lblFaceRight')) $('lblFaceRight').textContent = t.faceRight;
+    if ($('lblFaceRear')) $('lblFaceRear').textContent = t.faceRear;
+    if ($('lblFaceLeft')) $('lblFaceLeft').textContent = t.faceLeft;
+    if ($('lblSecPanelTool')) $('lblSecPanelTool').textContent = t.secPanelTool;
+    if ($('lblToolStd')) $('lblToolStd').textContent = t.toolStd;
+    if ($('lblToolFlat1')) $('lblToolFlat1').textContent = t.toolFlat1;
+    if ($('lblToolFlatHalf')) $('lblToolFlatHalf').textContent = t.toolFlatHalf;
+    if ($('lblToolFitting')) $('lblToolFitting').textContent = t.toolFitting;
+    if ($('lblSecNozTool')) $('lblSecNozTool').textContent = t.secNozTool;
+    if ($('nozPresetSingle')) $('nozPresetSingle').textContent = t.nozPresetSingle;
+    if ($('nozPresetDouble')) $('nozPresetDouble').textContent = t.nozPresetDouble;
+    if ($('nozClearAll')) $('nozClearAll').textContent = t.nozClearAll;
+    if ($('nozAddCustomBtn')) $('nozAddCustomBtn').textContent = t.nozAddCustomBtn;
+    if ($('nozSchedSummaryTitle')) $('nozSchedSummaryTitle').textContent = t.nozSchedTitle;
+
+    // Tab 4: BOM
+    if ($('secTitleBOM')) $('secTitleBOM').textContent = t.bomTabTitle;
+    if ($('hintBOM')) $('hintBOM').innerHTML = t.bomTabHint;
+    if ($('lblBalloonToggle')) $('lblBalloonToggle').textContent = t.balloonToggle;
+    if ($('btnAutoBOM')) $('btnAutoBOM').textContent = t.btnAutoBOM;
+    if ($('btnAddBOMRow')) $('btnAddBOMRow').textContent = t.btnAddBOMRow;
+    if ($('lblBomTableHint')) $('lblBomTableHint').textContent = t.bomTableHint;
+    if ($('thBomItems')) $('thBomItems').textContent = t.thBomItems;
+    if ($('thBomMat')) $('thBomMat').textContent = t.thBomMat;
+    if ($('thBomQty')) $('thBomQty').textContent = t.thBomQty;
+    if ($('thBomSpec')) $('thBomSpec').textContent = t.thBomSpec;
+    if ($('secTitleKv')) $('secTitleKv').textContent = t.secTitleKv;
+    if ($('secTitleCnt')) $('secTitleCnt').textContent = t.secTitleCnt;
+    if ($('thCntSpec')) $('thCntSpec').textContent = t.thCntSpec;
+    if ($('thCntQty')) $('thCntQty').textContent = t.thCntQty;
+
+    // Tab 5: Settings
     const padSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-pad"]');
     if (padSubBtn) padSubBtn.textContent = t.subtabPad;
     const titleSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-title"]');
@@ -5361,28 +5583,30 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     const dbSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-panels"]');
     if (dbSubBtn) dbSubBtn.textContent = t.subtabPanels;
 
-    // Mini subtabs in title block
     const projMini = document.querySelector('.mini-subtab-btn[data-title-sec="title-sec-proj"]');
     if (projMini) projMini.textContent = t.miniTabProj;
     const headMini = document.querySelector('.mini-subtab-btn[data-title-sec="title-sec-header"]');
     if (headMini) headMini.textContent = t.miniTabHeader;
     const noteMini = document.querySelector('.mini-subtab-btn[data-title-sec="title-sec-notes"]');
     if (noteMini) noteMini.textContent = t.miniTabNotes;
-
-    // Spec tab labels
-    if ($('lblSheetOn')) $('lblSheetOn').textContent = t.lblSheetOn;
-    if ($('lblScale')) $('lblScale').textContent = t.lblScale;
-    if ($('lblDrawingLang')) $('lblDrawingLang').textContent = t.lblDwgLang;
-    if ($('openBOMModalBtnSpec')) $('openBOMModalBtnSpec').textContent = t.bomSpecBtn;
     if ($('gotoBOMTabBtn')) $('gotoBOMTabBtn').textContent = t.btnGotoBOM;
 
-    // Action buttons
-    if ($('chtBtn')) $('chtBtn').textContent = t.btnOpenCht;
-    if ($('saveBtn')) $('saveBtn').textContent = t.btnSaveCht;
-    if ($('padAuto')) $('padAuto').textContent = t.btnAutoPad;
-    if ($('dxf')) $('dxf').textContent = t.btnExportDxf;
-    if ($('printBtn')) $('printBtn').textContent = t.btnPrintPdf;
+    // Toolbar & Layer chips
+    if ($('toggleSide')) {
+      const col = $('appBody').classList.contains('collapsed');
+      $('toggleSide').textContent = col ? t.toggleSideCol : t.toggleSideExp;
+    }
+    if ($('lblLyPanel')) $('lblLyPanel').textContent = t.lyPanel;
+    if ($('lblLyNozzle')) $('lblLyNozzle').textContent = t.lyNozzle;
+    if ($('lblLyDetail')) $('lblLyDetail').textContent = t.lyDetail;
+    if ($('lblLyFrame')) $('lblLyFrame').textContent = t.lyFrame;
+    if ($('lblLyReinf')) $('lblLyReinf').textContent = t.lyReinf;
+    if ($('lblLyWall')) $('lblLyWall').textContent = t.lyWall;
+    if ($('lblLySheet')) $('lblLySheet').textContent = t.lySheet;
+    if ($('lblLyDim')) $('lblLyDim').textContent = t.lyDim;
     if ($('fit')) $('fit').textContent = t.btnFit;
+    if ($('copyShareUrl')) $('copyShareUrl').textContent = t.btnShareUrl;
+    if ($('dwgBtn')) $('dwgBtn').textContent = t.btnSaveDwg;
 
     // Canvas HUD & Status
     const cvGuide = document.querySelector('.cv-hud-guide');
@@ -5391,24 +5615,18 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       $('status').textContent = t.statusReady;
     }
 
-    // BOM Tab UI
-    const bomTabH2 = document.querySelector('#tab-bom h2');
-    if (bomTabH2) bomTabH2.textContent = t.bomTabTitle;
-    const bomTabP = document.querySelector('#tab-bom .hint');
-    if (bomTabP) bomTabP.innerHTML = t.bomTabHint;
-    const balloonLbl = document.querySelector('#tab-bom label span');
-    if (balloonLbl) balloonLbl.textContent = t.balloonToggle;
-    if ($('btnAutoBOM')) $('btnAutoBOM').textContent = t.btnAutoBOM;
-    if ($('btnAddBOMRow')) $('btnAddBOMRow').textContent = t.btnAddBOMRow;
-
     updateBOMBadge();
     if (triggerSchedule) schedule();
   }
 
-  if ($('langBtn')) {
-    $('langBtn').addEventListener('click', () => {
-      setLanguage(currentLang === 'ko' ? 'en' : 'ko', true);
-    });
+  if ($('btnLangKo')) {
+    $('btnLangKo').addEventListener('click', () => setLanguage('ko', true));
+  }
+  if ($('btnLangEn')) {
+    $('btnLangEn').addEventListener('click', () => setLanguage('en', true));
+  }
+  if ($('uiLangSel')) {
+    $('uiLangSel').addEventListener('change', (e) => setLanguage(e.target.value, true));
   }
 
   /* Sidebar Toggle */
@@ -6443,6 +6661,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     }
     updatePadBadges();
     schedule();
+  });
   $('scaleSel').addEventListener('change', () => schedule());
   if ($('drawingLangSel')) $('drawingLangSel').addEventListener('change', () => schedule());
 
