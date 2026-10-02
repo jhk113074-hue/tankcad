@@ -5,6 +5,29 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.44] - 2026-10-02
+
+### Enhanced (UI 영문 선택 시 잔여 한글 완전 제거 및 전면 다국어 다이내믹 현지화)
+- **UI 영문 모드 전면 고도화 ("ENGLIST로 선택했는데 여전히 한글이 많습니다. 빠짐없이 체크해 주세요")**:
+  - **측면 및 노즐 탭 (Side & Nozzles)**:
+    - 배관 마스터 토글 버튼 텍스트가 언어에 따라 실시간 전환 (`💧 Nozzles ON` / `💧 Nozzles OFF`).
+    - 입면 격자 카드 헤더 타이틀 및 안내 힌트 다국어화 (`🏢 Front View (Front)`, `💡 Click cells to change panel / place nozzles`).
+    - 입면 격자 단 라벨(`Tier 1`, `Tier 2`, `Row 1`), 구획 태그(`Comp.1 Col 1`), 판넬 배지(`1×1 Flat`, `0.5×1 (x2)`, `Fitting`) 영문화.
+    - 배관 노즐 일람표(Nozzle Schedule) 헤더 카운트(`Total N`), 위치 셀(`FRONT Col 1`, `REAR Col 2`), 미사용 상태(`Unused`) 영문화.
+  - **환경설정 - 단별 판넬구성 (Settings & DB > Height & Tiers)**:
+    - 섹션 타이틀, 설명 힌트, 리셋/저장 버튼, 와이드 모달 열기 버튼, 모듈 모드 버튼(`Standard Module`, `1×1 Module`) 전면 영문화.
+    - 카드 뷰 내부 단수 배지(`T1`, `T2`, `3 Tiers`), 합계 일치/차이 배지(`Match`, `Diff`), 단 추가/삭제 버튼(`+Tier`, `-Tier`), 툴팁 영문화.
+    - 9열 와이드 모달 표(Wide Table Modal) 헤더 전체(`Total H (mm)`, `Tiers`, `Tier 1 (Bottom)`~`Tier 5 (Top)`, `Total / Status`, `Reset`) 및 하단 추가 바 영문화.
+  - **부품 명세표 (BOM) & 캔버스 하단 상태바**:
+    - 부품 카운트 배지(`N items`), 부품표 빈 상태 메시지 영문화.
+    - 캔버스 하단 실시간 상태바(`Zoom 38% · Panel blocks 3 / Lines 1,234`) 영문화.
+    - 평면 격자 상단 구획 바(`📦 Comp.1`, `⚡Baffle`), 기둥(`Pillar`) 영문화.
+  - **모달 및 툴바**:
+    - DWG/ODA 변환 안내 모달 및 판넬 DB 등록 모달의 타이틀, 설명, 라벨, 선택 옵션, 버튼 전면 영문화.
+    - 툴바 줌/맞춤/내보내기 버튼의 툴팁 영문화.
+
+---
+
 ## [1.5.43] - 2026-10-02
 
 ### Enhanced (도면 풍선 기호 중복 번호 방지: 동일 품번은 도면 전체에서 1회만 단일 기재)

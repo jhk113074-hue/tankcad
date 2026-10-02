@@ -534,7 +534,7 @@ canvas.drag{cursor:grabbing}
         <div class="elev-grid-card">
           <div class="elev-grid-header">
             <b style="font-size:12px;color:var(--fg)" id="nozGridTitle">🏢 정면 뷰 (Front Elevation)</b>
-            <span style="font-size:10px;color:var(--muted)">💡 칸 클릭 시 판넬 전환 / 노즐 배치</span>
+            <span style="font-size:10px;color:var(--muted)" id="lblNozGridHint">💡 칸 클릭 시 판넬 전환 / 노즐 배치</span>
           </div>
 
           <!-- 상단 패널 열 번호 & 구획 라벨 표시 영역 -->
@@ -829,7 +829,7 @@ canvas.drag{cursor:grabbing}
 
           <!-- 하단 빠른 추가 바 -->
           <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:8px;padding:5px 6px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:6px">
-            <span style="font-size:10.5px;font-weight:700">➕ 새 높이:</span>
+            <span style="font-size:10.5px;font-weight:700" id="lblNewH">➕ 새 높이:</span>
             <input type="number" id="newHInput" placeholder="예: 5500" step="100" min="500" max="10000" style="width:65px;padding:3px 4px;font-size:11px;text-align:center">
             <button type="button" id="btnAddNewH" class="btn-sm" style="font-size:10.5px;padding:3px 6px">추가</button>
           </div>
@@ -1075,14 +1075,14 @@ canvas.drag{cursor:grabbing}
     <!-- ODA Guide Modal -->
     <div id="odaModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
       <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:24px;max-width:500px;width:92%;box-shadow:var(--shadow)">
-        <h3 style="margin:0 0 10px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px">
+        <h3 id="odaModalTitle" style="margin:0 0 10px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px">
           <span>⚡</span> DWG 변환 및 다운로드 안내
         </h3>
-        <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:var(--fg)">
+        <p id="odaModalDesc" style="margin:0 0 10px;font-size:13px;line-height:1.6;color:var(--fg)">
           웹 브라우저는 보안 정책상 고객님 PC의 프로그램을 임의로 직접 실행할 수 없습니다.<br>
           <b>이미 ODA 변환기를 설치하셨다면</b>, 로컬 변환 서비스(<code>python server.py</code>)가 실행 중일 때 웹과 연결되어 즉시 <b>.dwg</b>로 변환됩니다.
         </p>
-        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--muted)">
+        <div id="odaModalTip" style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--muted)">
           <div style="font-weight:600;color:var(--fg);margin-bottom:4px">💡 가장 간편한 추천 방법: [DXF 다운로드]</div>
           아래 <b>[DXF 파일로 즉시 다운로드]</b>를 누르시면 별도 설치나 서버 실행 없이 바로 다운로드되며, <b>AutoCAD, ZWCAD, 캐디안 등에서 DWG와 100% 동일하게 즉시 열리고 편집/저장</b>됩니다!
         </div>
@@ -1109,7 +1109,7 @@ canvas.drag{cursor:grabbing}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)">
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:18px">📏</span>
-            <h3 style="margin:0;font-size:16px;font-weight:700">높이별·단별 판넬크기 지정 (전체 와이드 표)</h3>
+            <h3 id="modalHeightTableTitle" style="margin:0;font-size:16px;font-weight:700">높이별·단별 판넬크기 지정 (전체 와이드 표)</h3>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             <button type="button" id="btnModalResetH" class="btn-sm" style="font-size:11px;padding:4px 8px" title="기본 규격으로 초기화">🔄 기본값 복원</button>
@@ -1124,7 +1124,7 @@ canvas.drag{cursor:grabbing}
             <button type="button" class="htab-mode-btn active" id="btnModalModeStd" data-mode="std" style="font-size:12px;font-weight:700;padding:5px 12px">일반 규격 모듈 (표준: 1000, 1300, 1500, 2000)</button>
             <button type="button" class="htab-mode-btn" id="btnModalModeB11" data-mode="b11" style="font-size:12px;font-weight:700;padding:5px 12px">1×1 패널 모듈 (1000×1000 / 1000×500 기반)</button>
           </div>
-          <span style="font-size:11px;color:var(--muted)">각 단별 판넬 크기는 mm 단위로 입력합니다 (빈 칸은 제외)</span>
+          <span id="modalHeightTableDesc" style="font-size:11px;color:var(--muted)">각 단별 판넬 크기는 mm 단위로 입력합니다 (빈 칸은 제외)</span>
         </div>
 
         <!-- 와이드 테이블 본체 -->
@@ -1132,15 +1132,15 @@ canvas.drag{cursor:grabbing}
           <table style="width:100%;border-collapse:collapse;font-size:12px;text-align:center">
             <thead style="background:var(--surface-sub);position:sticky;top:0;z-index:2;box-shadow:0 1px 2px rgba(0,0,0,0.05)">
               <tr style="border-bottom:1px solid var(--line)">
-                <th style="padding:8px 6px;font-weight:700;width:90px">총 높이 (H)</th>
-                <th style="padding:8px 6px;font-weight:700;width:55px">단수</th>
-                <th style="padding:8px 6px;font-weight:700;width:110px">1단 (하단)</th>
-                <th style="padding:8px 6px;font-weight:700;width:110px">2단</th>
-                <th style="padding:8px 6px;font-weight:700;width:110px">3단</th>
-                <th style="padding:8px 6px;font-weight:700;width:110px">4단</th>
-                <th style="padding:8px 6px;font-weight:700;width:110px">5단 (상단)</th>
-                <th style="padding:8px 6px;font-weight:700;width:110px">합계 / 상태</th>
-                <th style="padding:8px 6px;font-weight:700;width:50px">초기화</th>
+                <th id="thModalH" style="padding:8px 6px;font-weight:700;width:90px">총 높이 (H)</th>
+                <th id="thModalTiers" style="padding:8px 6px;font-weight:700;width:55px">단수</th>
+                <th id="thModalT1" style="padding:8px 6px;font-weight:700;width:110px">1단 (하단)</th>
+                <th id="thModalT2" style="padding:8px 6px;font-weight:700;width:110px">2단</th>
+                <th id="thModalT3" style="padding:8px 6px;font-weight:700;width:110px">3단</th>
+                <th id="thModalT4" style="padding:8px 6px;font-weight:700;width:110px">4단</th>
+                <th id="thModalT5" style="padding:8px 6px;font-weight:700;width:110px">5단 (상단)</th>
+                <th id="thModalStatus" style="padding:8px 6px;font-weight:700;width:110px">합계 / 상태</th>
+                <th id="thModalReset" style="padding:8px 6px;font-weight:700;width:50px">초기화</th>
               </tr>
             </thead>
             <tbody id="modalHeightTableBody">
@@ -1152,7 +1152,7 @@ canvas.drag{cursor:grabbing}
         <!-- 하단 추가 바 -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:8px 12px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:6px">
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:12px;font-weight:700">➕ 새 높이 규격 추가:</span>
+            <span id="lblModalNewH" style="font-size:12px;font-weight:700">➕ 새 높이 규격 추가:</span>
             <input type="number" id="modalNewHInput" placeholder="예: 5500" step="100" min="500" max="10000" style="width:100px;padding:4px 8px;font-size:12px;text-align:center">
             <button type="button" id="btnModalAddNewH" class="btn-sm" style="font-size:12px;padding:4px 10px">행 추가</button>
           </div>
@@ -1164,20 +1164,20 @@ canvas.drag{cursor:grabbing}
     <!-- Panel Registration Modal -->
     <div id="panelRegModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
       <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;max-width:520px;width:92%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow)">
-        <h3 style="margin:0 0 12px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px">
+        <h3 id="panelRegModalTitle" style="margin:0 0 12px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px">
           <span>🧩</span> 판넬 등록 및 형상 편집
         </h3>
         
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
           <div>
-            <label style="font-size:11px;font-weight:600">재질</label>
+            <label id="lblModalMat" style="font-size:11px;font-weight:600">재질</label>
             <select id="modalMat" style="width:100%;padding:5px;font-size:12px">
               <option value="SMC">SMC (GRP)</option>
               <option value="STS">STS (스텐)</option>
             </select>
           </div>
           <div>
-            <label style="font-size:11px;font-weight:600">적용 위치</label>
+            <label id="lblModalCat" style="font-size:11px;font-weight:600">적용 위치</label>
             <select id="modalCat" style="width:100%;padding:5px;font-size:12px">
               <option value="top_bottom">평면 (상·하부 패널)</option>
               <option value="side">입면 (측면 패널)</option>
@@ -1185,11 +1185,11 @@ canvas.drag{cursor:grabbing}
             </select>
           </div>
           <div>
-            <label style="font-size:11px;font-weight:600">가로 폭 (W mm)</label>
+            <label id="lblModalW" style="font-size:11px;font-weight:600">가로 폭 (W mm)</label>
             <input type="number" id="modalW" value="1000" step="100" style="width:100%;padding:5px;font-size:12px">
           </div>
           <div>
-            <label style="font-size:11px;font-weight:600">세로 높이 (H mm)</label>
+            <label id="lblModalH" style="font-size:11px;font-weight:600">세로 높이 (H mm)</label>
             <input type="number" id="modalH" value="1000" step="100" style="width:100%;padding:5px;font-size:12px">
           </div>
         </div>
@@ -1200,13 +1200,13 @@ canvas.drag{cursor:grabbing}
         </div>
 
         <div style="margin-bottom:10px">
-          <label style="font-size:11px;font-weight:600">판넬 명칭</label>
+          <label id="lblModalName" style="font-size:11px;font-weight:600">판넬 명칭</label>
           <input type="text" id="modalName" placeholder="예: SMC 1000x1000 신형 다이아몬드형" style="width:100%;padding:5px;font-size:12px">
         </div>
 
         <!-- 형상 등록 방식 선택 -->
         <div style="margin-bottom:10px">
-          <label style="font-size:11px;font-weight:600">형상 입력 방식</label>
+          <label id="lblModalSource" style="font-size:11px;font-weight:600">형상 입력 방식</label>
           <div style="display:grid;grid-template-columns:1fr 1.2fr 1fr 0.9fr;gap:4px;margin-top:4px">
             <button type="button" class="btn-sm active" id="btnSourcePreset">🎨 프리셋</button>
             <button type="button" class="btn-sm" id="btnSourceStep" style="color:var(--accent);font-weight:700">📦 3D STP/STEP</button>
@@ -1217,7 +1217,7 @@ canvas.drag{cursor:grabbing}
 
         <!-- Source 1: Preset Generator -->
         <div id="boxSourcePreset" style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:12px">
-          <label style="font-size:11px;font-weight:600">패턴 종류 선택</label>
+          <label id="lblPresetType" style="font-size:11px;font-weight:600">패턴 종류 선택</label>
           <div style="display:flex;gap:6px;margin-top:4px">
             <select id="presetType" style="flex:1;padding:5px;font-size:12px">
               <option value="diamond">다이아몬드 엠보싱 (표준형)</option>
@@ -1462,9 +1462,9 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       subtabHeights: '📏 단별 판넬구성',
       subtabTitle: '📝 표제란',
       subtabPanels: '🗄️ 판넬 DB',
-      miniTabProj: '📌 프로젝트',
-      miniTabHeader: '🏢 회사·서명란',
-      miniTabNotes: '📝 일반노트',
+      miniTabProj: '📋 프로젝트',
+      miniTabHeader: '🏢 회사·머리글',
+      miniTabNotes: '📝 도면노트',
       btnGotoBOM: '탭으로 이동 ➔',
       btnOpenCht: '📁 CHT 열기',
       btnSaveCht: '💾 CHT 저장',
@@ -1564,9 +1564,9 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       subtabHeights: '📏 Height & Tiers',
       subtabTitle: '📝 Title Block',
       subtabPanels: '🗄️ Panel DB',
-      miniTabProj: '📌 Project',
+      miniTabProj: '📋 Project',
       miniTabHeader: '🏢 Company & Signs',
-      miniTabNotes: '📝 General Notes',
+      miniTabNotes: '📝 Drawing Notes',
       btnGotoBOM: 'Go to Tab ➔',
       btnOpenCht: '📁 Open CHT',
       btnSaveCht: '💾 Save CHT',
@@ -1751,6 +1751,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     if ($('nozMiniBarEmpty')) $('nozMiniBarEmpty').textContent = currentLang === 'en' ? '💡 Select a tool and click a grid cell to change panel type or place nozzles.' : '💡 도구를 선택하고 측면 격자 칸을 클릭하면 판넬 종류 변경 및 배관 노즐이 배치됩니다.';
     if ($('lblSchedToggle')) $('lblSchedToggle').textContent = currentLang === 'en' ? 'Expand / Collapse ▼' : '펼치기 / 접기 ▼';
     if ($('thNozSelect')) $('thNozSelect').textContent = currentLang === 'en' ? 'Select' : '선택';
+    if ($('lblNozGridHint')) $('lblNozGridHint').textContent = currentLang === 'en' ? '💡 Click cells to change panel / place nozzles' : '💡 칸 클릭 시 판넬 전환 / 노즐 배치';
 
     // Tab 4: BOM
     if ($('secTitleBOM')) $('secTitleBOM').textContent = t.bomTabTitle;
@@ -1798,6 +1799,38 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     if ($('btnPadPresetWide')) $('btnPadPresetWide').textContent = currentLang === 'en' ? 'Wide 450/350' : '광폭 450/350';
     if ($('btnPadPresetEqual3')) $('btnPadPresetEqual3').textContent = currentLang === 'en' ? 'Equal 300' : '동일 300';
     if ($('btnPadPresetEqual4')) $('btnPadPresetEqual4').textContent = currentLang === 'en' ? 'Equal 400' : '동일 400';
+
+    // Tab 5: Height Table (subtab-heights & modal)
+    if ($('secTitleHeights')) $('secTitleHeights').textContent = currentLang === 'en' ? '📏 Panel Heights & Tiers' : '📏 높이별 단별 판넬크기';
+    if ($('btnResetHeightTable')) $('btnResetHeightTable').textContent = currentLang === 'en' ? '🔄 Reset' : '🔄 초기화';
+    if ($('btnSaveHeightTable')) $('btnSaveHeightTable').textContent = currentLang === 'en' ? '💾 Save' : '💾 저장';
+    if ($('hintHeights')) $('hintHeights').textContent = currentLang === 'en' ? 'Configure tier heights of wall panels from bottom (Tier 1) to top according to tank height (H).' : '수조 높이(H)에 따라 벽체 패널이 하단(1단)부터 상단까지 분할되는 단별 규격을 설정합니다.';
+    if ($('btnOpenHeightModal')) $('btnOpenHeightModal').innerHTML = currentLang === 'en' ? '<span>🖥️</span> Edit in Wide Table (Open Modal)' : '<span>🖥️</span> 와이드 표로 전체 편집 (모달창 열기)';
+    if ($('btnHModeStd')) $('btnHModeStd').textContent = currentLang === 'en' ? 'Standard Module' : '일반 규격 (표준)';
+    if ($('btnHModeB11')) $('btnHModeB11').textContent = currentLang === 'en' ? '1×1 Module (1000/500)' : '1×1 모듈 (1000/500)';
+    if ($('lblNewH')) $('lblNewH').textContent = currentLang === 'en' ? '➕ New Height:' : '➕ 새 높이:';
+    if ($('newHInput')) $('newHInput').placeholder = currentLang === 'en' ? 'e.g. 5500' : '예: 5500';
+    if ($('btnAddNewH')) $('btnAddNewH').textContent = currentLang === 'en' ? 'Add' : '추가';
+
+    // Modal Height Table
+    if ($('modalHeightTableTitle')) $('modalHeightTableTitle').textContent = currentLang === 'en' ? 'Panel Heights & Tiers Specification (Wide Table)' : '높이별·단별 판넬크기 지정 (전체 와이드 표)';
+    if ($('btnModalResetH')) $('btnModalResetH').textContent = currentLang === 'en' ? '🔄 Restore Defaults' : '🔄 기본값 복원';
+    if ($('btnModalModeStd')) $('btnModalModeStd').textContent = currentLang === 'en' ? 'Standard Modules (1000, 1300, 1500, 2000)' : '일반 규격 모듈 (표준: 1000, 1300, 1500, 2000)';
+    if ($('btnModalModeB11')) $('btnModalModeB11').textContent = currentLang === 'en' ? '1×1 Panel Module (1000×1000 / 1000×500)' : '1×1 패널 모듈 (1000×1000 / 1000×500 기반)';
+    if ($('modalHeightTableDesc')) $('modalHeightTableDesc').textContent = currentLang === 'en' ? 'Enter panel size for each tier in mm (leave blank if omitted)' : '각 단별 판넬 크기는 mm 단위로 입력합니다 (빈 칸은 제외)';
+    if ($('thModalH')) $('thModalH').textContent = currentLang === 'en' ? 'Total H (mm)' : '총 높이 (H)';
+    if ($('thModalTiers')) $('thModalTiers').textContent = currentLang === 'en' ? 'Tiers' : '단수';
+    if ($('thModalT1')) $('thModalT1').textContent = currentLang === 'en' ? 'Tier 1 (Bottom)' : '1단 (하단)';
+    if ($('thModalT2')) $('thModalT2').textContent = currentLang === 'en' ? 'Tier 2' : '2단';
+    if ($('thModalT3')) $('thModalT3').textContent = currentLang === 'en' ? 'Tier 3' : '3단';
+    if ($('thModalT4')) $('thModalT4').textContent = currentLang === 'en' ? 'Tier 4' : '4단';
+    if ($('thModalT5')) $('thModalT5').textContent = currentLang === 'en' ? 'Tier 5 (Top)' : '5단 (상단)';
+    if ($('thModalStatus')) $('thModalStatus').textContent = currentLang === 'en' ? 'Total / Status' : '합계 / 상태';
+    if ($('thModalReset')) $('thModalReset').textContent = currentLang === 'en' ? 'Reset' : '초기화';
+    if ($('lblModalNewH')) $('lblModalNewH').textContent = currentLang === 'en' ? '➕ Add New Height Spec:' : '➕ 새 높이 규격 추가:';
+    if ($('modalNewHInput')) $('modalNewHInput').placeholder = currentLang === 'en' ? 'e.g. 5500' : '예: 5500';
+    if ($('btnModalAddNewH')) $('btnModalAddNewH').textContent = currentLang === 'en' ? 'Add Row' : '행 추가';
+    if ($('btnModalCloseBottom')) $('btnModalCloseBottom').textContent = currentLang === 'en' ? 'Close' : '닫기';
 
     // Tab 5: Title Block
     const projMini = document.querySelector('.mini-subtab-btn[data-title-sec="title-sec-proj"]');
@@ -1853,15 +1886,53 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     if ($('syncDbBtn')) $('syncDbBtn').textContent = currentLang === 'en' ? '🔄 Sync to Dwg' : '🔄 도면 동기화';
     if ($('resetDbBtn')) $('resetDbBtn').textContent = currentLang === 'en' ? 'Reset' : '초기화';
 
+    // Panel Registration Modal
+    if ($('panelRegModalTitle')) $('panelRegModalTitle').innerHTML = currentLang === 'en' ? '<span>🧩</span> Register & Edit Panel Shape' : '<span>🧩</span> 판넬 등록 및 형상 편집';
+    if ($('lblModalMat')) $('lblModalMat').textContent = currentLang === 'en' ? 'Material' : '재질';
+    if ($('lblModalCat')) $('lblModalCat').textContent = currentLang === 'en' ? 'Category' : '적용 위치';
+    if ($('modalCat') && $('modalCat').options.length >= 3) {
+      $('modalCat').options[0].textContent = currentLang === 'en' ? 'Plan (Top/Bottom Panel)' : '평면 (상·하부 패널)';
+      $('modalCat').options[1].textContent = currentLang === 'en' ? 'Elevation (Side Panel)' : '입면 (측면 패널)';
+      $('modalCat').options[2].textContent = currentLang === 'en' ? 'All (Plan + Elevation)' : '전체 (평면 + 입면 모두 적용)';
+    }
+    if ($('lblModalW')) $('lblModalW').textContent = currentLang === 'en' ? 'Width (W mm)' : '가로 폭 (W mm)';
+    if ($('lblModalH')) $('lblModalH').textContent = currentLang === 'en' ? 'Height (H mm)' : '세로 높이 (H mm)';
+    if ($('btnCleanFillets')) $('btnCleanFillets').textContent = currentLang === 'en' ? '✨ Clean Fillets' : '✨ 필렛/잡선 원터치 정제';
+    if ($('btnFitSize')) $('btnFitSize').textContent = currentLang === 'en' ? '📐 Fit Shape to W×H' : '📐 형상을 규격(WxH)에 강제 맞춤';
+    if ($('lblModalName')) $('lblModalName').textContent = currentLang === 'en' ? 'Panel Name' : '판넬 명칭';
+    if ($('modalName')) $('modalName').placeholder = currentLang === 'en' ? 'e.g. SMC 1000x1000 Diamond Embossed' : '예: SMC 1000x1000 신형 다이아몬드형';
+    if ($('lblModalSource')) $('lblModalSource').textContent = currentLang === 'en' ? 'Input Method' : '형상 입력 방식';
+    if ($('btnSourcePreset')) $('btnSourcePreset').textContent = currentLang === 'en' ? '🎨 Preset' : '🎨 프리셋';
+    if ($('btnSourceJson')) $('btnSourceJson').textContent = currentLang === 'en' ? '📝 JSON Edit' : '📝 JSON 편집';
+    if ($('lblPresetType')) $('lblPresetType').textContent = currentLang === 'en' ? 'Select Pattern Type' : '패턴 종류 선택';
+    if ($('presetType') && $('presetType').options.length >= 4) {
+      $('presetType').options[0].textContent = currentLang === 'en' ? 'Diamond Embossing (Standard)' : '다이아몬드 엠보싱 (표준형)';
+      $('presetType').options[1].textContent = currentLang === 'en' ? 'Concentric Circle Embossing' : '원형 동심원 엠보싱';
+      $('presetType').options[2].textContent = currentLang === 'en' ? 'Diagonal Cross (X-Reinf)' : 'X자 대각 보강형';
+      $('presetType').options[3].textContent = currentLang === 'en' ? 'Chamfer Flat' : '외곽 모따기 평판형';
+    }
+    if ($('btnApplyPreset')) $('btnApplyPreset').textContent = currentLang === 'en' ? 'Apply' : '생성 적용';
+    if ($('closePanelModal')) $('closePanelModal').textContent = currentLang === 'en' ? 'Cancel' : '취소';
+    if ($('savePanelBtn')) $('savePanelBtn').textContent = currentLang === 'en' ? '💾 Save to DB' : '💾 DB에 저장';
+
     // ODA Modal Guide
+    if ($('odaModalTitle')) $('odaModalTitle').innerHTML = currentLang === 'en' ? '<span>⚡</span> DWG Conversion & Download Guide' : '<span>⚡</span> DWG 변환 및 다운로드 안내';
+    if ($('odaModalDesc')) $('odaModalDesc').innerHTML = currentLang === 'en'
+      ? 'Due to browser security policies, local converter software cannot be executed directly.<br><b>If ODA File Converter is already installed</b>, run the local conversion service (<code>python server.py</code>) to convert to <b>.dwg</b> immediately.'
+      : '웹 브라우저는 보안 정책상 고객님 PC의 프로그램을 임의로 직접 실행할 수 없습니다.<br><b>이미 ODA 변환기를 설치하셨다면</b>, 로컬 변환 서비스(<code>python server.py</code>)가 실행 중일 때 웹과 연결되어 즉시 <b>.dwg</b>로 변환됩니다.';
+    if ($('odaModalTip')) $('odaModalTip').innerHTML = currentLang === 'en'
+      ? '<div style="font-weight:600;color:var(--fg);margin-bottom:4px">💡 Recommended Quick Option: [Download DXF]</div>Click <b>[Download DXF Directly]</b> below to download instantly without installing extra software. <b>It opens and edits identically to DWG in AutoCAD, ZWCAD, CADian, etc.!</b>'
+      : '<div style="font-weight:600;color:var(--fg);margin-bottom:4px">💡 가장 간편한 추천 방법: [DXF 다운로드]</div>아래 <b>[DXF 파일로 즉시 다운로드]</b>를 누르시면 별도 설치나 서버 실행 없이 바로 다운로드되며, <b>AutoCAD, ZWCAD, 캐디안 등에서 DWG와 100% 동일하게 즉시 열리고 편집/저장</b>됩니다!';
     if ($('modalDxfBtn')) $('modalDxfBtn').textContent = currentLang === 'en' ? '💾 Instant DXF Download (AutoCAD Compatible)' : '💾 DXF 파일로 즉시 다운로드 (AutoCAD 바로 열림)';
     if ($('btnOdaAlreadyInstalled')) $('btnOdaAlreadyInstalled').textContent = currentLang === 'en' ? '✅ Already Installed (Do not show again)' : '✅ 이미 설치되어 있음 (다음부터 이 창 보지 않기)';
     if ($('odaLink')) $('odaLink').textContent = currentLang === 'en' ? 'Download ODA File Converter if not installed' : 'ODA File Converter 미설치 시 다운로드 링크 열기';
+    if ($('closeOdaModal')) $('closeOdaModal').textContent = currentLang === 'en' ? 'Close' : '닫기';
 
     // Toolbar & Layer chips
     if ($('toggleSide')) {
       const col = $('appBody').classList.contains('collapsed');
       $('toggleSide').textContent = col ? t.toggleSideCol : t.toggleSideExp;
+      $('toggleSide').title = currentLang === 'en' ? 'Collapse / Expand Sidebar' : '사이드바 접기/펼치기';
     }
     if ($('lblLyPanel')) $('lblLyPanel').textContent = t.lyPanel;
     if ($('lblLyNozzle')) $('lblLyNozzle').textContent = t.lyNozzle;
@@ -1871,9 +1942,24 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     if ($('lblLyWall')) $('lblLyWall').textContent = t.lyWall;
     if ($('lblLySheet')) $('lblLySheet').textContent = t.lySheet;
     if ($('lblLyDim')) $('lblLyDim').textContent = t.lyDim;
-    if ($('fit')) $('fit').textContent = t.btnFit;
-    if ($('copyShareUrl')) $('copyShareUrl').textContent = t.btnShareUrl;
-    if ($('dwgBtn')) $('dwgBtn').textContent = t.btnSaveDwg;
+    if ($('fit')) {
+      $('fit').textContent = t.btnFit;
+      $('fit').title = currentLang === 'en' ? 'Fit Drawing to Screen' : '도면 화면 맞춤';
+    }
+    if ($('zoomIn')) $('zoomIn').title = currentLang === 'en' ? 'Zoom In' : '확대';
+    if ($('zoomOut')) $('zoomOut').title = currentLang === 'en' ? 'Zoom Out' : '축소';
+    if ($('copyShareUrl')) {
+      $('copyShareUrl').textContent = t.btnShareUrl;
+      $('copyShareUrl').title = currentLang === 'en' ? 'Copy shareable URL link with current drawing' : '현재 도면 및 설정이 저장된 URL 링크를 복사합니다';
+    }
+    if ($('png')) $('png').title = currentLang === 'en' ? 'Save canvas as PNG image' : '현재 화면을 PNG 이미지로 저장';
+    if ($('svg')) $('svg').title = currentLang === 'en' ? 'Download vector SVG drawing' : '벡터 SVG 도면 다운로드';
+    if ($('dxfDirect')) $('dxfDirect').title = currentLang === 'en' ? 'Download DXF file compatible with AutoCAD' : 'AutoCAD/CADian에서 바로 열리는 DXF 파일 다운로드';
+    if ($('dwgBtn')) {
+      $('dwgBtn').textContent = t.btnSaveDwg;
+      $('dwgBtn').title = currentLang === 'en' ? 'Download AutoCAD native DWG binary file' : 'AutoCAD 표준 DWG 바이너리 파일 다운로드';
+    }
+    if ($('dxf')) $('dxf').title = currentLang === 'en' ? 'Download DXF compressed as ZIP' : 'DXF 파일 압축(zip) 다운로드';
 
     // Canvas HUD & Status
     const cvGuide = document.querySelector('.cv-hud-guide');
@@ -1898,6 +1984,11 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     renderNozzleElevationGrid();
     updateMiniInspector();
     updatePreviewTbody();
+
+    renderHeightTable();
+    if (typeof dbPanelsList !== 'undefined' && dbPanelsList.length) {
+      renderPanelTable(dbPanelsList);
+    }
 
     updateBOMBadge();
     if (triggerSchedule) schedule();
@@ -1990,12 +2081,15 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   function renderHeightCards() {
     const container = $('heightCardList');
     if (!container) return;
+    const isEn = currentLang === 'en';
     const map = (activeHeightTable && activeHeightTable[currentHMode]) || {};
     const heights = Object.keys(map).map(Number).sort((a, b) => a - b);
     const defMap = (C.getDefaultHeightTable && C.getDefaultHeightTable()[currentHMode]) || {};
 
     if (heights.length === 0) {
-      container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:11px">등록된 높이 규격이 없습니다.</div>';
+      container.innerHTML = isEn
+        ? '<div style="text-align:center;padding:16px;color:var(--muted);font-size:11px">No height specifications registered.</div>'
+        : '<div style="text-align:center;padding:16px;color:var(--muted);font-size:11px">등록된 높이 규격이 없습니다.</div>';
       return;
     }
 
@@ -2007,31 +2101,31 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
       const chipsHtml = segs.map((val, idx) => `
         <div style="display:inline-flex;align-items:center;background:var(--surface-sub);border:1px solid var(--line);border-radius:4px;padding:2px 4px;gap:3px">
-          <span style="font-size:9.5px;color:var(--muted);font-weight:600">${idx + 1}단</span>
+          <span style="font-size:9.5px;color:var(--muted);font-weight:600">${isEn ? ('T' + (idx + 1)) : ((idx + 1) + '단')}</span>
           <input type="number" class="htier-card-input" data-h="${h}" data-idx="${idx}" value="${val}" step="50" min="0" max="${h}" style="width:50px;font-size:11.5px;font-weight:700;padding:2px 3px;text-align:center;border:1px solid var(--line);border-radius:3px;background:var(--surface);color:var(--fg)">
         </div>
       `).join('<span style="color:var(--muted);font-size:9.5px;font-weight:700">+</span>');
 
       const matchBadge = isMatch
-        ? `<span class="h-card-sum" style="color:#16a34a;font-weight:700">${sum}</span> <span class="h-card-badge" style="font-size:9px;font-weight:700;color:#16a34a;background:rgba(22,163,74,0.12);padding:1px 4px;border-radius:3px">일치</span>`
-        : `<span class="h-card-sum" style="color:#ef4444;font-weight:700">${sum}</span> <span class="h-card-badge" style="font-size:9px;font-weight:700;color:#ef4444;background:rgba(239,68,68,0.12);padding:1px 4px;border-radius:3px">차이(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
+        ? `<span class="h-card-sum" style="color:#16a34a;font-weight:700">${sum}</span> <span class="h-card-badge" style="font-size:9px;font-weight:700;color:#16a34a;background:rgba(22,163,74,0.12);padding:1px 4px;border-radius:3px">${isEn ? 'Match' : '일치'}</span>`
+        : `<span class="h-card-sum" style="color:#ef4444;font-weight:700">${sum}</span> <span class="h-card-badge" style="font-size:9px;font-weight:700;color:#ef4444;background:rgba(239,68,68,0.12);padding:1px 4px;border-radius:3px">${isEn ? 'Diff' : '차이'}(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
 
       return `
         <div class="h-card" data-h="${h}" style="background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 8px;box-shadow:0 1px 2px rgba(0,0,0,0.03)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <div style="display:flex;align-items:center;gap:6px">
               <span style="font-size:12.5px;font-weight:800;color:var(--accent)">${h} <span style="font-size:9.5px;font-weight:400;color:var(--muted)">mm</span></span>
-              <span class="h-tier-count" style="font-size:9.5px;font-weight:700;color:var(--muted);background:var(--surface-sub);padding:1px 5px;border-radius:4px;border:1px solid var(--line)">${count}단</span>
+              <span class="h-tier-count" style="font-size:9.5px;font-weight:700;color:var(--muted);background:var(--surface-sub);padding:1px 5px;border-radius:4px;border:1px solid var(--line)">${isEn ? (count + ' Tiers') : (count + '단')}</span>
             </div>
             <div style="display:flex;align-items:center;gap:5px">
               <span class="h-status-holder">${matchBadge}</span>
-              <button type="button" class="btn-sm btn-reset-card" data-h="${h}" style="padding:1px 5px;font-size:10px;line-height:1.2" title="이 높이 기본값 복원">↺</button>
+              <button type="button" class="btn-sm btn-reset-card" data-h="${h}" style="padding:1px 5px;font-size:10px;line-height:1.2" title="${isEn ? 'Restore default for this height' : '이 높이 기본값 복원'}">↺</button>
             </div>
           </div>
           <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
             ${chipsHtml}
-            ${segs.length < 5 ? `<button type="button" class="btn-sm btn-add-tier-card" data-h="${h}" style="font-size:9.5px;padding:2px 5px;color:var(--accent);border-style:dashed" title="단 추가">+단</button>` : ''}
-            ${segs.length > 1 ? `<button type="button" class="btn-sm btn-del-tier-card" data-h="${h}" style="font-size:9.5px;padding:2px 5px;color:#ef4444;border-style:dashed" title="마지막 단 삭제">-단</button>` : ''}
+            ${segs.length < 5 ? `<button type="button" class="btn-sm btn-add-tier-card" data-h="${h}" style="font-size:9.5px;padding:2px 5px;color:var(--accent);border-style:dashed" title="${isEn ? 'Add Tier' : '단 추가'}">${isEn ? '+Tier' : '+단'}</button>` : ''}
+            ${segs.length > 1 ? `<button type="button" class="btn-sm btn-del-tier-card" data-h="${h}" style="font-size:9.5px;padding:2px 5px;color:#ef4444;border-style:dashed" title="${isEn ? 'Delete Last Tier' : '마지막 단 삭제'}">${isEn ? '-Tier' : '-단'}</button>` : ''}
           </div>
         </div>
       `;
@@ -2053,13 +2147,13 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         const count = segs.filter(v => Number(v) > 0).length;
 
         const countBadge = card.querySelector('.h-tier-count');
-        if (countBadge) countBadge.textContent = `${count}단`;
+        if (countBadge) countBadge.textContent = isEn ? (count + ' Tiers') : `${count}단`;
 
         const statusHolder = card.querySelector('.h-status-holder');
         if (statusHolder) {
           statusHolder.innerHTML = isMatch
-            ? `<span class="h-card-sum" style="color:#16a34a;font-weight:700">${sum}</span> <span class="h-card-badge" style="font-size:9px;font-weight:700;color:#16a34a;background:rgba(22,163,74,0.12);padding:1px 4px;border-radius:3px">일치</span>`
-            : `<span class="h-card-sum" style="color:#ef4444;font-weight:700">${sum}</span> <span class="h-card-badge" style="font-size:9px;font-weight:700;color:#ef4444;background:rgba(239,68,68,0.12);padding:1px 4px;border-radius:3px">차이(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
+            ? `<span class="h-card-sum" style="color:#16a34a;font-weight:700">${sum}</span> <span class="h-card-badge" style="font-size:9px;font-weight:700;color:#16a34a;background:rgba(22,163,74,0.12);padding:1px 4px;border-radius:3px">${isEn ? 'Match' : '일치'}</span>`
+            : `<span class="h-card-sum" style="color:#ef4444;font-weight:700">${sum}</span> <span class="h-card-badge" style="font-size:9px;font-weight:700;color:#ef4444;background:rgba(239,68,68,0.12);padding:1px 4px;border-radius:3px">${isEn ? 'Diff' : '차이'}(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
         }
 
         // Also sync modal table if open
@@ -2068,12 +2162,12 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
           const mInputs = modalRow.querySelectorAll('.m-htier-input');
           if (mInputs[idx]) mInputs[idx].value = e.target.value;
           const mCount = modalRow.querySelector('.m-tier-count');
-          if (mCount) mCount.textContent = `${count}단`;
+          if (mCount) mCount.textContent = isEn ? (count + ' Tiers') : `${count}단`;
           const mStatus = modalRow.querySelector('.m-status-cell');
           if (mStatus) {
             mStatus.innerHTML = isMatch
-              ? `<span style="color:#16a34a;font-weight:700">${sum}</span> <span style="font-size:10px;color:#16a34a;background:rgba(22,163,74,0.12);padding:2px 6px;border-radius:4px;font-weight:700">일치</span>`
-              : `<span style="color:#ef4444;font-weight:700">${sum}</span> <span style="font-size:10px;color:#ef4444;background:rgba(239,68,68,0.12);padding:2px 6px;border-radius:4px;font-weight:700">차이(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
+              ? `<span style="color:#16a34a;font-weight:700">${sum}</span> <span style="font-size:10px;color:#16a34a;background:rgba(22,163,74,0.12);padding:2px 6px;border-radius:4px;font-weight:700">${isEn ? 'Match' : '일치'}</span>`
+              : `<span style="color:#ef4444;font-weight:700">${sum}</span> <span style="font-size:10px;color:#ef4444;background:rgba(239,68,68,0.12);padding:2px 6px;border-radius:4px;font-weight:700">${isEn ? 'Diff' : '차이'}(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
           }
         }
       });
@@ -2122,12 +2216,15 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   function renderModalHeightTable() {
     const tbody = $('modalHeightTableBody');
     if (!tbody) return;
+    const isEn = currentLang === 'en';
     const map = (activeHeightTable && activeHeightTable[currentHMode]) || {};
     const heights = Object.keys(map).map(Number).sort((a, b) => a - b);
     const defMap = (C.getDefaultHeightTable && C.getDefaultHeightTable()[currentHMode]) || {};
 
     if (heights.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--muted)">등록된 높이 규격이 없습니다.</td></tr>';
+      tbody.innerHTML = isEn
+        ? '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--muted)">No height specifications registered.</td></tr>'
+        : '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--muted)">등록된 높이 규격이 없습니다.</td></tr>';
       return;
     }
 
@@ -2146,17 +2243,17 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       }
 
       const matchBadge = isMatch
-        ? `<span style="color:#16a34a;font-weight:700">${sum}</span> <span style="font-size:10px;color:#16a34a;background:rgba(22,163,74,0.12);padding:2px 6px;border-radius:4px;font-weight:700">일치</span>`
-        : `<span style="color:#ef4444;font-weight:700">${sum}</span> <span style="font-size:10px;color:#ef4444;background:rgba(239,68,68,0.12);padding:2px 6px;border-radius:4px;font-weight:700">차이(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
+        ? `<span style="color:#16a34a;font-weight:700">${sum}</span> <span style="font-size:10px;color:#16a34a;background:rgba(22,163,74,0.12);padding:2px 6px;border-radius:4px;font-weight:700">${isEn ? 'Match' : '일치'}</span>`
+        : `<span style="color:#ef4444;font-weight:700">${sum}</span> <span style="font-size:10px;color:#ef4444;background:rgba(239,68,68,0.12);padding:2px 6px;border-radius:4px;font-weight:700">${isEn ? 'Diff' : '차이'}(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
 
       return `
         <tr data-h="${h}" style="border-bottom:1px solid var(--line)">
           <td style="padding:8px 6px;font-weight:800;color:var(--accent);font-size:13px">${h} mm</td>
-          <td style="padding:8px 6px"><span class="m-tier-count" style="font-size:11px;font-weight:700;color:var(--muted);background:var(--surface-sub);padding:2px 6px;border-radius:4px;border:1px solid var(--line)">${count}단</span></td>
+          <td style="padding:8px 6px"><span class="m-tier-count" style="font-size:11px;font-weight:700;color:var(--muted);background:var(--surface-sub);padding:2px 6px;border-radius:4px;border:1px solid var(--line)">${isEn ? (count + ' Tiers') : (count + '단')}</span></td>
           ${tierCells}
           <td class="m-status-cell" style="padding:8px 6px;white-space:nowrap">${matchBadge}</td>
           <td style="padding:8px 6px">
-            <button type="button" class="btn-sm btn-modal-reset-row" data-h="${h}" style="padding:2px 6px;font-size:11px" title="이 행 기본값 복원">↺</button>
+            <button type="button" class="btn-sm btn-modal-reset-row" data-h="${h}" style="padding:2px 6px;font-size:11px" title="${isEn ? 'Restore default for this row' : '이 행 기본값 복원'}">↺</button>
           </td>
         </tr>
       `;
@@ -2173,13 +2270,13 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         const isMatch = sum === h;
 
         const countBadge = row.querySelector('.m-tier-count');
-        if (countBadge) countBadge.textContent = `${newSegs.length}단`;
+        if (countBadge) countBadge.textContent = isEn ? (newSegs.length + ' Tiers') : `${newSegs.length}단`;
 
         const statusCell = row.querySelector('.m-status-cell');
         if (statusCell) {
           statusCell.innerHTML = isMatch
-            ? `<span style="color:#16a34a;font-weight:700">${sum}</span> <span style="font-size:10px;color:#16a34a;background:rgba(22,163,74,0.12);padding:2px 6px;border-radius:4px;font-weight:700">일치</span>`
-            : `<span style="color:#ef4444;font-weight:700">${sum}</span> <span style="font-size:10px;color:#ef4444;background:rgba(239,68,68,0.12);padding:2px 6px;border-radius:4px;font-weight:700">차이(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
+            ? `<span style="color:#16a34a;font-weight:700">${sum}</span> <span style="font-size:10px;color:#16a34a;background:rgba(22,163,74,0.12);padding:2px 6px;border-radius:4px;font-weight:700">${isEn ? 'Match' : '일치'}</span>`
+            : `<span style="color:#ef4444;font-weight:700">${sum}</span> <span style="font-size:10px;color:#ef4444;background:rgba(239,68,68,0.12);padding:2px 6px;border-radius:4px;font-weight:700">${isEn ? 'Diff' : '차이'}(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
         }
 
         if (!activeHeightTable[currentHMode]) activeHeightTable[currentHMode] = {};
@@ -2218,7 +2315,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
     if (btnTrigger) {
       const origText = btnTrigger.textContent;
-      btnTrigger.textContent = '✅ 저장 완료';
+      btnTrigger.textContent = currentLang === 'en' ? '✅ Saved!' : '✅ 저장 완료';
       btnTrigger.style.background = '#16a34a';
       setTimeout(() => {
         btnTrigger.textContent = origText;
@@ -2228,7 +2325,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   }
 
   function resetHeightTableData() {
-    if (confirm('높이별 단 판넬 설정을 시스템 기본값으로 복원하시겠습니까?')) {
+    const isEn = currentLang === 'en';
+    if (confirm(isEn ? 'Restore height and tier panel settings to system defaults?' : '높이별 단 판넬 설정을 시스템 기본값으로 복원하시겠습니까?')) {
       activeHeightTable = C.getDefaultHeightTable ? C.getDefaultHeightTable() : {
         std: {
           1000: [1000], 1300: [1300], 1500: [1500], 1800: [1300, 500], 2000: [2000],
@@ -2254,13 +2352,14 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   }
 
   function addHeightSpecification(val) {
+    const isEn = currentLang === 'en';
     if (!val || val < 500 || val > 15000) {
-      alert('500mm ~ 15,000mm 범위의 유효한 높이를 입력하세요.');
+      alert(isEn ? 'Please enter a valid height between 500mm and 15,000mm.' : '500mm ~ 15,000mm 범위의 유효한 높이를 입력하세요.');
       return;
     }
     if (!activeHeightTable[currentHMode]) activeHeightTable[currentHMode] = {};
     if (activeHeightTable[currentHMode][val]) {
-      alert('이미 등록된 높이입니다: ' + val + 'mm');
+      alert(isEn ? ('Height already exists: ' + val + 'mm') : ('이미 등록된 높이입니다: ' + val + 'mm'));
       return;
     }
     const rem = val % 1000;
@@ -2376,7 +2475,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   let itemList = [];
 
   function updateBOMBadge() {
-    const txt = `${(itemList || []).length}개`;
+    const isEn = currentLang === 'en';
+    const txt = isEn ? `${(itemList || []).length} items` : `${(itemList || []).length}개`;
     if ($('bomCountBadge')) $('bomCountBadge').textContent = txt;
     if ($('bomCountBadgeSpec')) $('bomCountBadgeSpec').textContent = txt;
   }
@@ -2392,8 +2492,11 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   function renderBOMTable() {
     const tbody = $('bomTableBody');
     if (!tbody) return;
+    const isEn = currentLang === 'en';
     if (!itemList || !itemList.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--muted)">등록된 부품이 없습니다. [자동 생성] 버튼을 누르세요.</td></tr>';
+      tbody.innerHTML = isEn
+        ? '<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--muted)">No items registered. Click [Auto BOM] button.</td></tr>'
+        : '<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--muted)">등록된 부품이 없습니다. [자동 생성] 버튼을 누르세요.</td></tr>';
       updateBOMBadge();
       return;
     }
@@ -2415,7 +2518,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
           <input type="text" value="${it.spec || it.specifications || ''}" style="width:100%;padding:3px 4px;font-size:11px" onchange="updateBOMField(${idx}, 'spec', this.value)">
         </td>
         <td style="padding:4px;text-align:center">
-          <button type="button" class="btn-sm" style="padding:2px 6px;color:#ef4444;background:transparent;border:none;cursor:pointer" onclick="deleteBOMRow(${idx})" title="삭제">✕</button>
+          <button type="button" class="btn-sm" style="padding:2px 6px;color:#ef4444;background:transparent;border:none;cursor:pointer" onclick="deleteBOMRow(${idx})" title="${isEn ? 'Delete' : '삭제'}">✕</button>
         </td>
       </tr>
     `).join('');
@@ -2517,12 +2620,13 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
   function getSingleCompNozzles(map, H) {
     const hVal = H || 3000;
+    const isEn = currentLang === 'en';
     return [
-      { id: 'noz_1', mark: 'N1', name: 'INLET', desc: '유입구', size: '100A', type: 'FLANGE', face: 'front', seg: 1, offset: 0, elev: Math.max(100, hVal - 300), use: true, topCell: [0, 0] },
-      { id: 'noz_2', mark: 'N2', name: 'OUTLET', desc: '유출구', size: '150A', type: 'FLANGE', face: 'front', seg: 2, offset: 0, elev: 300, use: true },
-      { id: 'noz_3', mark: 'N3', name: 'OVERFLOW', desc: '월류관', size: '100A', type: 'FLANGE', face: 'right', seg: 1, offset: 0, elev: Math.max(100, hVal - 200), use: true },
-      { id: 'noz_4', mark: 'N4', name: 'DRAIN', desc: '배수구', size: '50A', type: 'SOCKET', face: 'front', seg: 1, offset: -250, elev: 100, use: true },
-      { id: 'noz_5', mark: 'N5', name: 'FIRE', desc: '소방용수', size: '150A', type: 'FLANGE', face: 'front', seg: 3, offset: 0, elev: 200, use: true }
+      { id: 'noz_1', mark: 'N1', name: 'INLET', desc: isEn ? 'Inlet' : '유입구', size: '100A', type: 'FLANGE', face: 'front', seg: 1, offset: 0, elev: Math.max(100, hVal - 300), use: true, topCell: [0, 0] },
+      { id: 'noz_2', mark: 'N2', name: 'OUTLET', desc: isEn ? 'Outlet' : '유출구', size: '150A', type: 'FLANGE', face: 'front', seg: 2, offset: 0, elev: 300, use: true },
+      { id: 'noz_3', mark: 'N3', name: 'OVERFLOW', desc: isEn ? 'Overflow' : '월류관', size: '100A', type: 'FLANGE', face: 'right', seg: 1, offset: 0, elev: Math.max(100, hVal - 200), use: true },
+      { id: 'noz_4', mark: 'N4', name: 'DRAIN', desc: isEn ? 'Drain' : '배수구', size: '50A', type: 'SOCKET', face: 'front', seg: 1, offset: -250, elev: 100, use: true },
+      { id: 'noz_5', mark: 'N5', name: 'FIRE', desc: isEn ? 'Fire Water' : '소방용수', size: '150A', type: 'FLANGE', face: 'front', seg: 3, offset: 0, elev: 200, use: true }
     ];
   }
 
@@ -2539,21 +2643,22 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const c2_outlet = Math.min(halfCol + 2, numCols);
     const c2_drain = halfCol + 1;
     const c2_fire = Math.min(halfCol + 3, numCols);
+    const isEn = currentLang === 'en';
 
     return [
       // 1구획 노즐 세트 (5개)
-      { id: 'noz_1', mark: 'N1', name: 'INLET', desc: '1구획 유입구', size: '100A', type: 'FLANGE', face: 'front', seg: c1_inlet, offset: 0, elev: Math.max(100, hVal - 300), use: true, topCell: [0, 0] },
-      { id: 'noz_2', mark: 'N2', name: 'OUTLET', desc: '1구획 유출구', size: '150A', type: 'FLANGE', face: 'front', seg: c1_outlet, offset: 0, elev: 300, use: true },
-      { id: 'noz_3', mark: 'N3', name: 'OVERFLOW', desc: '1구획 월류관', size: '100A', type: 'FLANGE', face: 'left', seg: 1, offset: 0, elev: Math.max(100, hVal - 200), use: true },
-      { id: 'noz_4', mark: 'N4', name: 'DRAIN', desc: '1구획 배수구', size: '50A', type: 'SOCKET', face: 'front', seg: c1_drain, offset: -250, elev: 100, use: true },
-      { id: 'noz_5', mark: 'N5', name: 'FIRE', desc: '1구획 소방용수', size: '150A', type: 'FLANGE', face: 'front', seg: c1_fire, offset: 0, elev: 200, use: true },
+      { id: 'noz_1', mark: 'N1', name: 'INLET', desc: isEn ? 'Comp.1 Inlet' : '1구획 유입구', size: '100A', type: 'FLANGE', face: 'front', seg: c1_inlet, offset: 0, elev: Math.max(100, hVal - 300), use: true, topCell: [0, 0] },
+      { id: 'noz_2', mark: 'N2', name: 'OUTLET', desc: isEn ? 'Comp.1 Outlet' : '1구획 유출구', size: '150A', type: 'FLANGE', face: 'front', seg: c1_outlet, offset: 0, elev: 300, use: true },
+      { id: 'noz_3', mark: 'N3', name: 'OVERFLOW', desc: isEn ? 'Comp.1 Overflow' : '1구획 월류관', size: '100A', type: 'FLANGE', face: 'left', seg: 1, offset: 0, elev: Math.max(100, hVal - 200), use: true },
+      { id: 'noz_4', mark: 'N4', name: 'DRAIN', desc: isEn ? 'Comp.1 Drain' : '1구획 배수구', size: '50A', type: 'SOCKET', face: 'front', seg: c1_drain, offset: -250, elev: 100, use: true },
+      { id: 'noz_5', mark: 'N5', name: 'FIRE', desc: isEn ? 'Comp.1 Fire Water' : '1구획 소방용수', size: '150A', type: 'FLANGE', face: 'front', seg: c1_fire, offset: 0, elev: 200, use: true },
 
       // 2구획 노즐 세트 (5개)
-      { id: 'noz_6', mark: 'N6', name: 'INLET', desc: '2구획 유입구', size: '100A', type: 'FLANGE', face: 'front', seg: c2_inlet, offset: 0, elev: Math.max(100, hVal - 300), use: true, topCell: [0, Math.min(c2_inlet - 1, (map ? map.cols.length - 1 : 5))] },
-      { id: 'noz_7', mark: 'N7', name: 'OUTLET', desc: '2구획 유출구', size: '150A', type: 'FLANGE', face: 'front', seg: c2_outlet, offset: 0, elev: 300, use: true },
-      { id: 'noz_8', mark: 'N8', name: 'OVERFLOW', desc: '2구획 월류관', size: '100A', type: 'FLANGE', face: 'right', seg: 1, offset: 0, elev: Math.max(100, hVal - 200), use: true },
-      { id: 'noz_9', mark: 'N9', name: 'DRAIN', desc: '2구획 배수구', size: '50A', type: 'SOCKET', face: 'front', seg: c2_drain, offset: -250, elev: 100, use: true },
-      { id: 'noz_10', mark: 'N10', name: 'FIRE', desc: '2구획 소방용수', size: '150A', type: 'FLANGE', face: 'front', seg: c2_fire, offset: 0, elev: 200, use: true }
+      { id: 'noz_6', mark: 'N6', name: 'INLET', desc: isEn ? 'Comp.2 Inlet' : '2구획 유입구', size: '100A', type: 'FLANGE', face: 'front', seg: c2_inlet, offset: 0, elev: Math.max(100, hVal - 300), use: true, topCell: [0, Math.min(c2_inlet - 1, (map ? map.cols.length - 1 : 5))] },
+      { id: 'noz_7', mark: 'N7', name: 'OUTLET', desc: isEn ? 'Comp.2 Outlet' : '2구획 유출구', size: '150A', type: 'FLANGE', face: 'front', seg: c2_outlet, offset: 0, elev: 300, use: true },
+      { id: 'noz_8', mark: 'N8', name: 'OVERFLOW', desc: isEn ? 'Comp.2 Overflow' : '2구획 월류관', size: '100A', type: 'FLANGE', face: 'right', seg: 1, offset: 0, elev: Math.max(100, hVal - 200), use: true },
+      { id: 'noz_9', mark: 'N9', name: 'DRAIN', desc: isEn ? 'Comp.2 Drain' : '2구획 배수구', size: '50A', type: 'SOCKET', face: 'front', seg: c2_drain, offset: -250, elev: 100, use: true },
+      { id: 'noz_10', mark: 'N10', name: 'FIRE', desc: isEn ? 'Comp.2 Fire Water' : '2구획 소방용수', size: '150A', type: 'FLANGE', face: 'front', seg: c2_fire, offset: 0, elev: 200, use: true }
     ];
   }
 
@@ -2564,21 +2669,23 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const xs = isCols ? map.xs : map.ys;
     const secs = isCols ? (L || []).filter(Boolean) : (vals('W') || []).filter(Boolean);
 
+    const isEn = currentLang === 'en';
     const getCompLabel = (pos) => {
       if (secs.length <= 1) return '';
       let cum = 0;
       for (let c = 0; c < secs.length; c++) {
         cum += secs[c];
-        if (pos < cum) return `[${c + 1}구획] `;
+        if (pos < cum) return isEn ? `[Comp.${c + 1}] ` : `[${c + 1}구획] `;
       }
-      return `[${secs.length}구획] `;
+      return isEn ? `[Comp.${secs.length}] ` : `[${secs.length}구획] `;
     };
 
     return arr.map((len, idx) => {
       const p1 = xs[idx], p2 = xs[idx + 1];
       const comp = getCompLabel(p1);
       const sel = (idx + 1 === Number(curSeg)) ? 'selected' : '';
-      return `<option value="${idx + 1}" ${sel}>${comp}${idx + 1}번 (${p1.toLocaleString()}~${p2.toLocaleString()}mm)</option>`;
+      const colStr = isEn ? `Col ${idx + 1}` : `${idx + 1}번`;
+      return `<option value="${idx + 1}" ${sel}>${comp}${colStr} (${p1.toLocaleString()}~${p2.toLocaleString()}mm)</option>`;
     }).join('');
   }
 
@@ -2590,12 +2697,13 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     try { map = C.createMap({ length: vals('L'), width: vals('W') }); } catch (e) {}
     if (!map) return '';
     const pos = map.xs[colIdx] || 0;
+    const isEn = currentLang === 'en';
     let cum = 0;
     for (let c = 0; c < L_secs.length; c++) {
       cum += L_secs[c];
-      if (pos < cum) return `[${c + 1}구획]`;
+      if (pos < cum) return isEn ? `[Comp.${c + 1}]` : `[${c + 1}구획]`;
     }
-    return `[${L_secs.length}구획]`;
+    return isEn ? `[Comp.${L_secs.length}]` : `[${L_secs.length}구획]`;
   }
 
   function renderNozzleElevationGrid(map) {
@@ -2614,14 +2722,21 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const baseFrame = $('nozBaseFrame');
     if (!grid) return;
 
-    const titles = {
-      front: '정면 뷰 (Front)',
-      right: '우측면 뷰 (Right)',
-      rear: '배면 뷰 (Rear)',
-      left: '좌측면 뷰 (Left)',
-      top: '상부 평면 뷰 (Top Roof)'
+    const isEn = currentLang === 'en';
+    const titles = isEn ? {
+      front: '🏢 Front View (Front)',
+      right: '🏢 Right Side View (Right)',
+      rear: '🏢 Rear View (Rear)',
+      left: '🏢 Left Side View (Left)',
+      top: '🏢 Top Roof Plan (Top Roof)'
+    } : {
+      front: '🏢 정면 뷰 (Front)',
+      right: '🏢 우측면 뷰 (Right)',
+      rear: '🏢 배면 뷰 (Rear)',
+      left: '🏢 좌측면 뷰 (Left)',
+      top: '🏢 상부 평면 뷰 (Top Roof)'
     };
-    if (title) title.textContent = titles[currentNozFace] || '측면 뷰';
+    if (title) title.textContent = titles[currentNozFace] || (isEn ? 'Side View' : '측면 뷰');
 
     const isTop = (currentNozFace === 'top');
     if (baseFrame) baseFrame.style.display = isTop ? 'none' : 'flex';
@@ -2669,14 +2784,14 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       if (isTop) {
         rowLabels.innerHTML = rows.map((r, ri) => {
           const actualRowIdx = map.rows.length - 1 - ri;
-          return `<div style="height:${Math.max(14, Math.round(r * sc))}px;line-height:${Math.max(14, Math.round(r * sc))}px">${actualRowIdx + 1}행</div>`;
+          return `<div style="height:${Math.max(14, Math.round(r * sc))}px;line-height:${Math.max(14, Math.round(r * sc))}px">${isEn ? ('Row ' + (actualRowIdx + 1)) : ((actualRowIdx + 1) + '행')}</div>`;
         }).join('');
       } else {
         rowLabels.innerHTML = rows.map((r, ri) => {
           const tierIdx = hs.length - 1 - ri;
           const tint = tierIntervals[tierIdx];
           return `<div style="height:${Math.max(14, Math.round(r * sc))}px;display:flex;flex-direction:column;justify-content:center">
-            <b>${tierIdx + 1}단</b>
+            <b>${isEn ? ('Tier ' + (tierIdx + 1)) : ((tierIdx + 1) + '단')}</b>
             <span style="font-size:8px;color:var(--muted)">EL+${tint.y0}</span>
           </div>`;
         }).join('');
@@ -2690,9 +2805,9 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         let cum = 0;
         for (let c = 0; c < secs.length; c++) {
           cum += secs[c];
-          if (pos < cum) return `${c + 1}구획 `;
+          if (pos < cum) return isEn ? `Comp.${c + 1} ` : `${c + 1}구획 `;
         }
-        return `${secs.length}구획 `;
+        return isEn ? `Comp.${secs.length} ` : `${secs.length}구획 `;
       };
 
       colHeader.style.display = 'grid';
@@ -2702,7 +2817,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       colHeader.innerHTML = cols.map((c, ci) => {
         const p1 = colXs[ci];
         const tag = getCompTag(p1);
-        return `<div style="font-size:8px;color:var(--muted);text-align:center;overflow:hidden;white-space:nowrap" title="${tag}${ci + 1}번 (${c}mm)">${tag}${ci + 1}</div>`;
+        const colTitle = isEn ? `Col ${ci + 1}` : `${ci + 1}번`;
+        return `<div style="font-size:8px;color:var(--muted);text-align:center;overflow:hidden;white-space:nowrap" title="${tag}${colTitle} (${c}mm)">${tag}${ci + 1}</div>`;
       }).join('');
     }
 
@@ -2741,11 +2857,11 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         b.innerHTML = panelIcon(colWidthMm, rowHeightMm, 0, pType);
 
         if (pType === 'flat' || pType === 'flat-1x1') {
-          b.insertAdjacentHTML('beforeend', '<span class="panel-badge-flat">1×1평판</span>');
+          b.insertAdjacentHTML('beforeend', `<span class="panel-badge-flat">${isEn ? '1×1 Flat' : '1×1평판'}</span>`);
         } else if (pType === 'flat-half2' || pType === 'flat-0.5x2') {
-          b.insertAdjacentHTML('beforeend', '<span class="panel-badge-half2">0.5×1m 2장</span>');
+          b.insertAdjacentHTML('beforeend', `<span class="panel-badge-half2">${isEn ? '0.5×1 (x2)' : '0.5×1m 2장'}</span>`);
         } else if (pType === 'fitting' || pType === 'large') {
-          b.insertAdjacentHTML('beforeend', '<span class="panel-badge-fitting">피팅</span>');
+          b.insertAdjacentHTML('beforeend', `<span class="panel-badge-fitting">${isEn ? 'Fitting' : '피팅'}</span>`);
         }
 
         let cellNozzles = [];
@@ -3010,32 +3126,40 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   function updatePreviewTbody() {
     const tbody = $('nozPreviewTbody');
     if (!tbody) return;
+    const isEn = currentLang === 'en';
     const sumTitle = $('nozSchedSummaryTitle');
     if (sumTitle) {
       const activeCnt = nozzleData.filter(n => n.use !== false).length;
-      sumTitle.textContent = `📋 배관 노즐 일람표 (NOZZLE SCHEDULE - 총 ${activeCnt}개)`;
+      sumTitle.textContent = isEn
+        ? `📋 Nozzle Schedule (NOZZLE SCHEDULE - Total ${activeCnt})`
+        : `📋 배관 노즐 일람표 (NOZZLE SCHEDULE - 총 ${activeCnt}개)`;
     }
     if (nozzleData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:14px">정의된 배관 노즐이 없습니다. (위 프리셋 버튼을 누르거나 셀을 클릭하여 추가)</td></tr>';
+      tbody.innerHTML = isEn
+        ? '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:14px">No nozzles defined. (Click presets or grid cells to add)</td></tr>'
+        : '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:14px">정의된 배관 노즐이 없습니다. (위 프리셋 버튼을 누르거나 셀을 클릭하여 추가)</td></tr>';
       return;
     }
-    const faceTextMap = { front: 'FRONT (정면)', rear: 'REAR (배면)', left: 'LEFT (좌측)', right: 'RIGHT (우측)' };
+    const faceTextMap = isEn
+      ? { front: 'FRONT', rear: 'REAR', left: 'LEFT', right: 'RIGHT', top: 'TOP' }
+      : { front: 'FRONT (정면)', rear: 'REAR (배면)', left: 'LEFT (좌측)', right: 'RIGHT (우측)', top: 'TOP (상부)' };
     tbody.innerHTML = nozzleData.map(n => {
-      if (!n.use) return `<tr style="opacity:0.4"><td>${n.mark}</td><td>${n.name}${n.desc ? ' (' + n.desc + ')' : ''}</td><td colspan="5" style="text-align:center">미사용</td></tr>`;
-      const elev = `EL.+${Number(n.elev || 0).toLocaleString()}mm`;
+      if (!n.use) return `<tr style="opacity:0.4"><td>${n.mark}</td><td>${n.name}${n.desc ? ' (' + n.desc + ')' : ''}</td><td colspan="5" style="text-align:center">${isEn ? 'Unused' : '미사용'}</td></tr>`;
+      const elev = (n.face === 'top' || n.elev === 'TOP') ? 'TOP' : `EL.+${Number(n.elev || 0).toLocaleString()}mm`;
       const loc = faceTextMap[n.face] || n.face;
       const typeStr = n.type === 'FLANGE' ? 'FLG 10K' : 'SOCKET';
       const isSel = (n.id === selectedNozzleId);
+      const segStr = n.seg ? (isEn ? `Col ${n.seg}` : `${n.seg}번`) : '';
       return `<tr style="cursor:pointer;background:${isSel ? 'rgba(2,132,199,0.18)' : 'transparent'}" onclick="selectNozzle('${n.id}')">
         <td style="font-weight:700;color:${isSel ? 'var(--accent)' : 'inherit'}">${n.mark}</td>
         <td><b>${n.name}</b> ${n.desc ? '<span style="font-size:10px;color:var(--muted)">(' + n.desc + ')</span>' : ''}</td>
         <td><span class="badge-tag" style="position:static;background:#0284c7;color:#fff">${n.size}</span></td>
         <td>${typeStr}</td>
         <td>${elev}</td>
-        <td>${loc} ${n.seg ? (n.seg + '번') : ''}</td>
+        <td>${loc} ${segStr}</td>
         <td style="text-align:center">
-          <button type="button" class="btn-sm btn-select-noz" data-id="${n.id}" style="padding:1px 5px;font-size:10px">✏️</button>
-          <button type="button" class="btn-sm btn-del-noz" data-id="${n.id}" style="color:#ef4444;padding:1px 4px;font-size:10px">🗑️</button>
+          <button type="button" class="btn-sm btn-select-noz" data-id="${n.id}" style="padding:1px 5px;font-size:10px" title="${isEn ? 'Edit' : '수정'}">✏️</button>
+          <button type="button" class="btn-sm btn-del-noz" data-id="${n.id}" style="color:#ef4444;padding:1px 4px;font-size:10px" title="${isEn ? 'Delete' : '삭제'}">🗑️</button>
         </td>
       </tr>`;
     }).join('');
@@ -3131,24 +3255,30 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
     const L_secs = (vals('L') || []).filter(Boolean);
     const W_secs = (vals('W') || []).filter(Boolean);
+    const isEn = currentLang === 'en';
 
     // 구획 헤더 바 (칸막이 구획 표시)
     const compHeader = $('planCompHeader');
     if (compHeader) {
+      const baffleTag = isEn
+        ? '<div style="display:flex;align-items:center;color:#ea580c;font-size:9px;font-weight:800;padding:0 3px">⚡Baffle</div>'
+        : '<div style="display:flex;align-items:center;color:#ea580c;font-size:9px;font-weight:800;padding:0 3px">⚡칸막이</div>';
       if (L_secs.length > 1) {
         compHeader.style.display = 'flex';
         compHeader.innerHTML = L_secs.map((len, idx) => {
+          const compTitle = isEn ? `📦 Comp.${idx + 1} (${len.toLocaleString()}mm)` : `📦 ${idx + 1}구획 (${len.toLocaleString()}mm)`;
           return `<div style="flex:${len};text-align:center;background:rgba(2,132,199,0.08);color:var(--fg);border:1px solid rgba(2,132,199,0.3);border-radius:6px;padding:4px 6px;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-            📦 ${idx + 1}구획 (${len.toLocaleString()}mm)
+            ${compTitle}
           </div>`;
-        }).join('<div style="display:flex;align-items:center;color:#ea580c;font-size:9px;font-weight:800;padding:0 3px">⚡칸막이</div>');
+        }).join(baffleTag);
       } else if (W_secs.length > 1) {
         compHeader.style.display = 'flex';
         compHeader.innerHTML = W_secs.map((wid, idx) => {
+          const compTitle = isEn ? `📦 Comp.${idx + 1} (${wid.toLocaleString()}mm)` : `📦 ${idx + 1}구획 (${wid.toLocaleString()}mm)`;
           return `<div style="flex:${wid};text-align:center;background:rgba(2,132,199,0.08);color:var(--fg);border:1px solid rgba(2,132,199,0.3);border-radius:6px;padding:4px 6px;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-            📦 ${idx + 1}구획 (${wid.toLocaleString()}mm)
+            ${compTitle}
           </div>`;
-        }).join('<div style="display:flex;align-items:center;color:#ea580c;font-size:9px;font-weight:800;padding:0 3px">⚡칸막이</div>');
+        }).join(baffleTag);
       } else {
         compHeader.style.display = 'none';
       }
@@ -3181,17 +3311,18 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       const isPartBottom = isPartitionRow(i);
 
       const b = document.createElement('button'); b.type = 'button';
-      b.title = map.cols[j] + ' × ' + map.rows[i] + (off ? ' (삭제됨)' : (mk ? ' (부속품 설치됨)' : ''));
+      b.title = map.cols[j] + ' × ' + map.rows[i] + (off ? (isEn ? ' (Deleted)' : ' (삭제됨)') : (mk ? (isEn ? ' (Accessory installed)' : ' (부속품 설치됨)') : ''));
       let btnCls = off ? (pil ? 'off pil' : 'off') : '';
       if (isPartRight) btnCls += ' cell-part-right';
       if (isPartBottom) btnCls += ' cell-part-bottom';
       b.className = btnCls.trim();
-      b.innerHTML = off ? (pil ? '<svg viewBox="0 0 10 10" preserveAspectRatio="none" style="width:100%;height:100%" stroke="currentColor" fill="none" stroke-width="1" vector-effect="non-scaling-stroke"><rect x="2" y="2" width="6" height="6"/><path d="M2 2L8 8M2 8L8 2"/></svg><span class="badge-pillar">기둥</span>' : '') : panelIcon(map.cols[j], map.rows[i], mk);
+      const pilText = isEn ? 'Pillar' : '기둥';
+      b.innerHTML = off ? (pil ? `<svg viewBox="0 0 10 10" preserveAspectRatio="none" style="width:100%;height:100%" stroke="currentColor" fill="none" stroke-width="1" vector-effect="non-scaling-stroke"><rect x="2" y="2" width="6" height="6"/><path d="M2 2L8 8M2 8L8 2"/></svg><span class="badge-pillar">${pilText}</span>` : '') : panelIcon(map.cols[j], map.rows[i], mk);
 
       if (isPartRight && i === map.rows.length - 1) {
         const pBadge = document.createElement('span');
         pBadge.className = 'badge-partition';
-        pBadge.textContent = '⚡칸막이';
+        pBadge.textContent = isEn ? '⚡Baffle' : '⚡칸막이';
         b.appendChild(pBadge);
       }
 
@@ -3537,8 +3668,9 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   const setPipeFeature = (enabled) => {
     if ($('pipeFeatureToggle')) $('pipeFeatureToggle').checked = enabled;
     if ($('lyNozzle')) $('lyNozzle').checked = enabled;
+    const isEn = currentLang === 'en';
     const txt = $('pipeToggleText');
-    if (txt) txt.textContent = enabled ? '💧 배관 ON' : '💧 배관 OFF';
+    if (txt) txt.textContent = enabled ? (isEn ? '💧 Nozzles ON' : '💧 배관 ON') : (isEn ? '💧 Nozzles OFF' : '💧 배관 OFF');
     schedule();
   };
   if ($('pipeFeatureToggle')) {
@@ -3839,8 +3971,9 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       if (typeof st.useNozzles === 'boolean') {
         if ($('pipeFeatureToggle')) $('pipeFeatureToggle').checked = st.useNozzles;
         if ($('lyNozzle')) $('lyNozzle').checked = st.useNozzles;
+        const isEn = currentLang === 'en';
         const txt = $('pipeToggleText');
-        if (txt) txt.textContent = st.useNozzles ? '💧 배관 ON' : '💧 배관 OFF';
+        if (txt) txt.textContent = st.useNozzles ? (isEn ? '💧 Nozzles ON' : '💧 배관 ON') : (isEn ? '💧 Nozzles OFF' : '💧 배관 OFF');
       }
 
       if (Array.isArray(st.removed)) removed = new Set(st.removed);
@@ -4144,7 +4277,12 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         });
       });
     }
-    $('status').textContent = '배율 ' + (view.s * 1000).toFixed(0) + '%  ·  판넬 블럭 ' + plan.ents.filter(e => e.t === 'insert').length + '개 / 선 ' + plan.ents.filter(e => e.t === 'line').length.toLocaleString('ko-KR') + '개';
+    const isEn = currentLang === 'en';
+    const insCnt = plan.ents.filter(e => e.t === 'insert').length;
+    const lineCnt = plan.ents.filter(e => e.t === 'line').length;
+    $('status').textContent = isEn
+      ? `Zoom ${(view.s * 1000).toFixed(0)}%  ·  Panel blocks ${insCnt} / Lines ${lineCnt.toLocaleString('en-US')}`
+      : `배율 ${(view.s * 1000).toFixed(0)}%  ·  판넬 블럭 ${insCnt}개 / 선 ${lineCnt.toLocaleString('ko-KR')}개`;
   }
 
   /* Zoom & Pan Controls */
@@ -4551,21 +4689,26 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
   function renderPanelTable(panels) {
     const tbody = $('panelTableBody');
+    const isEn = currentLang === 'en';
     if (!panels.length) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:12px;color:var(--muted)">등록된 판넬이 없습니다.</td></tr>';
+      tbody.innerHTML = isEn
+        ? '<tr><td colspan="4" style="text-align:center;padding:12px;color:var(--muted)">No panels registered.</td></tr>'
+        : '<tr><td colspan="4" style="text-align:center;padding:12px;color:var(--muted)">등록된 판넬이 없습니다.</td></tr>';
       return;
     }
     tbody.innerHTML = panels.map(p => {
-      const catText = (p.category === 'top_bottom') ? '평면' : ((p.category === 'side') ? '입면' : '전체');
+      const catText = isEn
+        ? (p.category === 'top_bottom' ? 'Plan' : (p.category === 'side' ? 'Elev' : 'All'))
+        : (p.category === 'top_bottom' ? '평면' : (p.category === 'side' ? '입면' : '전체'));
       return `
       <tr data-id="${p.id}" style="cursor:pointer;border-bottom:1px solid var(--line-sub)">
         <td style="padding:5px 3px"><b>${p.material}</b> <span style="font-size:10px;color:var(--muted)">(${catText})</span></td>
         <td style="padding:5px 3px;font-family:var(--font-num)">${p.size_key}</td>
         <td style="padding:5px 3px;max-width:85px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.name}">${p.name}</td>
         <td style="padding:5px 3px;text-align:center;white-space:nowrap">
-          <button type="button" class="btn-sm btn-panel-apply" data-id="${p.id}" style="padding:2px 4px;font-size:10px;background:var(--accent);color:#fff;border-color:var(--accent)" title="이 판넬을 현재 탱크 도면에 즉시 반영">⚡적용</button>
-          <button type="button" class="btn-sm btn-panel-edit" data-id="${p.id}" style="padding:2px 4px;font-size:10px">수정</button>
-          ${!p.is_default ? `<button type="button" class="btn-sm btn-panel-del" data-id="${p.id}" style="padding:2px 4px;font-size:10px;color:#ef4444">삭제</button>` : ''}
+          <button type="button" class="btn-sm btn-panel-apply" data-id="${p.id}" style="padding:2px 4px;font-size:10px;background:var(--accent);color:#fff;border-color:var(--accent)" title="${isEn ? 'Apply this panel to current drawing' : '이 판넬을 현재 탱크 도면에 즉시 반영'}">${isEn ? '⚡Apply' : '⚡적용'}</button>
+          <button type="button" class="btn-sm btn-panel-edit" data-id="${p.id}" style="padding:2px 4px;font-size:10px">${isEn ? 'Edit' : '수정'}</button>
+          ${!p.is_default ? `<button type="button" class="btn-sm btn-panel-del" data-id="${p.id}" style="padding:2px 4px;font-size:10px;color:#ef4444">${isEn ? 'Del' : '삭제'}</button>` : ''}
         </td>
       </tr>
       `;
