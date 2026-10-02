@@ -2591,10 +2591,15 @@
     });
 
     // 6. 외부 사다리 (정면도 ladderShapes idx=5 및 측면도 idx=7 규격 완전 일치 3D 모델)
+    const ladderEnts = [];
     const lads = ladderList(opt, map) || [];
     lads.forEach(l => {
       const T = 40, FW = 270, FT = 20, TI = 270, FO = 200, BO = -500, TOP = 700, TTOP = 500, CX = 75, SI = 400;
       const mx = FW >> 1; // 135
+
+      const drawSeg = (p1, p2, layer = 'FRAME') => {
+        ladderEnts.push({ t: 'line', a: toIso(p1[0], p1[1], p1[2]), b: toIso(p2[0], p2[1], p2[2]), layer: layer || 'FRAME' });
+      };
 
       if (l.sd === 'D') {
         const lx = l.x;
@@ -2606,12 +2611,6 @@
             }
           }
         }
-
-        const drawSeg = (p1, p2, layer = 'FRAME') => {
-          const cz = (p1[2] + p2[2]) / 2;
-          const d = getDepth(lx, yWall - 500, cz);
-          ln(toIso(p1[0], p1[1], p1[2]), toIso(p2[0], p2[1], p2[2]), layer, d);
-        };
 
         const outP = [
           [yWall - CX, BO],
@@ -2693,12 +2692,6 @@
           }
         }
 
-        const drawSeg = (p1, p2, layer = 'FRAME') => {
-          const cz = (p1[2] + p2[2]) / 2;
-          const d = getDepth(xWall + 500, ly, cz);
-          ln(toIso(p1[0], p1[1], p1[2]), toIso(p2[0], p2[1], p2[2]), layer, d);
-        };
-
         const outP = [
           [xWall + CX, BO],
           [xWall + TI, BO + FO],
@@ -2772,12 +2765,6 @@
             }
           }
         }
-
-        const drawSeg = (p1, p2, layer = 'FRAME') => {
-          const cz = (p1[2] + p2[2]) / 2;
-          const d = getDepth(lx, yWall, cz);
-          ln(toIso(p1[0], p1[1], p1[2]), toIso(p2[0], p2[1], p2[2]), layer, d);
-        };
 
         const outP = [
           [yWall + CX, BO],
@@ -2853,12 +2840,6 @@
             break;
           }
         }
-
-        const drawSeg = (p1, p2, layer = 'FRAME') => {
-          const cz = (p1[2] + p2[2]) / 2;
-          const d = getDepth(xWall, ly, cz);
-          ln(toIso(p1[0], p1[1], p1[2]), toIso(p2[0], p2[1], p2[2]), layer, d);
-        };
 
         const outP = [
           [xWall - CX, BO],
@@ -3010,6 +2991,9 @@
       return a._idx - b._idx;
     });
     ents.forEach(e => { delete e._idx; delete e.depth; });
+
+    // 11. 외부 사다리(Ladder)는 판넬/틀에 덮여 가려지지 않도록 맨 마지막에 최상단으로 렌더링
+    ents.push(...ladderEnts);
 
     return { ents, textH, totalL, totalW, H };
   }
