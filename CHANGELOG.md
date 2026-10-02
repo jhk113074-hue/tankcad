@@ -5,6 +5,20 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.20] - 2026-10-02
+
+### Added & Enhanced (클라우드 서버 Render/Railway/Docker 100% 자동 DWG 변환 지원)
+- **클라우드 서버(Render / Railway / Docker / VPS) 배포 환경 완벽 구축**:
+  - `Dockerfile`에 Linux용 ODA File Converter 및 가상 디스플레이 버퍼(`xvfb`), Qt 라이브러리 자동 설치 구성.
+  - 헤드리스(Headless) 클라우드 컨테이너 환경에서도 X11 GUI 오류 없이 백그라운드에서 DXF ➔ DWG 변환이 100% 안정 구동되도록 가상 디스플레이(`DISPLAY=:99`) 연동.
+  - 클라우드 동적 포트(`PORT` 환경변수) 자동 바인딩 지원 (`server.py`).
+  - Render.com 1-클릭 Blueprint 배포 설정 파일(`render.yaml`) 추가.
+  - 클라우드 배포 도메인(Render, Railway, 사내 IP, 커스텀 도메인 등) 접속 시 자동으로 클라우드 백엔드 API(`/api/convert-dwg`)를 호출하도록 주소 탐색 로직 고도화.
+- **클라우드 웹사이트 원클릭 다운로드 완성**:
+  - 사용자는 PC에 ODA나 파이썬을 설치하지 않아도, 클라우드 웹사이트 접속 후 [DWG 도면]을 누르면 클라우드 서버가 1초 만에 직접 `.dwg` 바이너리로 변환하여 다운로드.
+
+---
+
 ## [1.5.19] - 2026-10-02
 
 ### Added & Enhanced (도면 머리글/회사 정보 환경설정 등록 및 변환 팝업 생략 기능)

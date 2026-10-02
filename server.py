@@ -10,30 +10,39 @@ import ezdxf
 from ezdxf.addons import odafc
 import db
 
-PORT = 8000
+PORT = int(os.environ.get("PORT", 8000))
 
 def setup_oda():
     """시스템에 설치된 ODA File Converter 실행 파일 경로를 찾아 ezdxf에 등록합니다."""
+    is_win = sys.platform.startswith("win")
+    addon_key = "win_exec_path" if is_win else "unix_exec_path"
+
     # 1. PATH 환경변수
     p = shutil.which("ODAFileConverter.exe") or shutil.which("ODAFileConverter")
     if p:
-        ezdxf.options.set("odafc-addon", "win_exec_path", f'"{p}"')
+        ezdxf.options.set("odafc-addon", addon_key, f'"{p}"')
         return p
-    # 2. 일반적인 Windows 설치 경로
+    # 2. 일반적인 Windows / Linux 설치 경로
     patterns = [
+        # Windows
         r"C:\Program Files\ODA\*\ODAFileConverter.exe",
         r"C:\Program Files (x86)\ODA\*\ODAFileConverter.exe",
         r"C:\Program Files\ODA\ODAFileConverter.exe",
         r"C:\Program Files (x86)\ODA\ODAFileConverter.exe",
         r"C:\ODA\*\ODAFileConverter.exe",
         r"C:\ODA\ODAFileConverter.exe",
-        os.path.expanduser(r"~\AppData\Local\Programs\ODA\*\ODAFileConverter.exe")
+        os.path.expanduser(r"~\AppData\Local\Programs\ODA\*\ODAFileConverter.exe"),
+        # Linux
+        "/usr/bin/ODAFileConverter",
+        "/usr/local/bin/ODAFileConverter",
+        "/opt/ODA/*/ODAFileConverter",
+        "/usr/lib/ODAFileConverter/*/ODAFileConverter"
     ]
     for pat in patterns:
         matches = glob.glob(pat)
         if matches:
             oda_exec = matches[0]
-            ezdxf.options.set("odafc-addon", "win_exec_path", f'"{oda_exec}"')
+            ezdxf.options.set("odafc-addon", addon_key, f'"{oda_exec}"')
             return oda_exec
     return None
 

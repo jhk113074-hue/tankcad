@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: ysacc-tankcad
+    env: docker
+    plan: free
+    region: singapore
+    branch: main
+    healthCheckPath: /api/panels
+    autoDeploy: true

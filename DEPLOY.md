@@ -1,66 +1,61 @@
 # YSACC TANK CAD 배포 가이드 (Deployment Guide)
 
-이 프로젝트는 브라우저 단독으로 실행 가능한 **정적 웹 모드**와, 판넬 DB 및 ODA 기반 DWG 변환을 지원하는 **풀스택 모드(Python 서버 포함)** 두 가지 방식으로 배포할 수 있습니다.
+이 프로젝트는 브라우저 단독으로 실행 가능한 **정적 웹 모드(GitHub Pages)**와, 클라우드 서버에서 도면 변환(ODA) 및 판넬 DB를 100% 자동 지원하는 **풀스택 클라우드 모드(Render / Railway / Docker / Cafe24 / AWS)**를 모두 지원합니다.
 
 ---
 
-## 1. GitHub 저장소 연동 및 푸시
+## 🌟 추천: Render.com 클라우드 서버 배포 (무료, 3분 완성, 전 세계 100% DWG 변환 지원)
 
-1. **GitHub에서 새 저장소 생성**:
-   - [GitHub New Repository](https://github.com/new)에 접속하여 저장소를 생성합니다. (예: `ysacc-tankcad`)
+> **장점**: 사용자가 컴퓨터에 ODA 변환기를 설치하지 않아도, 모바일이나 모든 PC에서 웹 접속 후 **[💾 DWG 도면 (.dwg)]** 버튼을 누르면 클라우드 서버가 즉시 `.dwg` 파일로 변환하여 다운로드해 줍니다. (신용카드 등록 없이 무료 플랜 이용 가능)
 
-2. **로컬 저장소와 원격 저장소 연결 후 푸시**:
-   ```bash
-   git remote add origin https://github.com/<사용자명>/<저장소명>.git
-   git branch -M main
-   git push -u origin main
-   ```
+### 배포 순서 (초간단 4단계):
 
----
+1. **[Render.com](https://render.com/) 접속 및 로그인**
+   - 상단 `Sign Up` 또는 `Sign In`을 누르고 **GitHub 계정으로 로그인**합니다.
 
-## 2. 배포 옵션 1: GitHub Pages (무료, 완전 자동)
+2. **새 Blueprints 또는 Web Service 생성**
+   - 대시보드 우측 상단의 **[New +]** 버튼을 누릅니다.
+   - **[Blueprint]**를 선택합니다.
 
-> **특징**: 서버 없이 GitHub에 커밋/푸시만 하면 자동으로 전 세계 어디서나 접속 가능한 정적 웹사이트로 배포됩니다.
-> (도면 편집, DXF 다운로드, SVG/PNG 내보내기 등 100% 브라우저 클라이언트 처리 지원)
+3. **GitHub 저장소 연결**
+   - `jhk113074-hue/tankcad` 저장소를 선택합니다.
+   - 프로젝트 내 `render.yaml` 설정 파일이 자동으로 감지됩니다.
+   - **[Apply]** 버튼을 클릭합니다.
 
-1. GitHub 저장소 페이지의 **Settings** → **Pages** 로 이동합니다.
-2. **Build and deployment** 항목의 **Source**를 `GitHub Actions`로 선택합니다.
-3. 코드를 `main` 브랜치에 푸시하면 `.github/workflows/deploy.yml`이 자동 실행되어 몇 분 내로 배포가 완료됩니다.
-4. 배포 주소: `https://<사용자명>.github.io/<저장소명>/`
-
----
-
-## 3. 배포 옵션 2: Vercel (무료, 고성능 글로벌 CDN)
-
-> **특징**: 빠른 로딩 속도와 커스텀 도메인 연동이 매우 쉽습니다.
-
-1. [Vercel](https://vercel.com/)에 가입 및 로그인합니다.
-2. **Add New Project** → GitHub 저장소를 선택합니다.
-3. 프로젝트 내 `vercel.json`이 자동으로 인식되므로 별도 설정 없이 **Deploy** 버튼을 클릭합니다.
-4. 즉시 고유한 `.vercel.app` URL로 전 세계에 배포됩니다.
+4. **배포 완료!**
+   - Render가 자동으로 Docker 이미지를 빌드하고 ODA File Converter 및 가상 디스플레이(xvfb), Python 서버를 실행합니다.
+   - 배포가 완료되면 `https://ysacc-tankcad.onrender.com` 과 같은 영구적인 보안(HTTPS) 전용 주소가 부여됩니다!
+   - 이제 어느 기기에서 접속하든 버튼 한 번으로 진짜 `.dwg` 파일이 즉시 다운로드됩니다.
 
 ---
 
-## 4. 배포 옵션 3: Docker / 클라우드 서버 (풀스택 모드)
+## 2. 배포 옵션: Railway.app 배포
 
-> **특징**: 판넬 데이터베이스(SQLite) 및 DWG 변환 API가 포함된 Python 백엔드(`server.py`)까지 온전히 구동합니다.
+1. [Railway.app](https://railway.app/) 접속 후 GitHub 계정으로 로그인합니다.
+2. **New Project** ➔ **Deploy from GitHub repo** ➔ `tankcad` 선택.
+3. Railway가 루트의 `Dockerfile`을 자동 인식하여 클라우드 컨테이너로 즉시 배포합니다.
 
-### Docker 실행
+---
+
+## 3. 배포 옵션: 사내 리눅스 / Cafe24 가상서버 / AWS EC2 (Docker Compose)
+
+사내 서버나 Cafe24 VPS, AWS EC2 인스턴스가 있다면 단 두 줄로 전체 시스템을 가동할 수 있습니다:
+
 ```bash
-# 이미지 빌드 및 실행
+# 1. 저장소 클론 및 이동
+git clone https://github.com/jhk113074-hue/tankcad.git
+cd tankcad
+
+# 2. 도커 백그라운드 빌드 및 실행
 docker-compose up -d --build
 
-# 접속: http://<서버IP>:8000
+# 접속: http://<서버IP 또는 도메인>:8000
 ```
 
-### 일반 리눅스/클라우드 서버(Ubuntu 등) 직접 구동
-```bash
-# 패키지 설치
-pip install -r requirements.txt
+---
 
-# 웹 번들 빌드
-python build.py
+## 4. 정적 웹사이트 모드: GitHub Pages (클라이언트 단독)
 
-# 백그라운드 서버 실행 (nohup 또는 systemd)
-nohup python server.py > server.log 2>&1 &
-```
+* **배포 주소**: `https://jhk113074-hue.github.io/tankcad/`
+* **특징**: 서버 없이 GitHub에 커밋/푸시만 하면 즉시 무료 정적 호스팅.
+* 정적 호스팅 환경에서는 브라우저 보안상 클라우드 백엔드가 없으므로, **[💾 DXF 파일로 즉시 다운로드]**(AutoCAD에서 100% 동일하게 열림)를 이용하거나 로컬 서버(`실행하기.bat`)와 연동하여 사용합니다.

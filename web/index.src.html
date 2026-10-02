@@ -292,7 +292,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.19</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.20</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2872,7 +2872,10 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const dxfContent = C.toDxf(plan.ents, plan.blocks);
     const filename = stamp();
     try {
-      const apiUrl = (location.protocol === 'file:' || !location.port || location.port !== '8000') ? 'http://localhost:8000/api/convert-dwg' : '/api/convert-dwg';
+      let apiUrl = '/api/convert-dwg';
+      if (location.protocol === 'file:' || location.hostname.endsWith('github.io')) {
+        apiUrl = 'http://localhost:8000/api/convert-dwg';
+      }
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
