@@ -1905,7 +1905,11 @@
     const ln = (a, b, layer, depth = 0) => ents.push({ t: 'line', a, b, layer: layer || 'PANEL', depth });
     const poly = (pts, layer, close = true, fill = false, depth = 0) => {
       if (fill) {
-        ents.push({ t: 'poly', pts, fill: true, stroke: (close !== false), close: (close !== false), layer: layer || 'PANEL', depth });
+        ents.push({ t: 'poly', pts, fill: true, stroke: false, close: false, layer: layer || 'PANEL', depth });
+        if (close !== false) {
+          for (let i = 0; i < pts.length - 1; i++) ln(pts[i], pts[i + 1], layer, depth);
+          if (pts.length > 2) ln(pts[pts.length - 1], pts[0], layer, depth);
+        }
       } else {
         for (let i = 0; i < pts.length - 1; i++) ln(pts[i], pts[i + 1], layer, depth);
         if (close && pts.length > 2) ln(pts[pts.length - 1], pts[0], layer, depth);
@@ -2957,6 +2961,107 @@
       if (Math.abs(dDiff) > 1e-4) return dDiff;
       return a._idx - b._idx;
     });
+    // 10-B. 2D 벡터 은선 제거 (Hidden Line Removal for CAD / Wireframe export)
+    // 전면에 위치한 불투명 면(Panel / Roof / Pad)에 가려지는 후면 와이어프레임 선분 자동 클리핑
+    const opaquePolys = ents.filter(e => e.t === 'poly' && e.fill && e.pts && e.pts.length >= 3 && e.depth !== undefined);
+
+    function clipSegmentAgainstConvexQuad(A, B, P) {
+      let area = 0;
+      for (let i = 0; i < P.length; i++) {
+        const p1 = P[i], p2 = P[(i + 1) % P.length];
+        area += (p1[0] * p2[1] - p2[0] * p1[1]);
+      }
+      const ccw = area > 0;
+      const D = [B[0] - A[0], B[1] - A[1]];
+      let tIn = 0, tOut = 1;
+
+      for (let i = 0; i < P.length; i++) {
+        const p1 = P[i], p2 = P[(i + 1) % P.length];
+        const ex = p2[0] - p1[0], ey = p2[1] - p1[1];
+        const nx = ccw ? ey : -ey, ny = ccw ? -ex : ex;
+        const num = nx * (p1[0] - A[0]) + ny * (p1[1] - A[1]);
+        const den = nx * D[0] + ny * D[1];
+
+        if (Math.abs(den) < 1e-9) {
+          if (num < 0) return [[A, B]]; // Outside
+        } else {
+          const t = num / den;
+          if (den < 0) { if (t > tIn) tIn = t; }
+          else { if (t < tOut) tOut = t; }
+          if (tIn > tOut) return [[A, B]];
+        }
+      }
+
+      const entry = Math.max(0, tIn);
+      const exit = Math.min(1, tOut);
+      if (entry >= exit - 1e-5) return [[A, B]];
+
+      const res = [];
+      if (entry > 1e-4) res.push([A, [A[0] + entry * D[0], A[1] + entry * D[1]]]);
+      if (exit < 1 - 1e-4) res.push([[A[0] + exit * D[0], A[1] + exit * D[1]], B]);
+      return res;
+    }
+
+    opaquePolys.forEach(p => {
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (let i = 0; i < p.pts.length; i++) {
+        const pt = p.pts[i];
+        if (pt[0] < minX) minX = pt[0];
+        if (pt[0] > maxX) maxX = pt[0];
+        if (pt[1] < minY) minY = pt[1];
+        if (pt[1] > maxY) maxY = pt[1];
+      }
+      p._bb = [minX, maxX, minY, maxY];
+    });
+
+    const newEnts = [];
+    ents.forEach(e => {
+      if (e.t === 'poly') {
+        newEnts.push(e);
+      } else if (e.t === 'line') {
+        if (e.depth === undefined || e.layer === 'DIM' || e.layer === 'BALLOON') {
+          newEnts.push(e);
+          return;
+        }
+        let segs = [[e.a, e.b]];
+        const eDepth = e.depth;
+
+        for (let i = 0; i < opaquePolys.length; i++) {
+          const poly = opaquePolys[i];
+          // Polygon must be strictly in FRONT of the line (lower depth by at least 15mm)
+          if (poly.depth < eDepth - 15) {
+            const bb = poly._bb;
+            const nextSegs = [];
+            for (let s = 0; s < segs.length; s++) {
+              const A = segs[s][0], B = segs[s][1];
+              const sMinX = A[0] < B[0] ? A[0] : B[0];
+              const sMaxX = A[0] > B[0] ? A[0] : B[0];
+              const sMinY = A[1] < B[1] ? A[1] : B[1];
+              const sMaxY = A[1] > B[1] ? A[1] : B[1];
+              if (sMaxX < bb[0] || sMinX > bb[1] || sMaxY < bb[2] || sMinY > bb[3]) {
+                nextSegs.push(segs[s]);
+                continue;
+              }
+              const clipped = clipSegmentAgainstConvexQuad(A, B, poly.pts);
+              for (let c = 0; c < clipped.length; c++) nextSegs.push(clipped[c]);
+            }
+            segs = nextSegs;
+            if (segs.length === 0) break;
+          }
+        }
+
+        segs.forEach(([a, b]) => {
+          newEnts.push({ ...e, a, b });
+        });
+      } else {
+        newEnts.push(e);
+      }
+    });
+
+    ents.length = 0;
+    ents.push(...newEnts);
+    opaquePolys.forEach(p => { delete p._bb; });
+
     ents.forEach(e => { delete e._idx; delete e.depth; });
 
     // 11. 외부 사다리(Ladder)는 판넬/틀에 덮여 가려지지 않도록 맨 마지막에 최상단으로 렌더링
@@ -3990,14 +4095,7 @@
         g(11, n(e.b[0])); g(21, n(e.b[1])); g(31, 0);
       }
       else if (e.t === 'poly') {
-        if (e.fill && e.pts && e.pts.length === 4) {
-          g(0, '3DFACE'); g(8, layer);
-          g(10, n(e.pts[0][0])); g(20, n(e.pts[0][1])); g(30, 0);
-          g(11, n(e.pts[1][0])); g(21, n(e.pts[1][1])); g(31, 0);
-          g(12, n(e.pts[2][0])); g(22, n(e.pts[2][1])); g(32, 0);
-          g(13, n(e.pts[3][0])); g(23, n(e.pts[3][1])); g(33, 0);
-        }
-        if (e.pts && e.pts.length > 1) {
+        if (e.stroke !== false && e.pts && e.pts.length > 1) {
           for (let i = 0; i < e.pts.length - 1; i++) {
             g(0, 'LINE'); g(8, layer);
             g(10, n(e.pts[i][0])); g(20, n(e.pts[i][1])); g(30, 0);
