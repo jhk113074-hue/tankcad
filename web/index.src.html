@@ -142,6 +142,10 @@ tr:last-child td{border-bottom:0}
 
 .btn-sm{padding:4px 10px;font-size:11px;font-weight:600;border-radius:6px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
 .btn-sm:hover{border-color:var(--warn);color:var(--warn)}
+.htab-mode-btn{padding:4px 10px;font-size:11px;font-weight:600;border-radius:5px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;transition:all .15s}
+.htab-mode-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.htable-input{width:100%;min-width:44px;padding:3px 2px;font-size:11px;font-weight:600;text-align:center;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--fg)}
+.htable-input:focus{border-color:var(--accent);outline:none;background:var(--surface-sub)}
 
 .plan-grid-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:6px;box-shadow:var(--shadow-sm)}
 .plan-grid-wrap{display:flex;justify-content:center;overflow-x:auto;padding:2px 0}
@@ -715,6 +719,7 @@ canvas.drag{cursor:grabbing}
       <!-- 환경설정 서브 탭 네비게이션 -->
       <div class="subtab-nav">
         <button type="button" class="subtab-btn active" data-subtab="subtab-pad">🏗️ 기초패드</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-heights">📏 단별 판넬구성</button>
         <button type="button" class="subtab-btn" data-subtab="subtab-title">📋 표제란·시트</button>
         <button type="button" class="subtab-btn" data-subtab="subtab-panels">🧩 판넬 DB</button>
       </div>
@@ -788,6 +793,65 @@ canvas.drag{cursor:grabbing}
             <button type="button" class="btn-sm" id="btnPadPresetWide" style="flex:1;padding:4px 2px;font-size:10px" title="최외각 450 / 일반 350">광폭 450/350</button>
             <button type="button" class="btn-sm" id="btnPadPresetEqual3" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 300">동일 300</button>
             <button type="button" class="btn-sm" id="btnPadPresetEqual4" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 400">동일 400</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Subtab 2: 높이별 각 단별 판넬크기 지정 테이블 (1x1패널모듈 포함) -->
+      <div class="subtab-content" id="subtab-heights">
+        <section class="box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h2 id="secTitleHeights" style="margin:0;font-size:12.5px">📏 높이별·단별 판넬크기 지정 (mm)</h2>
+            <div style="display:flex;gap:4px">
+              <button type="button" id="btnResetHeightTable" class="btn-sm" style="font-size:10px" title="기본 규격으로 초기화">🔄 기본값 복원</button>
+              <button type="button" id="btnSaveHeightTable" class="btn-sm" style="font-size:10px;background:var(--accent);color:#fff;border-color:var(--accent)" title="설정 저장 및 즉시 반영">💾 설정 저장</button>
+            </div>
+          </div>
+          <p class="hint" id="hintHeights" style="margin-bottom:10px">
+            수조의 총 높이(H)에 따라 벽체 패널이 하단(1단)부터 상단(최상단)까지 분할되는 단별 규격을 설정합니다. (1×1 패널 모듈 포함)
+          </p>
+
+          <!-- 모듈 모드 선택 버튼 (일반 규격 모듈 vs 1x1 패널 모듈) -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:10px;padding:6px 8px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px">
+            <div style="display:flex;gap:4px">
+              <button type="button" class="btn-sm htab-mode-btn active" id="btnHModeStd" data-mode="std" style="font-size:11px;font-weight:600;padding:4px 8px">일반 규격 모듈 (표준)</button>
+              <button type="button" class="btn-sm htab-mode-btn" id="btnHModeB11" data-mode="b11" style="font-size:11px;font-weight:600;padding:4px 8px">1×1 패널 모듈 (1000/500 기반)</button>
+            </div>
+            <div style="font-size:10.5px;color:var(--muted)">
+              <span id="hModeDesc">1000, 1300, 1500, 2000 조합</span>
+            </div>
+          </div>
+
+          <!-- 높이별 단 구성 테이블 -->
+          <div style="max-height:480px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+            <table id="heightTable" style="width:100%;border-collapse:collapse;font-size:11px;text-align:center">
+              <thead style="background:var(--surface-sub);position:sticky;top:0;z-index:1;box-shadow:0 1px 2px rgba(0,0,0,0.05)">
+                <tr style="border-bottom:1px solid var(--line)">
+                  <th style="padding:6px 4px;font-weight:700;width:75px">총 높이 (H)</th>
+                  <th style="padding:6px 4px;font-weight:700;width:45px">단수</th>
+                  <th style="padding:6px 4px;font-weight:700">1단 (하단)</th>
+                  <th style="padding:6px 4px;font-weight:700">2단</th>
+                  <th style="padding:6px 4px;font-weight:700">3단</th>
+                  <th style="padding:6px 4px;font-weight:700">4단</th>
+                  <th style="padding:6px 4px;font-weight:700">5단 (상단)</th>
+                  <th style="padding:6px 4px;font-weight:700;width:95px">합계 / 상태</th>
+                  <th style="padding:6px 4px;font-weight:700;width:35px">초기화</th>
+                </tr>
+              </thead>
+              <tbody id="heightTableBody">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 하단 빠른 추가 바 -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:10px;padding:6px 8px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:6px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:11px;font-weight:600">➕ 새 높이 추가:</span>
+              <input type="number" id="newHInput" placeholder="예: 5500" step="100" min="500" max="10000" style="width:80px;padding:3px 6px;font-size:11px;text-align:center">
+              <button type="button" id="btnAddNewH" class="btn-sm" style="font-size:11px;padding:3px 8px">행 추가</button>
+            </div>
+            <span style="font-size:10px;color:var(--muted)">mm 단위로 각 단의 판넬 높이를 입력하세요 (빈 칸은 제외)</span>
           </div>
         </section>
       </div>
@@ -1225,6 +1289,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
           const actSub = document.querySelector('.subtab-btn.active');
           if (actSub && actSub.getAttribute('data-subtab') === 'subtab-panels') {
             loadDbPanels();
+          } else if (actSub && actSub.getAttribute('data-subtab') === 'subtab-heights') {
+            renderHeightTable();
           }
         } else if (btn.getAttribute('data-tab') === 'tab-nozzles') {
           updateNozzleUi();
@@ -1247,6 +1313,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         target.classList.add('active');
         if (btn.getAttribute('data-subtab') === 'subtab-panels') {
           loadDbPanels();
+        } else if (btn.getAttribute('data-subtab') === 'subtab-heights') {
+          renderHeightTable();
         }
       }
     });
@@ -1353,6 +1421,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       thCntSpec: '패널 규격 (폭×길이)',
       thCntQty: '수량',
       subtabPad: '🏗️ 콘크리트 패드',
+      subtabHeights: '📏 단별 판넬구성',
       subtabTitle: '📝 표제란',
       subtabPanels: '🗄️ 판넬 DB',
       miniTabProj: '📌 프로젝트',
@@ -1454,6 +1523,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       thCntSpec: 'Panel Size (W×L)',
       thCntQty: 'Qty',
       subtabPad: '🏗️ Concrete Pad',
+      subtabHeights: '📏 Height & Tiers',
       subtabTitle: '📝 Title Block',
       subtabPanels: '🗄️ Panel DB',
       miniTabProj: '📌 Project',
@@ -1663,6 +1733,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     // Tab 5: Settings Subtabs
     const padSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-pad"]');
     if (padSubBtn) padSubBtn.textContent = t.subtabPad;
+    const heightSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-heights"]');
+    if (heightSubBtn) heightSubBtn.textContent = t.subtabHeights;
     const titleSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-title"]');
     if (titleSubBtn) titleSubBtn.textContent = t.subtabTitle;
     const dbSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-panels"]');
@@ -1823,13 +1895,229 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   }
   makeInputs($('segL'), LEN0, 'L'); makeInputs($('segW'), WID0, 'W');
 
+  /* ---------- 높이별 각 단별 판넬크기 지정 테이블 (1x1패널모듈 포함) ---------- */
+  let activeHeightTable = null;
+  let currentHMode = 'std'; // 'std' | 'b11'
+
+  function initHeightTable() {
+    try {
+      const saved = localStorage.getItem('tankcad_height_table');
+      if (saved) {
+        activeHeightTable = JSON.parse(saved);
+      }
+    } catch (e) {}
+    if (!activeHeightTable || !activeHeightTable.std || !activeHeightTable.b11) {
+      activeHeightTable = (C.getDefaultHeightTable ? C.getDefaultHeightTable() : null) || {
+        std: {
+          1000: [1000], 1300: [1300], 1500: [1500], 1800: [1300, 500], 2000: [2000],
+          2300: [1000, 1300], 2500: [1000, 1500], 2800: [1300, 1500], 3000: [1000, 2000],
+          3300: [1000, 1000, 1300], 3500: [1000, 1000, 1500], 3800: [1000, 1300, 1500],
+          4000: [1000, 1000, 2000], 4300: [1000, 1300, 2000], 4500: [1000, 1000, 1000, 1500],
+          4800: [1000, 1000, 1300, 1500], 5000: [1000, 1000, 1000, 2000]
+        },
+        b11: {
+          1000: [1000], 1500: [1000, 500], 2000: [1000, 1000], 2500: [1000, 500, 1000],
+          3000: [1000, 1000, 1000], 3500: [1000, 1000, 500, 1000], 4000: [1000, 1000, 1000, 1000],
+          4500: [1000, 500, 1000, 1000, 1000], 5000: [1000, 1000, 1000, 1000, 1000]
+        }
+      };
+    }
+    if (C.setCustomHeightTable) C.setCustomHeightTable(activeHeightTable);
+  }
+  initHeightTable();
+
   function fillHeights() {
     const cur = Number($('H').value) || 3000, one = $('b11').checked;
-    const list = one ? [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000] : [1000, 1300, 1500, 1800, 2000, 2300, 2500, 2800, 3000, 3300, 3500, 3800, 4000, 4300, 4500, 4800, 5000];
+    const modeKey = one ? 'b11' : 'std';
+    let list;
+    if (activeHeightTable && activeHeightTable[modeKey]) {
+      list = Object.keys(activeHeightTable[modeKey]).map(Number).sort((a, b) => a - b);
+    }
+    if (!list || list.length === 0) {
+      list = one ? [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000] : [1000, 1300, 1500, 1800, 2000, 2300, 2500, 2800, 3000, 3300, 3500, 3800, 4000, 4300, 4500, 4800, 5000];
+    }
     $('H').innerHTML = list.map(v => '<option value="' + v + '">' + v + '</option>').join('');
-    $('H').value = list.includes(cur) ? cur : 3000;
+    $('H').value = list.includes(cur) ? cur : (list.includes(3000) ? 3000 : list[0]);
   }
   fillHeights();
+
+  function renderHeightTable() {
+    const tbody = $('heightTableBody');
+    if (!tbody) return;
+    const map = (activeHeightTable && activeHeightTable[currentHMode]) || {};
+    const heights = Object.keys(map).map(Number).sort((a, b) => a - b);
+    const defMap = (C.getDefaultHeightTable && C.getDefaultHeightTable()[currentHMode]) || {};
+
+    const descEl = $('hModeDesc');
+    if (descEl) {
+      descEl.textContent = (currentHMode === 'std') ? '1000, 1300, 1500, 2000 조합 (표준 규격)' : '1000×1000 및 1000×500 조합 (1×1 패널 모듈)';
+    }
+
+    tbody.innerHTML = heights.map(h => {
+      const segs = map[h] || [];
+      const sum = segs.reduce((a, b) => a + (Number(b) || 0), 0);
+      const isMatch = sum === h;
+      const count = segs.filter(v => Number(v) > 0).length;
+
+      let tierInputs = '';
+      for (let t = 0; t < 5; t++) {
+        const val = (segs[t] !== undefined && segs[t] !== null && segs[t] !== '') ? segs[t] : '';
+        tierInputs += `<td style="padding:4px 3px">
+          <input type="number" class="htable-input htier-input" data-h="${h}" data-tier="${t}" value="${val}" min="0" max="${h}" step="50" placeholder="-">
+        </td>`;
+      }
+
+      const matchBadge = isMatch
+        ? `<span class="h-sum-text" style="color:#16a34a;font-weight:700">${sum}</span> <span class="h-badge" style="font-size:9.5px;color:#16a34a;background:rgba(22,163,74,0.12);padding:1px 4px;border-radius:3px">일치</span>`
+        : `<span class="h-sum-text" style="color:#ef4444;font-weight:700">${sum}</span> <span class="h-badge" style="font-size:9.5px;color:#ef4444;background:rgba(239,68,68,0.12);padding:1px 4px;border-radius:3px">차이(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
+
+      return `<tr data-h="${h}" style="border-bottom:1px solid var(--line-sub)">
+        <td style="padding:5px 4px;font-weight:700;color:var(--accent)">${h}</td>
+        <td style="padding:5px 4px"><span class="h-tier-count" style="font-size:10px;font-weight:600;color:var(--muted);background:var(--surface-sub);padding:1px 5px;border-radius:4px">${count}단</span></td>
+        ${tierInputs}
+        <td class="h-status-cell" style="padding:5px 4px;white-space:nowrap">${matchBadge}</td>
+        <td style="padding:5px 4px">
+          <button type="button" class="btn-sm btn-reset-row" data-h="${h}" style="padding:1px 5px;font-size:10px" title="이 행 기본값 복원">↺</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.htier-input').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const row = e.target.closest('tr');
+        const h = Number(row.getAttribute('data-h'));
+        const inputs = Array.from(row.querySelectorAll('.htier-input'));
+        const newSegs = inputs.map(inp => Number(inp.value) || 0).filter(v => v > 0);
+        const sum = newSegs.reduce((a, b) => a + b, 0);
+        const isMatch = sum === h;
+
+        const countBadge = row.querySelector('.h-tier-count');
+        if (countBadge) countBadge.textContent = `${newSegs.length}단`;
+
+        const statusCell = row.querySelector('.h-status-cell');
+        if (statusCell) {
+          statusCell.innerHTML = isMatch
+            ? `<span class="h-sum-text" style="color:#16a34a;font-weight:700">${sum}</span> <span class="h-badge" style="font-size:9.5px;color:#16a34a;background:rgba(22,163,74,0.12);padding:1px 4px;border-radius:3px">일치</span>`
+            : `<span class="h-sum-text" style="color:#ef4444;font-weight:700">${sum}</span> <span class="h-badge" style="font-size:9.5px;color:#ef4444;background:rgba(239,68,68,0.12);padding:1px 4px;border-radius:3px">차이(${sum - h > 0 ? '+' : ''}${sum - h})</span>`;
+        }
+
+        if (!activeHeightTable[currentHMode]) activeHeightTable[currentHMode] = {};
+        activeHeightTable[currentHMode][h] = newSegs.length > 0 ? newSegs : [h];
+      });
+    });
+
+    tbody.querySelectorAll('.btn-reset-row').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const h = Number(e.target.getAttribute('data-h'));
+        if (defMap[h]) {
+          activeHeightTable[currentHMode][h] = defMap[h].slice();
+          renderHeightTable();
+        }
+      });
+    });
+  }
+
+  if ($('btnSaveHeightTable')) {
+    $('btnSaveHeightTable').addEventListener('click', () => {
+      const tbody = $('heightTableBody');
+      if (tbody) {
+        tbody.querySelectorAll('tr').forEach(row => {
+          const h = Number(row.getAttribute('data-h'));
+          const inputs = Array.from(row.querySelectorAll('.htier-input'));
+          const newSegs = inputs.map(inp => Number(inp.value) || 0).filter(v => v > 0);
+          if (newSegs.length > 0) {
+            activeHeightTable[currentHMode][h] = newSegs;
+          }
+        });
+      }
+
+      try {
+        localStorage.setItem('tankcad_height_table', JSON.stringify(activeHeightTable));
+      } catch (e) {}
+
+      if (C.setCustomHeightTable) C.setCustomHeightTable(activeHeightTable);
+      fillHeights();
+      schedule();
+
+      const saveBtn = $('btnSaveHeightTable');
+      const origText = saveBtn.textContent;
+      saveBtn.textContent = '✅ 저장 완료';
+      saveBtn.style.background = '#16a34a';
+      setTimeout(() => {
+        saveBtn.textContent = origText;
+        saveBtn.style.background = 'var(--accent)';
+      }, 1500);
+    });
+  }
+
+  if ($('btnResetHeightTable')) {
+    $('btnResetHeightTable').addEventListener('click', () => {
+      if (confirm('높이별 단 판넬 설정을 시스템 기본값으로 복원하시겠습니까?')) {
+        activeHeightTable = C.getDefaultHeightTable ? C.getDefaultHeightTable() : {
+          std: {
+            1000: [1000], 1300: [1300], 1500: [1500], 1800: [1300, 500], 2000: [2000],
+            2300: [1000, 1300], 2500: [1000, 1500], 2800: [1300, 1500], 3000: [1000, 2000],
+            3300: [1000, 1000, 1300], 3500: [1000, 1000, 1500], 3800: [1000, 1300, 1500],
+            4000: [1000, 1000, 2000], 4300: [1000, 1300, 2000], 4500: [1000, 1000, 1000, 1500],
+            4800: [1000, 1000, 1300, 1500], 5000: [1000, 1000, 1000, 2000]
+          },
+          b11: {
+            1000: [1000], 1500: [1000, 500], 2000: [1000, 1000], 2500: [1000, 500, 1000],
+            3000: [1000, 1000, 1000], 3500: [1000, 1000, 500, 1000], 4000: [1000, 1000, 1000, 1000],
+            4500: [1000, 500, 1000, 1000, 1000], 5000: [1000, 1000, 1000, 1000, 1000]
+          }
+        };
+        try {
+          localStorage.removeItem('tankcad_height_table');
+        } catch (e) {}
+        if (C.setCustomHeightTable) C.setCustomHeightTable(activeHeightTable);
+        fillHeights();
+        renderHeightTable();
+        schedule();
+      }
+    });
+  }
+
+  if ($('btnHModeStd')) {
+    $('btnHModeStd').addEventListener('click', () => {
+      $('btnHModeStd').classList.add('active');
+      $('btnHModeB11').classList.remove('active');
+      currentHMode = 'std';
+      renderHeightTable();
+    });
+  }
+  if ($('btnHModeB11')) {
+    $('btnHModeB11').addEventListener('click', () => {
+      $('btnHModeB11').classList.add('active');
+      $('btnHModeStd').classList.remove('active');
+      currentHMode = 'b11';
+      renderHeightTable();
+    });
+  }
+
+  if ($('btnAddNewH')) {
+    $('btnAddNewH').addEventListener('click', () => {
+      const inp = $('newHInput');
+      const val = Number(inp.value);
+      if (!val || val < 500 || val > 15000) {
+        alert('500mm ~ 15,000mm 범위의 유효한 높이를 입력하세요.');
+        return;
+      }
+      if (!activeHeightTable[currentHMode]) activeHeightTable[currentHMode] = {};
+      if (activeHeightTable[currentHMode][val]) {
+        alert('이미 등록된 높이입니다: ' + val + 'mm');
+        return;
+      }
+      const rem = val % 1000;
+      const count1000 = Math.floor(val / 1000);
+      const initialSegs = [];
+      for (let k = 0; k < count1000; k++) initialSegs.push(1000);
+      if (rem > 0) initialSegs.push(rem);
+      activeHeightTable[currentHMode][val] = initialSegs;
+      inp.value = '';
+      renderHeightTable();
+    });
+  }
   $('H').addEventListener('change', () => {
     updateNozzleUi();
     schedule();
@@ -3243,7 +3531,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         notes: $('tNotes').value,
         remarks: $('tRemarks').value,
         parts: ''
-      }
+      },
+      heightTable: activeHeightTable
     };
   }
 
@@ -3252,6 +3541,11 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     isRestoringState = true;
 
     try {
+      if (st.heightTable && typeof st.heightTable === 'object') {
+        activeHeightTable = st.heightTable;
+        if (C.setCustomHeightTable) C.setCustomHeightTable(activeHeightTable);
+        try { localStorage.setItem('tankcad_height_table', JSON.stringify(activeHeightTable)); } catch (e) {}
+      }
       if (Array.isArray(st.L)) {
         for (let i = 0; i < 5; i++) {
           const el = $('L' + i);
