@@ -3359,18 +3359,17 @@ canvas.drag{cursor:grabbing}
         isoCircle(cx, yStart + 110, -th, 12, 'XY', 'FRAME', topPadDepth);
         ln(toIso(cx, yStart + 110, -th), toIso(cx, yStart + 110, -th + 30), 'FRAME', topPadDepth);
 
-        // 4) & 5) 우측 노출 측면: 가장 우측 보는 yStart~y1 전체, 중간 보는 전면 돌출부(yStart~y0)만 렌더링
-        const isRightMost = (sIdx === strips.length - 1);
-        if (isRightMost) {
-          const sideDepth = (yStart + y1) / 2 - rightX - (-th / 2);
-          poly([
-            toIso(rightX, yStart, -th),
-            toIso(rightX, y1, -th),
-            toIso(rightX, y1, GRD),
-            toIso(rightX, yStart, GRD)
-          ], 'PANEL', true, true, sideDepth);
-          ln(toIso(rightX, yStart, -th), toIso(rightX, y1, -th), 'PANEL', sideDepth);
+        // 4) & 5) 우측 노출 측면: yStart부터 y1까지 하나의 연속된 콘크리트 보 측면으로 렌더링
+        const sideDepth = (yStart + y1) / 2 - rightX - (-th / 2);
+        poly([
+          toIso(rightX, yStart, -th),
+          toIso(rightX, y1, -th),
+          toIso(rightX, y1, GRD),
+          toIso(rightX, yStart, GRD)
+        ], 'PANEL', true, true, sideDepth);
+        ln(toIso(rightX, yStart, -th), toIso(rightX, y1, -th), 'PANEL', sideDepth);
 
+        if (sIdx === strips.length - 1) {
           let xWall = totalL;
           for (let r = map.rows.length - 1; r >= 0; r--) {
             if (map.ys[r + 1] === y1) {
@@ -3384,16 +3383,6 @@ canvas.drag{cursor:grabbing}
             ln(toIso(xWall, y1, -th), toIso(rightX, y1, -th), 'PANEL', sideDepth);
           }
           ln(toIso(rightX, y1, -th), toIso(rightX, y1, GRD), 'PANEL', sideDepth);
-        } else {
-          // 중간 패드 빔: 전면 돌출부(yStart ~ y0)의 우측 측면만 외부 노출 (y0 이후는 탱크 하부로 은폐)
-          const sideDepth = (yStart + y0) / 2 - rightX - (-th / 2);
-          poly([
-            toIso(rightX, yStart, -th),
-            toIso(rightX, y0, -th),
-            toIso(rightX, y0, GRD),
-            toIso(rightX, yStart, GRD)
-          ], 'PANEL', true, true, sideDepth);
-          ln(toIso(rightX, yStart, -th), toIso(rightX, y0, -th), 'PANEL', sideDepth);
         }
       });
     });
