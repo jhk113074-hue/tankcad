@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>YSACC TANK CAD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
@@ -300,7 +303,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.34</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.35</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -3722,8 +3725,10 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const filename = stamp();
     try {
       let apiUrl = '/api/convert-dwg';
-      if (location.protocol === 'file:' || location.hostname.endsWith('github.io')) {
+      if (location.protocol === 'file:') {
         apiUrl = 'http://localhost:8000/api/convert-dwg';
+      } else if (location.hostname.endsWith('github.io')) {
+        apiUrl = 'https://ysacc-tankcad.onrender.com/api/convert-dwg';
       }
       const res = await fetch(apiUrl, {
         method: 'POST',

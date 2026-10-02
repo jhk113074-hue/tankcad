@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>YSACC TANK CAD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
@@ -300,7 +303,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.34</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.35</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -3612,16 +3615,10 @@ canvas.drag{cursor:grabbing}
             ln(toIso(xWall, y + FT, H), toIso(xWall + FD, y + FT, H), 'FRAME', tDepth);
           }
 
-          // 후면 외곽 모서리 (층별 분할 렌더링)
+          // 후면 외곽 모서리 (실루엣 모서리선만 렌더링, 배면 은선 및 내부 수평선 제외)
           if (!map.has(i + 1, j)) {
-            for (let k = 0; k < hs.length; k++) {
-              const z0 = zs[k], z1 = zs[k + 1];
-              const cz = (z0 + z1) / 2;
-              const cornerDepth = getDepth(xWall + FD, y1, cz);
-              ln(toIso(xWall + FD, y1, z0), toIso(xWall + FD, y1, z1), 'FRAME', cornerDepth);
-              ln(toIso(xWall, y1, z0), toIso(xWall, y1, z1), 'FRAME', cornerDepth);
-              ln(toIso(xWall, y1, z0), toIso(xWall + FD, y1, z0), 'FRAME', cornerDepth);
-            }
+            const cornerDepth = getDepth(xWall + FD, y1, H / 2);
+            ln(toIso(xWall + FD, y1, 0), toIso(xWall + FD, y1, H), 'FRAME', cornerDepth);
             const tDepth = getDepth(xWall + FD, y1, H);
             ln(toIso(xWall, y1, H), toIso(xWall + FD, y1, H), 'FRAME', tDepth);
           }
@@ -4090,7 +4087,9 @@ canvas.drag{cursor:grabbing}
           const xWall = map.xs[j + 1];
           const rDepth = getDepth(xWall, map.ys[i], H / 2);
           ln(toIso(xWall, map.ys[i], 0), toIso(xWall, map.ys[i], H), 'REINF', rDepth);
-          ln(toIso(xWall, map.ys[i + 1], 0), toIso(xWall, map.ys[i + 1], H), 'REINF', rDepth);
+          if (map.has(i + 1, j)) {
+            ln(toIso(xWall, map.ys[i + 1], 0), toIso(xWall, map.ys[i + 1], H), 'REINF', rDepth);
+          }
         }
       }
     }
@@ -7835,8 +7834,10 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     const filename = stamp();
     try {
       let apiUrl = '/api/convert-dwg';
-      if (location.protocol === 'file:' || location.hostname.endsWith('github.io')) {
+      if (location.protocol === 'file:') {
         apiUrl = 'http://localhost:8000/api/convert-dwg';
+      } else if (location.hostname.endsWith('github.io')) {
+        apiUrl = 'https://ysacc-tankcad.onrender.com/api/convert-dwg';
       }
       const res = await fetch(apiUrl, {
         method: 'POST',

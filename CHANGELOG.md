@@ -5,6 +5,18 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.35] - 2026-10-02
+
+### Fixed & Enhanced (3D 조감도 후면 우측 모서리 실루엣 정돈, 브라우저 캐시 방지 및 GitHub Pages DWG 원격 변환 연동)
+- **3D 조감도 후면 우측 모서리 은선 정돈**:
+  - 후면 우측 외곽 모서리($X=L, Y=W$)에서 배면 수평 플랜지 선 및 내부 중복 수직선(`FRAME`, `REINF`)을 제거하고, 순수 외곽 실루엣 라인만 깔끔하게 유지.
+- **브라우저 디스크 캐시(Cache) 방지 헤더 전면 적용**:
+  - `server.py` 및 HTML 헤더에 `Cache-Control: no-cache, no-store, must-revalidate` 및 `Pragma: no-cache`를 설정하여 브라우저가 과거 코드를 캐싱하여 구버전 DWG를 출력하던 문제 원천 차단.
+- **GitHub Pages에서 Render ODA DWG 변환기 원격 연동**:
+  - `github.io` 접속 시에도 `https://ysacc-tankcad.onrender.com/api/convert-dwg`로 자동 연결되어 GitHub Pages에서도 DWG 변환 다운로드가 가능하도록 연동.
+
+---
+
 ## [1.5.34] - 2026-10-02
 
 ### Fixed & Enhanced (DWG 3D 조감도 외관 시각화 일치 및 풍선 기호 상호 교차 방지)

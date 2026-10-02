@@ -2424,16 +2424,10 @@
             ln(toIso(xWall, y + FT, H), toIso(xWall + FD, y + FT, H), 'FRAME', tDepth);
           }
 
-          // 후면 외곽 모서리 (층별 분할 렌더링)
+          // 후면 외곽 모서리 (실루엣 모서리선만 렌더링, 배면 은선 및 내부 수평선 제외)
           if (!map.has(i + 1, j)) {
-            for (let k = 0; k < hs.length; k++) {
-              const z0 = zs[k], z1 = zs[k + 1];
-              const cz = (z0 + z1) / 2;
-              const cornerDepth = getDepth(xWall + FD, y1, cz);
-              ln(toIso(xWall + FD, y1, z0), toIso(xWall + FD, y1, z1), 'FRAME', cornerDepth);
-              ln(toIso(xWall, y1, z0), toIso(xWall, y1, z1), 'FRAME', cornerDepth);
-              ln(toIso(xWall, y1, z0), toIso(xWall + FD, y1, z0), 'FRAME', cornerDepth);
-            }
+            const cornerDepth = getDepth(xWall + FD, y1, H / 2);
+            ln(toIso(xWall + FD, y1, 0), toIso(xWall + FD, y1, H), 'FRAME', cornerDepth);
             const tDepth = getDepth(xWall + FD, y1, H);
             ln(toIso(xWall, y1, H), toIso(xWall + FD, y1, H), 'FRAME', tDepth);
           }
@@ -2902,7 +2896,9 @@
           const xWall = map.xs[j + 1];
           const rDepth = getDepth(xWall, map.ys[i], H / 2);
           ln(toIso(xWall, map.ys[i], 0), toIso(xWall, map.ys[i], H), 'REINF', rDepth);
-          ln(toIso(xWall, map.ys[i + 1], 0), toIso(xWall, map.ys[i + 1], H), 'REINF', rDepth);
+          if (map.has(i + 1, j)) {
+            ln(toIso(xWall, map.ys[i + 1], 0), toIso(xWall, map.ys[i + 1], H), 'REINF', rDepth);
+          }
         }
       }
     }
