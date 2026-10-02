@@ -5,6 +5,20 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.33] - 2026-10-02
+
+### Fixed & Enhanced (DWG 3D 조감도 외관 시각화 일치 및 풍선 기호 상호 교차 방지)
+- **DWG 3D 조감도 은선 배면 제거 및 외부 노출면 일치 ("DWG파일에서도 밖에서 보여지는 부분만 보이고, 보기화면 처럼 표현해주세요" 100% 반영)**:
+  - **AutoCAD 와이어프레임 투과 간섭 원천 제거**:
+    - 웹 캔버스와 달리 캐드(DWG/DXF) 2D 모델 공간에서는 면 채움(Solid Fill) 차폐가 지원되지 않아 배면(Back-Facing Wall) 및 좌측면(Left-Facing Wall)의 모든 다이아몬드 리브, 원형 딤플, 플랜지 라인이 정면 판넬을 관통하여 보이는 X선 현상 제거.
+    - 등각투영 시선(+X, -Y, +Z)에서 완전히 등진 후면 벽체(normal +Y) 및 좌측 벽체(normal -X) 판넬 생성을 생략하고, 상부 외곽 실루엣 림($Z = H$) 및 판넬 분할선만 깔끔하게 유지하여 웹 화면의 정갈한 외관과 100% 일치하도록 개선.
+    - 기초 콘크리트 패드 보 렌더링 시 중간 보의 우측 측면이 탱크 하부를 관통하던 와이어프레임 라인을 차단하고, 전면 외부 돌출부($yStart \sim y0$)만 노출되도록 최적화.
+- **풍선 기호 인출선 상호 교차(Cross) 원천 차단 ("풍선 기호(Balloon Callout)가 서로 크로스하지 말아주세요" 100% 반영)**:
+  - 정면도/측면도 상단에서 외부 사다리(⑧)와 내부 스테이(⑩) 인출선이 X자로 교차하던 현상을 해결.
+  - 사다리 위치(`lx`)와 스테이 위치(`stayX`)를 실시간 비교하여, 사다리가 좌측이면 사다리는 좌측 외곽으로·스테이는 우측으로 인출하고, 사다리가 우측이면 사다리는 우측 외곽으로·스테이는 좌측으로 반대 방향 조향 인출하여 인출선 교차가 100% 발생하지 않도록 완전 차단.
+
+---
+
 ## [1.5.32] - 2026-10-02
 
 ### Added (한글 / 영문 다국어 UI 지원 및 도면 한·영 병기/단독 표기 전면 지원)

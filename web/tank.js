@@ -1866,14 +1866,21 @@
       // 4. 코너 프레임 (Corner Frame - NO. 4): 좌상단 바깥 외곽
       drawBalloonCallout(ents, [0, nH], [-75 - Math.round(6 * N), nH + Math.round(10 * N)], [-75 - Math.round(16 * N), nH + Math.round(16 * N)], getItemNo('corner') || 4, N, 'BALLOON');
 
-      // 8. 외부 사다리 (External Ladder - NO. 8): 상단 바깥 외곽
+      // 8. 외부 사다리 (External Ladder - NO. 8) & 10. 내부 스테이 (Internal Stay - NO. 10): 상단 바깥 외곽 (상호 크로스 방지 방향 제어)
       const lads = ladderList(opt, mmap);
       const visibleLadder = lads.find(l => (view === 'front' ? l.sd === 'D' : l.sd === 'R'));
       const lx = visibleLadder ? (view === 'front' ? visibleLadder.x : visibleLadder.y) : (total - 300);
-      drawBalloonCallout(ents, [lx, nH + 100], [lx, elevTopY - Math.round(5 * N)], [lx + Math.round(10 * N), elevTopY], getItemNo('exladder') || 8, N, 'BALLOON');
+      const stayX = total * 0.5;
 
-      // 10. 내부 스테이 (Internal Stay - NO. 10): 상단 바깥 외곽
-      drawBalloonCallout(ents, [total * 0.5, nH * 0.5], [total * 0.5, elevTopY - Math.round(5 * N)], [total * 0.5 - Math.round(10 * N), elevTopY], getItemNo('stay') || 10, N, 'BALLOON');
+      if (lx <= stayX) {
+        // 사다리가 좌측(또는 동일), 스테이가 우측 -> 사다리는 좌측으로, 스테이는 우측으로 인출 (크로스 원천 차단)
+        drawBalloonCallout(ents, [lx, nH + 100], [lx, elevTopY - Math.round(5 * N)], [lx - Math.round(10 * N), elevTopY], getItemNo('exladder') || 8, N, 'BALLOON');
+        drawBalloonCallout(ents, [stayX, nH * 0.5], [stayX, elevTopY - Math.round(5 * N)], [stayX + Math.round(10 * N), elevTopY], getItemNo('stay') || 10, N, 'BALLOON');
+      } else {
+        // 사다리가 우측, 스테이가 좌측 -> 사다리는 우측으로, 스테이는 좌측으로 인출 (크로스 원천 차단)
+        drawBalloonCallout(ents, [lx, nH + 100], [lx, elevTopY - Math.round(5 * N)], [lx + Math.round(10 * N), elevTopY], getItemNo('exladder') || 8, N, 'BALLOON');
+        drawBalloonCallout(ents, [stayX, nH * 0.5], [stayX, elevTopY - Math.round(5 * N)], [stayX - Math.round(10 * N), elevTopY], getItemNo('stay') || 10, N, 'BALLOON');
+      }
 
       // 11. 노즐 (Nozzles - NO. 11): 우측 바깥 외곽
       drawBalloonCallout(ents, [total + 75, nH * 0.3], [total + 75 + Math.round(6 * N), nH * 0.3], [elevRightX, nH * 0.3], getItemNo('nozzle') || 11, N, 'BALLOON');
@@ -2161,17 +2168,18 @@
         isoCircle(cx, yStart + 110, -th, 12, 'XY', 'FRAME', topPadDepth);
         ln(toIso(cx, yStart + 110, -th), toIso(cx, yStart + 110, -th + 30), 'FRAME', topPadDepth);
 
-        // 4) & 5) 우측 노출 측면: yStart부터 y1까지 하나의 연속된 콘크리트 보 측면으로 렌더링
-        const sideDepth = (yStart + y1) / 2 - rightX - (-th / 2);
-        poly([
-          toIso(rightX, yStart, -th),
-          toIso(rightX, y1, -th),
-          toIso(rightX, y1, GRD),
-          toIso(rightX, yStart, GRD)
-        ], 'PANEL', true, true, sideDepth);
-        ln(toIso(rightX, yStart, -th), toIso(rightX, y1, -th), 'PANEL', sideDepth);
+        // 4) & 5) 우측 노출 측면: 가장 우측 보는 yStart~y1 전체, 중간 보는 전면 돌출부(yStart~y0)만 렌더링
+        const isRightMost = (sIdx === strips.length - 1);
+        if (isRightMost) {
+          const sideDepth = (yStart + y1) / 2 - rightX - (-th / 2);
+          poly([
+            toIso(rightX, yStart, -th),
+            toIso(rightX, y1, -th),
+            toIso(rightX, y1, GRD),
+            toIso(rightX, yStart, GRD)
+          ], 'PANEL', true, true, sideDepth);
+          ln(toIso(rightX, yStart, -th), toIso(rightX, y1, -th), 'PANEL', sideDepth);
 
-        if (sIdx === strips.length - 1) {
           let xWall = totalL;
           for (let r = map.rows.length - 1; r >= 0; r--) {
             if (map.ys[r + 1] === y1) {
@@ -2185,6 +2193,16 @@
             ln(toIso(xWall, y1, -th), toIso(rightX, y1, -th), 'PANEL', sideDepth);
           }
           ln(toIso(rightX, y1, -th), toIso(rightX, y1, GRD), 'PANEL', sideDepth);
+        } else {
+          // 중간 패드 빔: 전면 돌출부(yStart ~ y0)의 우측 측면만 외부 노출 (y0 이후는 탱크 하부로 은폐)
+          const sideDepth = (yStart + y0) / 2 - rightX - (-th / 2);
+          poly([
+            toIso(rightX, yStart, -th),
+            toIso(rightX, y0, -th),
+            toIso(rightX, y0, GRD),
+            toIso(rightX, yStart, GRD)
+          ], 'PANEL', true, true, sideDepth);
+          ln(toIso(rightX, yStart, -th), toIso(rightX, y0, -th), 'PANEL', sideDepth);
         }
       });
     });
@@ -2246,35 +2264,7 @@
       }
     }
 
-    // 3-B. 후면 벽체 판넬 (Back-Facing Walls: normal +Y) - 중정 및 후면 노출 벽체
-    for (let i = 0; i < map.rows.length; i++) {
-      const yWall = map.ys[i + 1];
-      for (let j = 0; j < map.cols.length; j++) {
-        if (!map.has(i, j) || map.has(i + 1, j)) continue;
-        const x0 = map.xs[j], w = map.cols[j];
-        for (let k = 0; k < hs.length; k++) {
-          const z0 = zs[k], h = hs[k];
-          const depth = getDepth(x0 + w / 2, yWall, z0 + h / 2);
-          const pType = sidePanels[`back,${k},${j}`] || sidePanels[`rear,${k},${j}`] || 'std';
-          renderWallPanel('XZ', x0, yWall, z0, w, h, pType, depth);
-        }
-      }
-    }
-
-    // 3-C. 좌측 벽체 판넬 (Left-Facing Walls: normal -X) - 중정 및 좌측 노출 벽체
-    for (let i = 0; i < map.rows.length; i++) {
-      const y0 = map.ys[i], w = map.rows[i];
-      for (let j = 0; j < map.cols.length; j++) {
-        if (!map.has(i, j) || map.has(i, j - 1)) continue;
-        const xWall = map.xs[j];
-        for (let k = 0; k < hs.length; k++) {
-          const z0 = zs[k], h = hs[k];
-          const depth = getDepth(xWall, y0 + w / 2, z0 + h / 2);
-          const pType = sidePanels[`left,${k},${i}`] || 'std';
-          renderWallPanel('YZ', xWall, y0, z0, w, h, pType, depth);
-        }
-      }
-    }
+    // 3-B. 후면 벽체(normal +Y) 및 좌측 벽체(normal -X)는 등각투영(조감도) 카메라 시선(+X, -Y, +Z)에서 완전히 등진 배면(Back-Face)이므로 와이어프레임 은선 간섭 방지를 위해 렌더링 생략
 
     // 4. 천정 판넬 (Top Roof: Z = H)
     for (let i = 0; i < map.rows.length; i++) {
@@ -2450,7 +2440,7 @@
         }
       }
 
-      // (1-B) 후면 벽체 상부 플랜지 (중정/노출)
+      // (1-B) 후면 벽체 상부 플랜지 (상단 외곽 실루엣 및 판넬 분할선)
       for (let i = 0; i < map.rows.length; i++) {
         const yWall = map.ys[i + 1];
         for (let j = 0; j < map.cols.length; j++) {
@@ -2458,16 +2448,12 @@
           const x0 = map.xs[j], x1 = map.xs[j + 1];
           const topDepthB = getDepth((x0 + x1) / 2, yWall + FD, H);
           ln(toIso(x0, yWall + FD, H), toIso(x1, yWall + FD, H), 'FRAME', topDepthB);
-          ln(toIso(x0, yWall + FD, H - FT), toIso(x1, yWall + FD, H - FT), 'FRAME', topDepthB);
-          ln(toIso(x0, yWall, H - FT), toIso(x1, yWall, H - FT), 'PANEL_DETAIL', topDepthB);
           ln(toIso(x0, yWall, H), toIso(x0, yWall + FD, H), 'FRAME', topDepthB);
           ln(toIso(x1, yWall, H), toIso(x1, yWall + FD, H), 'FRAME', topDepthB);
-          ln(toIso(x0, yWall + FD, H - FT), toIso(x0, yWall + FD, H), 'FRAME', topDepthB);
-          ln(toIso(x1, yWall + FD, H - FT), toIso(x1, yWall + FD, H), 'FRAME', topDepthB);
         }
       }
 
-      // (2-B) 좌측 벽체 상부 플랜지 (중정/노출)
+      // (2-B) 좌측 벽체 상부 플랜지 (상단 외곽 실루엣 및 판넬 분할선)
       for (let i = 0; i < map.rows.length; i++) {
         const y0 = map.ys[i], y1 = map.ys[i + 1];
         for (let j = 0; j < map.cols.length; j++) {
@@ -2475,12 +2461,8 @@
           const xWall = map.xs[j];
           const topDepthL = getDepth(xWall - FD, (y0 + y1) / 2, H);
           ln(toIso(xWall - FD, y0, H), toIso(xWall - FD, y1, H), 'FRAME', topDepthL);
-          ln(toIso(xWall - FD, y0, H - FT), toIso(xWall - FD, y1, H - FT), 'FRAME', topDepthL);
-          ln(toIso(xWall, y0, H - FT), toIso(xWall, y1, H - FT), 'PANEL_DETAIL', topDepthL);
           ln(toIso(xWall, y0, H), toIso(xWall - FD, y0, H), 'FRAME', topDepthL);
           ln(toIso(xWall, y1, H), toIso(xWall - FD, y1, H), 'FRAME', topDepthL);
-          ln(toIso(xWall - FD, y0, H - FT), toIso(xWall - FD, y0, H), 'FRAME', topDepthL);
-          ln(toIso(xWall - FD, y1, H - FT), toIso(xWall - FD, y1, H), 'FRAME', topDepthL);
         }
       }
 
