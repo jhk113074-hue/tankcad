@@ -5,6 +5,16 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.53] - 2026-10-03
+
+### Fixed (초기 로드 시 첫 화면 블랭크 현상 원천 해결 - media_1790954501845.png)
+- **초기 로딩 시 도면 미표시 현상 완전 해결 ("첫화면이 안나옵니다. 나오게 해주세요.")**:
+  - `setLanguage` 함수에서 언어 옵션 텍스트 동기화 시, `<input type="hidden">`으로 변경된 `drawingLangSel` 및 `uiLangSel`의 `.options` 프로퍼티에 접근하면서 발생하던 `TypeError: Cannot read properties of undefined (reading 'length')` 런타임 예외를 발견 및 완전 수정.
+  - 모든 셀렉트 박스 요소의 `.options` 존재 여부를 안전하게 검사하도록 방어 코드 적용.
+  - `init()` 라이프사이클의 각 단계(`setLanguage`, `restoreAppState`, `applyActiveTemplates`, `rebuild`)를 개별 `try/catch` 블록으로 격리하여 어떤 예외 상황에서도 초기 도면 렌더링이 중단되지 않도록 보장.
+  - `fitView()` 함수에서 브라우저 초기 레이아웃 계산 중 뷰포트 크기가 0이거나 유효하지 않은 스케일로 계산되는 현상을 방지하는 방어 로직 추가 및 레이아웃 안정화 타이머(60ms, 200ms) 추가.
+  - 페이지 접속 즉시 A1 표준 도면 시트와 모든 투영도(평면, 패드, 정면, 측면, 3D조감도)가 즉각 렌더링되도록 개선 완료.
+
 ## [1.5.52] - 2026-10-03
 
 ### Fixed & Enhanced (3D 등각투영 조감도 콘크리트 패드 300mm 기둥 및 150mm 연속 바닥 슬래브 업데이트 - media_1790953862546.png 완벽 반영)

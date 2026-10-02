@@ -331,7 +331,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.52</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.53</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -6636,43 +6636,43 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     if (setTabBtn) setTabBtn.textContent = t.tabSettings;
 
     // Tab 1: Select dropdown options
-    if ($('sheetKind') && $('sheetKind').options.length >= 5) {
+    if ($('sheetKind') && $('sheetKind').options && $('sheetKind').options.length >= 5) {
       $('sheetKind').options[0].textContent = currentLang === 'en' ? 'General Assembly (Plan, Pad, Elev, 3D)' : '조립도 (평면·패드·정면·측면·3D등각)';
       $('sheetKind').options[1].textContent = currentLang === 'en' ? 'Foundation Pad Dwg' : '기초콘크리트도 (FOUNDATION PAD DWG)';
       $('sheetKind').options[2].textContent = currentLang === 'en' ? '3D Isometric Dwg' : '등각 조감도 (3D ISOMETRIC DWG)';
       $('sheetKind').options[3].textContent = currentLang === 'en' ? 'Frame Dwg (Skid & Stay)' : '프레임도 (스키드·내부 스테이)';
       $('sheetKind').options[4].textContent = currentLang === 'en' ? 'Details Dwg' : '상세도 (DETAILS DWG)';
     }
-    if ($('drawingLangSel') && $('drawingLangSel').options.length >= 3) {
+    if ($('drawingLangSel') && $('drawingLangSel').options && $('drawingLangSel').options.length >= 3) {
       $('drawingLangSel').options[0].textContent = currentLang === 'en' ? '🇰🇷 Korean' : '🇰🇷 한글 (Korean)';
       $('drawingLangSel').options[1].textContent = currentLang === 'en' ? '🇺🇸 English' : '🇺🇸 영문 (English)';
       $('drawingLangSel').options[2].textContent = currentLang === 'en' ? '🌐 Bilingual (KR/EN)' : '🌐 한·영 병기 (Bilingual)';
     }
-    if ($('uiLangSel') && $('uiLangSel').options.length >= 2) {
+    if ($('uiLangSel') && $('uiLangSel').options && $('uiLangSel').options.length >= 2) {
       $('uiLangSel').options[0].textContent = currentLang === 'en' ? '🇰🇷 Korean' : '🇰🇷 한국어 (Korean)';
       $('uiLangSel').options[1].textContent = currentLang === 'en' ? '🇺🇸 English' : '🇺🇸 English';
     }
-    if ($('frm') && $('frm').options.length >= 4) {
+    if ($('frm') && $('frm').options && $('frm').options.length >= 4) {
       $('frm').options[0].textContent = '50 (SHS)';
       $('frm').options[1].textContent = currentLang === 'en' ? '75 (Angle)' : '75 (앵글)';
       $('frm').options[2].textContent = currentLang === 'en' ? '125 (Channel)' : '125 (채널)';
       $('frm').options[3].textContent = currentLang === 'en' ? '150 (Channel)' : '150 (채널)';
     }
-    if ($('miniType') && $('miniType').options.length >= 2) {
+    if ($('miniType') && $('miniType').options && $('miniType').options.length >= 2) {
       $('miniType').options[0].textContent = 'FLANGE 10K';
       $('miniType').options[1].textContent = currentLang === 'en' ? 'SOCKET (Threaded)' : 'SOCKET (나사식)';
     }
-    if ($('miniOffset') && $('miniOffset').options.length >= 3) {
+    if ($('miniOffset') && $('miniOffset').options && $('miniOffset').options.length >= 3) {
       $('miniOffset').options[0].textContent = currentLang === 'en' ? '◀ Left (-250)' : '◀ 좌 (-250)';
       $('miniOffset').options[1].textContent = currentLang === 'en' ? '● Center (0)' : '● 중앙 (0)';
       $('miniOffset').options[2].textContent = currentLang === 'en' ? '▶ Right (+250)' : '▶ 우 (+250)';
     }
-    if ($('dbFilterMat') && $('dbFilterMat').options.length >= 3) {
+    if ($('dbFilterMat') && $('dbFilterMat').options && $('dbFilterMat').options.length >= 3) {
       $('dbFilterMat').options[0].textContent = currentLang === 'en' ? 'All Materials' : '전체 재질';
       $('dbFilterMat').options[1].textContent = 'SMC (GRP)';
       $('dbFilterMat').options[2].textContent = currentLang === 'en' ? 'STS (Stainless)' : 'STS (스텐)';
     }
-    if ($('dbFilterCat') && $('dbFilterCat').options.length >= 3) {
+    if ($('dbFilterCat') && $('dbFilterCat').options && $('dbFilterCat').options.length >= 3) {
       $('dbFilterCat').options[0].textContent = currentLang === 'en' ? 'All Categories' : '전체 위치';
       $('dbFilterCat').options[1].textContent = currentLang === 'en' ? 'Plan (Top/Bottom)' : '평면 (상·하부)';
       $('dbFilterCat').options[2].textContent = currentLang === 'en' ? 'Elevation (Side)' : '입면 (측면)';
@@ -6681,7 +6681,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     // Tab 1: Specs & Dims
     if ($('lblSheetOn')) $('lblSheetOn').textContent = t.lblSheetOn;
     if ($('lblScale')) $('lblScale').textContent = t.lblScale;
-    if ($('scaleSel') && $('scaleSel').options.length > 0) $('scaleSel').options[0].textContent = t.scaleAuto;
+    if ($('scaleSel') && $('scaleSel').options && $('scaleSel').options.length > 0) $('scaleSel').options[0].textContent = t.scaleAuto;
     if ($('lblDrawingLang')) $('lblDrawingLang').textContent = t.lblDwgLang;
     if ($('lblUiLang')) $('lblUiLang').textContent = t.lblUiLang;
     if ($('openBOMModalBtnSpec')) {
@@ -6891,7 +6891,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     if ($('panelRegModalTitle')) $('panelRegModalTitle').innerHTML = currentLang === 'en' ? '<span>🧩</span> Register & Edit Panel Shape' : '<span>🧩</span> 판넬 등록 및 형상 편집';
     if ($('lblModalMat')) $('lblModalMat').textContent = currentLang === 'en' ? 'Material' : '재질';
     if ($('lblModalCat')) $('lblModalCat').textContent = currentLang === 'en' ? 'Category' : '적용 위치';
-    if ($('modalCat') && $('modalCat').options.length >= 3) {
+    if ($('modalCat') && $('modalCat').options && $('modalCat').options.length >= 3) {
       $('modalCat').options[0].textContent = currentLang === 'en' ? 'Plan (Top/Bottom Panel)' : '평면 (상·하부 패널)';
       $('modalCat').options[1].textContent = currentLang === 'en' ? 'Elevation (Side Panel)' : '입면 (측면 패널)';
       $('modalCat').options[2].textContent = currentLang === 'en' ? 'All (Plan + Elevation)' : '전체 (평면 + 입면 모두 적용)';
@@ -6906,7 +6906,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     if ($('btnSourcePreset')) $('btnSourcePreset').textContent = currentLang === 'en' ? '🎨 Preset' : '🎨 프리셋';
     if ($('btnSourceJson')) $('btnSourceJson').textContent = currentLang === 'en' ? '📝 JSON Edit' : '📝 JSON 편집';
     if ($('lblPresetType')) $('lblPresetType').textContent = currentLang === 'en' ? 'Select Pattern Type' : '패턴 종류 선택';
-    if ($('presetType') && $('presetType').options.length >= 4) {
+    if ($('presetType') && $('presetType').options && $('presetType').options.length >= 4) {
       $('presetType').options[0].textContent = currentLang === 'en' ? 'Diamond Embossing (Standard)' : '다이아몬드 엠보싱 (표준형)';
       $('presetType').options[1].textContent = currentLang === 'en' ? 'Concentric Circle Embossing' : '원형 동심원 엠보싱';
       $('presetType').options[2].textContent = currentLang === 'en' ? 'Diagonal Cross (X-Reinf)' : 'X자 대각 보강형';
@@ -9158,7 +9158,9 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
   function fitView() {
     if (!plan) return;
     const z = size(), b = bounds(), pad = 40;
+    if (z.w <= 0 || z.h <= 0) return;
     const s = Math.min((z.w - pad * 2) / (b[2] - b[0]), (z.h - pad * 2) / (b[3] - b[1]));
+    if (!isFinite(s) || s <= 0) return;
     view = { s, x: z.w / 2 - s * (b[0] + b[2]) / 2, y: z.h / 2 + s * (b[1] + b[3]) / 2 };
     draw();
   }
@@ -10570,15 +10572,37 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
 
   // 초기 시작 시 저장된 이전 상태를 최우선 복원한 후 즉시 도면 렌더링 (첫 화면 블랭크 방지)
   (function init() {
-    setLanguage(currentLang, false);
-    restoreAppState();
-    applyActiveTemplates();
-    rebuild(true);
+    try {
+      setLanguage(currentLang, false);
+    } catch (e) {
+      console.warn('setLanguage init error:', e);
+    }
+    try {
+      restoreAppState();
+    } catch (e) {
+      console.warn('restoreAppState init error:', e);
+    }
+    try {
+      applyActiveTemplates();
+    } catch (e) {
+      console.warn('applyActiveTemplates init error:', e);
+    }
+    try {
+      rebuild(true);
+    } catch (e) {
+      console.error('rebuild init error:', e);
+    }
 
-    // 뷰포트 레이아웃 안정화 후 1회 추가 맞춤
+    // 뷰포트 레이아웃 안정화 후 추가 맞춤
     requestAnimationFrame(() => {
       fitView();
     });
+    setTimeout(() => {
+      fitView();
+    }, 60);
+    setTimeout(() => {
+      fitView();
+    }, 200);
 
     // 백그라운드에서 DB 판넬 및 템플릿 비동기 동기화 (초기 렌더링 블로킹 원천 차단)
     setTimeout(() => {
