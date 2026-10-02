@@ -2215,11 +2215,11 @@
       }
     });
 
-    // 6. 외부 사다리 (정면도 ladderShapes idx=5 및 평면도 형상 기반 직선 사다리)
+    // 6. 외부 사다리 (정면도 ladderShapes idx=5 및 측면도 idx=7 규격 완전 일치 3D 모델)
     const lads = ladderList(opt, map) || [];
     lads.forEach(l => {
-      const mx = 135, T = 40; // ladderShapes 표준 규격: 폭 FW=270 (mx=135), 파이프 두께 T=40
-      const TO = 200; // 벽체 이격 거리 (200mm)
+      const T = 40, FW = 270, FT = 20, TI = 270, FO = 200, BO = -500, TOP = 700, TTOP = 500, CX = 75, SI = 400;
+      const mx = FW >> 1; // 135
 
       if (l.sd === 'D') {
         const lx = l.x;
@@ -2231,55 +2231,80 @@
             }
           }
         }
-        const yOff = yWall - TO;
-        const lDepth = getDepth(lx, yOff - 50, H / 2);
-        const xL1 = lx - mx - T, xL2 = lx - mx;
-        const xR1 = lx + mx, xR2 = lx + mx + T;
 
-        // 1) 좌/우 세로 레일 (층별 분할 렌더링으로 벽체 판넬에 의한 은선 가림 방지)
-        for (let k = 0; k < hs.length; k++) {
-          const z0 = zs[k], z1 = zs[k + 1];
-          const segDepth = getDepth(lx, yOff, (z0 + z1) / 2);
-          ln(toIso(xL1, yOff, z0), toIso(xL1, yOff, z1), 'FRAME', segDepth);
-          ln(toIso(xL2, yOff, z0), toIso(xL2, yOff, z1), 'FRAME', segDepth);
-          ln(toIso(xR1, yOff, z0), toIso(xR1, yOff, z1), 'FRAME', segDepth);
-          ln(toIso(xR2, yOff, z0), toIso(xR2, yOff, z1), 'FRAME', segDepth);
-          if (k === 0) {
-            ln(toIso(xL1, yOff, z0), toIso(xL2, yOff, z0), 'FRAME', segDepth);
-            ln(toIso(xR1, yOff, z0), toIso(xR2, yOff, z0), 'FRAME', segDepth);
+        const drawSeg = (p1, p2, layer = 'FRAME') => {
+          const cz = (p1[2] + p2[2]) / 2;
+          const d = getDepth(lx, yWall - 500, cz);
+          ln(toIso(p1[0], p1[1], p1[2]), toIso(p2[0], p2[1], p2[2]), layer, d);
+        };
+
+        const outP = [
+          [yWall - CX, BO],
+          [yWall - TI, BO + FO],
+          [yWall - TI, H + TTOP],
+          [yWall - TI + 75, H + TOP]
+        ];
+        const inP = [
+          [yWall - CX, BO + T],
+          [yWall - (TI - T), BO + FO],
+          [yWall - (TI - T), H + TTOP],
+          [yWall - (TI - T) + 75, H + TOP]
+        ];
+
+        const railsX = [
+          [lx - mx - T, lx - mx],
+          [lx + mx, lx + mx + T]
+        ];
+
+        railsX.forEach(([xA, xB]) => {
+          for (let i = 0; i < outP.length - 1; i++) {
+            drawSeg([xA, outP[i][0], outP[i][1]], [xA, outP[i + 1][0], outP[i + 1][1]]);
+            drawSeg([xB, outP[i][0], outP[i][1]], [xB, outP[i + 1][0], outP[i + 1][1]]);
           }
-        }
+          for (let i = 0; i < inP.length - 1; i++) {
+            drawSeg([xA, inP[i][0], inP[i][1]], [xA, inP[i + 1][0], inP[i + 1][1]]);
+            drawSeg([xB, inP[i][0], inP[i][1]], [xB, inP[i + 1][0], inP[i + 1][1]]);
+          }
+          // 상단 끝 마감 (오픈 탑 핸드레일 끝단 캡)
+          drawSeg([xA, outP[3][0], outP[3][1]], [xA, inP[3][0], inP[3][1]]);
+          drawSeg([xB, outP[3][0], outP[3][1]], [xB, inP[3][0], inP[3][1]]);
+          drawSeg([xA, outP[3][0], outP[3][1]], [xB, outP[3][0], outP[3][1]]);
+          drawSeg([xA, inP[3][0], inP[3][1]], [xB, inP[3][0], inP[3][1]]);
 
-        // 2) 발판 (Rungs) - 300mm 간격 2중선
-        for (let rz = 200; rz <= H; rz += 300) {
-          const rDepth = getDepth(lx, yOff, rz);
-          ln(toIso(xL2, yOff, rz), toIso(xR1, yOff, rz), 'FRAME', rDepth);
-          ln(toIso(xL2, yOff, rz + 20), toIso(xR1, yOff, rz + 20), 'FRAME', rDepth);
-        }
+          // 하단 끝 마감 (패드 접속부)
+          drawSeg([xA, outP[0][0], outP[0][1]], [xA, inP[0][0], inP[0][1]]);
+          drawSeg([xB, outP[0][0], outP[0][1]], [xB, inP[0][0], inP[0][1]]);
+          drawSeg([xA, outP[0][0], outP[0][1]], [xB, outP[0][0], outP[0][1]]);
+          drawSeg([xA, inP[0][0], inP[0][1]], [xB, inP[0][0], inP[0][1]]);
 
-        // 3) 벽체 고정 브래킷 (하부 300, 중간 H/2, 상부 H)
-        [300, Math.round(H / 2), H].forEach(bz => {
-          const bDepth = getDepth(lx, (yWall + yOff) / 2, bz);
-          ln(toIso(xL1, yWall, bz), toIso(xL1, yOff, bz), 'FRAME', bDepth);
-          ln(toIso(xR2, yWall, bz), toIso(xR2, yOff, bz), 'FRAME', bDepth);
+          // H + TTOP 위치 꺾임선 (line 276)
+          drawSeg([xA, yWall - (TI - T), H + TTOP], [xA, yWall - TI, H + TTOP]);
+          drawSeg([xB, yWall - (TI - T), H + TTOP], [xB, yWall - TI, H + TTOP]);
         });
 
-        // 4) 상부 안전 손잡이 벤딩 (H에서 H+700까지 돌출 후 탱크 상단으로 연결)
-        const tDepth = getDepth(lx, yOff, H + 350);
-        ln(toIso(xL1, yOff, H), toIso(xL1, yOff, H + 700), 'FRAME', tDepth);
-        ln(toIso(xL2, yOff, H), toIso(xL2, yOff, H + 700), 'FRAME', tDepth);
-        ln(toIso(xR1, yOff, H), toIso(xR1, yOff, H + 700), 'FRAME', tDepth);
-        ln(toIso(xR2, yOff, H), toIso(xR2, yOff, H + 700), 'FRAME', tDepth);
+        // 발판 (Rungs) - 정면도 line 267: for (let y = BO + FO; y < H; y += FT + SI)
+        const rungY = yWall - (TI - T / 2);
+        const rungX1 = lx - mx, rungX2 = lx + mx;
+        for (let rz = BO + FO; rz < H; rz += FT + SI) {
+          drawSeg([rungX1, rungY, rz], [rungX2, rungY, rz]);
+          drawSeg([rungX1, rungY, rz + FT], [rungX2, rungY, rz + FT]);
+        }
 
-        ln(toIso(xL1, yOff, H + 700), toIso(xL1, yWall, H + 700), 'FRAME', tDepth);
-        ln(toIso(xL2, yOff, H + 700), toIso(xL2, yWall, H + 700), 'FRAME', tDepth);
-        ln(toIso(xL1, yWall, H + 700), toIso(xL1, yWall, H), 'FRAME', tDepth);
-        ln(toIso(xL2, yWall, H + 700), toIso(xL2, yWall, H), 'FRAME', tDepth);
+        // 벽체 지지 브래킷 (Bracket) - 측면도 line 274, 275: 상부 H - 2*T 및 하부 BO + 600 + 2*T
+        const bracketZList = [BO + 600 + T, H - 2 * T];
+        if (H >= 3000) bracketZList.splice(1, 0, Math.round(H / 2) - T / 2);
 
-        ln(toIso(xR1, yOff, H + 700), toIso(xR1, yWall, H + 700), 'FRAME', tDepth);
-        ln(toIso(xR2, yOff, H + 700), toIso(xR2, yWall, H + 700), 'FRAME', tDepth);
-        ln(toIso(xR1, yWall, H + 700), toIso(xR1, yWall, H), 'FRAME', tDepth);
-        ln(toIso(xR2, yWall, H + 700), toIso(xR2, yWall, H), 'FRAME', tDepth);
+        bracketZList.forEach(bz => {
+          railsX.forEach(([xA, xB]) => {
+            const bY1 = yWall, bY2 = yWall - (TI - T);
+            drawSeg([xA, bY1, bz], [xA, bY2, bz]);
+            drawSeg([xA, bY1, bz + T], [xA, bY2, bz + T]);
+            drawSeg([xB, bY1, bz], [xB, bY2, bz]);
+            drawSeg([xB, bY1, bz + T], [xB, bY2, bz + T]);
+            drawSeg([xA, bY1, bz], [xA, bY1, bz + T]);
+            drawSeg([xB, bY1, bz], [xB, bY1, bz + T]);
+          });
+        });
 
       } else if (l.sd === 'R') {
         const ly = l.y;
@@ -2292,50 +2317,236 @@
             break;
           }
         }
-        const xOff = xWall + TO;
-        const yL1 = ly - mx - T, yL2 = ly - mx;
-        const yR1 = ly + mx, yR2 = ly + mx + T;
 
-        for (let k = 0; k < hs.length; k++) {
-          const z0 = zs[k], z1 = zs[k + 1];
-          const segDepth = getDepth(xOff, ly, (z0 + z1) / 2);
-          ln(toIso(xOff, yL1, z0), toIso(xOff, yL1, z1), 'FRAME', segDepth);
-          ln(toIso(xOff, yL2, z0), toIso(xOff, yL2, z1), 'FRAME', segDepth);
-          ln(toIso(xOff, yR1, z0), toIso(xOff, yR1, z1), 'FRAME', segDepth);
-          ln(toIso(xOff, yR2, z0), toIso(xOff, yR2, z1), 'FRAME', segDepth);
-          if (k === 0) {
-            ln(toIso(xOff, yL1, z0), toIso(xOff, yL2, z0), 'FRAME', segDepth);
-            ln(toIso(xOff, yR1, z0), toIso(xOff, yR2, z0), 'FRAME', segDepth);
+        const drawSeg = (p1, p2, layer = 'FRAME') => {
+          const cz = (p1[2] + p2[2]) / 2;
+          const d = getDepth(xWall + 500, ly, cz);
+          ln(toIso(p1[0], p1[1], p1[2]), toIso(p2[0], p2[1], p2[2]), layer, d);
+        };
+
+        const outP = [
+          [xWall + CX, BO],
+          [xWall + TI, BO + FO],
+          [xWall + TI, H + TTOP],
+          [xWall + TI - 75, H + TOP]
+        ];
+        const inP = [
+          [xWall + CX, BO + T],
+          [xWall + (TI - T), BO + FO],
+          [xWall + (TI - T), H + TTOP],
+          [xWall + (TI - T) - 75, H + TOP]
+        ];
+
+        const railsY = [
+          [ly - mx - T, ly - mx],
+          [ly + mx, ly + mx + T]
+        ];
+
+        railsY.forEach(([yA, yB]) => {
+          for (let i = 0; i < outP.length - 1; i++) {
+            drawSeg([outP[i][0], yA, outP[i][1]], [outP[i + 1][0], yA, outP[i + 1][1]]);
+            drawSeg([outP[i][0], yB, outP[i][1]], [outP[i + 1][0], yB, outP[i + 1][1]]);
+          }
+          for (let i = 0; i < inP.length - 1; i++) {
+            drawSeg([inP[i][0], yA, inP[i][1]], [inP[i + 1][0], yA, inP[i + 1][1]]);
+            drawSeg([inP[i][0], yB, inP[i][1]], [inP[i + 1][0], yB, inP[i + 1][1]]);
+          }
+          drawSeg([outP[3][0], yA, outP[3][1]], [inP[3][0], yA, inP[3][1]]);
+          drawSeg([outP[3][0], yB, outP[3][1]], [inP[3][0], yB, inP[3][1]]);
+          drawSeg([outP[3][0], yA, outP[3][1]], [outP[3][0], yB, outP[3][1]]);
+          drawSeg([inP[3][0], yA, inP[3][1]], [inP[3][0], yB, inP[3][1]]);
+
+          drawSeg([outP[0][0], yA, outP[0][1]], [inP[0][0], yA, inP[0][1]]);
+          drawSeg([outP[0][0], yB, outP[0][1]], [inP[0][0], yB, inP[0][1]]);
+          drawSeg([outP[0][0], yA, outP[0][1]], [outP[0][0], yB, outP[0][1]]);
+          drawSeg([inP[0][0], yA, inP[0][1]], [inP[0][0], yB, inP[0][1]]);
+
+          drawSeg([xWall + (TI - T), yA, H + TTOP], [xWall + TI, yA, H + TTOP]);
+          drawSeg([xWall + (TI - T), yB, H + TTOP], [xWall + TI, yB, H + TTOP]);
+        });
+
+        const rungX = xWall + (TI - T / 2);
+        const rungY1 = ly - mx, rungY2 = ly + mx;
+        for (let rz = BO + FO; rz < H; rz += FT + SI) {
+          drawSeg([rungX, rungY1, rz], [rungX, rungY2, rz]);
+          drawSeg([rungX, rungY1, rz + FT], [rungX, rungY2, rz + FT]);
+        }
+
+        const bracketZList = [BO + 600 + T, H - 2 * T];
+        if (H >= 3000) bracketZList.splice(1, 0, Math.round(H / 2) - T / 2);
+
+        bracketZList.forEach(bz => {
+          railsY.forEach(([yA, yB]) => {
+            const bX1 = xWall, bX2 = xWall + (TI - T);
+            drawSeg([bX1, yA, bz], [bX2, yA, bz]);
+            drawSeg([bX1, yA, bz + T], [bX2, yA, bz + T]);
+            drawSeg([bX1, yB, bz], [bX2, yB, bz]);
+            drawSeg([bX1, yB, bz + T], [bX2, yB, bz + T]);
+            drawSeg([bX1, yA, bz], [bX1, yA, bz + T]);
+            drawSeg([bX1, yB, bz], [bX1, yB, bz + T]);
+          });
+        });
+
+      } else if (l.sd === 'U') {
+        const lx = l.x;
+        let yWall = totalW;
+        for (let r = map.rows.length - 1; r >= 0; r--) {
+          for (let c = 0; c < map.cols.length; c++) {
+            if (map.has(r, c) && !map.has(r + 1, c)) {
+              if (lx >= map.xs[c] - 10 && lx <= map.xs[c + 1] + 10) { yWall = map.ys[r + 1]; break; }
+            }
           }
         }
 
-        for (let rz = 200; rz <= H; rz += 300) {
-          const rDepth = getDepth(xOff, ly, rz);
-          ln(toIso(xOff, yL2, rz), toIso(xOff, yR1, rz), 'FRAME', rDepth);
-          ln(toIso(xOff, yL2, rz + 20), toIso(xOff, yR1, rz + 20), 'FRAME', rDepth);
-        }
+        const drawSeg = (p1, p2, layer = 'FRAME') => {
+          const cz = (p1[2] + p2[2]) / 2;
+          const d = getDepth(lx, yWall, cz);
+          ln(toIso(p1[0], p1[1], p1[2]), toIso(p2[0], p2[1], p2[2]), layer, d);
+        };
 
-        [300, Math.round(H / 2), H].forEach(bz => {
-          const bDepth = getDepth((xWall + xOff) / 2, ly, bz);
-          ln(toIso(xWall, yL1, bz), toIso(xOff, yL1, bz), 'FRAME', bDepth);
-          ln(toIso(xWall, yR2, bz), toIso(xOff, yR2, bz), 'FRAME', bDepth);
+        const outP = [
+          [yWall + CX, BO],
+          [yWall + TI, BO + FO],
+          [yWall + TI, H + TTOP],
+          [yWall + TI - 75, H + TOP]
+        ];
+        const inP = [
+          [yWall + CX, BO + T],
+          [yWall + (TI - T), BO + FO],
+          [yWall + (TI - T), H + TTOP],
+          [yWall + (TI - T) - 75, H + TOP]
+        ];
+
+        const railsX = [
+          [lx - mx - T, lx - mx],
+          [lx + mx, lx + mx + T]
+        ];
+
+        railsX.forEach(([xA, xB]) => {
+          for (let i = 0; i < outP.length - 1; i++) {
+            drawSeg([xA, outP[i][0], outP[i][1]], [xA, outP[i + 1][0], outP[i + 1][1]]);
+            drawSeg([xB, outP[i][0], outP[i][1]], [xB, outP[i + 1][0], outP[i + 1][1]]);
+          }
+          for (let i = 0; i < inP.length - 1; i++) {
+            drawSeg([xA, inP[i][0], inP[i][1]], [xA, inP[i + 1][0], inP[i + 1][1]]);
+            drawSeg([xB, inP[i][0], inP[i][1]], [xB, inP[i + 1][0], inP[i + 1][1]]);
+          }
+          drawSeg([xA, outP[3][0], outP[3][1]], [xA, inP[3][0], inP[3][1]]);
+          drawSeg([xB, outP[3][0], outP[3][1]], [xB, inP[3][0], inP[3][1]]);
+          drawSeg([xA, outP[3][0], outP[3][1]], [xB, outP[3][0], outP[3][1]]);
+          drawSeg([xA, inP[3][0], inP[3][1]], [xB, inP[3][0], inP[3][1]]);
+
+          drawSeg([xA, outP[0][0], outP[0][1]], [xA, inP[0][0], inP[0][1]]);
+          drawSeg([xB, outP[0][0], outP[0][1]], [xB, inP[0][0], inP[0][1]]);
+          drawSeg([xA, outP[0][0], outP[0][1]], [xB, outP[0][0], outP[0][1]]);
+          drawSeg([xA, inP[0][0], inP[0][1]], [xB, inP[0][0], inP[0][1]]);
+
+          drawSeg([xA, yWall + (TI - T), H + TTOP], [xA, yWall + TI, H + TTOP]);
+          drawSeg([xB, yWall + (TI - T), H + TTOP], [xB, yWall + TI, H + TTOP]);
         });
 
-        const tDepth = getDepth(xOff, ly, H + 350);
-        ln(toIso(xOff, yL1, H), toIso(xOff, yL1, H + 700), 'FRAME', tDepth);
-        ln(toIso(xOff, yL2, H), toIso(xOff, yL2, H + 700), 'FRAME', tDepth);
-        ln(toIso(xOff, yR1, H), toIso(xOff, yR1, H + 700), 'FRAME', tDepth);
-        ln(toIso(xOff, yR2, H), toIso(xOff, yR2, H + 700), 'FRAME', tDepth);
+        const rungY = yWall + (TI - T / 2);
+        const rungX1 = lx - mx, rungX2 = lx + mx;
+        for (let rz = BO + FO; rz < H; rz += FT + SI) {
+          drawSeg([rungX1, rungY, rz], [rungX2, rungY, rz]);
+          drawSeg([rungX1, rungY, rz + FT], [rungX2, rungY, rz + FT]);
+        }
 
-        ln(toIso(xOff, yL1, H + 700), toIso(xWall, yL1, H + 700), 'FRAME', tDepth);
-        ln(toIso(xOff, yL2, H + 700), toIso(xWall, yL2, H + 700), 'FRAME', tDepth);
-        ln(toIso(xWall, yL1, H + 700), toIso(xWall, yL1, H), 'FRAME', tDepth);
-        ln(toIso(xWall, yL2, H + 700), toIso(xWall, yL2, H), 'FRAME', tDepth);
+        const bracketZList = [BO + 600 + T, H - 2 * T];
+        if (H >= 3000) bracketZList.splice(1, 0, Math.round(H / 2) - T / 2);
 
-        ln(toIso(xOff, yR1, H + 700), toIso(xWall, yR1, H + 700), 'FRAME', tDepth);
-        ln(toIso(xOff, yR2, H + 700), toIso(xWall, yR2, H + 700), 'FRAME', tDepth);
-        ln(toIso(xWall, yR1, H + 700), toIso(xWall, yR1, H), 'FRAME', tDepth);
-        ln(toIso(xWall, yR2, H + 700), toIso(xWall, yR2, H), 'FRAME', tDepth);
+        bracketZList.forEach(bz => {
+          railsX.forEach(([xA, xB]) => {
+            const bY1 = yWall, bY2 = yWall + (TI - T);
+            drawSeg([xA, bY1, bz], [xA, bY2, bz]);
+            drawSeg([xA, bY1, bz + T], [xA, bY2, bz + T]);
+            drawSeg([xB, bY1, bz], [xB, bY2, bz]);
+            drawSeg([xB, bY1, bz + T], [xB, bY2, bz + T]);
+            drawSeg([xA, bY1, bz], [xA, bY1, bz + T]);
+            drawSeg([xB, bY1, bz], [xB, bY1, bz + T]);
+          });
+        });
+
+      } else if (l.sd === 'L') {
+        const ly = l.y;
+        let xWall = 0;
+        for (let r = 0; r < map.rows.length; r++) {
+          if (ly >= map.ys[r] - 10 && ly <= map.ys[r + 1] + 10) {
+            for (let c = 0; c < map.cols.length; c++) {
+              if (map.has(r, c) && !map.has(r, c - 1)) { xWall = map.xs[c]; break; }
+            }
+            break;
+          }
+        }
+
+        const drawSeg = (p1, p2, layer = 'FRAME') => {
+          const cz = (p1[2] + p2[2]) / 2;
+          const d = getDepth(xWall, ly, cz);
+          ln(toIso(p1[0], p1[1], p1[2]), toIso(p2[0], p2[1], p2[2]), layer, d);
+        };
+
+        const outP = [
+          [xWall - CX, BO],
+          [xWall - TI, BO + FO],
+          [xWall - TI, H + TTOP],
+          [xWall - TI + 75, H + TOP]
+        ];
+        const inP = [
+          [xWall - CX, BO + T],
+          [xWall - (TI - T), BO + FO],
+          [xWall - (TI - T), H + TTOP],
+          [xWall - (TI - T) + 75, H + TOP]
+        ];
+
+        const railsY = [
+          [ly - mx - T, ly - mx],
+          [ly + mx, ly + mx + T]
+        ];
+
+        railsY.forEach(([yA, yB]) => {
+          for (let i = 0; i < outP.length - 1; i++) {
+            drawSeg([outP[i][0], yA, outP[i][1]], [outP[i + 1][0], yA, outP[i + 1][1]]);
+            drawSeg([outP[i][0], yB, outP[i][1]], [outP[i + 1][0], yB, outP[i + 1][1]]);
+          }
+          for (let i = 0; i < inP.length - 1; i++) {
+            drawSeg([inP[i][0], yA, inP[i][1]], [inP[i + 1][0], yA, inP[i + 1][1]]);
+            drawSeg([inP[i][0], yB, inP[i][1]], [inP[i + 1][0], yB, inP[i + 1][1]]);
+          }
+          drawSeg([outP[3][0], yA, outP[3][1]], [inP[3][0], yA, inP[3][1]]);
+          drawSeg([outP[3][0], yB, outP[3][1]], [inP[3][0], yB, inP[3][1]]);
+          drawSeg([outP[3][0], yA, outP[3][1]], [outP[3][0], yB, outP[3][1]]);
+          drawSeg([inP[3][0], yA, inP[3][1]], [inP[3][0], yB, inP[3][1]]);
+
+          drawSeg([outP[0][0], yA, outP[0][1]], [inP[0][0], yA, inP[0][1]]);
+          drawSeg([outP[0][0], yB, outP[0][1]], [inP[0][0], yB, inP[0][1]]);
+          drawSeg([outP[0][0], yA, outP[0][1]], [outP[0][0], yB, outP[0][1]]);
+          drawSeg([inP[0][0], yA, inP[0][1]], [inP[0][0], yB, inP[0][1]]);
+
+          drawSeg([xWall - (TI - T), yA, H + TTOP], [xWall - TI, yA, H + TTOP]);
+          drawSeg([xWall - (TI - T), yB, H + TTOP], [xWall - TI, yB, H + TTOP]);
+        });
+
+        const rungX = xWall - (TI - T / 2);
+        const rungY1 = ly - mx, rungY2 = ly + mx;
+        for (let rz = BO + FO; rz < H; rz += FT + SI) {
+          drawSeg([rungX, rungY1, rz], [rungX, rungY2, rz]);
+          drawSeg([rungX, rungY1, rz + FT], [rungX, rungY2, rz + FT]);
+        }
+
+        const bracketZList = [BO + 600 + T, H - 2 * T];
+        if (H >= 3000) bracketZList.splice(1, 0, Math.round(H / 2) - T / 2);
+
+        bracketZList.forEach(bz => {
+          railsY.forEach(([yA, yB]) => {
+            const bX1 = xWall, bX2 = xWall - (TI - T);
+            drawSeg([bX1, yA, bz], [bX2, yA, bz]);
+            drawSeg([bX1, yA, bz + T], [bX2, yA, bz + T]);
+            drawSeg([bX1, yB, bz], [bX2, yB, bz]);
+            drawSeg([bX1, yB, bz + T], [bX2, yB, bz + T]);
+            drawSeg([bX1, yA, bz], [bX1, yA, bz + T]);
+            drawSeg([bX1, yB, bz], [bX1, yB, bz + T]);
+          });
+        });
       }
     });
 

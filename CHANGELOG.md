@@ -5,6 +5,17 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.29] - 2026-10-02
+
+### Enhanced & Fixed (3D 등각도 외부 사다리 정면도·측면도 도면 표준 형상 100% 일치화 및 중간 발판 복원)
+- **3D 등각도 사다리 형상 정면도·측면도 도면 일치화 ("사다리는 형상이 틀렸습니다", "발판도 없습니다. 중간에" 완벽 해결)**:
+  - **중간 발판(Rung) 누락 결함 해결**: 은선 제거(Painter's Algorithm) 정렬 시 2단 벽체 판넬의 배경 마스킹에 의해 사다리 중간 발판이 가려지던 문제를 해결. 하단(`BO + FO = -300`)부터 지붕 상단(`H = 3000`)까지 420mm(`FT + SI`) 간격의 모든 2중 발판이 누락 없이 100% 선명하게 표출되도록 depth 우선순위 보정.
+  - **상단 핸드레일 형상 정상화**: 지붕 위에 문틀처럼 ㄷ자형으로 폐쇄 연결되던 왜곡된 핸드레일을 제거하고, 기준 도면 정면도(`ladderShapes(5)`) 및 우측면도(`ladderShapes(7)`) 규격에 따라 상부 `H + 500`에서 탱크 안쪽으로 75mm 완만하게 꺾여 올라간 후 마감 캡으로 끝나는 오픈 탑(open-ended) 핸드레일로 구현.
+  - **하단 패드 안착 곡선(Foot) 및 벽체 브래킷(Wall Bracket) 구현**: 사다리 하단이 공중에서 잘리던 형태를 제거하고 콘크리트 패드 상단(`BO = -500`)에 완만히 꺾여 안착되는 하단 레일 구현. 상부/중간/하부 지지 브래킷이 탱크 벽면 판넬에 빈틈없이 견고하게 연결되도록 정밀 결합.
+  - **4면(정면 D, 우측 R, 후면 U, 좌측 L) 3D 사다리 전면 지원**: 어느 위치에 사다리를 배치하더라도 도면 기준 형상 그대로 렌더링되도록 4방향 모델링 완비.
+
+---
+
 ## [1.5.28] - 2026-10-02
 
 ### Enhanced (3D 등각도 맨홀·에어벤트·사다리 정면도 및 평면도 표준 형상 개편)
