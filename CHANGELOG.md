@@ -5,6 +5,17 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.28] - 2026-10-02
+
+### Enhanced (3D 등각도 맨홀·에어벤트·사다리 정면도 및 평면도 표준 형상 개편)
+- **3D 등각도 맨홀·에어벤트·사다리 정면도·평면도 형상 일치화 ("맨홀, 에어벤트, 사다리는 정면도, 평면도의 있는 형상으로 다시 그려주세요" 완벽 반영)**:
+  - **맨홀 (Manhole)**: 기존의 인위적인 3D 원통형 칼라와 지시선(`MANHOLE Ø600`)을 제거하고, 평면도(`markShapes`)의 팔각 리브 패턴, Ø600 원형 림, 힌지/손잡이 탭 및 정면도(`CManholeLT`)의 40mm 저상형 림과 중앙 손잡이 형상으로 정밀 렌더링.
+  - **에어벤트 (Air Vent)**: 기존의 350mm 장대형 파이프와 지시선(`AIR VENT 100A`)을 제거하고, 평면도(`markShapes`)의 동심원 및 십자선, 정면도의 75mm 컴팩트 버섯형 벤트 캡 형상으로 개편.
+  - **사다리 (External Ladder)**: 기존의 둥근 방호울(cage hoops)과 지시선을 전면 제거하고, 정면도(`ladderShapes` idx=5) 및 평면도와 100% 동일한 직선형 레일(폭 270mm), 300mm 간격 2중 발판(rungs), 벽체 고정 브래킷 및 상부 안전 손잡이 벤딩(H+700) 형상으로 완전 복원.
+  - **층별 은선 가림 방지**: 사다리 레일과 발판을 벽체 층별(tier) depth에 맞춰 분할 렌더링하여 판넬 배경에 가려지지 않고 깔끔하게 표출.
+
+---
+
 ## [1.5.27] - 2026-10-02
 
 ### Enhanced & Fixed (등각조감도 치수선 생략 및 콘크리트 기초 빔 연속성 복원, 이형 규격 +/- 표기)

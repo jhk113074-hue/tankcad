@@ -2153,119 +2153,189 @@
       }
     }
 
-    // 5. 맨홀 및 환기구 (Manhole & Air Vent on Roof - 사용자가 평면 편집에서 설정한 위치에만 표시)
+    // 5. 맨홀 및 환기구 (Manhole & Air Vent on Roof - 평면도 및 정면도 표준 형상 반영)
     const marks = Object.assign({}, opt.marks);
     Object.entries(marks).forEach(([k, mk]) => {
       const [i, j] = k.split(',').map(Number);
       if (!map.has(i, j)) return;
       const x0 = map.xs[j], y0 = map.ys[i];
       const cx = x0 + map.cols[j] / 2, cy = y0 + map.rows[i] / 2;
-      const accDepth = getDepth(cx, cy, H + 100);
+      const accDepth = getDepth(cx, cy, H + 50);
 
-      if (mk & 1) { // 3D MANHOLE
-        const neckH = 180;
+      if (mk & 1) { // 맨홀 (평면도 markShapes 및 정면도 CManholeLT 저상형 림 형상)
+        // 1) 외곽 원형 림 Ø600
         isoCircle(cx, cy, H, 300, 'XY', 'FRAME', accDepth);
-        isoCircle(cx, cy, H + neckH, 300, 'XY', 'FRAME', accDepth);
-        ln(toIso(cx - 300, cy, H), toIso(cx - 300, cy, H + neckH), 'FRAME', accDepth);
-        ln(toIso(cx + 300, cy, H), toIso(cx + 300, cy, H + neckH), 'FRAME', accDepth);
-        ln(toIso(cx, cy - 300, H), toIso(cx, cy - 300, H + neckH), 'FRAME', accDepth);
-        ln(toIso(cx, cy + 300, H), toIso(cx, cy + 300, H + neckH), 'FRAME', accDepth);
-        isoCircle(cx, cy, H + neckH, 330, 'XY', 'FRAME', accDepth);
-        isoCircle(cx, cy, H + neckH, 260, 'XY', 'PANEL_DETAIL', accDepth);
-        poly([toIso(cx - 70, cy, H + neckH), toIso(cx - 70, cy, H + neckH + 50), toIso(cx + 70, cy, H + neckH + 50), toIso(cx + 70, cy, H + neckH)], 'FRAME', true, false, accDepth);
-        const pStart = toIso(cx, cy, H + neckH + 50);
-        const pEnd = [pStart[0] + Math.round(textH * 3.5), pStart[1] + Math.round(textH * 2.0)];
-        drawLeader(ents, pStart, [pEnd[0] - textH * 1.5, pEnd[1]], pEnd, ['MANHOLE Ø600'], textH * 0.85, 'left', 'DIM');
+        isoCircle(cx, cy, H, 270, 'XY', 'PANEL_DETAIL', accDepth);
+
+        // 2) 평면도 내부 팔각 리브 형상
+        const oct1 = [[260, 105], [735, 105], [888, 260], [888, 735], [735, 888], [262, 888], [105, 735], [105, 260]];
+        const oct2 = [[150, 280], [290, 150], [710, 150], [850, 280], [850, 720], [710, 850], [290, 850], [150, 720]];
+        poly(oct1.map(p => toIso(x0 + p[0], y0 + p[1], H)), 'FRAME', true, false, accDepth);
+        poly(oct2.map(p => toIso(x0 + p[0], y0 + p[1], H)), 'FRAME', true, false, accDepth);
+
+        // 3) 손잡이/힌지 디테일 박스
+        const tab1 = [[310, 110], [390, 110], [390, 67], [310, 67]];
+        const tab2 = [[610, 110], [690, 110], [690, 67], [610, 67]];
+        const tab3 = [[462, 945], [538, 945], [538, 898], [462, 898]];
+        poly(tab1.map(p => toIso(x0 + p[0], y0 + p[1], H)), 'FRAME', true, false, accDepth);
+        poly(tab2.map(p => toIso(x0 + p[0], y0 + p[1], H)), 'FRAME', true, false, accDepth);
+        poly(tab3.map(p => toIso(x0 + p[0], y0 + p[1], H)), 'FRAME', true, false, accDepth);
+
+        // 4) 정면도 CManholeLT 40mm 저상형 림
+        const rimH = 40;
+        isoCircle(cx, cy, H + rimH, 300, 'XY', 'FRAME', accDepth);
+        ln(toIso(cx - 300, cy, H), toIso(cx - 300, cy, H + rimH), 'FRAME', accDepth);
+        ln(toIso(cx + 300, cy, H), toIso(cx + 300, cy, H + rimH), 'FRAME', accDepth);
+        ln(toIso(cx, cy - 300, H), toIso(cx, cy - 300, H + rimH), 'FRAME', accDepth);
+        ln(toIso(cx, cy + 300, H), toIso(cx, cy + 300, H + rimH), 'FRAME', accDepth);
+        // 중앙 손잡이
+        ln(toIso(cx - 70, cy, H + rimH + 25), toIso(cx + 70, cy, H + rimH + 25), 'FRAME', accDepth);
+        ln(toIso(cx - 70, cy, H + rimH), toIso(cx - 70, cy, H + rimH + 25), 'FRAME', accDepth);
+        ln(toIso(cx + 70, cy, H + rimH), toIso(cx + 70, cy, H + rimH + 25), 'FRAME', accDepth);
       }
 
-      if (mk & 2) { // 3D AIR VENT
-        const ventX = (mk & 1) ? cx + 280 : cx;
-        const ventY = (mk & 1) ? cy + 280 : cy;
-        const pipeH = 350;
-        const vDepth = getDepth(ventX, ventY, H + 100);
-        ln(toIso(ventX - 40, ventY, H), toIso(ventX - 40, ventY, H + pipeH), 'FRAME', vDepth);
-        ln(toIso(ventX + 40, ventY, H), toIso(ventX + 40, ventY, H + pipeH), 'FRAME', vDepth);
-        isoCircle(ventX, ventY, H + pipeH, 90, 'XY', 'FRAME', vDepth);
-        isoCircle(ventX, ventY, H + pipeH + 45, 110, 'XY', 'FRAME', vDepth);
-        isoCircle(ventX, ventY, H + pipeH + 75, 40, 'XY', 'FRAME', vDepth);
-        const pStart = toIso(ventX, ventY, H + pipeH + 75);
-        const pEnd = [pStart[0] - Math.round(textH * 3.5), pStart[1] + Math.round(textH * 1.8)];
-        drawLeader(ents, pStart, [pEnd[0] + textH * 1.5, pEnd[1]], pEnd, ['AIR VENT 100A'], textH * 0.85, 'right', 'DIM');
+      if (mk & 2) { // 에어벤트 (평면도 동심원 십자선 및 정면도 버섯형 캡)
+        const ventX = (mk & 1) ? cx + 250 : cx;
+        const ventY = (mk & 1) ? cy + 250 : cy;
+        const vDepth = getDepth(ventX, ventY, H + 50);
+
+        // 평면도 동심원 및 십자선
+        isoCircle(ventX, ventY, H, 50, 'XY', 'REINF', vDepth);
+        isoCircle(ventX, ventY, H, 100, 'XY', 'REINF', vDepth);
+        ln(toIso(ventX - 120, ventY, H), toIso(ventX + 120, ventY, H), 'REINF', vDepth);
+        ln(toIso(ventX, ventY - 120, H), toIso(ventX, ventY + 120, H), 'REINF', vDepth);
+
+        // 정면도 소형 벤트 파이프 및 캡 (높이 75mm 컴팩트 규격)
+        ln(toIso(ventX - 30, ventY, H), toIso(ventX - 30, ventY, H + 60), 'FRAME', vDepth);
+        ln(toIso(ventX + 30, ventY, H), toIso(ventX + 30, ventY, H + 60), 'FRAME', vDepth);
+        isoCircle(ventX, ventY, H + 60, 60, 'XY', 'FRAME', vDepth);
+        isoCircle(ventX, ventY, H + 75, 60, 'XY', 'FRAME', vDepth);
+        ln(toIso(ventX - 60, ventY, H + 60), toIso(ventX - 60, ventY, H + 75), 'FRAME', vDepth);
+        ln(toIso(ventX + 60, ventY, H + 60), toIso(ventX + 60, ventY, H + 75), 'FRAME', vDepth);
       }
     });
 
-    // 6. 외부 사다리 (External Ladder with Cage & Top Safety Rails)
+    // 6. 외부 사다리 (정면도 ladderShapes idx=5 및 평면도 형상 기반 직선 사다리)
     const lads = ladderList(opt, map) || [];
     lads.forEach(l => {
-      const ladW = 450;
+      const mx = 135, T = 40; // ladderShapes 표준 규격: 폭 FW=270 (mx=135), 파이프 두께 T=40
+      const TO = 200; // 벽체 이격 거리 (200mm)
+
       if (l.sd === 'D') {
         const lx = l.x;
-        const x1 = lx - ladW / 2, x2 = lx + ladW / 2;
-        const yOff = -120;
-        const lDepth = getDepth(lx, yOff - 50, H / 2);
-        ln(toIso(x1, yOff, 0), toIso(x1, yOff, H + 850), 'FRAME', lDepth);
-        ln(toIso(x2, yOff, 0), toIso(x2, yOff, H + 850), 'FRAME', lDepth);
-        poly([toIso(x1, yOff, H + 850), toIso(x1, yOff / 2, H + 900), toIso(x1, 0, H + 850), toIso(x1, 50, H)], 'FRAME', false, false, lDepth);
-        poly([toIso(x2, yOff, H + 850), toIso(x2, yOff / 2, H + 900), toIso(x2, 0, H + 850), toIso(x2, 50, H)], 'FRAME', false, false, lDepth);
-        for (let rz = 300; rz <= H; rz += 300) {
-          ln(toIso(x1, yOff, rz), toIso(x2, yOff, rz), 'FRAME', lDepth);
-        }
-        [300, Math.round(H / 2), H].forEach(bz => {
-          ln(toIso(x1, 0, bz), toIso(x1, yOff, bz), 'FRAME', lDepth);
-          ln(toIso(x2, 0, bz), toIso(x2, yOff, bz), 'FRAME', lDepth);
-        });
-        if (H >= 3000) {
-          for (let cz = 2200; cz <= H + 500; cz += 800) {
-            const pts = [];
-            for (let a = 0; a <= 8; a++) {
-              const ang = Math.PI - (a * Math.PI) / 8;
-              const hx = lx + (ladW / 2 + 100) * Math.cos(ang);
-              const hy = yOff - 300 * Math.sin(ang);
-              pts.push(toIso(hx, hy, cz));
+        let yWall = 0;
+        for (let r = 0; r < map.rows.length; r++) {
+          for (let c = 0; c < map.cols.length; c++) {
+            if (map.has(r, c) && !map.has(r - 1, c)) {
+              if (lx >= map.xs[c] - 10 && lx <= map.xs[c + 1] + 10) { yWall = map.ys[r]; break; }
             }
-            poly(pts, 'FRAME', false, false, lDepth);
-          }
-          for (let s = -1; s <= 1; s++) {
-            ln(toIso(lx + s * 160, yOff - 300, 2200), toIso(lx + s * 160, yOff - 300, H + 500), 'FRAME', lDepth);
           }
         }
-        const pStart = toIso(lx, yOff, H + 400);
-        const pEnd = [pStart[0] - Math.round(textH * 3.5), pStart[1] + Math.round(textH * 1.5)];
-        drawLeader(ents, pStart, [pEnd[0] + textH * 1.5, pEnd[1]], pEnd, ['EXTERNAL LADDER', (H >= 3000 ? '(W/ SAFETY CAGE)' : '')].filter(Boolean), textH * 0.8, 'right', 'DIM');
+        const yOff = yWall - TO;
+        const lDepth = getDepth(lx, yOff - 50, H / 2);
+        const xL1 = lx - mx - T, xL2 = lx - mx;
+        const xR1 = lx + mx, xR2 = lx + mx + T;
+
+        // 1) 좌/우 세로 레일 (층별 분할 렌더링으로 벽체 판넬에 의한 은선 가림 방지)
+        for (let k = 0; k < hs.length; k++) {
+          const z0 = zs[k], z1 = zs[k + 1];
+          const segDepth = getDepth(lx, yOff, (z0 + z1) / 2);
+          ln(toIso(xL1, yOff, z0), toIso(xL1, yOff, z1), 'FRAME', segDepth);
+          ln(toIso(xL2, yOff, z0), toIso(xL2, yOff, z1), 'FRAME', segDepth);
+          ln(toIso(xR1, yOff, z0), toIso(xR1, yOff, z1), 'FRAME', segDepth);
+          ln(toIso(xR2, yOff, z0), toIso(xR2, yOff, z1), 'FRAME', segDepth);
+          if (k === 0) {
+            ln(toIso(xL1, yOff, z0), toIso(xL2, yOff, z0), 'FRAME', segDepth);
+            ln(toIso(xR1, yOff, z0), toIso(xR2, yOff, z0), 'FRAME', segDepth);
+          }
+        }
+
+        // 2) 발판 (Rungs) - 300mm 간격 2중선
+        for (let rz = 200; rz <= H; rz += 300) {
+          const rDepth = getDepth(lx, yOff, rz);
+          ln(toIso(xL2, yOff, rz), toIso(xR1, yOff, rz), 'FRAME', rDepth);
+          ln(toIso(xL2, yOff, rz + 20), toIso(xR1, yOff, rz + 20), 'FRAME', rDepth);
+        }
+
+        // 3) 벽체 고정 브래킷 (하부 300, 중간 H/2, 상부 H)
+        [300, Math.round(H / 2), H].forEach(bz => {
+          const bDepth = getDepth(lx, (yWall + yOff) / 2, bz);
+          ln(toIso(xL1, yWall, bz), toIso(xL1, yOff, bz), 'FRAME', bDepth);
+          ln(toIso(xR2, yWall, bz), toIso(xR2, yOff, bz), 'FRAME', bDepth);
+        });
+
+        // 4) 상부 안전 손잡이 벤딩 (H에서 H+700까지 돌출 후 탱크 상단으로 연결)
+        const tDepth = getDepth(lx, yOff, H + 350);
+        ln(toIso(xL1, yOff, H), toIso(xL1, yOff, H + 700), 'FRAME', tDepth);
+        ln(toIso(xL2, yOff, H), toIso(xL2, yOff, H + 700), 'FRAME', tDepth);
+        ln(toIso(xR1, yOff, H), toIso(xR1, yOff, H + 700), 'FRAME', tDepth);
+        ln(toIso(xR2, yOff, H), toIso(xR2, yOff, H + 700), 'FRAME', tDepth);
+
+        ln(toIso(xL1, yOff, H + 700), toIso(xL1, yWall, H + 700), 'FRAME', tDepth);
+        ln(toIso(xL2, yOff, H + 700), toIso(xL2, yWall, H + 700), 'FRAME', tDepth);
+        ln(toIso(xL1, yWall, H + 700), toIso(xL1, yWall, H), 'FRAME', tDepth);
+        ln(toIso(xL2, yWall, H + 700), toIso(xL2, yWall, H), 'FRAME', tDepth);
+
+        ln(toIso(xR1, yOff, H + 700), toIso(xR1, yWall, H + 700), 'FRAME', tDepth);
+        ln(toIso(xR2, yOff, H + 700), toIso(xR2, yWall, H + 700), 'FRAME', tDepth);
+        ln(toIso(xR1, yWall, H + 700), toIso(xR1, yWall, H), 'FRAME', tDepth);
+        ln(toIso(xR2, yWall, H + 700), toIso(xR2, yWall, H), 'FRAME', tDepth);
+
       } else if (l.sd === 'R') {
         const ly = l.y;
-        const y1 = ly - ladW / 2, y2 = ly + ladW / 2;
-        const xOff = totalL + 120;
-        const lDepth = getDepth(xOff + 50, ly, H / 2);
-        ln(toIso(xOff, y1, 0), toIso(xOff, y1, H + 850), 'FRAME', lDepth);
-        ln(toIso(xOff, y2, 0), toIso(xOff, y2, H + 850), 'FRAME', lDepth);
-        poly([toIso(xOff, y1, H + 850), toIso(xOff - 60, y1, H + 900), toIso(totalL, y1, H + 850), toIso(totalL - 50, y1, H)], 'FRAME', false, false, lDepth);
-        poly([toIso(xOff, y2, H + 850), toIso(xOff - 60, y2, H + 900), toIso(totalL, y2, H + 850), toIso(totalL - 50, y2, H)], 'FRAME', false, false, lDepth);
-        for (let rz = 300; rz <= H; rz += 300) {
-          ln(toIso(xOff, y1, rz), toIso(xOff, y2, rz), 'FRAME', lDepth);
-        }
-        [300, Math.round(H / 2), H].forEach(bz => {
-          ln(toIso(totalL, y1, bz), toIso(xOff, y1, bz), 'FRAME', lDepth);
-          ln(toIso(totalL, y2, bz), toIso(xOff, y2, bz), 'FRAME', lDepth);
-        });
-        if (H >= 3000) {
-          for (let cz = 2200; cz <= H + 500; cz += 800) {
-            const pts = [];
-            for (let a = 0; a <= 8; a++) {
-              const ang = (a * Math.PI) / 8 - Math.PI / 2;
-              const hx = xOff + 300 * Math.cos(ang);
-              const hy = ly + (ladW / 2 + 100) * Math.sin(ang);
-              pts.push(toIso(hx, hy, cz));
+        let xWall = totalL;
+        for (let r = 0; r < map.rows.length; r++) {
+          if (ly >= map.ys[r] - 10 && ly <= map.ys[r + 1] + 10) {
+            for (let c = map.cols.length - 1; c >= 0; c--) {
+              if (map.has(r, c) && !map.has(r, c + 1)) { xWall = map.xs[c + 1]; break; }
             }
-            poly(pts, 'FRAME', false, false, lDepth);
-          }
-          for (let s = -1; s <= 1; s++) {
-            ln(toIso(xOff + 300, ly + s * 160, 2200), toIso(xOff + 300, ly + s * 160, H + 500), 'FRAME', lDepth);
+            break;
           }
         }
-        const pStart = toIso(xOff, ly, H + 400);
-        const pEnd = [pStart[0] + Math.round(textH * 3.5), pStart[1] + Math.round(textH * 1.5)];
-        drawLeader(ents, pStart, [pEnd[0] - textH * 1.5, pEnd[1]], pEnd, ['EXTERNAL LADDER', (H >= 3000 ? '(W/ SAFETY CAGE)' : '')].filter(Boolean), textH * 0.8, 'left', 'DIM');
+        const xOff = xWall + TO;
+        const yL1 = ly - mx - T, yL2 = ly - mx;
+        const yR1 = ly + mx, yR2 = ly + mx + T;
+
+        for (let k = 0; k < hs.length; k++) {
+          const z0 = zs[k], z1 = zs[k + 1];
+          const segDepth = getDepth(xOff, ly, (z0 + z1) / 2);
+          ln(toIso(xOff, yL1, z0), toIso(xOff, yL1, z1), 'FRAME', segDepth);
+          ln(toIso(xOff, yL2, z0), toIso(xOff, yL2, z1), 'FRAME', segDepth);
+          ln(toIso(xOff, yR1, z0), toIso(xOff, yR1, z1), 'FRAME', segDepth);
+          ln(toIso(xOff, yR2, z0), toIso(xOff, yR2, z1), 'FRAME', segDepth);
+          if (k === 0) {
+            ln(toIso(xOff, yL1, z0), toIso(xOff, yL2, z0), 'FRAME', segDepth);
+            ln(toIso(xOff, yR1, z0), toIso(xOff, yR2, z0), 'FRAME', segDepth);
+          }
+        }
+
+        for (let rz = 200; rz <= H; rz += 300) {
+          const rDepth = getDepth(xOff, ly, rz);
+          ln(toIso(xOff, yL2, rz), toIso(xOff, yR1, rz), 'FRAME', rDepth);
+          ln(toIso(xOff, yL2, rz + 20), toIso(xOff, yR1, rz + 20), 'FRAME', rDepth);
+        }
+
+        [300, Math.round(H / 2), H].forEach(bz => {
+          const bDepth = getDepth((xWall + xOff) / 2, ly, bz);
+          ln(toIso(xWall, yL1, bz), toIso(xOff, yL1, bz), 'FRAME', bDepth);
+          ln(toIso(xWall, yR2, bz), toIso(xOff, yR2, bz), 'FRAME', bDepth);
+        });
+
+        const tDepth = getDepth(xOff, ly, H + 350);
+        ln(toIso(xOff, yL1, H), toIso(xOff, yL1, H + 700), 'FRAME', tDepth);
+        ln(toIso(xOff, yL2, H), toIso(xOff, yL2, H + 700), 'FRAME', tDepth);
+        ln(toIso(xOff, yR1, H), toIso(xOff, yR1, H + 700), 'FRAME', tDepth);
+        ln(toIso(xOff, yR2, H), toIso(xOff, yR2, H + 700), 'FRAME', tDepth);
+
+        ln(toIso(xOff, yL1, H + 700), toIso(xWall, yL1, H + 700), 'FRAME', tDepth);
+        ln(toIso(xOff, yL2, H + 700), toIso(xWall, yL2, H + 700), 'FRAME', tDepth);
+        ln(toIso(xWall, yL1, H + 700), toIso(xWall, yL1, H), 'FRAME', tDepth);
+        ln(toIso(xWall, yL2, H + 700), toIso(xWall, yL2, H), 'FRAME', tDepth);
+
+        ln(toIso(xOff, yR1, H + 700), toIso(xWall, yR1, H + 700), 'FRAME', tDepth);
+        ln(toIso(xOff, yR2, H + 700), toIso(xWall, yR2, H + 700), 'FRAME', tDepth);
+        ln(toIso(xWall, yR1, H + 700), toIso(xWall, yR1, H), 'FRAME', tDepth);
+        ln(toIso(xWall, yR2, H + 700), toIso(xWall, yR2, H), 'FRAME', tDepth);
       }
     });
 
