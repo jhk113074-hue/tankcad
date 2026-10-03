@@ -705,6 +705,39 @@
     });
     return list;
   }
+  const NOZZLE_ABBR_MAP = {
+    INLET: 'IN',
+    OUTLET: 'OUT',
+    OVERFLOW: 'O/F',
+    DRAIN: 'DR',
+    FIRE: 'FF'
+  };
+  function getNozzleAbbr(name) {
+    if (!name) return '';
+    const upper = String(name).trim().toUpperCase();
+    if (NOZZLE_ABBR_MAP[upper]) return NOZZLE_ABBR_MAP[upper];
+    if (upper.includes('INLET') || upper.includes('유입') || upper.includes('급수')) return 'IN';
+    if (upper.includes('OUTLET') || upper.includes('유출') || upper.includes('송수')) return 'OUT';
+    if (upper.includes('OVERFLOW') || upper.includes('월류')) return 'O/F';
+    if (upper.includes('DRAIN') || upper.includes('배수')) return 'DR';
+    if (upper.includes('FIRE') || upper.includes('소방') || upper.includes('소화')) return 'FF';
+    return upper.slice(0, 4);
+  }
+  function formatNozzleLabel(n) {
+    if (!n) return '';
+    const abbr = getNozzleAbbr(n.name);
+    return `[${n.mark}] ${abbr ? abbr + ' ' : ''}${n.size}`;
+  }
+  function formatNozzleGroupLabel(items) {
+    if (!items || !items.length) return '';
+    const sameSize = items.every(it => it.n.size === items[0].n.size);
+    const sameAbbr = items.every(it => getNozzleAbbr(it.n.name) === getNozzleAbbr(items[0].n.name));
+    if (sameSize && sameAbbr) {
+      const abbr = getNozzleAbbr(items[0].n.name);
+      return `[${items.map(it => it.n.mark).join(', ')}] ${abbr ? abbr + ' ' : ''}${items[0].n.size}`;
+    }
+    return items.map(it => formatNozzleLabel(it.n)).join(', ');
+  }
   function drawLeader(ents, startPt, elbowPt, endPt, lines, textH, align, layer) {
     layer = layer || 'DIM';
     ents.push({ t: 'line', a: startPt, b: elbowPt, layer });
@@ -830,6 +863,7 @@
 
   /* ---------- 평면도 생성 (TankPlane + TankPlaneDim 상당, 직사각형 탱크) ---------- */
   const FRAME = 75, DIM_OFF = 140;   // 원본 상수: 틀 75, 외부보강 140
+  let dimSeq = 0;
   function dimLinear(ents, p1, p2, off, vertical, text, textH, layer) {
     const span = vertical ? Math.abs(p2[1] - p1[1]) : Math.abs(p2[0] - p1[0]);
     // 1. 작은 구간(75mm, 100mm 등)에 대한 축척 적응형 텍스트 크기 및 틱 크기
@@ -841,29 +875,32 @@
     // 텍스트는 valign: 'middle'이므로 문자 높이 절반 + 틱 높이 + 안전 여백 확보: 1.05 * curTextH
     const textOffset = Math.round(curTextH * 1.05);
 
+    const dId = 'DIM_' + (++dimSeq);
+    const meta = { id: dId, vertical: !!vertical, text: String(text != null ? text : '') };
+
     if (!vertical) {                           // 수평 치수선, off 는 y 방향 위치
       const y = off;
       const dir = y >= p1[1] ? 1 : -1;
-      ents.push({ t: 'line', a: [p1[0], p1[1]], b: [p1[0], y + dir * extOver], layer });
-      ents.push({ t: 'line', a: [p2[0], p2[1]], b: [p2[0], y + dir * extOver], layer });
-      ents.push({ t: 'line', a: [p1[0], y], b: [p2[0], y], layer });
-      ents.push({ t: 'line', a: [p1[0] - tick, y - tick], b: [p1[0] + tick, y + tick], layer });
-      ents.push({ t: 'line', a: [p2[0] - tick, y - tick], b: [p2[0] + tick, y + tick], layer });
+      ents.push({ t: 'line', a: [p1[0], p1[1]], b: [p1[0], y + dir * extOver], layer, dimId: dId, dimRole: 'ext1', dimMeta: meta });
+      ents.push({ t: 'line', a: [p2[0], p2[1]], b: [p2[0], y + dir * extOver], layer, dimId: dId, dimRole: 'ext2', dimMeta: meta });
+      ents.push({ t: 'line', a: [p1[0], y], b: [p2[0], y], layer, dimId: dId, dimRole: 'dimline', dimMeta: meta });
+      ents.push({ t: 'line', a: [p1[0] - tick, y - tick], b: [p1[0] + tick, y + tick], layer, dimId: dId, dimRole: 'tick1', dimMeta: meta });
+      ents.push({ t: 'line', a: [p2[0] - tick, y - tick], b: [p2[0] + tick, y + tick], layer, dimId: dId, dimRole: 'tick2', dimMeta: meta });
       // 수평 치수 문자는 항상 치수선 위쪽에 배치 (줄에 걸치지 않음)
-      ents.push({ t: 'text', p: [(p1[0] + p2[0]) / 2, y + textOffset], h: curTextH, s: text, rot: 0, align: 'center', valign: 'middle', layer });
+      ents.push({ t: 'text', p: [(p1[0] + p2[0]) / 2, y + textOffset], h: curTextH, s: text, rot: 0, align: 'center', valign: 'middle', layer, dimId: dId, dimRole: 'text', dimMeta: meta });
     } else {                                   // 수직 치수선, off 는 x 방향 위치
       const x = off;
       const objX = (p1[0] + p2[0]) / 2;
       const isLeft = x <= objX;
       const dir = isLeft ? -1 : 1;
-      ents.push({ t: 'line', a: [p1[0], p1[1]], b: [x + dir * extOver, p1[1]], layer });
-      ents.push({ t: 'line', a: [p2[0], p2[1]], b: [x + dir * extOver, p2[1]], layer });
-      ents.push({ t: 'line', a: [x, p1[1]], b: [x, p2[1]], layer });
-      ents.push({ t: 'line', a: [x - tick, p1[1] - tick], b: [x + tick, p1[1] + tick], layer });
-      ents.push({ t: 'line', a: [x - tick, p2[1] - tick], b: [x + tick, p2[1] + tick], layer });
+      ents.push({ t: 'line', a: [p1[0], p1[1]], b: [x + dir * extOver, p1[1]], layer, dimId: dId, dimRole: 'ext1', dimMeta: meta });
+      ents.push({ t: 'line', a: [p2[0], p2[1]], b: [x + dir * extOver, p2[1]], layer, dimId: dId, dimRole: 'ext2', dimMeta: meta });
+      ents.push({ t: 'line', a: [x, p1[1]], b: [x, p2[1]], layer, dimId: dId, dimRole: 'dimline', dimMeta: meta });
+      ents.push({ t: 'line', a: [x - tick, p1[1] - tick], b: [x + tick, p1[1] + tick], layer, dimId: dId, dimRole: 'tick1', dimMeta: meta });
+      ents.push({ t: 'line', a: [x - tick, p2[1] - tick], b: [x + tick, p2[1] + tick], layer, dimId: dId, dimRole: 'tick2', dimMeta: meta });
       // 수직 치수 문자는 왼쪽 치수선의 경우 선 왼쪽, 오른쪽 치수선의 경우 선 오른쪽에 배치
       const textX = isLeft ? x - textOffset : x + textOffset;
-      ents.push({ t: 'text', p: [textX, (p1[1] + p2[1]) / 2], h: curTextH, s: text, rot: 90, align: 'center', valign: 'middle', layer });
+      ents.push({ t: 'text', p: [textX, (p1[1] + p2[1]) / 2], h: curTextH, s: text, rot: 90, align: 'center', valign: 'middle', layer, dimId: dId, dimRole: 'text', dimMeta: meta });
     }
   }
 
@@ -1013,7 +1050,7 @@
     nozList.forEach((n, idx) => {
       const spec = getNozzleSpec(n.size);
       const isFlg = n.type === 'FLANGE';
-      const label = `[${n.mark}] ${n.size}`;
+      const label = formatNozzleLabel(n);
       const offVal = n.offset || 0;
       
       if (n.face === 'top') {
@@ -2648,13 +2685,7 @@
         ln([xEnd, elev - spec.r], [xEnd, elev + spec.r], 'NOZZLE');
       }
 
-      const sameSize = items.every(it => it.n.size === items[0].n.size);
-      let line1;
-      if (sameSize) {
-        line1 = `[${items.map(it => it.n.mark).join(', ')}] ${items[0].n.size}`;
-      } else {
-        line1 = items.map(it => `[${it.n.mark}] ${it.n.size}`).join(', ');
-      }
+      const line1 = formatNozzleGroupLabel(items);
       const line2 = `EL.+${elev.toLocaleString()}`;
 
       let ey = elev + Math.round(1.5 * N);
@@ -2704,13 +2735,7 @@
         ln([xEnd, elev - spec.r], [xEnd, elev + spec.r], 'NOZZLE');
       }
 
-      const sameSize = items.every(it => it.n.size === items[0].n.size);
-      let line1;
-      if (sameSize) {
-        line1 = `[${items.map(it => it.n.mark).join(', ')}] ${items[0].n.size}`;
-      } else {
-        line1 = items.map(it => `[${it.n.mark}] ${it.n.size}`).join(', ');
-      }
+      const line1 = formatNozzleGroupLabel(items);
       const line2 = `EL.+${elev.toLocaleString()}`;
 
       let ey = elev + Math.round(1.5 * N);
@@ -2758,13 +2783,7 @@
         ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'NOZZLE');
       }
 
-      const sameSize = items.every(it => it.n.size === items[0].n.size);
-      let line1;
-      if (sameSize) {
-        line1 = `[${items.map(it => it.n.mark).join(', ')}] ${items[0].n.size}`;
-      } else {
-        line1 = items.map(it => `[${it.n.mark}] ${it.n.size}`).join(', ');
-      }
+      const line1 = formatNozzleGroupLabel(items);
       const line2 = 'EL.+TOP';
 
       const yTip = isFlg ? (yBase + spec.neckLen) : (yBase + spec.sockLen);
@@ -2816,13 +2835,7 @@
       ln([cx - cr, cy], [cx + cr, cy], 'NOZZLE');
       ln([cx, cy - cr], [cx, cy + cr], 'NOZZLE');
 
-      const sameSize = items.every(it => it.n.size === items[0].n.size);
-      let line1;
-      if (sameSize) {
-        line1 = `[${items.map(it => it.n.mark).join(', ')}] ${items[0].n.size}`;
-      } else {
-        line1 = items.map(it => `[${it.n.mark}] ${it.n.size}`).join(', ');
-      }
+      const line1 = formatNozzleGroupLabel(items);
       const line2 = `EL.+${elev.toLocaleString()}`;
 
       const toRight = cx >= total / 2;
@@ -4022,7 +4035,7 @@
       nozzles.forEach(n => {
         const spec = getNozzleSpec(n.size);
         const elev = typeof n.elev === 'number' ? n.elev : 300;
-        const markLabel = `[${n.mark}] ${n.name} ${n.size}`;
+        const markLabel = formatNozzleLabel(n);
 
         if (n.face === 'front') {
           const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
@@ -4947,10 +4960,12 @@
       const faceNameMap = lang === 'en' ? { front: 'FRONT', rear: 'REAR', left: 'LEFT', right: 'RIGHT', top: 'TOP' } : (lang === 'ko' ? { front: '정면', rear: '배면', left: '좌측', right: '우측', top: '상부' } : { front: 'FRONT (정면)', rear: 'REAR (배면)', left: 'LEFT (좌측)', right: 'RIGHT (우측)', top: 'TOP (상부)' });
       activeNozzles.forEach(n => {
         curColX = tableX0;
+        const abbr = getNozzleAbbr(n.name);
+        const svcName = n.name + (abbr ? ' [' + abbr + ']' : '') + (n.desc ? ' (' + n.desc + ')' : '');
         const elevStr = n.face === 'top' ? 'TOP' : ('EL.+' + (typeof n.elev === 'number' ? n.elev.toLocaleString() : n.elev));
         const rowVals = [
           n.mark,
-          n.name + (n.desc ? ' (' + n.desc + ')' : ''),
+          svcName,
           n.size,
           n.type === 'FLANGE' ? 'FLG 10K' : 'SOCKET',
           elevStr,
@@ -5327,6 +5342,16 @@
     g(0, 'STYLE'); g(2, 'STANDARD'); g(70, 0); g(40, 0); g(41, 0.85); g(50, 0); g(71, 0); g(42, 2.5);
     g(3, 'simplex.shx'); g(4, 'whgtxt.shx');
     g(0, 'ENDTAB');
+    g(0, 'TABLE'); g(2, 'DIMSTYLE'); g(70, 1);
+    g(0, 'DIMSTYLE'); g(2, 'STANDARD'); g(70, 0);
+    g(40, 1.0);
+    g(41, 2.5);
+    g(42, 0.625);
+    g(43, 3.75);
+    g(44, 1.25);
+    g(140, 2.5);
+    g(147, 0.625);
+    g(0, 'ENDTAB');
     g(0, 'ENDSEC');
 
     const writeEnt = (e, defLayer) => {
@@ -5426,8 +5451,27 @@
       }
     };
 
-    const allBlocks = blocks || (ents && ents.blocks) || {};
-    if (Object.keys(allBlocks).length > 0) {
+    const entList = Array.isArray(ents) ? ents : ((ents && ents.ents) || []);
+    const dimGroups = new Map();
+    const otherEnts = [];
+
+    entList.forEach(e => {
+      if (e && e.dimId) {
+        let grp = dimGroups.get(e.dimId);
+        if (!grp) {
+          grp = { id: e.dimId, meta: e.dimMeta, roles: {}, ents: [] };
+          dimGroups.set(e.dimId, grp);
+        }
+        grp.ents.push(e);
+        if (e.dimRole) grp.roles[e.dimRole] = e;
+      } else if (e) {
+        otherEnts.push(e);
+      }
+    });
+
+    const allBlocks = { ...(blocks || (ents && ents.blocks) || {}) };
+    const hasBlocks = Object.keys(allBlocks).length > 0 || dimGroups.size > 0;
+    if (hasBlocks) {
       g(0, 'SECTION'); g(2, 'BLOCKS');
       Object.entries(allBlocks).forEach(([bName, bEnts]) => {
         g(0, 'BLOCK'); g(8, '0'); g(2, bName); g(70, 0);
@@ -5436,16 +5480,61 @@
         bEnts.forEach(e => writeEnt(e, 'PANEL'));
         g(0, 'ENDBLK'); g(8, '0');
       });
+
+      let dxfDimIdx = 0;
+      dimGroups.forEach(grp => {
+        const blkName = '*D' + (++dxfDimIdx);
+        grp.blkName = blkName;
+        const bLayer = grp.ents[0]?.layer || 'DIM';
+        g(0, 'BLOCK'); g(8, bLayer); g(2, blkName); g(70, 1);
+        g(10, 0); g(20, 0); g(30, 0);
+        g(3, blkName); g(1, '');
+        grp.ents.forEach(e => writeEnt(e, 'DIM'));
+        g(0, 'ENDBLK'); g(8, bLayer);
+      });
       g(0, 'ENDSEC');
     }
 
     g(0, 'SECTION'); g(2, 'ENTITIES');
-    const entList = Array.isArray(ents) ? ents : ((ents && ents.ents) || []);
-    entList.forEach(e => writeEnt(e, '0'));
+    otherEnts.forEach(e => writeEnt(e, '0'));
+
+    dimGroups.forEach(grp => {
+      const ext1 = grp.roles.ext1;
+      const ext2 = grp.roles.ext2;
+      const dimline = grp.roles.dimline;
+      const txt = grp.roles.text;
+      if (!dimline || !ext1 || !ext2 || !txt) {
+        grp.ents.forEach(e => writeEnt(e, 'DIM'));
+        return;
+      }
+      const layer = dimline.layer || 'DIM';
+      const isVert = !!(grp.meta && grp.meta.vertical);
+      const rot = isVert ? 90 : 0;
+      const p1 = ext1.a;
+      const p2 = ext2.a;
+      const dimPtX = (dimline.a[0] + dimline.b[0]) / 2;
+      const dimPtY = (dimline.a[1] + dimline.b[1]) / 2;
+      const textPtX = txt.p[0];
+      const textPtY = txt.p[1];
+      const str = String(txt.s != null ? txt.s : '');
+
+      g(0, 'DIMENSION');
+      g(8, layer);
+      g(2, grp.blkName);
+      g(10, n(dimPtX)); g(20, n(dimPtY)); g(30, 0);
+      g(11, n(textPtX)); g(21, n(textPtY)); g(31, 0);
+      g(70, 32);
+      g(1, dxfText(str));
+      g(3, 'STANDARD');
+      g(13, n(p1[0])); g(23, n(p1[1])); g(33, 0);
+      g(14, n(p2[0])); g(24, n(p2[1])); g(34, 0);
+      g(50, n(rot));
+    });
+
     g(0, 'ENDSEC'); g(0, 'EOF');
     return o.join('\r\n') + '\r\n';
   }
 
-  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, drawBalloonCallout, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable };
+  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, drawBalloonCallout, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TankCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
