@@ -317,6 +317,93 @@ def parse_dxf_string(dxf_content, target_w=None, target_h=None):
     return entities
 
 
+def extract_blocks_from_dxf(dxf_content):
+    """DXF 내용에서 정의된 모든 사용자 블록(BLOCKS)을 추출하여 블록명, WxH 크기, 정규화된 2D 엔티티 목록 반환"""
+    import tempfile
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".dxf", delete=False) as tf:
+        tf.write(dxf_content)
+        tmp_name = tf.name
+
+    try:
+        doc = ezdxf.readfile(tmp_name)
+    finally:
+        if os.path.exists(tmp_name):
+            try: os.remove(tmp_name)
+            except: pass
+
+    blocks_data = []
+    for block in doc.blocks:
+        name = block.name
+        if name.startswith('*'):
+            continue
+        ents = []
+        for e in block:
+            dxftype = e.dxftype()
+            if dxftype == 'LINE':
+                ents.append({'k': 'line', 'p': [[round(float(e.dxf.start.x), 1), round(float(e.dxf.start.y), 1)], [round(float(e.dxf.end.x), 1), round(float(e.dxf.end.y), 1)]]})
+            elif dxftype == 'CIRCLE':
+                ents.append({'k': 'circle', 'c': [round(float(e.dxf.center.x), 1), round(float(e.dxf.center.y), 1)], 'r': round(float(e.dxf.radius), 1)})
+            elif dxftype == 'ARC':
+                ents.append({'k': 'arc', 'c': [round(float(e.dxf.center.x), 1), round(float(e.dxf.center.y), 1)], 'r': round(float(e.dxf.radius), 1), 'a0': round(float(e.dxf.start_angle), 1), 'a1': round(float(e.dxf.end_angle), 1)})
+            elif dxftype == 'LWPOLYLINE':
+                pts = [[round(float(p[0]), 1), round(float(p[1]), 1)] for p in e.get_points('xy')]
+                if len(pts) >= 2:
+                    ents.append({'k': 'poly', 'p': pts, 'c': bool(e.closed)})
+            elif dxftype == 'POLYLINE':
+                pts = [[round(float(v.dxf.location.x), 1), round(float(v.dxf.location.y), 1)] for v in e.vertices]
+                if len(pts) >= 2:
+                    ents.append({'k': 'poly', 'p': pts, 'c': bool(e.is_closed)})
+
+        if not ents:
+            continue
+
+        min_x = min_y = float('inf')
+        max_x = max_y = float('-inf')
+        for ent in ents:
+            if ent['k'] == 'line':
+                for pt in ent['p']:
+                    min_x = min(min_x, pt[0])
+                    max_x = max(max_x, pt[0])
+                    min_y = min(min_y, pt[1])
+                    max_y = max(max_y, pt[1])
+            elif ent['k'] in ('circle', 'arc'):
+                cx, cy = ent['c']
+                r = ent['r']
+                min_x = min(min_x, cx - r)
+                max_x = max(max_x, cx + r)
+                min_y = min(min_y, cy - r)
+                max_y = max(max_y, cy + r)
+            elif ent['k'] == 'poly':
+                for pt in ent['p']:
+                    min_x = min(min_x, pt[0])
+                    max_x = max(max_x, pt[0])
+                    min_y = min(min_y, pt[1])
+                    max_y = max(max_y, pt[1])
+
+        w = round(max_x - min_x, 1) if max_x > min_x else 1000
+        h = round(max_y - min_y, 1) if max_y > min_y else 1000
+
+        norm_ents = []
+        for ent in ents:
+            if ent['k'] == 'line':
+                norm_ents.append({'k': 'line', 'p': [[round(ent['p'][0][0] - min_x, 1), round(ent['p'][0][1] - min_y, 1)], [round(ent['p'][1][0] - min_x, 1), round(ent['p'][1][1] - min_y, 1)]]})
+            elif ent['k'] == 'circle':
+                norm_ents.append({'k': 'circle', 'c': [round(ent['c'][0] - min_x, 1), round(ent['c'][1] - min_y, 1)], 'r': ent['r']})
+            elif ent['k'] == 'arc':
+                norm_ents.append({'k': 'arc', 'c': [round(ent['c'][0] - min_x, 1), round(ent['c'][1] - min_y, 1)], 'r': ent['r'], 'a0': ent.get('a0', 0), 'a1': ent.get('a1', 360)})
+            elif ent['k'] == 'poly':
+                norm_ents.append({'k': 'poly', 'p': [[round(p[0] - min_x, 1), round(p[1] - min_y, 1)] for p in ent['p']], 'c': ent.get('c', False)})
+
+        blocks_data.append({
+            'name': name,
+            'width': w,
+            'height': h,
+            'entities': norm_ents
+        })
+
+    return blocks_data
+
+
 def parse_step_string(step_text, target_w=None, target_h=None):
     """
     3D CAD STEP (ISO-10303-21) 파일 텍스트에서 정면 2D 투영 형상(외곽선, 엠보싱, 리브)을 추출합니다.

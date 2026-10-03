@@ -259,6 +259,36 @@ class TankCADHandler(SimpleHTTPRequestHandler):
                 self.send_json({"success": False, "error": f"DWG 변환 및 파싱 오류: {e}"}, status=400)
             return
 
+        # DWG/DXF 파일에서 모든 블록(BLOCK) 목록 일괄 추출 (다중 부품/판넬 자동 분할)
+        if self.path == "/api/cad/extract-blocks":
+            dwg_b64 = payload.get("dwg_base64", "")
+            dxf_text = payload.get("dxf_text", "")
+            if not dwg_b64 and not dxf_text:
+                self.send_json({"success": False, "error": "도면 데이터가 없습니다."}, status=400)
+                return
+            try:
+                if dwg_b64:
+                    oda_path = setup_oda()
+                    if not oda_path or not odafc.is_installed():
+                        self.send_json({"success": False, "error": "ODA File Converter가 필요합니다. DXF 파일로 업로드하시면 서버 없이 즉시 변환됩니다."}, status=400)
+                        return
+                    import base64
+                    dwg_bytes = base64.b64decode(dwg_b64)
+                    with tempfile.TemporaryDirectory() as tmp_dir:
+                        in_dwg = os.path.join(tmp_dir, "input.dwg")
+                        out_dxf = os.path.join(tmp_dir, "output.dxf")
+                        with open(in_dwg, "wb") as f:
+                            f.write(dwg_bytes)
+                        odafc.convert(in_dwg, out_dxf, version="ACAD2018")
+                        with open(out_dxf, "r", encoding="utf-8", errors="ignore") as f:
+                            dxf_text = f.read()
+
+                blocks = db.extract_blocks_from_dxf(dxf_text)
+                self.send_json({"success": True, "blocks": blocks, "count": len(blocks)})
+            except Exception as e:
+                self.send_json({"success": False, "error": f"블록 추출 오류: {e}"}, status=400)
+            return
+
         # DB 초기 템플릿으로 리셋
         if self.path == "/api/panels/reset":
             db.seed_defaults()
