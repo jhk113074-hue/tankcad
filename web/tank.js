@@ -208,8 +208,11 @@
       } else if (k === 'poly') {
         const rawP = s.p || s.pts || [];
         if (rawP.length >= 2) {
-          const p = rawP.map(q => [x + q[0], y + q[1]]);
           const isClosed = s.c !== false;
+          let p = rawP.map(q => [x + q[0], y + q[1]]);
+          if (isClosed && p.length > 2 && Math.hypot(p[p.length - 1][0] - p[0][0], p[p.length - 1][1] - p[0][1]) < 0.1) {
+            p = p.slice(0, -1);
+          }
           const cnt = isClosed ? p.length : p.length - 1;
           for (let i = 0; i < cnt; i++) out.push({ t: 'line', a: p[i], b: p[(i + 1) % p.length], layer: 'PANEL_DETAIL' });
         }
@@ -2004,7 +2007,7 @@
               const p = s.p || s.pts || [];
               if (p.length >= 2) {
                 for (let k = 0; k + 1 < p.length; k++) bEnts.push({ t: 'line', a: p[k], b: p[k + 1], layer: 'PANEL_DETAIL' });
-                if (s.c !== false && p.length > 2) bEnts.push({ t: 'line', a: p[p.length - 1], b: p[0], layer: 'PANEL_DETAIL' });
+                if (s.c !== false && p.length > 2 && Math.hypot(p[p.length - 1][0] - p[0][0], p[p.length - 1][1] - p[0][1]) > 0.1) bEnts.push({ t: 'line', a: p[p.length - 1], b: p[0], layer: 'PANEL_DETAIL' });
               }
             } else if (k === 'circle' && (s.c || s.center)) {
               const c = s.c || s.center;
@@ -2894,14 +2897,18 @@
           }
           ln(pt1, pt2, defaultLayer, depth);
         } else if (k === 'poly') {
-          const rawP = s.p || s.pts || [];
+          let rawP = s.p || s.pts || [];
           if (rawP.length >= 2) {
+            const isClosed = s.c !== false;
+            if (isClosed && rawP.length > 2 && Math.hypot(rawP[rawP.length - 1][0] - rawP[0][0], rawP[rawP.length - 1][1] - rawP[0][1]) < 0.1) {
+              rawP = rawP.slice(0, -1);
+            }
             const pts = rawP.map(p => {
               if (plane === 'XZ') return toIso(originX + p[0], originY, originZ + p[1]);
               if (plane === 'YZ') return toIso(originX, originY + p[0], originZ + p[1]);
               return toIso(originX + p[0], originY + p[1], originZ);
             });
-            poly(pts, defaultLayer, s.c !== false, false, depth);
+            poly(pts, defaultLayer, isClosed, false, depth);
           }
         } else if (k === 'circle' && (s.c || s.center)) {
           const c = s.c || s.center;

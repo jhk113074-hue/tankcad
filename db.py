@@ -4,6 +4,8 @@ import math
 import re
 import sqlite3
 import ezdxf
+from ezdxf import path
+
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tank_panels.db")
 PANEL_JSON_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "panel_templates.json")
@@ -262,33 +264,35 @@ def parse_dxf_string(dxf_content, target_w=None, target_h=None):
             raw.append({'k': 'arc', 'c': c, 'r': r, 's': s, 'e': e_pt, 'a0': float(e.dxf.start_angle), 'a1': float(e.dxf.end_angle)})
             xs.extend([s[0], e_pt[0]])
             ys.extend([s[1], e_pt[1]])
-        elif dxftype == 'LWPOLYLINE':
-            pts = [[float(p[0]), float(p[1])] for p in e.get_points('xy')]
-            if pts:
-                is_closed = bool(getattr(e, 'closed', False))
-                raw.append({'k': 'poly', 'p': pts, 'c': is_closed})
-                for p in pts:
-                    xs.append(p[0])
-                    ys.append(p[1])
-        elif dxftype == 'POLYLINE':
-            pts = [[float(v.dxf.location.x), float(v.dxf.location.y)] for v in e.vertices]
-            if pts:
-                is_closed = bool(e.is_closed) if hasattr(e, 'is_closed') else False
-                raw.append({'k': 'poly', 'p': pts, 'c': is_closed})
-                for p in pts:
-                    xs.append(p[0])
-                    ys.append(p[1])
-        elif dxftype in ('ELLIPSE', 'SPLINE'):
+        elif dxftype in ('LWPOLYLINE', 'POLYLINE', 'SPLINE', 'ELLIPSE'):
             try:
-                pts = [[float(p.x), float(p.y)] for p in e.flattening(distance=2.0)]
-                if pts:
-                    is_closed = (math.hypot(pts[0][0] - pts[-1][0], pts[0][1] - pts[-1][1]) < 1e-2)
+                p = path.make_path(e)
+                pts = [[round(float(pt.x), 1), round(float(pt.y), 1)] for pt in p.flattening(distance=0.5)]
+                is_closed = bool(getattr(e, 'closed', False) or getattr(e, 'is_closed', False) or p.is_closed)
+                if pts and is_closed and len(pts) > 2 and math.hypot(pts[0][0] - pts[-1][0], pts[0][1] - pts[-1][1]) < 0.1:
+                    pts.pop()
+                if len(pts) >= 2:
                     raw.append({'k': 'poly', 'p': pts, 'c': is_closed})
-                    for p in pts:
-                        xs.append(p[0])
-                        ys.append(p[1])
+                    for pt in pts:
+                        xs.append(pt[0])
+                        ys.append(pt[1])
             except Exception:
-                pass
+                if dxftype == 'LWPOLYLINE':
+                    pts = [[float(p[0]), float(p[1])] for p in e.get_points('xy')]
+                    if pts:
+                        is_closed = bool(getattr(e, 'closed', False))
+                        raw.append({'k': 'poly', 'p': pts, 'c': is_closed})
+                        for p_pt in pts:
+                            xs.append(p_pt[0])
+                            ys.append(p_pt[1])
+                elif dxftype == 'POLYLINE':
+                    pts = [[float(v.dxf.location.x), float(v.dxf.location.y)] for v in e.vertices]
+                    if pts:
+                        is_closed = bool(getattr(e, 'is_closed', False))
+                        raw.append({'k': 'poly', 'p': pts, 'c': is_closed})
+                        for p_pt in pts:
+                            xs.append(p_pt[0])
+                            ys.append(p_pt[1])
 
     if not raw or not xs or not ys:
         return []
@@ -360,14 +364,24 @@ def extract_blocks_from_dxf(dxf_content):
                 ents.append({'k': 'circle', 'c': [round(float(e.dxf.center.x), 1), round(float(e.dxf.center.y), 1)], 'r': round(float(e.dxf.radius), 1)})
             elif dxftype == 'ARC':
                 ents.append({'k': 'arc', 'c': [round(float(e.dxf.center.x), 1), round(float(e.dxf.center.y), 1)], 'r': round(float(e.dxf.radius), 1), 'a0': round(float(e.dxf.start_angle), 1), 'a1': round(float(e.dxf.end_angle), 1)})
-            elif dxftype == 'LWPOLYLINE':
-                pts = [[round(float(p[0]), 1), round(float(p[1]), 1)] for p in e.get_points('xy')]
-                if len(pts) >= 2:
-                    ents.append({'k': 'poly', 'p': pts, 'c': bool(e.closed)})
-            elif dxftype == 'POLYLINE':
-                pts = [[round(float(v.dxf.location.x), 1), round(float(v.dxf.location.y), 1)] for v in e.vertices]
-                if len(pts) >= 2:
-                    ents.append({'k': 'poly', 'p': pts, 'c': bool(e.is_closed)})
+            elif dxftype in ('LWPOLYLINE', 'POLYLINE', 'SPLINE', 'ELLIPSE'):
+                try:
+                    p = path.make_path(e)
+                    pts = [[round(float(pt.x), 1), round(float(pt.y), 1)] for pt in p.flattening(distance=0.5)]
+                    is_closed = bool(getattr(e, 'closed', False) or getattr(e, 'is_closed', False) or p.is_closed)
+                    if pts and is_closed and len(pts) > 2 and math.hypot(pts[0][0] - pts[-1][0], pts[0][1] - pts[-1][1]) < 0.1:
+                        pts.pop()
+                    if len(pts) >= 2:
+                        ents.append({'k': 'poly', 'p': pts, 'c': is_closed})
+                except Exception:
+                    if dxftype == 'LWPOLYLINE':
+                        pts = [[round(float(p[0]), 1), round(float(p[1]), 1)] for p in e.get_points('xy')]
+                        if len(pts) >= 2:
+                            ents.append({'k': 'poly', 'p': pts, 'c': bool(getattr(e, 'closed', False))})
+                    elif dxftype == 'POLYLINE':
+                        pts = [[round(float(v.dxf.location.x), 1), round(float(v.dxf.location.y), 1)] for v in e.vertices]
+                        if len(pts) >= 2:
+                            ents.append({'k': 'poly', 'p': pts, 'c': bool(getattr(e, 'is_closed', False))})
 
         if not ents:
             continue
@@ -381,13 +395,35 @@ def extract_blocks_from_dxf(dxf_content):
                     max_x = max(max_x, pt[0])
                     min_y = min(min_y, pt[1])
                     max_y = max(max_y, pt[1])
-            elif ent['k'] in ('circle', 'arc'):
+            elif ent['k'] == 'circle':
                 cx, cy = ent['c']
                 r = ent['r']
                 min_x = min(min_x, cx - r)
                 max_x = max(max_x, cx + r)
                 min_y = min(min_y, cy - r)
                 max_y = max(max_y, cy + r)
+            elif ent['k'] == 'arc':
+                cx, cy = ent['c']
+                r = ent['r']
+                a0_deg = ent.get('a0', 0)
+                a1_deg = ent.get('a1', 360)
+                a0_rad = math.radians(a0_deg % 360)
+                a1_rad = math.radians(a1_deg % 360)
+                arc_xs = [cx + r * math.cos(a0_rad), cx + r * math.cos(a1_rad)]
+                arc_ys = [cy + r * math.sin(a0_rad), cy + r * math.sin(a1_rad)]
+                span = (a1_deg - a0_deg) % 360
+                if span == 0 and a1_deg != a0_deg:
+                    span = 360
+                for test_deg in (0, 90, 180, 270):
+                    diff = (test_deg - a0_deg) % 360
+                    if 0 < diff < span:
+                        rad = math.radians(test_deg)
+                        arc_xs.append(cx + r * math.cos(rad))
+                        arc_ys.append(cy + r * math.sin(rad))
+                min_x = min(min_x, min(arc_xs))
+                max_x = max(max_x, max(arc_xs))
+                min_y = min(min_y, min(arc_ys))
+                max_y = max(max_y, max(arc_ys))
             elif ent['k'] == 'poly':
                 for pt in ent['p']:
                     min_x = min(min_x, pt[0])
