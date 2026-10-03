@@ -50,7 +50,8 @@ class TankCADHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Private-Network")
+        self.send_header("Access-Control-Allow-Private-Network", "true")
         self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         self.send_header("Pragma", "no-cache")
         self.send_header("Expires", "0")
@@ -284,9 +285,15 @@ class TankCADHandler(SimpleHTTPRequestHandler):
                             dxf_text = f.read()
 
                 blocks = db.extract_blocks_from_dxf(dxf_text)
-                self.send_json({"success": True, "blocks": blocks, "count": len(blocks)})
+                single_ents = []
+                if not blocks:
+                    try:
+                        single_ents = db.parse_dxf_string(dxf_text)
+                    except Exception:
+                        pass
+                self.send_json({"success": True, "blocks": blocks, "count": len(blocks), "entities": single_ents})
             except Exception as e:
-                self.send_json({"success": False, "error": f"블록 추출 오류: {e}"}, status=400)
+                self.send_json({"success": False, "error": f"DWG/DXF 분석 오류: {e}"}, status=400)
             return
 
         # DB 초기 템플릿으로 리셋

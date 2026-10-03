@@ -165,7 +165,7 @@ def delete_panel(pid):
     return deleted
 
 def export_all_templates_dict():
-    """TankCAD Web 엔진이 바로 사용할 수 있는 포맷으로 전체 템플릿 반환"""
+    """TankCAD Web 엔진이 바로 사용할 수 있는 포맷으로 전체 템플릿 반환 (천정/저판/측면/공통 구분)"""
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("SELECT material, category, size_key, entities_json, is_default FROM panels")
@@ -173,6 +173,7 @@ def export_all_templates_dict():
     conn.close()
 
     pt = {}
+    bt = {}
     st = {}
     custom_map = {}
     for r in rows:
@@ -182,16 +183,29 @@ def export_all_templates_dict():
         ents = json.loads(r["entities_json"])
         is_def = r["is_default"]
 
-        target = pt if cat == "top_bottom" else st
-        if mat not in target:
-            target[mat] = {}
-        target[mat][skey] = ents
+        for d in (pt, bt, st):
+            if mat not in d:
+                d[mat] = {}
+
+        if cat in ("top", "top_bottom", "common", "all"):
+            pt[mat][skey] = ents
+        if cat in ("bottom", "top_bottom", "common", "all"):
+            bt[mat][skey] = ents
+        if cat in ("side", "common", "all"):
+            st[mat][skey] = ents
+
         if not is_def:
             custom_map[f"{mat}_{cat}_{skey}"] = True
 
     st["_custom"] = custom_map
     pt["_custom"] = custom_map
-    return {"panel_templates": pt, "side_templates": st, "custom_map": custom_map}
+    bt["_custom"] = custom_map
+    return {
+        "panel_templates": pt,
+        "bottom_templates": bt,
+        "side_templates": st,
+        "custom_map": custom_map
+    }
 
 def parse_dxf_string(dxf_content, target_w=None, target_h=None):
     """업로드된 DXF 문자열에서 선, 원, 호, 폴리라인, 블록(INSERT), 타원, 스플라인을 판넬 템플릿 형식으로 추출 및 (0,0) 정규화"""
@@ -454,7 +468,7 @@ def parse_step_string(step_text, target_w=None, target_h=None):
     u_min = u_dim['min']
     v_min = v_dim['min']
 
-    std_sizes = [500, 1000, 1100, 1200, 1250, 1300, 1500, 2000]
+    std_sizes = [500, 1000, 1100, 1200, 1250, 1500, 2000]
     def snap(v):
         for s in std_sizes:
             if abs(v - s) <= 35:

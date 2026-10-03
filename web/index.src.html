@@ -1175,7 +1175,7 @@ canvas.drag{cursor:grabbing}
         <!-- 모드 전환 바 -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:8px 12px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px">
           <div style="display:flex;gap:6px">
-            <button type="button" class="htab-mode-btn active" id="btnModalModeStd" data-mode="std" style="font-size:12px;font-weight:700;padding:5px 12px">일반 규격 모듈 (표준: 1000, 1300, 1500, 2000)</button>
+            <button type="button" class="htab-mode-btn active" id="btnModalModeStd" data-mode="std" style="font-size:12px;font-weight:700;padding:5px 12px">일반 규격 모듈 (표준: 1000, 1500, 2000)</button>
             <button type="button" class="htab-mode-btn" id="btnModalModeB11" data-mode="b11" style="font-size:12px;font-weight:700;padding:5px 12px">1×1 패널 모듈 (1000×1000 / 1000×500 기반)</button>
           </div>
           <span id="modalHeightTableDesc" style="font-size:11px;color:var(--muted)">각 단별 판넬 크기는 mm 단위로 입력합니다 (빈 칸은 제외)</span>
@@ -1231,11 +1231,13 @@ canvas.drag{cursor:grabbing}
             </select>
           </div>
           <div>
-            <label id="lblModalCat" style="font-size:11px;font-weight:600">적용 위치</label>
+            <label id="lblModalCat" style="font-size:11px;font-weight:600">적용 위치 / 부위</label>
             <select id="modalCat" style="width:100%;padding:5px;font-size:12px">
-              <option value="top_bottom">평면 (상·하부 패널)</option>
-              <option value="side">입면 (측면 패널)</option>
-              <option value="all">전체 (평면 + 입면 모두 적용)</option>
+              <option value="top">🏠 천정판넬 (Roof Panel)</option>
+              <option value="bottom">⚓ 저판판넬 (Bottom Panel)</option>
+              <option value="side">🏢 측면판넬 (Side / Elevation Panel)</option>
+              <option value="common">🌟 공통판넬 (천정·저판·측면 모든곳에 공통 사용)</option>
+              <option value="top_bottom">🔲 평면판넬 (상·하부 공용)</option>
             </select>
           </div>
           <div>
@@ -1409,9 +1411,12 @@ canvas.drag{cursor:grabbing}
                 <div>
                   <label id="lblFilterCat" style="font-size:11px;color:var(--muted);display:block;margin-bottom:2px">위치 필터</label>
                   <select id="dbFilterCat" style="width:100%;font-size:12px;padding:5px">
-                    <option value="ALL">전체 위치</option>
-                    <option value="top_bottom">평면 (상·하부)</option>
-                    <option value="side">입면 (측면)</option>
+                    <option value="ALL">전체 위치 (All Categories)</option>
+                    <option value="top">🏠 천정판넬 (Roof)</option>
+                    <option value="bottom">⚓ 저판판넬 (Bottom)</option>
+                    <option value="side">🏢 측면판넬 (Side)</option>
+                    <option value="common">🌟 공통판넬 (Common)</option>
+                    <option value="top_bottom">🔲 평면판넬 (상·하부)</option>
                   </select>
                 </div>
               </div>
@@ -1555,13 +1560,17 @@ canvas.drag{cursor:grabbing}
               </div>
 
               <!-- 4. CAD 파일 드래그 앤 드롭 영역 -->
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <span style="font-weight:700;font-size:12px;color:var(--fg)">4. 도면 로드 & 자동 블록 감지</span>
+                <span id="cadServerStatusBadge" style="font-size:10.5px;padding:2px 8px;border-radius:10px;background:rgba(16,185,129,0.12);color:#10b981;font-weight:600" title="DWG 변환 엔진 상태">🟢 DWG 직접 로드 지원</span>
+              </div>
               <div style="border:2px dashed var(--line);border-radius:8px;padding:12px 10px;text-align:center;background:var(--bg);cursor:pointer;position:relative;margin-bottom:10px" id="cadDropZone">
                 <input type="file" id="cadPartFileInput" accept=".dwg,.dxf,.stp,.step" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
                 <div style="font-size:22px;margin-bottom:4px">📁</div>
                 <div style="font-size:12px;font-weight:700;color:var(--fg)" id="cadDropText">DWG / DXF 도면 파일을 여기로 드래그하거나 클릭하여 선택</div>
-                <div style="font-size:10px;color:var(--muted);margin-top:2px">AutoCAD DWG, DXF (브라우저 직접 파싱), 3D STEP 지원</div>
+                <div style="font-size:10.5px;color:var(--muted);margin-top:2px"><b>AutoCAD DWG (직접 지원)</b>, DXF (브라우저 직접 파싱), 3D STEP 지원</div>
               </div>
-              <div id="cadParseStatus" style="font-size:11px;margin-top:-6px;margin-bottom:10px;display:none;padding:5px 8px;border-radius:4px"></div>
+              <div id="cadParseStatus" style="font-size:11px;margin-top:-6px;margin-bottom:10px;display:none;padding:7px 10px;border-radius:6px;line-height:1.5"></div>
 
               <!-- 5. 도면 저장 및 즉시 반영 버튼 -->
               <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:8px;margin-bottom:8px">
@@ -2200,7 +2209,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     // Modal Height Table
     if ($('modalHeightTableTitle')) $('modalHeightTableTitle').textContent = currentLang === 'en' ? 'Panel Heights & Tiers Specification (Wide Table)' : '높이별·단별 판넬크기 지정 (전체 와이드 표)';
     if ($('btnModalResetH')) $('btnModalResetH').textContent = currentLang === 'en' ? '🔄 Restore Defaults' : '🔄 기본값 복원';
-    if ($('btnModalModeStd')) $('btnModalModeStd').textContent = currentLang === 'en' ? 'Standard Modules (1000, 1300, 1500, 2000)' : '일반 규격 모듈 (표준: 1000, 1300, 1500, 2000)';
+    if ($('btnModalModeStd')) $('btnModalModeStd').textContent = currentLang === 'en' ? 'Standard Modules (1000, 1500, 2000)' : '일반 규격 모듈 (표준: 1000, 1500, 2000)';
     if ($('btnModalModeB11')) $('btnModalModeB11').textContent = currentLang === 'en' ? '1×1 Panel Module (1000×1000 / 1000×500)' : '1×1 패널 모듈 (1000×1000 / 1000×500 기반)';
     if ($('modalHeightTableDesc')) $('modalHeightTableDesc').textContent = currentLang === 'en' ? 'Enter panel size for each tier in mm (leave blank if omitted)' : '각 단별 판넬 크기는 mm 단위로 입력합니다 (빈 칸은 제외)';
     if ($('thModalH')) $('thModalH').textContent = currentLang === 'en' ? 'Total H (mm)' : '총 높이 (H)';
@@ -2420,14 +2429,19 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         activeHeightTable = JSON.parse(saved);
       }
     } catch (e) {}
-    if (!activeHeightTable || !activeHeightTable.std || !activeHeightTable.b11) {
+    // 1300mm 판넬 기반 규격 높이(1300, 1800, 2300, 2800, 3300, 3800, 4300, 4800) 제외
+    const excludedH = [1300, 1800, 2300, 2800, 3300, 3800, 4300, 4800];
+    if (activeHeightTable && activeHeightTable.std) {
+      excludedH.forEach(h => delete activeHeightTable.std[h]);
+    }
+    if (!activeHeightTable || !activeHeightTable.std || !activeHeightTable.b11 || !Object.keys(activeHeightTable.std).length) {
       activeHeightTable = (C.getDefaultHeightTable ? C.getDefaultHeightTable() : null) || {
         std: {
-          1000: [1000], 1300: [1300], 1500: [1500], 1800: [1300, 500], 2000: [2000],
-          2300: [1000, 1300], 2500: [1000, 1500], 2800: [1300, 1500], 3000: [1000, 2000],
-          3300: [1000, 1000, 1300], 3500: [1000, 1000, 1500], 3800: [1000, 1300, 1500],
-          4000: [1000, 1000, 2000], 4300: [1000, 1300, 2000], 4500: [1000, 1000, 1000, 1500],
-          4800: [1000, 1000, 1300, 1500], 5000: [1000, 1000, 1000, 2000]
+          1000: [1000], 1500: [1500], 2000: [2000],
+          2500: [1000, 1500], 3000: [1000, 2000],
+          3500: [1000, 1000, 1500],
+          4000: [1000, 1000, 2000], 4500: [1000, 1000, 1000, 1500],
+          5000: [1000, 1000, 1000, 2000]
         },
         b11: {
           1000: [1000], 1500: [1000, 500], 2000: [1000, 1000], 2500: [1000, 500, 1000],
@@ -2445,10 +2459,10 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const modeKey = one ? 'b11' : 'std';
     let list;
     if (activeHeightTable && activeHeightTable[modeKey]) {
-      list = Object.keys(activeHeightTable[modeKey]).map(Number).sort((a, b) => a - b);
+      list = Object.keys(activeHeightTable[modeKey]).map(Number).filter(v => ![1300, 1800, 2300, 2800, 3300, 3800, 4300, 4800].includes(v)).sort((a, b) => a - b);
     }
     if (!list || list.length === 0) {
-      list = one ? [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000] : [1000, 1300, 1500, 1800, 2000, 2300, 2500, 2800, 3000, 3300, 3500, 3800, 4000, 4300, 4500, 4800, 5000];
+      list = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000];
     }
     $('H').innerHTML = list.map(v => '<option value="' + v + '">' + v + '</option>').join('');
     $('H').value = list.includes(cur) ? cur : (list.includes(3000) ? 3000 : list[0]);
@@ -2714,11 +2728,11 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     if (confirm(isEn ? 'Restore height and tier panel settings to system defaults?' : '높이별 단 판넬 설정을 시스템 기본값으로 복원하시겠습니까?')) {
       activeHeightTable = C.getDefaultHeightTable ? C.getDefaultHeightTable() : {
         std: {
-          1000: [1000], 1300: [1300], 1500: [1500], 1800: [1300, 500], 2000: [2000],
-          2300: [1000, 1300], 2500: [1000, 1500], 2800: [1300, 1500], 3000: [1000, 2000],
-          3300: [1000, 1000, 1300], 3500: [1000, 1000, 1500], 3800: [1000, 1300, 1500],
-          4000: [1000, 1000, 2000], 4300: [1000, 1300, 2000], 4500: [1000, 1000, 1000, 1500],
-          4800: [1000, 1000, 1300, 1500], 5000: [1000, 1000, 1000, 2000]
+          1000: [1000], 1500: [1500], 2000: [2000],
+          2500: [1000, 1500], 3000: [1000, 2000],
+          3500: [1000, 1000, 1500],
+          4000: [1000, 1000, 2000], 4500: [1000, 1000, 1000, 1500],
+          5000: [1000, 1000, 1000, 2000]
         },
         b11: {
           1000: [1000], 1500: [1000, 500], 2000: [1000, 1000], 2500: [1000, 500, 1000],
@@ -2740,6 +2754,10 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const isEn = currentLang === 'en';
     if (!val || val < 500 || val > 15000) {
       alert(isEn ? 'Please enter a valid height between 500mm and 15,000mm.' : '500mm ~ 15,000mm 범위의 유효한 높이를 입력하세요.');
+      return;
+    }
+    if ([1300, 1800, 2300, 2800, 3300, 3800, 4300, 4800].includes(val)) {
+      alert(isEn ? '1300mm panel based heights (1.3mH ~ 4.8mH) are excluded from production.' : '1300mm 판넬 기반 규격(1.3mH ~ 4.8mH)은 사양에서 제외되었습니다.');
       return;
     }
     if (!activeHeightTable[currentHMode]) activeHeightTable[currentHMode] = {};
@@ -5040,8 +5058,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const list = [];
     const mats = (filterMat === 'ALL') ? ['SMC', 'STS'] : [filterMat];
     mats.forEach(mat => {
-      // 1. Top/Bottom templates
-      if (filterCat === 'ALL' || filterCat === 'top_bottom') {
+      // 1. Top/Roof templates
+      if (filterCat === 'ALL' || filterCat === 'top' || filterCat === 'top_bottom' || filterCat === 'common') {
         const topDict = (typeof TEMPLATES !== 'undefined' && TEMPLATES && TEMPLATES[mat]) || {};
         for (const [key, ents] of Object.entries(topDict)) {
           const parts = key.split('x').map(Number);
@@ -5049,23 +5067,42 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
           list.push({
             id: `builtin_${mat}_top_${key}`,
             material: mat,
-            category: 'top_bottom',
+            category: 'top',
             width: w,
             height: h,
             size_key: key,
-            name: `${mat} ${key} 평면/천정 표준형`,
+            name: `${mat} ${key} 천정 표준 판넬`,
             entities: ents,
             is_default: true
           });
         }
       }
-      // 2. Side elevation templates
-      if (filterCat === 'ALL' || filterCat === 'side') {
+      // 2. Bottom templates
+      if (filterCat === 'ALL' || filterCat === 'bottom' || filterCat === 'top_bottom' || filterCat === 'common') {
+        const botDict = (typeof window.BOTTOM_T !== 'undefined' && window.BOTTOM_T && window.BOTTOM_T[mat]) || ((typeof TEMPLATES !== 'undefined' && TEMPLATES && TEMPLATES[mat]) || {});
+        for (const [key, ents] of Object.entries(botDict)) {
+          const parts = key.split('x').map(Number);
+          const w = parts[0] || 1000, h = parts[1] || 1000;
+          list.push({
+            id: `builtin_${mat}_bot_${key}`,
+            material: mat,
+            category: 'bottom',
+            width: w,
+            height: h,
+            size_key: key,
+            name: `${mat} ${key} 저판 표준 판넬`,
+            entities: ents,
+            is_default: true
+          });
+        }
+      }
+      // 3. Side elevation templates
+      if (filterCat === 'ALL' || filterCat === 'side' || filterCat === 'common') {
         const sideDict = (typeof SIDE_T !== 'undefined' && SIDE_T && SIDE_T[mat]) || {};
         for (const [key, ents] of Object.entries(sideDict)) {
           const parts = key.match(/\d+/g) || [1000, 1000];
           const w = Number(parts[0]) || 1000, h = Number(parts[1]) || 1000;
-          let label = `${mat} ${key} 측면 표준형`;
+          let label = `${mat} ${key} 측면 표준 판넬`;
           if (key === 'flat-1x1' || key === 'flat') label = `${mat} 1×1 평판형 (피팅용)`;
           else if (key === 'flat-half2') label = `${mat} 0.5×1 (2장 분할) 평판형`;
           else if (key === 'fitting') label = `${mat} 피팅 가공용 판넬`;
@@ -5088,8 +5125,14 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     try {
       const custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
       custom.forEach(cp => {
-        if ((filterMat === 'ALL' || cp.material === filterMat) &&
-            (filterCat === 'ALL' || cp.category === filterCat)) {
+        if (cp.width === 1300 || cp.height === 1300 || (cp.size_key && cp.size_key.includes('1300'))) return;
+        const matchesMat = (filterMat === 'ALL' || cp.material === filterMat);
+        let matchesCat = (filterCat === 'ALL' || cp.category === filterCat);
+        if (filterCat === 'top' && (cp.category === 'top_bottom' || cp.category === 'common')) matchesCat = true;
+        if (filterCat === 'bottom' && (cp.category === 'top_bottom' || cp.category === 'common')) matchesCat = true;
+        if (filterCat === 'side' && cp.category === 'common') matchesCat = true;
+        if (filterCat === 'common' && cp.category === 'all') matchesCat = true;
+        if (matchesMat && matchesCat) {
           list.push(cp);
         }
       });
@@ -5108,7 +5151,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       clearTimeout(tid);
       if (!res.ok) throw new Error('API 응답 실패');
       const data = await res.json();
-      dbPanelsList = data.panels || [];
+      const rawPanels = data.panels || [];
+      dbPanelsList = rawPanels.filter(p => p.width !== 1300 && p.height !== 1300 && (!p.size_key || !p.size_key.includes('1300')));
     } catch (err) {
       dbPanelsList = getBuiltinPanelsList(mat, cat);
     }
@@ -5125,16 +5169,25 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     try {
       const custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
       custom.forEach(p => {
+        if (p.width === 1300 || p.height === 1300 || (p.size_key && p.size_key.includes('1300'))) return;
         const mat = p.material || 'SMC';
         const key = p.size_key || `${p.width}x${p.height}`;
         const ents = p.entities || [];
         if (!ents.length) return;
 
-        if (p.category === 'top_bottom' || p.category === 'all') {
+        // 천정 (Roof / Top)
+        if (p.category === 'top' || p.category === 'top_bottom' || p.category === 'common' || p.category === 'all') {
           if (!TEMPLATES[mat]) TEMPLATES[mat] = {};
           TEMPLATES[mat][key] = ents;
         }
-        if (p.category === 'side' || p.category === 'all') {
+        // 저판 (Bottom)
+        if (p.category === 'bottom' || p.category === 'top_bottom' || p.category === 'common' || p.category === 'all') {
+          if (!window.BOTTOM_T) window.BOTTOM_T = {};
+          if (!window.BOTTOM_T[mat]) window.BOTTOM_T[mat] = {};
+          window.BOTTOM_T[mat][key] = ents;
+        }
+        // 측면 (Side / Elevation)
+        if (p.category === 'side' || p.category === 'common' || p.category === 'all') {
           if (!SIDE_T[mat]) SIDE_T[mat] = {};
           SIDE_T[mat][key] = ents;
         }
@@ -5154,18 +5207,28 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       return;
     }
     tbody.innerHTML = panels.map(p => {
-      const catText = isEn
-        ? (p.category === 'top_bottom' ? 'Plan' : (p.category === 'side' ? 'Elev' : 'All'))
-        : (p.category === 'top_bottom' ? '평면' : (p.category === 'side' ? '입면' : '전체'));
+      let badgeHtml = '';
+      if (p.category === 'top') {
+        badgeHtml = `<span style="font-size:10px;padding:2px 5px;border-radius:4px;background:rgba(2,132,199,0.12);color:#0284c7;font-weight:600">🏠 ${isEn ? 'Roof' : '천정'}</span>`;
+      } else if (p.category === 'bottom') {
+        badgeHtml = `<span style="font-size:10px;padding:2px 5px;border-radius:4px;background:rgba(217,119,6,0.12);color:#d97706;font-weight:600">⚓ ${isEn ? 'Bottom' : '저판'}</span>`;
+      } else if (p.category === 'side') {
+        badgeHtml = `<span style="font-size:10px;padding:2px 5px;border-radius:4px;background:rgba(16,185,129,0.12);color:#059669;font-weight:600">🏢 ${isEn ? 'Side' : '측면'}</span>`;
+      } else if (p.category === 'common' || p.category === 'all') {
+        badgeHtml = `<span style="font-size:10px;padding:2px 5px;border-radius:4px;background:rgba(147,51,234,0.12);color:#7c3aed;font-weight:600">🌟 ${isEn ? 'Common' : '공통'}</span>`;
+      } else {
+        badgeHtml = `<span style="font-size:10px;padding:2px 5px;border-radius:4px;background:rgba(100,116,139,0.12);color:#475569;font-weight:600">🔲 ${isEn ? 'Plan' : '평면'}</span>`;
+      }
+
       return `
       <tr data-id="${p.id}" style="cursor:pointer;border-bottom:1px solid var(--line-sub)">
-        <td style="padding:5px 3px"><b>${p.material}</b> <span style="font-size:10px;color:var(--muted)">(${catText})</span></td>
-        <td style="padding:5px 3px;font-family:var(--font-num)">${p.size_key}</td>
-        <td style="padding:5px 3px;max-width:85px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.name}">${p.name}</td>
-        <td style="padding:5px 3px;text-align:center;white-space:nowrap">
-          <button type="button" class="btn-sm btn-panel-apply" data-id="${p.id}" style="padding:2px 4px;font-size:10px;background:var(--accent);color:#fff;border-color:var(--accent)" title="${isEn ? 'Apply this panel to current drawing' : '이 판넬을 현재 탱크 도면에 즉시 반영'}">${isEn ? '⚡Apply' : '⚡적용'}</button>
-          <button type="button" class="btn-sm btn-panel-edit" data-id="${p.id}" style="padding:2px 4px;font-size:10px">${isEn ? 'Edit' : '수정'}</button>
-          ${!p.is_default ? `<button type="button" class="btn-sm btn-panel-del" data-id="${p.id}" style="padding:2px 4px;font-size:10px;color:#ef4444">${isEn ? 'Del' : '삭제'}</button>` : ''}
+        <td style="padding:6px 4px"><b>${p.material}</b> ${badgeHtml}</td>
+        <td style="padding:6px 4px;font-family:var(--font-num);font-weight:600">${p.size_key}</td>
+        <td style="padding:6px 4px;max-width:115px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.name}">${p.name}</td>
+        <td style="padding:6px 4px;text-align:center;white-space:nowrap">
+          <button type="button" class="btn-sm btn-panel-apply" data-id="${p.id}" style="padding:2px 6px;font-size:10px;background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600" title="${isEn ? 'Apply this panel to current drawing' : '이 판넬을 현재 탱크 도면에 즉시 반영'}">${isEn ? '⚡Apply' : '⚡적용'}</button>
+          <button type="button" class="btn-sm btn-panel-edit" data-id="${p.id}" style="padding:2px 6px;font-size:10px">${isEn ? 'Edit' : '수정'}</button>
+          ${!p.is_default ? `<button type="button" class="btn-sm btn-panel-del" data-id="${p.id}" style="padding:2px 6px;font-size:10px;color:#ef4444">${isEn ? 'Del' : '삭제'}</button>` : ''}
         </td>
       </tr>
       `;
@@ -5191,11 +5254,16 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
           alert('이 판넬에는 등록된 형상 데이터가 없습니다.');
           return;
         }
-        if (p.category === 'top_bottom' || p.category === 'all') {
+        if (p.category === 'top' || p.category === 'top_bottom' || p.category === 'common' || p.category === 'all') {
           if (!TEMPLATES[mat]) TEMPLATES[mat] = {};
           TEMPLATES[mat][key] = ents;
         }
-        if (p.category === 'side' || p.category === 'all') {
+        if (p.category === 'bottom' || p.category === 'top_bottom' || p.category === 'common' || p.category === 'all') {
+          if (!window.BOTTOM_T) window.BOTTOM_T = {};
+          if (!window.BOTTOM_T[mat]) window.BOTTOM_T[mat] = {};
+          window.BOTTOM_T[mat][key] = ents;
+        }
+        if (p.category === 'side' || p.category === 'common' || p.category === 'all') {
           if (!SIDE_T[mat]) SIDE_T[mat] = {};
           SIDE_T[mat][key] = ents;
         }
@@ -5439,7 +5507,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const wRaw = uMax - uMin;
     const hRaw = vMax - vMin;
 
-    const stdSizes = [500, 1000, 1100, 1200, 1250, 1300, 1500, 2000];
+    const stdSizes = [500, 1000, 1100, 1200, 1250, 1500, 2000];
     function snapStd(v) {
       for (const s of stdSizes) {
         if (Math.abs(v - s) <= 80) return s;
@@ -6464,7 +6532,17 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   }
 
   function getViewLabel(view) {
-    const labels = { plan: '평면도', front: '정면도', right: '우측면도', left: '좌측면도' };
+    const labels = {
+      plan: '평면도',
+      front: '정면도',
+      right: '우측면도',
+      left: '좌측면도',
+      top: '천정판넬',
+      bottom: '저판판넬',
+      side: '측면판넬',
+      common: '공통판넬',
+      top_bottom: '평면(상·하부)'
+    };
     return labels[view] || view;
   }
 
@@ -6539,7 +6617,9 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
       if (cat === 'panel') {
         const isPlan = (v === 'plan');
-        const p = customPanels.find(x => x.category === (isPlan ? 'top_bottom' : 'side'));
+        const p = customPanels.find(x => isPlan
+          ? (x.category === 'top' || x.category === 'bottom' || x.category === 'top_bottom' || x.category === 'common')
+          : (x.category === 'side' || x.category === 'common'));
         if (p && p.entities && p.entities.length) {
           isCustom = true;
           count = p.entities.length;
@@ -6596,7 +6676,12 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       const isSide = (view !== 'plan');
       try {
         const custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
-        const p = custom.find(x => x.material === mat && x.category === (isSide ? 'side' : 'top_bottom') && x.size_key === sizeKey);
+        let p = null;
+        if (isSide) {
+          p = custom.find(x => x.material === mat && (x.category === 'side' || x.category === 'common') && x.size_key === sizeKey);
+        } else {
+          p = custom.find(x => x.material === mat && (x.category === 'top' || x.category === 'bottom' || x.category === 'top_bottom' || x.category === 'common') && x.size_key === sizeKey);
+        }
         if (p && p.entities && p.entities.length) return p.entities;
       } catch (e) {}
       return getPartDefaultEntities(cat, subKey, w, h, view);
@@ -6883,12 +6968,18 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     }
 
     if (category === 'panel') {
-      if (name.includes('top') || name.includes('roof') || name.includes('하부') || name.includes('상부')) {
-        sub = 'top_bottom';
-        view = 'plan';
+      if (name.includes('roof') || name.includes('천정') || name.includes('top') || name.includes('상부')) {
+        sub = 'top';
+        view = 'top';
+      } else if (name.includes('bot') || name.includes('저판') || name.includes('바닥') || name.includes('하부')) {
+        sub = 'bottom';
+        view = 'bottom';
+      } else if (name.includes('com') || name.includes('common') || name.includes('공통') || name.includes('all')) {
+        sub = 'common';
+        view = 'common';
       } else {
         sub = 'side';
-        view = 'front';
+        view = 'side';
       }
     }
 
@@ -6940,12 +7031,16 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
               </select>
             </div>
             <div>
-              <label style="font-size:10px;color:var(--muted);display:block">투영 방향</label>
+              <label style="font-size:10px;color:var(--muted);display:block">투영 방향 / 판넬 부위</label>
               <select class="blk-view-sel">
-                <option value="front" ${rec.view === 'front' ? 'selected' : ''}>🏢 정면도</option>
+                <option value="front" ${rec.view === 'front' ? 'selected' : ''}>🏢 정면도 (측면)</option>
                 <option value="right" ${rec.view === 'right' ? 'selected' : ''}>📐 우측면도</option>
                 <option value="left" ${rec.view === 'left' ? 'selected' : ''}>📐 좌측면도</option>
-                <option value="plan" ${rec.view === 'plan' ? 'selected' : ''}>🔲 평면도</option>
+                <option value="top" ${rec.view === 'top' ? 'selected' : ''}>🏠 천정판넬 (Roof)</option>
+                <option value="bottom" ${rec.view === 'bottom' ? 'selected' : ''}>⚓ 저판판넬 (Bottom)</option>
+                <option value="side" ${rec.view === 'side' ? 'selected' : ''}>🏢 측면판넬 (Side)</option>
+                <option value="common" ${rec.view === 'common' ? 'selected' : ''}>🌟 공통판넬 (천정·저판·측면 모두)</option>
+                <option value="plan" ${rec.view === 'plan' ? 'selected' : ''}>🔲 평면도 (상·하부)</option>
               </select>
             </div>
           </div>
@@ -7004,9 +7099,15 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
     if (cat === 'panel') {
       const sizeKey = `${w}x${blockH}`;
-      const isSide = (view !== 'plan');
-      const panelCat = isSide ? 'side' : 'top_bottom';
-      const name = `${mat} ${w}x${blockH} (${block.name || '블록'})`;
+      let panelCat = 'side';
+      if (view === 'top') panelCat = 'top';
+      else if (view === 'bottom') panelCat = 'bottom';
+      else if (view === 'common') panelCat = 'common';
+      else if (view === 'side' || view === 'front' || view === 'right' || view === 'left') panelCat = 'side';
+      else if (view === 'plan') panelCat = 'top_bottom';
+
+      const catLabel = (panelCat === 'top') ? '천정' : (panelCat === 'bottom') ? '저판' : (panelCat === 'common' ? '공통' : (panelCat === 'top_bottom' ? '평면' : '측면'));
+      const name = `${mat} ${w}x${blockH} ${catLabel} (${block.name || '블록'})`;
       try {
         let custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
         const idx = custom.findIndex(p => p.material === mat && p.category === panelCat && p.size_key === sizeKey);
@@ -7208,9 +7309,16 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
     if (cat === 'panel') {
       const sizeKey = `${w}x${h}`;
-      const isSide = (view !== 'plan');
-      const panelCat = isSide ? 'side' : 'top_bottom';
-      const name = `${mat} ${w}x${h} 사용자 CAD (${isSide ? '측면' : '상·하부'})`;
+      let panelCat = 'side';
+      if (view === 'top') panelCat = 'top';
+      else if (view === 'bottom') panelCat = 'bottom';
+      else if (view === 'common') panelCat = 'common';
+      else if (view === 'side' || view === 'front' || view === 'right' || view === 'left') panelCat = 'side';
+      else if (view === 'plan') panelCat = 'top_bottom';
+
+      const catLabels = { top: '천정', bottom: '저판', side: '측면', common: '공통', top_bottom: '상·하부' };
+      const catLabel = catLabels[panelCat] || '측면';
+      const name = `${mat} ${w}x${h} 사용자 CAD (${catLabel})`;
 
       try {
         let custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
@@ -7259,6 +7367,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   function saveAllViewsCadPart() {
     const cat = getSelectedCadCategory();
     const sub = $('cadPartSubSel')?.value || cat;
+    const mat = $('cadPartMatSel')?.value || 'SMC';
     const w = Number($('cadPartW')?.value) || 1000;
     const h = Number($('cadPartH')?.value) || 1000;
 
@@ -7267,28 +7376,47 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       return;
     }
 
-    if (!confirm(`현재 편집 중인 형상을 [${getCategoryLabel(cat)}]의 4개 방향(정면/우측/좌측/평면) 전체에 공통 CAD 형상으로 일괄 등록하시겠습니까?`)) {
+    if (!confirm(`현재 편집 중인 형상을 [${getCategoryLabel(cat)}]의 전체 부위에 공통 CAD 형상으로 일괄 등록하시겠습니까?`)) {
       return;
     }
 
     try {
-      let customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
-      ['plan', 'front', 'right', 'left'].forEach(v => {
-        customComp[`${cat}_${v}`] = currentCadEntities;
-        if (sub && sub !== cat) customComp[`${sub}_${v}`] = currentCadEntities;
-      });
-      if (cat !== 'panel') {
+      if (cat === 'panel') {
+        const sizeKey = `${w}x${h}`;
+        const name = `${mat} ${w}x${h} 사용자 CAD (공통)`;
+        let custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
+        const idx = custom.findIndex(p => p.material === mat && p.category === 'common' && p.size_key === sizeKey);
+        const newPanel = {
+          id: `custom_${mat}_common_${sizeKey}_${Date.now()}`,
+          material: mat,
+          category: 'common',
+          width: w,
+          height: h,
+          size_key: sizeKey,
+          name: name,
+          entities: currentCadEntities,
+          is_default: false
+        };
+        if (idx >= 0) custom[idx] = newPanel; else custom.push(newPanel);
+        localStorage.setItem('tankcad_custom_panels', JSON.stringify(custom));
+        applyActiveTemplates();
+      } else {
+        let customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
+        ['plan', 'front', 'right', 'left'].forEach(v => {
+          customComp[`${cat}_${v}`] = currentCadEntities;
+          if (sub && sub !== cat) customComp[`${sub}_${v}`] = currentCadEntities;
+        });
         customComp[cat] = currentCadEntities;
         if (sub && sub !== cat) customComp[sub] = currentCadEntities;
+        localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
       }
-      localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
     } catch (e) { console.warn(e); }
 
     rebuild(false);
     draw();
     updateViewBadges(cat, sub, cadCurrentHeight);
     renderRegisteredPartsTable();
-    alert(`✅ [${getCategoryLabel(cat)}]의 4개 방향 전체에 현재 CAD 형상이 일괄 등록되었습니다!`);
+    alert(`✅ [${getCategoryLabel(cat)}]의 전체 방향/부위에 현재 CAD 형상이 일괄 등록되었습니다!`);
   }
 
   function resetCurrentCadPart() {
@@ -7302,11 +7430,15 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
     if (cat === 'panel') {
       const sizeKey = `${w}x${h}`;
-      const isSide = (view !== 'plan');
-      const panelCat = isSide ? 'side' : 'top_bottom';
+      let panelCat = 'side';
+      if (view === 'top') panelCat = 'top';
+      else if (view === 'bottom') panelCat = 'bottom';
+      else if (view === 'common') panelCat = 'common';
+      else if (view === 'side' || view === 'front' || view === 'right' || view === 'left') panelCat = 'side';
+      else if (view === 'plan') panelCat = 'top_bottom';
       try {
         let custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
-        custom = custom.filter(p => !(p.material === mat && p.category === panelCat && p.size_key === sizeKey));
+        custom = custom.filter(p => !(p.material === mat && (p.category === panelCat || (panelCat === 'top_bottom' && (p.category === 'top' || p.category === 'bottom' || p.category === 'top_bottom'))) && p.size_key === sizeKey));
         localStorage.setItem('tankcad_custom_panels', JSON.stringify(custom));
         applyActiveTemplates();
       } catch (e) {}
@@ -7341,13 +7473,18 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     }
 
     try {
-      let customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
-      Object.keys(customComp).forEach(k => {
-        if (k.startsWith(cat) || k.startsWith(sub)) {
-          delete customComp[k];
-        }
-      });
-      localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
+      if (cat === 'panel') {
+        localStorage.removeItem('tankcad_custom_panels');
+        applyActiveTemplates();
+      } else {
+        let customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
+        Object.keys(customComp).forEach(k => {
+          if (k.startsWith(cat) || k.startsWith(sub)) {
+            delete customComp[k];
+          }
+        });
+        localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
+      }
     } catch (e) {}
 
     loadPartForCategory(cat, cadCurrentView, cadCurrentHeight, sub);
@@ -7609,7 +7746,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   });
 
   // 파일 업로드 처리
-  function handleCadFileUpload(file) {
+  window.handleCadFileUpload = function handleCadFileUpload(file) {
     if (!file) return;
     const isDwg = file.name.toLowerCase().endsWith('.dwg');
     const isStep = file.name.toLowerCase().endsWith('.stp') || file.name.toLowerCase().endsWith('.step');
@@ -7678,61 +7815,145 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       reader.readAsText(file);
     } else if (isDwg) {
       if (statusEl) {
+        statusEl.style.display = 'block';
         statusEl.style.background = 'rgba(2, 132, 199, 0.15)';
         statusEl.style.color = 'var(--accent)';
-        statusEl.textContent = '⏳ DWG 도면의 블록 및 형상을 분석하는 중...';
+        statusEl.innerHTML = '⏳ <b>DWG 도면 분석 중...</b> AutoCAD DWG 형상 및 블록(Block)을 추출하고 있습니다.';
       }
       const reader = new FileReader();
       reader.onload = async () => {
         try {
           const base64Data = reader.result.split(',')[1];
-          const controller = new AbortController();
-          const tid = setTimeout(() => controller.abort(), 15000);
-          const res = await fetch(`${API_BASE}/api/cad/extract-blocks`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dwg_base64: base64Data, filename: file.name }),
-            signal: controller.signal
-          });
-          clearTimeout(tid);
-          const data = await res.json();
-          if (data.success && data.blocks && data.blocks.length > 0) {
-            showCadBlockWizard(data.blocks, file.name);
-            if (statusEl) {
-              statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
-              statusEl.style.color = '#10b981';
-              statusEl.innerHTML = `🎉 DWG 도면에서 <b>${data.blocks.length}개</b>의 블록(Block)을 성공적으로 추출했습니다! 아래 마법사에서 일괄 등록하세요.`;
+          const candidateBases = [
+            API_BASE,
+            'http://127.0.0.1:8000',
+            'http://localhost:8000',
+            ''
+          ].filter((v, i, a) => a.indexOf(v) === i);
+
+          let res = null;
+          let lastErr = null;
+          for (const base of candidateBases) {
+            try {
+              const controller = new AbortController();
+              const tid = setTimeout(() => controller.abort(), 15000);
+              const tryUrl = (base ? base.replace(/\/$/, '') : '') + '/api/cad/extract-blocks';
+              const r = await fetch(tryUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dwg_base64: base64Data, filename: file.name }),
+                signal: controller.signal
+              });
+              clearTimeout(tid);
+              if (r.ok) {
+                res = r;
+                break;
+              }
+            } catch (err) {
+              lastErr = err;
             }
-            return;
           }
 
-          // Fallback to single DWG import
-          const res2 = await fetch(`${API_BASE}/api/panels/import-dwg`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dwg_base64: base64Data, filename: file.name, width: Number($('cadPartW')?.value) || 1000, height: Number($('cadPartH')?.value) || 1000 })
-          });
-          const data2 = await res2.json();
-          if (data2.success && data2.entities) {
-            currentCadEntities = data2.entities;
-            updateCadPartPreview();
-            if (statusEl) {
-              statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
-              statusEl.style.color = '#10b981';
-              statusEl.innerHTML = `✅ CAD DWG에서 <b>${data2.count}개</b> 형상 추출 완료!`;
+          if (res) {
+            const data = await res.json();
+            if (data.success && data.blocks && data.blocks.length > 0) {
+              showCadBlockWizard(data.blocks, file.name);
+              if (statusEl) {
+                statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
+                statusEl.style.color = '#10b981';
+                statusEl.innerHTML = `🎉 DWG 도면에서 <b>${data.blocks.length}개</b>의 블록(Block)을 성공적으로 추출했습니다! 아래 마법사에서 각 부품을 확인하고 일괄 등록하세요.`;
+              }
+              const badge = $('cadServerStatusBadge');
+              if (badge) {
+                badge.textContent = '🟢 DWG 변환 엔진 연결됨';
+                badge.style.background = 'rgba(16, 185, 129, 0.15)';
+                badge.style.color = '#10b981';
+              }
+              return;
             }
-          } else {
-            if (statusEl) {
-              statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
-              statusEl.style.color = '#ef4444';
-              statusEl.textContent = '❌ DWG 변환 실패: ' + (data2.error || '오류') + ' (AutoCAD/GstarCAD에서 DXF로 저장 후 올리시면 브라우저에서 즉시 모든 블록이 추출됩니다)';
+
+            if (data.success && data.entities && data.entities.length > 0) {
+              currentCadEntities = data.entities;
+              updateCadPartPreview();
+              if (statusEl) {
+                statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
+                statusEl.style.color = '#10b981';
+                statusEl.innerHTML = `✅ 단일 부품 DWG 도면에서 <b>${data.entities.length}개</b> 형상 추출 완료! 우측 화면에서 실시간 확인 및 등록이 가능합니다.`;
+              }
+              return;
             }
+          }
+
+          // Fallback to single DWG import endpoint
+          let res2 = null;
+          for (const base of candidateBases) {
+            try {
+              const controller = new AbortController();
+              const tid = setTimeout(() => controller.abort(), 12000);
+              const tryUrl = (base ? base.replace(/\/$/, '') : '') + '/api/panels/import-dwg';
+              const r = await fetch(tryUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  dwg_base64: base64Data,
+                  filename: file.name,
+                  width: Number($('cadPartW')?.value) || 1000,
+                  height: Number($('cadPartH')?.value) || 1000
+                }),
+                signal: controller.signal
+              });
+              clearTimeout(tid);
+              if (r.ok) {
+                res2 = r;
+                break;
+              }
+            } catch (err) {}
+          }
+
+          if (res2) {
+            const data2 = await res2.json();
+            if (data2.success && data2.entities && data2.entities.length > 0) {
+              currentCadEntities = data2.entities;
+              updateCadPartPreview();
+              if (statusEl) {
+                statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
+                statusEl.style.color = '#10b981';
+                statusEl.innerHTML = `✅ CAD DWG에서 <b>${data2.count || data2.entities.length}개</b> 형상 추출 완료!`;
+              }
+              return;
+            }
+          }
+
+          // Both failed: 안내 가이드 제시
+          const badge = $('cadServerStatusBadge');
+          if (badge) {
+            badge.textContent = '🟠 DWG 서버 미실행';
+            badge.style.background = 'rgba(245, 158, 11, 0.15)';
+            badge.style.color = '#d97706';
+          }
+          if (statusEl) {
+            statusEl.style.background = 'rgba(239, 68, 68, 0.10)';
+            statusEl.style.color = '#b91c1c';
+            statusEl.innerHTML = `
+              <div style="font-weight:700;margin-bottom:4px;font-size:12px">⚠️ DWG 직접 변환을 위해 백엔드 변환 엔진(실행하기.bat)이 필요합니다.</div>
+              <div style="font-size:11px;color:var(--fg);line-height:1.55">
+                오토데스크 바이너리(DWG)는 내부 형상 변환 엔진(ODA)을 통해 100% 정밀 파싱됩니다.<br>
+                <b>1️⃣ 해결 방법:</b> 폴더 내 <b>[실행하기.bat]</b>을 더블 클릭해 프로그램을 실행하시면 즉시 모든 DWG 파일이 100% 자동 분석됩니다.<br>
+                <b>2️⃣ 대안 (무설치 즉시):</b> AutoCAD 또는 GstarCAD에서 <b>[다른 이름으로 저장 ➔ DXF]</b>로 저장 후 여기에 올리시면 <b>서버 없이 웹 브라우저에서 0.1초만에 모든 블록이 100% 자동 감지</b>됩니다!
+              </div>
+            `;
           }
         } catch (e) {
           if (statusEl) {
-            statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
-            statusEl.style.color = '#ef4444';
-            statusEl.innerHTML = '💡 <b>원클릭 팁</b>: AutoCAD 또는 GstarCAD에서 <b>[다른 이름으로 저장 ➔ AutoCAD 2004/2018 DXF]</b>로 저장 후 업로드하시면 서버 없이 웹 브라우저에서 <b>모든 사다리·판넬 블록이 0.1초만에 100% 즉시 감지</b>됩니다!';
+            statusEl.style.background = 'rgba(239, 68, 68, 0.10)';
+            statusEl.style.color = '#b91c1c';
+            statusEl.innerHTML = `
+              <div style="font-weight:700;margin-bottom:4px">⚠️ DWG 변환 서버 미실행 안내</div>
+              <div style="font-size:11px;color:var(--fg);line-height:1.55">
+                1️⃣ 폴더 내 <b>[실행하기.bat]</b>을 더블 클릭해 프로그램을 실행하시면 DWG가 즉시 자동 분석됩니다.<br>
+                2️⃣ 또는 AutoCAD/GstarCAD에서 <b>[다른 이름으로 저장 ➔ DXF]</b>로 저장 후 올리시면 서버 없이 즉시 모든 블록이 로딩됩니다!
+              </div>
+            `;
           }
         }
       };
