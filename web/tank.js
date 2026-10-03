@@ -4623,6 +4623,8 @@
     const S = SHEET, x0 = S.margin, y0 = S.margin, x1 = S.w - S.margin, y1 = S.h - S.margin;
     const line = (a, b) => ents.push({ t: 'line', a: [P(a[0]), P(a[1])], b: [P(b[0]), P(b[1])], layer: 'SHEET' });
     const circle = (c, r) => ents.push({ t: 'circle', c: [P(c[0]), P(c[1])], r: P(r), layer: 'SHEET' });
+    const arc = (c, r, a0, a1) => ents.push({ t: 'arc', c: [P(c[0]), P(c[1])], r: P(r), a0: a0 || 0, a1: a1 || 360, layer: 'SHEET' });
+    const poly = (pts, layer = 'SHEET') => ents.push({ t: 'poly', pts: pts.map(pt => [P(pt[0]), P(pt[1])]), layer });
     const rect = (xa, ya, xb, yb) => { line([xa, ya], [xb, ya]); line([xb, ya], [xb, yb]); line([xb, yb], [xa, yb]); line([xa, yb], [xa, ya]); };
     const text = (x, y, h, str, align, rot, valign) => { if (str) ents.push({ t: 'text', p: [P(x), P(y)], h: P(h), s: str, rot: rot || 0, align: align || 'left', valign: valign || 'baseline', layer: 'SHEET' }); };
     rect(x0, y0, x1, y1);
@@ -4634,10 +4636,57 @@
     // 1. 회사명 및 로고 (높이 16mm)
     y -= 16;
     line([tx0, y], [x1, y]);
-    // 회사 로고 마크 (원형 이니셜 엠블럼 - 설정값 연동)
+    // 회사 로고 마크 (원형 이니셜 엠블럼 또는 사용자 등록 CAD/이미지 로고)
     const logoX = tx0 + 15, logoY = y + 8;
     const logoTxt = (t.logoText !== undefined && t.logoText !== null) ? t.logoText : 'Y';
-    if (logoTxt) {
+    if (t.logoCadEntities && t.logoCadEntities.length) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      const addPt = (px, py) => {
+        if (typeof px === 'number' && isFinite(px) && typeof py === 'number' && isFinite(py)) {
+          if (px < minX) minX = px; if (py < minY) minY = py;
+          if (px > maxX) maxX = px; if (py > maxY) maxY = py;
+        }
+      };
+      t.logoCadEntities.forEach(e => {
+        if (e.k === 'line' && e.p) { addPt(e.p[0][0], e.p[0][1]); addPt(e.p[1][0], e.p[1][1]); }
+        else if (e.k === 'circle' && e.c) { addPt(e.c[0] - e.r, e.c[1] - e.r); addPt(e.c[0] + e.r, e.c[1] + e.r); }
+        else if (e.k === 'arc' && e.c) { addPt(e.c[0] - e.r, e.c[1] - e.r); addPt(e.c[0] + e.r, e.c[1] + e.r); }
+        else if (e.k === 'poly' && e.p) { e.p.forEach(pt => addPt(pt[0], pt[1])); }
+      });
+      const ow = maxX - minX, oh = maxY - minY;
+      if (ow > 0 && oh > 0) {
+        const maxW = 24, maxH = 13;
+        const s = Math.min(maxW / ow, maxH / oh);
+        const dx = logoX - (minX + ow / 2) * s;
+        const dy = logoY - (minY + oh / 2) * s;
+        t.logoCadEntities.forEach(e => {
+          if (e.k === 'line' && e.p) {
+            line([e.p[0][0] * s + dx, e.p[0][1] * s + dy], [e.p[1][0] * s + dx, e.p[1][1] * s + dy]);
+          } else if (e.k === 'circle' && e.c) {
+            circle([e.c[0] * s + dx, e.c[1] * s + dy], e.r * s);
+          } else if (e.k === 'arc' && e.c) {
+            arc([e.c[0] * s + dx, e.c[1] * s + dy], e.r * s, e.a0, e.a1);
+          } else if (e.k === 'poly' && e.p && e.p.length >= 2) {
+            const scaledPts = e.p.map(pt => [pt[0] * s + dx, pt[1] * s + dy]);
+            poly(scaledPts, 'SHEET');
+          }
+        });
+      } else {
+        circle([logoX, logoY], 5.8);
+        circle([logoX, logoY], 5.0);
+        if (logoTxt) text(logoX, logoY, 5.5, logoTxt, 'center', 0, 'middle');
+      }
+    } else if (t.logoImage) {
+      ents.push({
+        t: 'image',
+        href: t.logoImage,
+        x: P(logoX - 12),
+        y: P(logoY - 6.5),
+        w: P(24),
+        h: P(13),
+        layer: 'SHEET'
+      });
+    } else if (logoTxt) {
       circle([logoX, logoY], 5.8);
       circle([logoX, logoY], 5.0);
       text(logoX, logoY, 5.5, logoTxt, 'center', 0, 'middle');
@@ -5315,6 +5364,14 @@
         g(0, 'CIRCLE'); g(8, layer);
         g(10, n(e.c[0])); g(20, n(e.c[1])); g(30, 0);
         g(40, n(e.r));
+      }
+      else if (e.t === 'image') {
+        const x0 = e.x, y0 = e.y, x1 = e.x + e.w, y1 = e.y + e.h;
+        writeEnt({ t: 'line', a: [x0, y0], b: [x1, y0], layer });
+        writeEnt({ t: 'line', a: [x1, y0], b: [x1, y1], layer });
+        writeEnt({ t: 'line', a: [x1, y1], b: [x0, y1], layer });
+        writeEnt({ t: 'line', a: [x0, y1], b: [x0, y0], layer });
+        writeEnt({ t: 'text', p: [(x0 + x1) / 2, (y0 + y1) / 2], s: '[LOGO]', h: 3, align: 'center', valign: 'middle', layer });
       }
       else if (e.t === 'text') {
         const px = e.p[0], py = e.p[1];

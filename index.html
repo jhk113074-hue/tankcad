@@ -399,7 +399,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.69</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.70</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1821,13 +1821,27 @@ canvas.drag{cursor:grabbing}
             </div>
 
             <div style="display:flex;flex-direction:column;gap:8px">
-              <div style="display:flex;gap:8px">
-                <div style="width:85px">
-                  <label for="tLogoText" id="lblLogoText" style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px">로고 마크</label>
-                  <input type="text" id="tLogoText" value="Y" maxlength="3" style="width:100%;text-align:center;font-weight:700;padding:6px;font-size:13px;border:1px solid var(--line);border-radius:4px" placeholder="Y">
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <label for="tLogoText" id="lblLogoText" style="font-size:11px;font-weight:700;color:var(--muted);display:block">로고 마크 (텍스트 / 파일)</label>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <input type="text" id="tLogoText" value="Y" maxlength="6" style="width:52px;text-align:center;font-weight:700;padding:6px 4px;font-size:13px;border:1px solid var(--line);border-radius:4px" placeholder="Y" title="텍스트 이니셜 마크">
+                    <button type="button" id="btnUploadLogo" class="btn-sm" style="padding:6px 9px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;white-space:nowrap;background:var(--surface-sub);border:1px solid var(--accent);color:var(--accent);border-radius:4px;cursor:pointer" title="회사 로고 이미지(PNG/JPG/SVG) 또는 CAD(DWG/DXF) 파일 등록" onclick="$('logoFileInput').click()">
+                      <span>📁 로고 등록</span>
+                    </button>
+                    <input type="file" id="logoFileInput" accept=".png,.jpg,.jpeg,.svg,.webp,.dxf,.dwg" hidden>
+                    <button type="button" id="btnResetLogo" class="btn-sm" style="display:none;padding:6px 8px;font-size:11px;color:#ef4444;background:transparent;border:1px solid var(--line);border-radius:4px;cursor:pointer" title="등록된 로고 파일을 삭제하고 기본 텍스트 이니셜로 복원" onclick="resetCustomLogo()">
+                      ✕
+                    </button>
+                  </div>
+                  <div id="logoPreviewWrap" style="display:none;align-items:center;gap:6px;padding:3px 6px;background:var(--surface-sub);border:1px solid var(--line);border-radius:4px;font-size:10px">
+                    <div id="logoPreviewThumb" style="width:26px;height:16px;display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:2px;overflow:hidden"></div>
+                    <span id="logoPreviewInfo" style="color:var(--fg);font-weight:600;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+                  </div>
                 </div>
+
                 <div style="flex:1">
-                  <label for="tCustomer" id="lblCustomer" style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px">회사 상호 (Company Name)</label>
+                  <label for="tCustomer" id="lblCustomer" style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px">회사 상호 (Company Name)</label>
                   <input type="text" id="tCustomer" value="YSACC CO.,LTD" style="width:100%;padding:6px 10px;font-size:12.5px;font-weight:600;border:1px solid var(--line);border-radius:4px" placeholder="YSACC CO.,LTD">
                 </div>
               </div>
@@ -1902,7 +1916,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.69</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.70</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1912,7 +1926,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.69</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.70</span></div>
     </div>
   </main>
 </div>
@@ -6542,6 +6556,8 @@ canvas.drag{cursor:grabbing}
     const S = SHEET, x0 = S.margin, y0 = S.margin, x1 = S.w - S.margin, y1 = S.h - S.margin;
     const line = (a, b) => ents.push({ t: 'line', a: [P(a[0]), P(a[1])], b: [P(b[0]), P(b[1])], layer: 'SHEET' });
     const circle = (c, r) => ents.push({ t: 'circle', c: [P(c[0]), P(c[1])], r: P(r), layer: 'SHEET' });
+    const arc = (c, r, a0, a1) => ents.push({ t: 'arc', c: [P(c[0]), P(c[1])], r: P(r), a0: a0 || 0, a1: a1 || 360, layer: 'SHEET' });
+    const poly = (pts, layer = 'SHEET') => ents.push({ t: 'poly', pts: pts.map(pt => [P(pt[0]), P(pt[1])]), layer });
     const rect = (xa, ya, xb, yb) => { line([xa, ya], [xb, ya]); line([xb, ya], [xb, yb]); line([xb, yb], [xa, yb]); line([xa, yb], [xa, ya]); };
     const text = (x, y, h, str, align, rot, valign) => { if (str) ents.push({ t: 'text', p: [P(x), P(y)], h: P(h), s: str, rot: rot || 0, align: align || 'left', valign: valign || 'baseline', layer: 'SHEET' }); };
     rect(x0, y0, x1, y1);
@@ -6553,10 +6569,57 @@ canvas.drag{cursor:grabbing}
     // 1. 회사명 및 로고 (높이 16mm)
     y -= 16;
     line([tx0, y], [x1, y]);
-    // 회사 로고 마크 (원형 이니셜 엠블럼 - 설정값 연동)
+    // 회사 로고 마크 (원형 이니셜 엠블럼 또는 사용자 등록 CAD/이미지 로고)
     const logoX = tx0 + 15, logoY = y + 8;
     const logoTxt = (t.logoText !== undefined && t.logoText !== null) ? t.logoText : 'Y';
-    if (logoTxt) {
+    if (t.logoCadEntities && t.logoCadEntities.length) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      const addPt = (px, py) => {
+        if (typeof px === 'number' && isFinite(px) && typeof py === 'number' && isFinite(py)) {
+          if (px < minX) minX = px; if (py < minY) minY = py;
+          if (px > maxX) maxX = px; if (py > maxY) maxY = py;
+        }
+      };
+      t.logoCadEntities.forEach(e => {
+        if (e.k === 'line' && e.p) { addPt(e.p[0][0], e.p[0][1]); addPt(e.p[1][0], e.p[1][1]); }
+        else if (e.k === 'circle' && e.c) { addPt(e.c[0] - e.r, e.c[1] - e.r); addPt(e.c[0] + e.r, e.c[1] + e.r); }
+        else if (e.k === 'arc' && e.c) { addPt(e.c[0] - e.r, e.c[1] - e.r); addPt(e.c[0] + e.r, e.c[1] + e.r); }
+        else if (e.k === 'poly' && e.p) { e.p.forEach(pt => addPt(pt[0], pt[1])); }
+      });
+      const ow = maxX - minX, oh = maxY - minY;
+      if (ow > 0 && oh > 0) {
+        const maxW = 24, maxH = 13;
+        const s = Math.min(maxW / ow, maxH / oh);
+        const dx = logoX - (minX + ow / 2) * s;
+        const dy = logoY - (minY + oh / 2) * s;
+        t.logoCadEntities.forEach(e => {
+          if (e.k === 'line' && e.p) {
+            line([e.p[0][0] * s + dx, e.p[0][1] * s + dy], [e.p[1][0] * s + dx, e.p[1][1] * s + dy]);
+          } else if (e.k === 'circle' && e.c) {
+            circle([e.c[0] * s + dx, e.c[1] * s + dy], e.r * s);
+          } else if (e.k === 'arc' && e.c) {
+            arc([e.c[0] * s + dx, e.c[1] * s + dy], e.r * s, e.a0, e.a1);
+          } else if (e.k === 'poly' && e.p && e.p.length >= 2) {
+            const scaledPts = e.p.map(pt => [pt[0] * s + dx, pt[1] * s + dy]);
+            poly(scaledPts, 'SHEET');
+          }
+        });
+      } else {
+        circle([logoX, logoY], 5.8);
+        circle([logoX, logoY], 5.0);
+        if (logoTxt) text(logoX, logoY, 5.5, logoTxt, 'center', 0, 'middle');
+      }
+    } else if (t.logoImage) {
+      ents.push({
+        t: 'image',
+        href: t.logoImage,
+        x: P(logoX - 12),
+        y: P(logoY - 6.5),
+        w: P(24),
+        h: P(13),
+        layer: 'SHEET'
+      });
+    } else if (logoTxt) {
       circle([logoX, logoY], 5.8);
       circle([logoX, logoY], 5.0);
       text(logoX, logoY, 5.5, logoTxt, 'center', 0, 'middle');
@@ -7234,6 +7297,14 @@ canvas.drag{cursor:grabbing}
         g(0, 'CIRCLE'); g(8, layer);
         g(10, n(e.c[0])); g(20, n(e.c[1])); g(30, 0);
         g(40, n(e.r));
+      }
+      else if (e.t === 'image') {
+        const x0 = e.x, y0 = e.y, x1 = e.x + e.w, y1 = e.y + e.h;
+        writeEnt({ t: 'line', a: [x0, y0], b: [x1, y0], layer });
+        writeEnt({ t: 'line', a: [x1, y0], b: [x1, y1], layer });
+        writeEnt({ t: 'line', a: [x1, y1], b: [x0, y1], layer });
+        writeEnt({ t: 'line', a: [x0, y1], b: [x0, y0], layer });
+        writeEnt({ t: 'text', p: [(x0 + x1) / 2, (y0 + y1) / 2], s: '[LOGO]', h: 3, align: 'center', valign: 'middle', layer });
       }
       else if (e.t === 'text') {
         const px = e.p[0], py = e.p[1];
@@ -9070,6 +9141,221 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if (el) el.addEventListener('input', updateTitleBlockSummary);
   });
 
+  /* Custom Company Logo Upload & Management (Image / CAD / SVG) */
+  let customTitleLogo = null;
+
+  function loadSavedCustomLogo() {
+    try {
+      const saved = localStorage.getItem('tankcad_title_logo_custom');
+      if (saved) {
+        customTitleLogo = JSON.parse(saved);
+        updateLogoUi();
+      }
+    } catch (e) {}
+  }
+
+  function updateLogoUi() {
+    const wrap = $('logoPreviewWrap');
+    const thumb = $('logoPreviewThumb');
+    const info = $('logoPreviewInfo');
+    const resetBtn = $('btnResetLogo');
+    if (!wrap || !thumb || !info) return;
+
+    if (customTitleLogo) {
+      wrap.style.display = 'inline-flex';
+      if (resetBtn) resetBtn.style.display = 'inline-flex';
+      info.textContent = customTitleLogo.name || (customTitleLogo.type === 'cad' ? 'CAD 로고' : '이미지 로고');
+      if (customTitleLogo.dataUrl) {
+        thumb.innerHTML = `<img src="${customTitleLogo.dataUrl}" style="max-width:100%;max-height:100%;object-fit:contain">`;
+      } else if (customTitleLogo.entities && customTitleLogo.entities.length) {
+        thumb.innerHTML = `<span style="font-size:11px" title="CAD 벡터 로고 (${customTitleLogo.entities.length}개 요소)">📐</span>`;
+      } else {
+        thumb.innerHTML = `<span style="font-size:11px">🖼️</span>`;
+      }
+    } else {
+      wrap.style.display = 'none';
+      if (resetBtn) resetBtn.style.display = 'none';
+      thumb.innerHTML = '';
+      info.textContent = '';
+    }
+  }
+
+  function resetCustomLogo() {
+    customTitleLogo = null;
+    try { localStorage.removeItem('tankcad_title_logo_custom'); } catch(e) {}
+    updateLogoUi();
+    schedule();
+  }
+  window.resetCustomLogo = resetCustomLogo;
+
+  function parseSvgToEntities(svgText) {
+    const ents = [];
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(svgText, 'image/svg+xml');
+      const svg = doc.querySelector('svg');
+      if (!svg) return ents;
+
+      let vb = svg.getAttribute('viewBox');
+      let vbW = 100, vbH = 100;
+      if (vb) {
+        const parts = vb.trim().split(/[\s,]+/).map(Number);
+        if (parts.length === 4) { vbW = parts[2]; vbH = parts[3]; }
+      } else {
+        vbW = parseFloat(svg.getAttribute('width')) || 100;
+        vbH = parseFloat(svg.getAttribute('height')) || 100;
+      }
+
+      doc.querySelectorAll('line').forEach(el => {
+        const x1 = parseFloat(el.getAttribute('x1')) || 0;
+        const y1 = vbH - (parseFloat(el.getAttribute('y1')) || 0);
+        const x2 = parseFloat(el.getAttribute('x2')) || 0;
+        const y2 = vbH - (parseFloat(el.getAttribute('y2')) || 0);
+        ents.push({ k: 'line', p: [[x1, y1], [x2, y2]] });
+      });
+
+      doc.querySelectorAll('rect').forEach(el => {
+        const rx = parseFloat(el.getAttribute('x')) || 0;
+        const ry = parseFloat(el.getAttribute('y')) || 0;
+        const rw = parseFloat(el.getAttribute('width')) || 0;
+        const rh = parseFloat(el.getAttribute('height')) || 0;
+        if (rw > 0 && rh > 0) {
+          const yBottom = vbH - (ry + rh), yTop = vbH - ry;
+          ents.push({ k: 'poly', p: [[rx, yBottom], [rx + rw, yBottom], [rx + rw, yTop], [rx, yTop]], c: true });
+        }
+      });
+
+      doc.querySelectorAll('circle').forEach(el => {
+        const cx = parseFloat(el.getAttribute('cx')) || 0;
+        const cy = vbH - (parseFloat(el.getAttribute('cy')) || 0);
+        const r = parseFloat(el.getAttribute('r')) || 0;
+        if (r > 0) ents.push({ k: 'circle', c: [cx, cy], r: r });
+      });
+
+      doc.querySelectorAll('polyline, polygon').forEach(el => {
+        const ptsStr = el.getAttribute('points') || '';
+        const raw = ptsStr.trim().split(/[\s,]+/).map(Number);
+        const pts = [];
+        for (let i = 0; i + 1 < raw.length; i += 2) {
+          pts.push([raw[i], vbH - raw[i + 1]]);
+        }
+        if (pts.length >= 2) {
+          ents.push({ k: 'poly', p: pts, c: el.tagName.toLowerCase() === 'polygon' });
+        }
+      });
+    } catch(e) {}
+    return ents;
+  }
+
+  async function handleLogoFileUpload(file) {
+    if (!file) return;
+    const isEn = currentLang === 'en';
+    const fname = file.name.toLowerCase();
+
+    // 1. CAD: DXF
+    if (fname.endsWith('.dxf')) {
+      try {
+        const text = await file.text();
+        const entities = parseDxfStringClient(text);
+        if (!entities || !entities.length) {
+          alert(isEn ? 'No 2D vector entities found in DXF file.' : 'DXF 파일에서 2D CAD 엔티티를 찾지 못했습니다.');
+          return;
+        }
+        customTitleLogo = { type: 'cad', name: file.name, entities: entities };
+        try { localStorage.setItem('tankcad_title_logo_custom', JSON.stringify(customTitleLogo)); } catch(e) {}
+        updateLogoUi();
+        schedule();
+        alert(isEn ? `✅ CAD Logo (${entities.length} entities) registered!` : `✅ CAD 로고(${entities.length}개 엔티티)가 성공적으로 등록되었습니다!`);
+      } catch (err) {
+        alert((isEn ? 'Failed to parse DXF: ' : 'DXF 파일 파싱 실패: ') + err.message);
+      }
+      return;
+    }
+
+    // 2. CAD: DWG
+    if (fname.endsWith('.dwg')) {
+      try {
+        const apiBase = (location.protocol === 'file:' || !location.port || location.port !== '8000') ? 'http://localhost:8000' : '';
+        const formData = new FormData();
+        formData.append('file', file);
+        const resp = await fetch(`${apiBase}/api/convert-dwg`, {
+          method: 'POST',
+          body: formData
+        });
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          throw new Error(errData.detail || 'DWG conversion failed');
+        }
+        const dxfText = await resp.text();
+        const entities = parseDxfStringClient(dxfText);
+        if (!entities || !entities.length) {
+          alert(isEn ? 'No 2D vector entities found in DWG file.' : 'DWG 파일에서 2D CAD 엔티티를 찾지 못했습니다.');
+          return;
+        }
+        customTitleLogo = { type: 'cad', name: file.name, entities: entities };
+        try { localStorage.setItem('tankcad_title_logo_custom', JSON.stringify(customTitleLogo)); } catch(e) {}
+        updateLogoUi();
+        schedule();
+        alert(isEn ? `✅ DWG Logo converted and registered!` : `✅ DWG 로고가 성공적으로 변환 및 등록되었습니다!`);
+      } catch (err) {
+        alert((isEn ? 'DWG Logo conversion error: ' : 'DWG 로고 변환 오류: ') + err.message);
+      }
+      return;
+    }
+
+    // 3. Image: SVG
+    if (fname.endsWith('.svg')) {
+      try {
+        const text = await file.text();
+        const svgEnts = parseSvgToEntities(text);
+        const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(text);
+        customTitleLogo = {
+          type: 'svg',
+          name: file.name,
+          dataUrl: dataUrl,
+          entities: svgEnts.length ? svgEnts : null
+        };
+        try { localStorage.setItem('tankcad_title_logo_custom', JSON.stringify(customTitleLogo)); } catch(e) {}
+        updateLogoUi();
+        schedule();
+        alert(isEn ? '✅ SVG Logo registered!' : '✅ SVG 로고가 성공적으로 등록되었습니다!');
+      } catch (err) {
+        alert('SVG error: ' + err.message);
+      }
+      return;
+    }
+
+    // 4. Raster Images: PNG, JPG, JPEG, WEBP
+    if (fname.endsWith('.png') || fname.endsWith('.jpg') || fname.endsWith('.jpeg') || fname.endsWith('.webp')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        customTitleLogo = {
+          type: 'image',
+          name: file.name,
+          dataUrl: dataUrl
+        };
+        try { localStorage.setItem('tankcad_title_logo_custom', JSON.stringify(customTitleLogo)); } catch(e) {}
+        updateLogoUi();
+        schedule();
+        alert(isEn ? '✅ Image Logo registered!' : '✅ 회사 로고 이미지가 성공적으로 등록되었습니다!');
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    alert(isEn ? 'Please upload an image (PNG, JPG, SVG) or CAD (DXF, DWG) file.' : '그림 파일(PNG, JPG, SVG) 또는 CAD 파일(DXF, DWG)을 선택해주세요.');
+  }
+  window.handleLogoFileUpload = handleLogoFileUpload;
+
+  if ($('logoFileInput')) {
+    $('logoFileInput').addEventListener('change', (ev) => {
+      const f = ev.target.files && ev.target.files[0];
+      if (f) handleLogoFileUpload(f);
+      ev.target.value = '';
+    });
+  }
+
   /* CHT File Loader */
   $('chtBtn').addEventListener('click', () => $('chtFile').click());
   $('chtFile').addEventListener('change', async ev => {
@@ -10287,6 +10573,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         notes: $('tNotes').value.split('\n').map(x => x.trim()).filter(Boolean),
         remarks: $('tRemarks').value.split('\n').map(x => x.trim()).filter(Boolean),
         title: { logoText: $('tLogoText') ? $('tLogoText').value : 'Y',
+                 logoCadEntities: (customTitleLogo && customTitleLogo.entities && customTitleLogo.entities.length) ? customTitleLogo.entities : null,
+                 logoImage: (customTitleLogo && customTitleLogo.dataUrl) ? customTitleLogo.dataUrl : null,
                  prodName: $('tProdName') ? $('tProdName').value : '',
                  customer: $('tCustomer').value, address: $('tAddress').value, tankSize: $('tTankSize').value, client: $('tClient').value, consultant: $('tConsultant').value,
                  contractor: $('tContractor').value, project: $('tProject').value, mep: $('tMep').value, chartNo: $('tChart').value, date: $('tDate').value, drawn: $('tDrawn').value, tel: $('tTel').value, dwgNo: $('tDwgNo').value }
@@ -10313,7 +10601,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.69</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.70</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -10734,6 +11022,21 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   const tx = x => view.x + x * view.s, ty = y => view.y - y * view.s;
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
+  const imageCache = new Map();
+  function getCachedImage(src) {
+    if (!src) return null;
+    let img = imageCache.get(src);
+    if (!img) {
+      img = new Image();
+      img.onload = () => {
+        requestAnimationFrame(() => draw());
+      };
+      img.src = src;
+      imageCache.set(src, img);
+    }
+    return img;
+  }
+
   function draw() {
     if (!plan) return;
     try {
@@ -10744,10 +11047,35 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const lw = { PANEL: 1.4, PANEL_DETAIL: 0.9, FRAME: 1.6, REINF: 1.2, WALL: 1, DIM: 1, SHEET: 1.3, BALLOON: 1.8, NOZZLE: 1.6 };
       const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
 
+      const renderImageEnt = (e) => {
+        const img = getCachedImage(e.href);
+        if (!img) return;
+        const bx = tx(e.x + (e.ox || 0));
+        const by = ty(e.y + e.h + (e.oy || 0));
+        const bw = e.w * view.s;
+        const bh = e.h * view.s;
+        if (bw <= 0 || bh <= 0) return;
+        if (img.complete && img.naturalWidth && img.naturalHeight) {
+          const aspect = img.naturalWidth / img.naturalHeight;
+          let dw = bw, dh = bh;
+          if (dw / dh > aspect) {
+            dw = dh * aspect;
+          } else {
+            dh = dw / aspect;
+          }
+          const dx = bx + (bw - dw) / 2;
+          const dy = by + (bh - dh) / 2;
+          ctx.drawImage(img, dx, dy, dw, dh);
+        } else if (img.complete) {
+          ctx.drawImage(img, bx, by, bw, bh);
+        }
+      };
+
       const hasFills = (plan.ents || []).some(e => e && e.fill);
       if (hasFills) {
         const bgCol = css('--cv-bg') || '#0b1120';
         const texts = [];
+        const images = [];
         let curLayer = null;
 
         const setLayer = layer => {
@@ -10796,6 +11124,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           } else if (e.t === 'text' && e.p) {
             if (ox || oy) texts.push({ ...e, p: [e.p[0] + ox, e.p[1] + oy] });
             else texts.push(e);
+          } else if (e.t === 'image' && e.href) {
+            images.push({ ...e, ox, oy });
           }
         };
 
@@ -10823,16 +11153,19 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           ctx.textBaseline = e.valign === 'middle' ? 'middle' : 'alphabetic';
           ctx.save(); ctx.translate(tx(e.p[0]), ty(e.p[1])); ctx.rotate(-(e.rot || 0) * Math.PI / 180); ctx.fillText(e.s || '', 0, 0); ctx.restore();
         });
+        images.forEach(renderImageEnt);
       } else {
         ['PANEL_DETAIL', 'PANEL', 'WALL', 'REINF', 'FRAME', 'DIM', 'SHEET', 'BALLOON', 'NOZZLE'].forEach(layer => {
           ctx.strokeStyle = col[layer]; ctx.fillStyle = col[layer]; ctx.lineWidth = lw[layer]; ctx.beginPath();
           const texts = [];
+          const images = [];
           const renderEnt = (e, ox = 0, oy = 0) => {
             if (!e || e.layer !== layer || !layerOn(e)) return;
             if (e.t === 'line' && e.a && e.b) { ctx.moveTo(tx(e.a[0] + ox), ty(e.a[1] + oy)); ctx.lineTo(tx(e.b[0] + ox), ty(e.b[1] + oy)); }
             else if (e.t === 'circle' && e.c) { ctx.moveTo(tx(e.c[0] + ox) + (e.r || 10) * view.s, ty(e.c[1] + oy)); ctx.arc(tx(e.c[0] + ox), ty(e.c[1] + oy), (e.r || 10) * view.s, 0, 7); }
             else if (e.t === 'arc' && e.c) { const r = (e.r || 10) * view.s, cx = tx(e.c[0] + ox), cy = ty(e.c[1] + oy), a0 = (e.a0 || 0) * Math.PI / 180, a1 = (e.a1 || 360) * Math.PI / 180; ctx.moveTo(cx + r * Math.cos(a0), cy - r * Math.sin(a0)); ctx.arc(cx, cy, r, -a0, -a1, true); }
             else if (e.t === 'text' && e.p) texts.push(e);
+            else if (e.t === 'image' && e.href) images.push({ ...e, ox, oy });
           };
           (plan.ents || []).forEach(e => {
             if (!e || !layerOn(e)) return;
@@ -10856,6 +11189,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             ctx.textBaseline = e.valign === 'middle' ? 'middle' : 'alphabetic';
             ctx.save(); ctx.translate(tx(e.p[0]), ty(e.p[1])); ctx.rotate(-(e.rot || 0) * Math.PI / 180); ctx.fillText(e.s || '', 0, 0); ctx.restore();
           });
+          images.forEach(renderImageEnt);
         });
       }
     } catch (err) {
@@ -15333,6 +15667,11 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       restoreAppState();
     } catch (e) {
       console.warn('restoreAppState init error:', e);
+    }
+    try {
+      loadSavedCustomLogo();
+    } catch (e) {
+      console.warn('loadSavedCustomLogo init error:', e);
     }
     try {
       applyActiveTemplates();
