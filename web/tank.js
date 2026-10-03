@@ -217,38 +217,89 @@
   }
 
   /* ---------- 평면도 맨홀 손잡이 / 환기구 (CCeilLT::_1000BY1000 의 CLT_HANDLE=1, CLT_AIRVENT=2) : 1000x1000 패널만 ---------- */
-  function markShapes(x, y, mark) {
+  function markShapes(x, y, mark, opt) {
+    const customParts = opt?.partTemplates || {};
     const out = [], P = (a, b) => [x + a, y + b];
     const poly = (pts, layer) => pts.forEach((p, k) => out.push({ t: 'line', a: P(...p), b: P(...pts[(k + 1) % pts.length]), layer }));
+
     if (mark & 1) { // 맨홀 (손잡이) 및 직하부 내부사다리
-      poly([[260, 105], [735, 105], [888, 260], [888, 735], [735, 888], [262, 888], [105, 735], [105, 260]], 'FRAME');
-      poly([[150, 280], [290, 150], [710, 150], [850, 280], [850, 720], [710, 850], [290, 850], [150, 720]], 'FRAME');
-      poly([[310, 110], [390, 110], [390, 67], [310, 67]], 'FRAME'); poly([[610, 110], [690, 110], [690, 67], [610, 67]], 'FRAME');
-      poly([[462, 945], [538, 945], [538, 898], [462, 898]], 'FRAME');
-      out.push({ t: 'circle', c: P(500, 500), r: 300, layer: 'FRAME' });
-      out.push({ t: 'text', p: P(500, (mark & 2) ? 610 : 500), s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
+      if (customParts.manhole && customParts.manhole.length > 0) {
+        customParts.manhole.forEach(e => {
+          if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'FRAME' });
+          else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'FRAME' });
+          else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'FRAME' });
+          else if (e.k === 'poly') poly(e.p, 'FRAME');
+        });
+        out.push({ t: 'text', p: P(500, (mark & 2) ? 610 : 500), s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
+      } else {
+        poly([[260, 105], [735, 105], [888, 260], [888, 735], [735, 888], [262, 888], [105, 735], [105, 260]], 'FRAME');
+        poly([[150, 280], [290, 150], [710, 150], [850, 280], [850, 720], [710, 850], [290, 850], [150, 720]], 'FRAME');
+        poly([[310, 110], [390, 110], [390, 67], [310, 67]], 'FRAME'); poly([[610, 110], [690, 110], [690, 67], [610, 67]], 'FRAME');
+        poly([[462, 945], [538, 945], [538, 898], [462, 898]], 'FRAME');
+        out.push({ t: 'circle', c: P(500, 500), r: 300, layer: 'FRAME' });
+        out.push({ t: 'text', p: P(500, (mark & 2) ? 610 : 500), s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
+      }
 
       // 내부사다리 (IN-LADDER) 기호 (맨홀 직하부 탱크 내부 설치 위치)
-      const ladX1 = 360, ladX2 = 640;
-      out.push({ t: 'line', a: P(ladX1, 230), b: P(ladX1, 380), layer: 'FRAME' });
-      out.push({ t: 'line', a: P(ladX2, 230), b: P(ladX2, 380), layer: 'FRAME' });
-      for (let ry = 250; ry <= 370; ry += 40) {
-        out.push({ t: 'line', a: P(ladX1, ry), b: P(ladX2, ry), layer: 'FRAME' });
+      if (customParts.inladder && customParts.inladder.length > 0) {
+        customParts.inladder.forEach(e => {
+          if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'FRAME' });
+          else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'FRAME' });
+          else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'FRAME' });
+          else if (e.k === 'poly') poly(e.p, 'FRAME');
+        });
+        out.push({ t: 'text', p: P(500, 210), s: 'IN-LADDER', h: 42, rot: 0, align: 'center', layer: 'DIM' });
+      } else {
+        const ladX1 = 360, ladX2 = 640;
+        out.push({ t: 'line', a: P(ladX1, 230), b: P(ladX1, 380), layer: 'FRAME' });
+        out.push({ t: 'line', a: P(ladX2, 230), b: P(ladX2, 380), layer: 'FRAME' });
+        for (let ry = 250; ry <= 370; ry += 40) {
+          out.push({ t: 'line', a: P(ladX1, ry), b: P(ladX2, ry), layer: 'FRAME' });
+        }
+        out.push({ t: 'text', p: P(500, 210), s: 'IN-LADDER', h: 42, rot: 0, align: 'center', layer: 'DIM' });
       }
-      out.push({ t: 'text', p: P(500, 210), s: 'IN-LADDER', h: 42, rot: 0, align: 'center', layer: 'DIM' });
     }
     if (mark & 2) { // 에어벤트
-      out.push({ t: 'circle', c: P(500, 500), r: 50, layer: 'REINF' });
-      out.push({ t: 'circle', c: P(500, 500), r: 100, layer: 'REINF' });
-      out.push({ t: 'line', a: P(380, 500), b: P(620, 500), layer: 'REINF' });
-      out.push({ t: 'line', a: P(500, 380), b: P(500, 620), layer: 'REINF' });
-      out.push({ t: 'text', p: P(500, (mark & 1) ? 380 : 500), s: 'AIR VENT 100A', h: 50, rot: 0, align: 'center', layer: 'DIM' });
+      if (customParts.airvent && customParts.airvent.length > 0) {
+        customParts.airvent.forEach(e => {
+          if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'REINF' });
+          else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'REINF' });
+          else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'REINF' });
+          else if (e.k === 'poly') poly(e.p, 'REINF');
+        });
+        out.push({ t: 'text', p: P(500, (mark & 1) ? 380 : 500), s: 'AIR VENT 100A', h: 50, rot: 0, align: 'center', layer: 'DIM' });
+      } else {
+        out.push({ t: 'circle', c: P(500, 500), r: 50, layer: 'REINF' });
+        out.push({ t: 'circle', c: P(500, 500), r: 100, layer: 'REINF' });
+        out.push({ t: 'line', a: P(380, 500), b: P(620, 500), layer: 'REINF' });
+        out.push({ t: 'line', a: P(500, 380), b: P(500, 620), layer: 'REINF' });
+        out.push({ t: 'text', p: P(500, (mark & 1) ? 380 : 500), s: 'AIR VENT 100A', h: 50, rot: 0, align: 'center', layer: 'DIM' });
+      }
     }
     return out;
   }
 
   /* ---------- 사다리 (CLadderLT) : 1 위, 2 아래, 3 오른쪽, 4 왼쪽 (평면) / 5 정면, 6 뒤(상부만), 7 우측면, 8 좌측면 ---------- */
-  function ladderShapes(idx, px, py, H) {
+  function ladderShapes(idx, px, py, H, opt) {
+    const customParts = opt?.partTemplates || {};
+    if (idx >= 1 && idx <= 4 && customParts.ladder_plan && customParts.ladder_plan.length > 0) {
+      const out = [], L = 'FRAME';
+      const sx = idx === 3 ? 1 : idx === 4 ? -1 : 0, sy = idx === 1 ? 1 : idx === 2 ? -1 : 0;
+      const angle = sy === 1 ? 0 : (sy === -1 ? Math.PI : (sx === 1 ? Math.PI / 2 : -Math.PI / 2));
+      const cosA = Math.cos(angle), sinA = Math.sin(angle);
+      const trans = (x, y) => [px + (x * cosA - y * sinA), py + (x * sinA + y * cosA)];
+      customParts.ladder_plan.forEach(e => {
+        if (e.k === 'line') out.push({ t: 'line', a: trans(e.p[0][0], e.p[0][1]), b: trans(e.p[1][0], e.p[1][1]), layer: L });
+        else if (e.k === 'circle') out.push({ t: 'circle', c: trans(e.c[0], e.c[1]), r: e.r, layer: L });
+        else if (e.k === 'poly') {
+          const tpts = e.p.map(p => trans(p[0], p[1]));
+          for (let k = 0; k + 1 < tpts.length; k++) out.push({ t: 'line', a: tpts[k], b: tpts[k + 1], layer: L });
+          if (e.c) out.push({ t: 'line', a: tpts[tpts.length - 1], b: tpts[0], layer: L });
+        }
+      });
+      out.push({ t: 'text', p: [px + sx * 315, py + sy * 315], s: 'LADDER', h: 50, rot: sx ? 90 : 0, align: 'center', layer: 'DIM' });
+      return out;
+    }
     const T = 40, FW = 270, FT = 20, TO = 250, TI = 270, TL = 250, SI = 400, FO = 200, BO = -500, MH = 150, TOP = 700, TTOP = 500, CX = 75;
     const mx = FW >> 1, out = [], L = 'FRAME';
     const ln = (a, b) => out.push({ t: 'line', a: [px + a[0], py + a[1]], b: [px + b[0], py + b[1]], layer: L });
@@ -681,10 +732,10 @@
       if (exposed(i, j, 'top') && exposed(i, j, 'right')) corner([[x1 + F, y1], [x1, y1], [x1, y1 + F]]);
       if (exposed(i, j, 'top') && exposed(i, j, 'left')) corner([[x0, y1 + F], [x0, y1], [x0 - F, y1]]);
     }
-    ladderList(opt, map).forEach(l => ents.push(...ladderShapes(l.idx, l.x, l.y, 0)));
+    ladderList(opt, map).forEach(l => ents.push(...ladderShapes(l.idx, l.x, l.y, 0, opt)));
     Object.entries(opt.marks || {}).forEach(([k, m]) => {
       const [i, j] = k.split(',').map(Number);
-      if (map.has(i, j) && map.cols[j] === 1000 && map.rows[i] === 1000) ents.push(...markShapes(map.xs[j], map.ys[i], m));
+      if (map.has(i, j) && map.cols[j] === 1000 && map.rows[i] === 1000) ents.push(...markShapes(map.xs[j], map.ys[i], m, opt));
     });
     // 기둥 표시 (삭제된 패널 중심): 정사각 + 대각선 (원본 심볼은 미확인 → 근사)
     (opt.pillars || []).forEach(([i, j]) => {
@@ -2240,7 +2291,7 @@
         if (l.sd === 'U') { idx = 7; px = total; } else if (l.sd === 'D') { idx = 8; px = 0; } else if (l.sd === 'R') { idx = 5; px = l.y; } else { idx = 6; px = l.y; }
       }
       if (done.has(idx + ':' + px)) return; done.add(idx + ':' + px);
-      ents.push(...ladderShapes(idx, px, 0, nH));
+      ents.push(...ladderShapes(idx, px, 0, nH, opt));
     });
 
     let prevLeftEy = null;

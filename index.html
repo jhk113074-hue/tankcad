@@ -331,7 +331,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.53</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.54</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -354,6 +354,7 @@ canvas.drag{cursor:grabbing}
       <button type="button" class="tab-btn" data-tab="tab-edit">✏️ 평면 편집</button>
       <button type="button" class="tab-btn" data-tab="tab-nozzles">📐 측면편집</button>
       <button type="button" class="tab-btn" data-tab="tab-bom">📋 부품사양·집계</button>
+      <button type="button" class="tab-btn" data-tab="tab-cad-parts" id="tabBtnCadParts">🧩 부품 CAD 등록</button>
       <button type="button" class="tab-btn" data-tab="tab-settings">⚙️ 환경설정</button>
     </nav>
 
@@ -681,7 +682,126 @@ canvas.drag{cursor:grabbing}
       </section>
     </div>
 
-    <!-- Tab 5: Settings (환경설정) -->
+    <!-- Tab 5: CAD Parts Registration (부품·판넬 CAD 등록) -->
+    <div class="tab-content" id="tab-cad-parts">
+      <section class="box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <h2 id="secTitleCadParts" style="margin:0;font-size:13px">🧩 부품 CAD 등록 (DWG·DXF)</h2>
+          <button type="button" id="btnResetAllCadParts" class="btn-preset danger" style="padding:2px 8px;font-size:11px" title="모든 커스텀 부품을 공장 표준으로 초기화">🔄 전체 초기화</button>
+        </div>
+        <p class="hint" id="hintCadParts" style="margin-bottom:10px">
+          탱크 도면에 그려지는 각 부품(판넬, 맨홀, 에어벤트, 사다리, 노즐, 스키드 프레임, 기초패드)의 <b>DWG / DXF 형상을 등록</b>하여 도면에 실시간 반영합니다.
+        </p>
+
+        <!-- 1. 부품 대분류 선택 카드 -->
+        <div style="background:var(--surface-sub);padding:10px;border-radius:6px;border:1px solid var(--line);margin-bottom:10px">
+          <label id="lblCadPartCat" style="font-size:11px;font-weight:700;display:block;margin-bottom:6px">1. 등록 대상 부품 선택</label>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px">
+            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="panel" checked><span>🔲 판넬</span></label>
+            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="manhole"><span>🔘 맨홀</span></label>
+            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="airvent"><span>💨 에어벤트</span></label>
+            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="ladder"><span>🪜 사다리</span></label>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="inladder"><span>🪜 내부사다리</span></label>
+            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="nozzle"><span>💧 배관노즐</span></label>
+            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="skid"><span>🏗️ 스키드프레임</span></label>
+            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="foundation"><span>🧱 기초패드</span></label>
+          </div>
+
+          <!-- 세부 항목 및 규격 -->
+          <div style="margin-top:10px;display:grid;grid-template-columns:1.2fr 0.8fr;gap:6px">
+            <div>
+              <label id="lblCadPartSub" style="font-size:11px;color:var(--muted)">세부 적용 항목</label>
+              <select id="cadPartSubSel" style="width:100%;font-size:12px;padding:4px">
+              </select>
+            </div>
+            <div>
+              <label id="lblCadPartMat" style="font-size:11px;color:var(--muted)">재질 구분</label>
+              <select id="cadPartMatSel" style="width:100%;font-size:12px;padding:4px">
+                <option value="SMC">SMC (GRP)</option>
+                <option value="STS">STS (스텐)</option>
+                <option value="COMMON">공통 (All)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div>
+              <label id="lblCadPartW" style="font-size:11px;color:var(--muted)">가로 폭 (W mm)</label>
+              <input type="number" id="cadPartW" value="1000" step="50" style="width:100%;font-size:12px;padding:4px">
+            </div>
+            <div>
+              <label id="lblCadPartH" style="font-size:11px;color:var(--muted)">세로 높이 (H mm)</label>
+              <input type="number" id="cadPartH" value="1000" step="50" style="width:100%;font-size:12px;padding:4px">
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. CAD 파일 불러오기 및 기본 도면 다운로드 카드 -->
+        <div style="background:var(--surface-sub);padding:10px;border-radius:6px;border:1px solid var(--line);margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <label id="lblCadPartUpload" style="font-size:11px;font-weight:700">2. CAD 도면 (DWG·DXF) 불러오기</label>
+            <button type="button" id="btnDownloadSampleDxf" class="btn-sm" style="font-size:10px;padding:2px 8px;color:var(--accent);border-color:var(--accent)" title="선택된 부품의 기본 표준 CAD 도면(.dxf)을 다운로드하여 AutoCAD에서 수정할 수 있습니다">
+              ⬇️ 기본 도면(.dxf) 받기
+            </button>
+          </div>
+
+          <div style="border:2px dashed var(--line);border-radius:6px;padding:14px 8px;text-align:center;background:var(--bg);cursor:pointer;position:relative" id="cadDropZone">
+            <input type="file" id="cadPartFileInput" accept=".dwg,.dxf,.stp,.step" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
+            <div style="font-size:22px;margin-bottom:4px">📁</div>
+            <div style="font-size:12px;font-weight:600;color:var(--fg)" id="cadDropText">DWG 또는 DXF 파일을 여기로 드래그하거나 클릭하여 선택</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">지원 포맷: AutoCAD DWG, DXF (브라우저 직접 구동), 3D STEP (.stp)</div>
+          </div>
+          <div id="cadParseStatus" style="font-size:11px;margin-top:6px;display:none;padding:6px 8px;border-radius:4px"></div>
+
+          <!-- 정제 및 스케일 조정 버튼 -->
+          <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px">
+            <button type="button" id="btnPartCleanFillets" class="btn-sm" style="font-size:10px;padding:2px 6px;color:#10b981" title="중복선 및 불필요한 필렛 제거">✨ 선분 원터치 정제</button>
+            <button type="button" id="btnPartFitSize" class="btn-sm" style="font-size:10px;padding:2px 6px;color:var(--accent)" title="입력된 규격(WxH)에 맞게 비율 자동 조정">📐 규격에 강제 맞춤</button>
+          </div>
+        </div>
+
+        <!-- 3. 실시간 CAD 2D 미리보기 카드 -->
+        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:11px;font-weight:700" id="cadPreviewTitle">선택 부품 CAD 형상 미리보기</span>
+            <span style="font-size:10px;color:var(--muted)" id="cadPreviewEntityCount">도형 0개</span>
+          </div>
+          <div style="display:flex;justify-content:center;align-items:center;background:#0f172a;border-radius:4px;height:180px;position:relative;overflow:hidden">
+            <canvas id="cadPartPreviewCv" width="360" height="180" style="width:100%;height:100%"></canvas>
+          </div>
+        </div>
+
+        <!-- 4. 도면 저장 및 즉시 반영 버튼 -->
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+          <button type="button" id="btnApplyCadPart" class="pri" style="flex:1;padding:8px 12px;font-size:12px;font-weight:700" title="이 CAD 형상을 탱크 도면에 즉시 등록하고 반영합니다">
+            💾 도면에 즉시 등록·반영 (Save &amp; Apply)
+          </button>
+          <button type="button" id="btnResetCurrentCadPart" class="btn-sm" style="color:#ef4444" title="현재 선택된 부품을 기본 공장 형상으로 복원">
+            기본값 복원
+          </button>
+        </div>
+
+        <!-- 5. 등록된 부품 현황 일람표 -->
+        <h3 style="font-size:12px;font-weight:700;margin:12px 0 6px" id="lblRegisteredPartsTitle">📋 부품별 CAD 적용 현황</h3>
+        <div style="max-height:190px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--bg)">
+          <table style="width:100%;font-size:11px;border-collapse:collapse" id="registeredPartsTable">
+            <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
+              <tr>
+                <th style="padding:5px 4px;text-align:left">부품 구분</th>
+                <th style="padding:5px 4px;text-align:left">항목</th>
+                <th style="padding:5px 4px;text-align:center">상태</th>
+                <th style="padding:5px 4px;text-align:center">관리</th>
+              </tr>
+            </thead>
+            <tbody id="registeredPartsTbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Tab 6: Settings (환경설정) -->
     <div class="tab-content" id="tab-settings">
       <!-- 환경설정 서브 탭 네비게이션 -->
       <div class="subtab-nav">
@@ -955,7 +1075,14 @@ canvas.drag{cursor:grabbing}
             <h2 id="secTitlePanelDb" style="margin:0">🧩 탱크 판넬 DB 관리</h2>
             <button type="button" id="openPanelModal" class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent)">➕ 판넬 등록</button>
           </div>
-          <p class="hint" id="hintPanelDb" style="margin-bottom:10px">탱크 규격별 판넬의 형상(엠보싱, 무늬, 보강)을 등록하고 관리합니다.</p>
+          <p class="hint" id="hintPanelDb" style="margin-bottom:8px">탱크 규격별 판넬의 형상(엠보싱, 무늬, 보강)을 등록하고 관리합니다.</p>
+          
+          <div style="background:rgba(2,132,199,0.08);border:1px solid var(--accent);border-radius:6px;padding:8px 10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <div style="font-size:11px;color:var(--fg);line-height:1.4">
+              <b>💡 외부 탭 바로가기:</b> 판넬 및 맨홀·사다리·노즐 등 모든 부품의 CAD 등록이 메인 상단 탭 <b>[🧩 부품 CAD 등록]</b>으로 확장 배치되었습니다.
+            </div>
+            <button type="button" class="btn-sm" onclick="switchToCadPartsTab('panel')" style="background:var(--accent);color:#fff;border-color:var(--accent);white-space:nowrap;font-size:11px;padding:3px 8px;cursor:pointer">이동하기 ▶</button>
+          </div>
           
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
             <div>
@@ -1032,6 +1159,7 @@ canvas.drag{cursor:grabbing}
       </div>
       <span class="sp"></span>
       <button type="button" id="copyShareUrl" title="현재 도면 및 설정이 저장된 URL 링크를 복사합니다">🔗 공유 링크</button>
+      <button type="button" id="btnQuickCadReg" class="btn-sm" style="font-weight:700;background:var(--surface-sub);border:1px solid var(--accent);color:var(--accent);padding:4px 9px;font-size:11px" title="도면에 그려지는 각 부품(판넬, 맨홀, 사다리, 노즐 등)의 DWG/DXF 형상 등록">🧩 부품 CAD 등록</button>
       <button type="button" id="png" title="현재 화면을 PNG 이미지로 저장">📸 PNG</button>
       <button type="button" id="svg" title="벡터 SVG 도면 다운로드">📐 SVG</button>
       <button type="button" id="dxfDirect" title="AutoCAD/CADian에서 바로 열리는 DXF 파일 다운로드">💾 DXF (.dxf)</button>
@@ -1529,38 +1657,89 @@ canvas.drag{cursor:grabbing}
   }
 
   /* ---------- 평면도 맨홀 손잡이 / 환기구 (CCeilLT::_1000BY1000 의 CLT_HANDLE=1, CLT_AIRVENT=2) : 1000x1000 패널만 ---------- */
-  function markShapes(x, y, mark) {
+  function markShapes(x, y, mark, opt) {
+    const customParts = opt?.partTemplates || {};
     const out = [], P = (a, b) => [x + a, y + b];
     const poly = (pts, layer) => pts.forEach((p, k) => out.push({ t: 'line', a: P(...p), b: P(...pts[(k + 1) % pts.length]), layer }));
+
     if (mark & 1) { // 맨홀 (손잡이) 및 직하부 내부사다리
-      poly([[260, 105], [735, 105], [888, 260], [888, 735], [735, 888], [262, 888], [105, 735], [105, 260]], 'FRAME');
-      poly([[150, 280], [290, 150], [710, 150], [850, 280], [850, 720], [710, 850], [290, 850], [150, 720]], 'FRAME');
-      poly([[310, 110], [390, 110], [390, 67], [310, 67]], 'FRAME'); poly([[610, 110], [690, 110], [690, 67], [610, 67]], 'FRAME');
-      poly([[462, 945], [538, 945], [538, 898], [462, 898]], 'FRAME');
-      out.push({ t: 'circle', c: P(500, 500), r: 300, layer: 'FRAME' });
-      out.push({ t: 'text', p: P(500, (mark & 2) ? 610 : 500), s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
+      if (customParts.manhole && customParts.manhole.length > 0) {
+        customParts.manhole.forEach(e => {
+          if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'FRAME' });
+          else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'FRAME' });
+          else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'FRAME' });
+          else if (e.k === 'poly') poly(e.p, 'FRAME');
+        });
+        out.push({ t: 'text', p: P(500, (mark & 2) ? 610 : 500), s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
+      } else {
+        poly([[260, 105], [735, 105], [888, 260], [888, 735], [735, 888], [262, 888], [105, 735], [105, 260]], 'FRAME');
+        poly([[150, 280], [290, 150], [710, 150], [850, 280], [850, 720], [710, 850], [290, 850], [150, 720]], 'FRAME');
+        poly([[310, 110], [390, 110], [390, 67], [310, 67]], 'FRAME'); poly([[610, 110], [690, 110], [690, 67], [610, 67]], 'FRAME');
+        poly([[462, 945], [538, 945], [538, 898], [462, 898]], 'FRAME');
+        out.push({ t: 'circle', c: P(500, 500), r: 300, layer: 'FRAME' });
+        out.push({ t: 'text', p: P(500, (mark & 2) ? 610 : 500), s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
+      }
 
       // 내부사다리 (IN-LADDER) 기호 (맨홀 직하부 탱크 내부 설치 위치)
-      const ladX1 = 360, ladX2 = 640;
-      out.push({ t: 'line', a: P(ladX1, 230), b: P(ladX1, 380), layer: 'FRAME' });
-      out.push({ t: 'line', a: P(ladX2, 230), b: P(ladX2, 380), layer: 'FRAME' });
-      for (let ry = 250; ry <= 370; ry += 40) {
-        out.push({ t: 'line', a: P(ladX1, ry), b: P(ladX2, ry), layer: 'FRAME' });
+      if (customParts.inladder && customParts.inladder.length > 0) {
+        customParts.inladder.forEach(e => {
+          if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'FRAME' });
+          else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'FRAME' });
+          else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'FRAME' });
+          else if (e.k === 'poly') poly(e.p, 'FRAME');
+        });
+        out.push({ t: 'text', p: P(500, 210), s: 'IN-LADDER', h: 42, rot: 0, align: 'center', layer: 'DIM' });
+      } else {
+        const ladX1 = 360, ladX2 = 640;
+        out.push({ t: 'line', a: P(ladX1, 230), b: P(ladX1, 380), layer: 'FRAME' });
+        out.push({ t: 'line', a: P(ladX2, 230), b: P(ladX2, 380), layer: 'FRAME' });
+        for (let ry = 250; ry <= 370; ry += 40) {
+          out.push({ t: 'line', a: P(ladX1, ry), b: P(ladX2, ry), layer: 'FRAME' });
+        }
+        out.push({ t: 'text', p: P(500, 210), s: 'IN-LADDER', h: 42, rot: 0, align: 'center', layer: 'DIM' });
       }
-      out.push({ t: 'text', p: P(500, 210), s: 'IN-LADDER', h: 42, rot: 0, align: 'center', layer: 'DIM' });
     }
     if (mark & 2) { // 에어벤트
-      out.push({ t: 'circle', c: P(500, 500), r: 50, layer: 'REINF' });
-      out.push({ t: 'circle', c: P(500, 500), r: 100, layer: 'REINF' });
-      out.push({ t: 'line', a: P(380, 500), b: P(620, 500), layer: 'REINF' });
-      out.push({ t: 'line', a: P(500, 380), b: P(500, 620), layer: 'REINF' });
-      out.push({ t: 'text', p: P(500, (mark & 1) ? 380 : 500), s: 'AIR VENT 100A', h: 50, rot: 0, align: 'center', layer: 'DIM' });
+      if (customParts.airvent && customParts.airvent.length > 0) {
+        customParts.airvent.forEach(e => {
+          if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'REINF' });
+          else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'REINF' });
+          else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'REINF' });
+          else if (e.k === 'poly') poly(e.p, 'REINF');
+        });
+        out.push({ t: 'text', p: P(500, (mark & 1) ? 380 : 500), s: 'AIR VENT 100A', h: 50, rot: 0, align: 'center', layer: 'DIM' });
+      } else {
+        out.push({ t: 'circle', c: P(500, 500), r: 50, layer: 'REINF' });
+        out.push({ t: 'circle', c: P(500, 500), r: 100, layer: 'REINF' });
+        out.push({ t: 'line', a: P(380, 500), b: P(620, 500), layer: 'REINF' });
+        out.push({ t: 'line', a: P(500, 380), b: P(500, 620), layer: 'REINF' });
+        out.push({ t: 'text', p: P(500, (mark & 1) ? 380 : 500), s: 'AIR VENT 100A', h: 50, rot: 0, align: 'center', layer: 'DIM' });
+      }
     }
     return out;
   }
 
   /* ---------- 사다리 (CLadderLT) : 1 위, 2 아래, 3 오른쪽, 4 왼쪽 (평면) / 5 정면, 6 뒤(상부만), 7 우측면, 8 좌측면 ---------- */
-  function ladderShapes(idx, px, py, H) {
+  function ladderShapes(idx, px, py, H, opt) {
+    const customParts = opt?.partTemplates || {};
+    if (idx >= 1 && idx <= 4 && customParts.ladder_plan && customParts.ladder_plan.length > 0) {
+      const out = [], L = 'FRAME';
+      const sx = idx === 3 ? 1 : idx === 4 ? -1 : 0, sy = idx === 1 ? 1 : idx === 2 ? -1 : 0;
+      const angle = sy === 1 ? 0 : (sy === -1 ? Math.PI : (sx === 1 ? Math.PI / 2 : -Math.PI / 2));
+      const cosA = Math.cos(angle), sinA = Math.sin(angle);
+      const trans = (x, y) => [px + (x * cosA - y * sinA), py + (x * sinA + y * cosA)];
+      customParts.ladder_plan.forEach(e => {
+        if (e.k === 'line') out.push({ t: 'line', a: trans(e.p[0][0], e.p[0][1]), b: trans(e.p[1][0], e.p[1][1]), layer: L });
+        else if (e.k === 'circle') out.push({ t: 'circle', c: trans(e.c[0], e.c[1]), r: e.r, layer: L });
+        else if (e.k === 'poly') {
+          const tpts = e.p.map(p => trans(p[0], p[1]));
+          for (let k = 0; k + 1 < tpts.length; k++) out.push({ t: 'line', a: tpts[k], b: tpts[k + 1], layer: L });
+          if (e.c) out.push({ t: 'line', a: tpts[tpts.length - 1], b: tpts[0], layer: L });
+        }
+      });
+      out.push({ t: 'text', p: [px + sx * 315, py + sy * 315], s: 'LADDER', h: 50, rot: sx ? 90 : 0, align: 'center', layer: 'DIM' });
+      return out;
+    }
     const T = 40, FW = 270, FT = 20, TO = 250, TI = 270, TL = 250, SI = 400, FO = 200, BO = -500, MH = 150, TOP = 700, TTOP = 500, CX = 75;
     const mx = FW >> 1, out = [], L = 'FRAME';
     const ln = (a, b) => out.push({ t: 'line', a: [px + a[0], py + a[1]], b: [px + b[0], py + b[1]], layer: L });
@@ -1993,10 +2172,10 @@ canvas.drag{cursor:grabbing}
       if (exposed(i, j, 'top') && exposed(i, j, 'right')) corner([[x1 + F, y1], [x1, y1], [x1, y1 + F]]);
       if (exposed(i, j, 'top') && exposed(i, j, 'left')) corner([[x0, y1 + F], [x0, y1], [x0 - F, y1]]);
     }
-    ladderList(opt, map).forEach(l => ents.push(...ladderShapes(l.idx, l.x, l.y, 0)));
+    ladderList(opt, map).forEach(l => ents.push(...ladderShapes(l.idx, l.x, l.y, 0, opt)));
     Object.entries(opt.marks || {}).forEach(([k, m]) => {
       const [i, j] = k.split(',').map(Number);
-      if (map.has(i, j) && map.cols[j] === 1000 && map.rows[i] === 1000) ents.push(...markShapes(map.xs[j], map.ys[i], m));
+      if (map.has(i, j) && map.cols[j] === 1000 && map.rows[i] === 1000) ents.push(...markShapes(map.xs[j], map.ys[i], m, opt));
     });
     // 기둥 표시 (삭제된 패널 중심): 정사각 + 대각선 (원본 심볼은 미확인 → 근사)
     (opt.pillars || []).forEach(([i, j]) => {
@@ -3552,7 +3731,7 @@ canvas.drag{cursor:grabbing}
         if (l.sd === 'U') { idx = 7; px = total; } else if (l.sd === 'D') { idx = 8; px = 0; } else if (l.sd === 'R') { idx = 5; px = l.y; } else { idx = 6; px = l.y; }
       }
       if (done.has(idx + ':' + px)) return; done.add(idx + ':' + px);
-      ents.push(...ladderShapes(idx, px, 0, nH));
+      ents.push(...ladderShapes(idx, px, 0, nH, opt));
     });
 
     let prevLeftEy = null;
@@ -6332,6 +6511,8 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
         } else if (btn.getAttribute('data-tab') === 'tab-bom') {
           if (!itemList.length) initBOM();
           renderBOMTable();
+        } else if (btn.getAttribute('data-tab') === 'tab-cad-parts') {
+          initCadPartsView();
         }
       }
     });
@@ -6390,6 +6571,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       tabEdit: '✏️ 평면 편집',
       tabNozzles: '📐 측면편집',
       tabBOM: '📋 부품사양·집계',
+      tabCadParts: '🧩 부품 CAD 등록',
       tabSettings: '⚙️ 환경설정',
       lblSheetOn: 'A1 도면 시트 포함',
       lblScale: '도면 축척 (Scale)',
@@ -6492,6 +6674,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       tabEdit: '✏️ Plan Edit',
       tabNozzles: '📐 Side & Nozzles',
       tabBOM: '📋 BOM / Item List',
+      tabCadParts: '🧩 CAD Parts (DWG/DXF)',
       tabSettings: '⚙️ Settings & DB',
       lblSheetOn: 'Include A1 Sheet',
       lblScale: 'Drawing Scale',
@@ -6632,6 +6815,8 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     if (nozTabBtn) nozTabBtn.textContent = t.tabNozzles;
     const bomTabBtn = document.querySelector('.tab-btn[data-tab="tab-bom"]');
     if (bomTabBtn) bomTabBtn.textContent = t.tabBOM;
+    const cadPartsTabBtn = document.querySelector('.tab-btn[data-tab="tab-cad-parts"]');
+    if (cadPartsTabBtn) cadPartsTabBtn.textContent = t.tabCadParts || '🧩 부품 CAD 등록';
     const setTabBtn = document.querySelector('.tab-btn[data-tab="tab-settings"]');
     if (setTabBtn) setTabBtn.textContent = t.tabSettings;
 
@@ -7507,7 +7692,10 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
           <input type="number" value="${it.no || (idx + 1)}" style="width:36px;text-align:center;padding:3px 2px;font-size:11px" onchange="updateBOMField(${idx}, 'no', Number(this.value))">
         </td>
         <td style="padding:4px">
-          <input type="text" value="${it.name || it.items || ''}" style="width:100%;padding:3px 4px;font-size:11px" onchange="updateBOMField(${idx}, 'name', this.value)">
+          <div style="display:flex;align-items:center;gap:3px">
+            <input type="text" value="${it.name || it.items || ''}" style="flex:1;min-width:0;padding:3px 4px;font-size:11px" onchange="updateBOMField(${idx}, 'name', this.value)">
+            <button type="button" class="btn-sm" style="padding:2px 4px;font-size:10px;background:var(--surface-sub);border:1px solid var(--accent);color:var(--accent);white-space:nowrap;border-radius:3px;cursor:pointer" onclick="openCadRegForPart('${it.key || ''}')" title="${isEn ? 'Register / customize CAD (DWG/DXF) for this part' : '이 부품의 DWG/DXF 형상 등록 및 도면 반영'}">🧩CAD</button>
+          </div>
         </td>
         <td style="padding:4px">
           <input type="text" value="${it.mat || it.material || ''}" style="width:100%;padding:3px 4px;font-size:11px" onchange="updateBOMField(${idx}, 'mat', this.value)">
@@ -8759,6 +8947,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
         nozzles: nozzleData.filter(n => n.use !== false),
         showBalloons: $('balloonFeatureToggle') ? $('balloonFeatureToggle').checked : true,
         itemList: (itemList && itemList.length) ? itemList : null,
+        partTemplates: (typeof getActivePartTemplates === 'function') ? getActivePartTemplates() : {},
         notes: $('tNotes').value.split('\n').map(x => x.trim()).filter(Boolean),
         remarks: $('tRemarks').value.split('\n').map(x => x.trim()).filter(Boolean),
         title: { logoText: $('tLogoText') ? $('tLogoText').value : 'Y',
@@ -10568,6 +10757,746 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     await syncTemplatesFromDb(true);
     rebuild(false);
     draw();
+  }
+
+  /* ==========================================================================
+     🧩 부품 CAD 등록 (DWG·DXF) 통합 관리 시스템
+     ========================================================================== */
+  const DEFAULT_PART_ENTITIES = {
+    panel: {
+      w: 1000, h: 1000, name: 'SMC 1000x1000 표준 다이아몬드 판넬',
+      get: (w, h) => generatePresetEntities('diamond', w || 1000, h || 1000)
+    },
+    manhole: {
+      w: 1000, h: 1000, name: '맨홀 Ø600 표준형 (평면/손잡이)',
+      get: () => [
+        { k: 'poly', p: [[260, 105], [735, 105], [888, 260], [888, 735], [735, 888], [262, 888], [105, 735], [105, 260]], c: true },
+        { k: 'poly', p: [[150, 280], [290, 150], [710, 150], [850, 280], [850, 720], [710, 850], [290, 850], [150, 720]], c: true },
+        { k: 'poly', p: [[310, 110], [390, 110], [390, 67], [310, 67]], c: true },
+        { k: 'poly', p: [[610, 110], [690, 110], [690, 67], [610, 67]], c: true },
+        { k: 'poly', p: [[462, 945], [538, 945], [538, 898], [462, 898]], c: true },
+        { k: 'circle', c: [500, 500], r: 300 },
+        { k: 'line', p: [[360, 230], [360, 380]] },
+        { k: 'line', p: [[640, 230], [640, 380]] },
+        { k: 'line', p: [[360, 250], [640, 250]] },
+        { k: 'line', p: [[360, 290], [640, 290]] },
+        { k: 'line', p: [[360, 330], [640, 330]] },
+        { k: 'line', p: [[360, 370], [640, 370]] }
+      ]
+    },
+    airvent: {
+      w: 1000, h: 1000, name: '에어벤트 Φ50/100A 방충망 일체형 (평면)',
+      get: () => [
+        { k: 'circle', c: [500, 500], r: 50 },
+        { k: 'circle', c: [500, 500], r: 100 },
+        { k: 'line', p: [[380, 500], [620, 500]] },
+        { k: 'line', p: [[500, 380], [500, 620]] }
+      ]
+    },
+    ladder: {
+      w: 350, h: 250, name: '외부 사다리 W270 표준형 (평면 기호)',
+      get: () => [
+        { k: 'poly', p: [[0, 0], [40, 0], [40, 250], [0, 250]], c: true },
+        { k: 'poly', p: [[310, 0], [350, 0], [350, 250], [310, 250]], c: true },
+        { k: 'line', p: [[40, 250], [310, 250]] },
+        { k: 'line', p: [[40, 180], [310, 180]] },
+        { k: 'line', p: [[40, 110], [310, 110]] }
+      ]
+    },
+    inladder: {
+      w: 280, h: 200, name: '내부 사다리 FRP 표준형 (평면 기호)',
+      get: () => [
+        { k: 'line', p: [[0, 0], [0, 200]] },
+        { k: 'line', p: [[280, 0], [280, 200]] },
+        { k: 'line', p: [[0, 40], [280, 40]] },
+        { k: 'line', p: [[0, 90], [280, 90]] },
+        { k: 'line', p: [[0, 140], [280, 140]] },
+        { k: 'line', p: [[0, 190], [280, 190]] }
+      ]
+    },
+    nozzle: {
+      w: 210, h: 210, name: '100A JIS 10K 플랜지 노즐 (정면)',
+      get: () => [
+        { k: 'circle', c: [105, 105], r: 105 },
+        { k: 'circle', c: [105, 105], r: 87.5 },
+        { k: 'circle', c: [105, 105], r: 57 },
+        { k: 'circle', c: [105 + 87.5, 105], r: 9.5 },
+        { k: 'circle', c: [105 - 87.5, 105], r: 9.5 },
+        { k: 'circle', c: [105, 105 + 87.5], r: 9.5 },
+        { k: 'circle', c: [105, 105 - 87.5], r: 9.5 }
+      ]
+    },
+    skid: {
+      w: 75, h: 75, name: '[-75x75x6T 스키드 베이스 찬넬 단면',
+      get: () => [
+        { k: 'poly', p: [[0, 0], [75, 0], [75, 6], [6, 6], [6, 69], [75, 69], [75, 75], [0, 75]], c: true }
+      ]
+    },
+    foundation: {
+      w: 300, h: 525, name: '기초 콘크리트 패드 빔 300x525 단면 (모따기 포함)',
+      get: () => [
+        { k: 'poly', p: [[0, 0], [300, 0], [300, 510], [285, 525], [15, 525], [0, 510]], c: true },
+        { k: 'circle', c: [35, 490], r: 8 },
+        { k: 'circle', c: [265, 490], r: 8 },
+        { k: 'circle', c: [35, 35], r: 8 },
+        { k: 'circle', c: [265, 35], r: 8 }
+      ]
+    }
+  };
+
+  const CAD_PART_OPTIONS = {
+    panel: [
+      { id: 'top_1000x1000', name: '상·하부 판넬 1000×1000', w: 1000, h: 1000, mat: 'SMC' },
+      { id: 'top_1000x500', name: '상·하부 판넬 1000×500', w: 1000, h: 500, mat: 'SMC' },
+      { id: 'top_1000x1500', name: '상·하부 판넬 1000×1500', w: 1000, h: 1500, mat: 'SMC' },
+      { id: 'top_1000x2000', name: '상·하부 판넬 1000×2000', w: 1000, h: 2000, mat: 'SMC' },
+      { id: 'top_500x500', name: '상·하부 판넬 500×500', w: 500, h: 500, mat: 'SMC' },
+      { id: 'side_1000x1000', name: '측면 판넬 1000×1000 표준형', w: 1000, h: 1000, mat: 'SMC' },
+      { id: 'side_1000x500', name: '측면 판넬 1000×500 (상단단)', w: 1000, h: 500, mat: 'SMC' },
+      { id: 'side_1000x1500', name: '측면 판넬 1000×1500 (1.5H단)', w: 1000, h: 1500, mat: 'SMC' },
+      { id: 'side_1000x2000', name: '측면 판넬 1000×2000 (2.0H단)', w: 1000, h: 2000, mat: 'SMC' },
+      { id: 'side_flat', name: '측면 1×1 평판형 (피팅·배관용)', w: 1000, h: 1000, mat: 'SMC' }
+    ],
+    manhole: [
+      { id: 'manhole', name: '평면도 맨홀 (Ø600 림 & 손잡이)', w: 1000, h: 1000, mat: 'COMMON' }
+    ],
+    airvent: [
+      { id: 'airvent', name: '평면도 에어벤트 (Φ50/100A 방충망)', w: 1000, h: 1000, mat: 'COMMON' }
+    ],
+    ladder: [
+      { id: 'ladder_plan', name: '평면도 외부 사다리 (W270 기호)', w: 350, h: 250, mat: 'COMMON' }
+    ],
+    inladder: [
+      { id: 'inladder', name: '내부 사다리 FRP (맨홀 하부 기호)', w: 280, h: 200, mat: 'COMMON' }
+    ],
+    nozzle: [
+      { id: 'nozzle_flange', name: '플랜지 노즐 (JIS 10K 100A)', w: 210, h: 210, mat: 'COMMON' },
+      { id: 'nozzle_socket', name: '소켓 노즐 (Socket)', w: 150, h: 150, mat: 'COMMON' }
+    ],
+    skid: [
+      { id: 'skid', name: '스키드 베이스 [-75x75x6T 찬넬 단면', w: 75, h: 75, mat: 'COMMON' }
+    ],
+    foundation: [
+      { id: 'foundation', name: '기초 콘크리트 패드 빔 300x525 단면', w: 300, h: 525, mat: 'COMMON' }
+    ]
+  };
+
+  let currentCadEntities = [];
+
+  function getActivePartTemplates() {
+    try {
+      const raw = localStorage.getItem('tankcad_custom_components');
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function getSelectedCadCategory() {
+    const checked = document.querySelector('input[name="cadPartCategory"]:checked');
+    return checked ? checked.value : 'panel';
+  }
+
+  function getCategoryLabel(cat) {
+    const labels = {
+      panel: '판넬', manhole: '맨홀', airvent: '에어벤트', ladder: '사다리',
+      inladder: '내부사다리', nozzle: '배관노즐', skid: '스키드프레임', foundation: '기초패드'
+    };
+    return labels[cat] || cat;
+  }
+
+  function getPartDefaultEntities(cat, subKey, w, h) {
+    if (cat === 'panel') {
+      const mat = $('cadPartMatSel')?.value || 'SMC';
+      const sizeKey = `${w || 1000}x${h || 1000}`;
+      const isSide = String(subKey).startsWith('side');
+      if (isSide) {
+        if (typeof SIDE_T !== 'undefined' && SIDE_T && SIDE_T[mat] && SIDE_T[mat][sizeKey]) {
+          return JSON.parse(JSON.stringify(SIDE_T[mat][sizeKey]));
+        }
+      } else {
+        if (typeof TEMPLATES !== 'undefined' && TEMPLATES && TEMPLATES[mat] && TEMPLATES[mat][sizeKey]) {
+          return JSON.parse(JSON.stringify(TEMPLATES[mat][sizeKey]));
+        }
+      }
+      return generatePresetEntities('diamond', w || 1000, h || 1000);
+    }
+    const def = DEFAULT_PART_ENTITIES[cat];
+    if (def && typeof def.get === 'function') {
+      return def.get(w, h);
+    }
+    return [];
+  }
+
+  function getCurrentActivePartEntities(cat, subKey, w, h) {
+    if (cat === 'panel') {
+      const mat = $('cadPartMatSel')?.value || 'SMC';
+      const sizeKey = `${w || 1000}x${h || 1000}`;
+      const isSide = String(subKey).startsWith('side');
+      try {
+        const custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
+        const p = custom.find(x => x.material === mat && x.category === (isSide ? 'side' : 'top_bottom') && x.size_key === sizeKey);
+        if (p && p.entities && p.entities.length) return p.entities;
+      } catch (e) {}
+      return getPartDefaultEntities(cat, subKey, w, h);
+    }
+    try {
+      const customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
+      if (customComp[subKey] && customComp[subKey].length) {
+        return customComp[subKey];
+      }
+    } catch (e) {}
+    return getPartDefaultEntities(cat, subKey, w, h);
+  }
+
+  function updateCadPartPreview() {
+    const cv = $('cadPartPreviewCv');
+    if (!cv) return;
+    const w = Number($('cadPartW')?.value) || 1000;
+    const h = Number($('cadPartH')?.value) || 1000;
+    renderSinglePanel(cv, w, h, currentCadEntities);
+    const countEl = $('cadPreviewEntityCount');
+    if (countEl) {
+      countEl.textContent = `도형 ${currentCadEntities ? currentCadEntities.length : 0}개 (${w}×${h}mm)`;
+    }
+  }
+
+  function parseDxfStringClient(dxfContent) {
+    const lines = dxfContent.split(/\r?\n/);
+    const entities = [];
+    let i = 0;
+    let inEntities = false;
+    let cur = null;
+
+    function flush() {
+      if (!cur) return;
+      if (cur.type === 'LINE' && cur.x1 !== undefined && cur.y1 !== undefined && cur.x2 !== undefined && cur.y2 !== undefined) {
+        entities.push({ k: 'line', p: [[cur.x1, cur.y1], [cur.x2, cur.y2]] });
+      } else if (cur.type === 'CIRCLE' && cur.cx !== undefined && cur.cy !== undefined && cur.r !== undefined) {
+        entities.push({ k: 'circle', c: [cur.cx, cur.cy], r: cur.r });
+      } else if (cur.type === 'ARC' && cur.cx !== undefined && cur.cy !== undefined && cur.r !== undefined) {
+        entities.push({ k: 'arc', c: [cur.cx, cur.cy], r: cur.r, a0: cur.a0 || 0, a1: cur.a1 || 360 });
+      } else if ((cur.type === 'LWPOLYLINE' || cur.type === 'POLYLINE') && cur.pts && cur.pts.length >= 2) {
+        entities.push({ k: 'poly', p: cur.pts, c: cur.closed || false });
+      }
+      cur = null;
+    }
+
+    while (i < lines.length) {
+      const codeLine = lines[i++].trim();
+      if (i >= lines.length) break;
+      const valLine = lines[i++].trim();
+      const c = parseInt(codeLine, 10);
+
+      if (c === 0) {
+        if (valLine === 'ENTITIES') { inEntities = true; continue; }
+        if (valLine === 'ENDSEC') { if (inEntities) { flush(); inEntities = false; } continue; }
+        if (valLine === 'EOF') { flush(); break; }
+        if (inEntities || valLine === 'LINE' || valLine === 'CIRCLE' || valLine === 'ARC' || valLine === 'LWPOLYLINE' || valLine === 'POLYLINE') {
+          flush();
+          if (['LINE', 'CIRCLE', 'ARC', 'LWPOLYLINE', 'POLYLINE'].includes(valLine)) {
+            cur = { type: valLine, pts: [] };
+            inEntities = true;
+          }
+        }
+      } else if (inEntities && cur) {
+        const num = parseFloat(valLine);
+        if (cur.type === 'LINE') {
+          if (c === 10) cur.x1 = num;
+          else if (c === 20) cur.y1 = num;
+          else if (c === 11) cur.x2 = num;
+          else if (c === 21) cur.y2 = num;
+        } else if (cur.type === 'CIRCLE' || cur.type === 'ARC') {
+          if (c === 10) cur.cx = num;
+          else if (c === 20) cur.cy = num;
+          else if (c === 40) cur.r = num;
+          else if (c === 50) cur.a0 = num;
+          else if (c === 51) cur.a1 = num;
+        } else if (cur.type === 'LWPOLYLINE') {
+          if (c === 70) cur.closed = (parseInt(valLine, 10) & 1) === 1;
+          else if (c === 10) cur.curX = num;
+          else if (c === 20) {
+            if (cur.curX !== undefined) {
+              cur.pts.push([cur.curX, num]);
+              delete cur.curX;
+            }
+          }
+        }
+      }
+    }
+    flush();
+    return entities;
+  }
+
+  function entitiesToDxf(entities, partName = 'PART') {
+    let s = '0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1015\n0\nENDSEC\n';
+    s += '0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n70\n1\n0\nLAYER\n2\nFRAME\n70\n0\n62\n7\n6\nCONTINUOUS\n0\nENDTAB\n0\nENDSEC\n';
+    s += '0\nSECTION\n2\nBLOCKS\n0\nENDSEC\n';
+    s += '0\nSECTION\n2\nENTITIES\n';
+    (entities || []).forEach(e => {
+      if (e.k === 'line') {
+        s += `0\nLINE\n8\nFRAME\n10\n${e.p[0][0]}\n20\n${e.p[0][1]}\n30\n0.0\n11\n${e.p[1][0]}\n21\n${e.p[1][1]}\n31\n0.0\n`;
+      } else if (e.k === 'circle') {
+        s += `0\nCIRCLE\n8\nFRAME\n10\n${e.c[0]}\n20\n${e.c[1]}\n30\n0.0\n40\n${e.r}\n`;
+      } else if (e.k === 'arc') {
+        s += `0\nARC\n8\nFRAME\n10\n${e.c[0]}\n20\n${e.c[1]}\n30\n0.0\n40\n${e.r}\n50\n${e.a0 || 0}\n51\n${e.a1 || 360}\n`;
+      } else if (e.k === 'poly' && e.p && e.p.length >= 2) {
+        s += `0\nLWPOLYLINE\n8\nFRAME\n90\n${e.p.length}\n70\n${e.c ? 1 : 0}\n`;
+        e.p.forEach(pt => {
+          s += `10\n${pt[0]}\n20\n${pt[1]}\n`;
+        });
+      }
+    });
+    s += '0\nENDSEC\n0\nEOF\n';
+    return s;
+  }
+
+  function downloadCurrentPartDxf() {
+    const cat = getSelectedCadCategory();
+    const sub = $('cadPartSubSel')?.value || cat;
+    const ents = (currentCadEntities && currentCadEntities.length) ? currentCadEntities : getPartDefaultEntities(cat, sub);
+    const dxfStr = entitiesToDxf(ents, `${cat}_${sub}`);
+    const blob = new Blob([dxfStr], { type: 'application/dxf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tankcad_${cat}_${sub}.dxf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function saveCurrentCadPart() {
+    const cat = getSelectedCadCategory();
+    const sub = $('cadPartSubSel')?.value || cat;
+    const mat = $('cadPartMatSel')?.value || 'SMC';
+    const w = Number($('cadPartW')?.value) || 1000;
+    const h = Number($('cadPartH')?.value) || 1000;
+
+    if (!currentCadEntities || !currentCadEntities.length) {
+      alert('등록할 CAD 형상이 없습니다. DWG/DXF 파일을 불러오거나 기본 도면을 확인하세요.');
+      return;
+    }
+
+    if (cat === 'panel') {
+      const sizeKey = `${w}x${h}`;
+      const isSide = String(sub).startsWith('side');
+      const panelCat = isSide ? 'side' : 'top_bottom';
+      const name = `${mat} ${w}x${h} 사용자 CAD 판넬`;
+
+      try {
+        let custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
+        const idx = custom.findIndex(p => p.material === mat && p.category === panelCat && p.size_key === sizeKey);
+        const newPanel = {
+          id: `custom_${mat}_${panelCat}_${sizeKey}_${Date.now()}`,
+          material: mat,
+          category: panelCat,
+          width: w,
+          height: h,
+          size_key: sizeKey,
+          name: name,
+          entities: currentCadEntities,
+          is_default: false
+        };
+        if (idx >= 0) custom[idx] = newPanel; else custom.push(newPanel);
+        localStorage.setItem('tankcad_custom_panels', JSON.stringify(custom));
+        applyActiveTemplates();
+      } catch (e) { console.warn(e); }
+    } else {
+      try {
+        let customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
+        customComp[sub] = currentCadEntities;
+        localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
+      } catch (e) { console.warn(e); }
+    }
+
+    rebuild(false);
+    draw();
+    renderRegisteredPartsTable();
+    alert(`✅ [${getCategoryLabel(cat)}] CAD 형상이 도면에 성공적으로 등록 및 즉시 반영되었습니다!`);
+  }
+
+  function resetCurrentCadPart() {
+    const cat = getSelectedCadCategory();
+    const sub = $('cadPartSubSel')?.value || cat;
+    const mat = $('cadPartMatSel')?.value || 'SMC';
+    const w = Number($('cadPartW')?.value) || 1000;
+    const h = Number($('cadPartH')?.value) || 1000;
+
+    if (cat === 'panel') {
+      const sizeKey = `${w}x${h}`;
+      const isSide = String(sub).startsWith('side');
+      const panelCat = isSide ? 'side' : 'top_bottom';
+      try {
+        let custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
+        custom = custom.filter(p => !(p.material === mat && p.category === panelCat && p.size_key === sizeKey));
+        localStorage.setItem('tankcad_custom_panels', JSON.stringify(custom));
+        applyActiveTemplates();
+      } catch (e) {}
+    } else {
+      try {
+        let customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
+        delete customComp[sub];
+        localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
+      } catch (e) {}
+    }
+
+    loadPartForCategory(cat, sub);
+    rebuild(false);
+    draw();
+    renderRegisteredPartsTable();
+    alert(`🔄 [${getCategoryLabel(cat)}] CAD 형상이 공장 기본 표준형으로 복원되었습니다.`);
+  }
+
+  function resetAllCadParts() {
+    if (confirm('모든 사용자 등록 부품(판넬, 맨홀, 사다리 등)의 CAD 형상을 공장 초기 표준으로 복원하시겠습니까?')) {
+      localStorage.removeItem('tankcad_custom_components');
+      localStorage.removeItem('tankcad_custom_panels');
+      applyActiveTemplates();
+      loadPartForCategory(getSelectedCadCategory(), $('cadPartSubSel')?.value);
+      rebuild(false);
+      draw();
+      renderRegisteredPartsTable();
+      alert('모든 부품 형상이 공장 기본 표준으로 복원되었습니다.');
+    }
+  }
+
+  function handleCadFileUpload(file) {
+    if (!file) return;
+    const isDwg = file.name.toLowerCase().endsWith('.dwg');
+    const isStep = file.name.toLowerCase().endsWith('.stp') || file.name.toLowerCase().endsWith('.step');
+    const isDxf = file.name.toLowerCase().endsWith('.dxf');
+    const statusEl = $('cadParseStatus');
+    if (statusEl) statusEl.style.display = 'block';
+
+    if (isStep) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const res = parseStepFileTo2D(reader.result, file.name, true);
+          currentCadEntities = res.entities;
+          if ($('cadPartW')) $('cadPartW').value = res.width;
+          if ($('cadPartH')) $('cadPartH').value = res.height;
+          updateCadPartPreview();
+          if (statusEl) {
+            statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
+            statusEl.style.color = '#10b981';
+            statusEl.innerHTML = `✅ 3D STP에서 <b>${res.entities.length}개</b> 선분·도형 추출 완료 (${res.width}×${res.height}mm)`;
+          }
+        } catch (e) {
+          if (statusEl) {
+            statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
+            statusEl.style.color = '#ef4444';
+            statusEl.textContent = `❌ STP 변환 오류: ${e.message}`;
+          }
+        }
+      };
+      reader.readAsText(file);
+    } else if (isDxf) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const text = reader.result;
+          const ents = parseDxfStringClient(text);
+          if (!ents || !ents.length) throw new Error('DXF 파일에서 추출 가능한 선/원/호가 없습니다.');
+          currentCadEntities = ents;
+          updateCadPartPreview();
+          if (statusEl) {
+            statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
+            statusEl.style.color = '#10b981';
+            statusEl.innerHTML = `✅ CAD DXF에서 <b>${ents.length}개</b> 선분·도형 추출 성공!`;
+          }
+        } catch (e) {
+          if (statusEl) {
+            statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
+            statusEl.style.color = '#ef4444';
+            statusEl.textContent = `❌ DXF 파싱 오류: ${e.message}`;
+          }
+        }
+      };
+      reader.readAsText(file);
+    } else if (isDwg) {
+      if (statusEl) {
+        statusEl.style.background = 'rgba(2, 132, 199, 0.15)';
+        statusEl.style.color = 'var(--accent)';
+        statusEl.textContent = '⏳ DWG 파일을 서버에서 변환하는 중...';
+      }
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const base64Data = reader.result.split(',')[1];
+          const w = Number($('cadPartW')?.value) || 1000;
+          const h = Number($('cadPartH')?.value) || 1000;
+          const controller = new AbortController();
+          const tid = setTimeout(() => controller.abort(), 6000);
+          const res = await fetch(`${API_BASE}/api/panels/import-dwg`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dwg_base64: base64Data, filename: file.name, width: w, height: h }),
+            signal: controller.signal
+          });
+          clearTimeout(tid);
+          const data = await res.json();
+          if (data.success && data.entities) {
+            currentCadEntities = data.entities;
+            updateCadPartPreview();
+            if (statusEl) {
+              statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
+              statusEl.style.color = '#10b981';
+              statusEl.innerHTML = `✅ CAD DWG에서 <b>${data.count}개</b> 형상 추출 완료!`;
+            }
+          } else {
+            if (statusEl) {
+              statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
+              statusEl.style.color = '#ef4444';
+              statusEl.textContent = '❌ DWG 변환 실패: ' + (data.error || '오류') + ' (AutoCAD에서 DXF로 저장 후 올리시면 즉시 등록됩니다)';
+            }
+          }
+        } catch (e) {
+          if (statusEl) {
+            statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
+            statusEl.style.color = '#ef4444';
+            statusEl.textContent = '💡 로컬 서버 미구동 상태입니다. AutoCAD/CADian에서 [다른 이름으로 저장 -> AutoCAD 2000/2004 DXF]로 저장 후 업로드하시면 100% 브라우저 자체 파싱으로 즉시 등록됩니다!';
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function loadPartForCategory(cat, targetSub = null) {
+    const sel = $('cadPartSubSel');
+    if (!sel) return;
+    const opts = CAD_PART_OPTIONS[cat] || [];
+    sel.innerHTML = opts.map(o => `<option value="${o.id}" data-w="${o.w}" data-h="${o.h}" data-mat="${o.mat}">${o.name}</option>`).join('');
+
+    if (targetSub && opts.some(o => o.id === targetSub)) {
+      sel.value = targetSub;
+    }
+
+    const curOpt = opts.find(o => o.id === sel.value) || opts[0];
+    if (curOpt) {
+      if ($('cadPartW')) $('cadPartW').value = curOpt.w;
+      if ($('cadPartH')) $('cadPartH').value = curOpt.h;
+      if ($('cadPartMatSel') && curOpt.mat !== 'COMMON') $('cadPartMatSel').value = curOpt.mat;
+      currentCadEntities = getCurrentActivePartEntities(cat, curOpt.id, curOpt.w, curOpt.h);
+      updateCadPartPreview();
+    }
+  }
+
+  function renderRegisteredPartsTable() {
+    const tbody = $('registeredPartsTbody');
+    if (!tbody) return;
+    const rows = [];
+    const customComp = getActivePartTemplates();
+    let customPanels = [];
+    try { customPanels = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]'); } catch (e) {}
+
+    Object.keys(CAD_PART_OPTIONS).forEach(cat => {
+      CAD_PART_OPTIONS[cat].forEach(sub => {
+        let isCustom = false;
+        let entCount = 0;
+        if (cat === 'panel') {
+          const isSide = sub.id.startsWith('side');
+          const p = customPanels.find(x => x.size_key === `${sub.w}x${sub.h}` && x.category === (isSide ? 'side' : 'top_bottom'));
+          if (p) { isCustom = true; entCount = p.entities?.length || 0; }
+        } else {
+          if (customComp[sub.id] && customComp[sub.id].length) {
+            isCustom = true;
+            entCount = customComp[sub.id].length;
+          }
+        }
+
+        const catNames = {
+          panel: '판넬', manhole: '맨홀', airvent: '에어벤트', ladder: '사다리',
+          inladder: '내부사다리', nozzle: '배관노즐', skid: '스키드', foundation: '기초패드'
+        };
+
+        rows.push(`
+          <tr style="border-bottom:1px solid var(--line)">
+            <td style="padding:5px 4px"><b>${catNames[cat] || cat}</b></td>
+            <td style="padding:5px 4px;font-size:10px" title="${sub.name}">${sub.name}</td>
+            <td style="padding:5px 4px;text-align:center">
+              ${isCustom ? `<span style="color:#10b981;font-weight:700">🟢 사용자CAD (${entCount}개)</span>` : `<span style="color:var(--muted)">⚪ 기본표준</span>`}
+            </td>
+            <td style="padding:5px 4px;text-align:center;white-space:nowrap">
+              <button type="button" class="btn-sm" style="padding:2px 4px;font-size:10px;cursor:pointer" onclick="switchToCadPartsTab('${cat}', '${sub.id}')">선택</button>
+            </td>
+          </tr>
+        `);
+      });
+    });
+    tbody.innerHTML = rows.join('');
+  }
+
+  function initCadPartsView(category = 'panel', subKey = null) {
+    const radios = document.querySelectorAll('input[name="cadPartCategory"]');
+    radios.forEach(r => {
+      r.checked = (r.value === category);
+    });
+    loadPartForCategory(category, subKey);
+    renderRegisteredPartsTable();
+  }
+
+  window.switchToCadPartsTab = (category = 'panel', subKey = null) => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const partTabBtn = document.querySelector('.tab-btn[data-tab="tab-cad-parts"]');
+    if (partTabBtn) partTabBtn.classList.add('active');
+    const target = $('tab-cad-parts');
+    if (target) target.classList.add('active');
+    initCadPartsView(category, subKey);
+  };
+
+  window.openCadRegForPart = (bomKey) => {
+    const map = {
+      foundation: 'foundation',
+      skid: 'skid',
+      panel: 'panel',
+      corner: 'panel',
+      airvent: 'airvent',
+      manhole: 'manhole',
+      inladder: 'inladder',
+      ladder: 'ladder',
+      exladder: 'ladder',
+      nozzle: 'nozzle'
+    };
+    const cat = map[bomKey] || 'panel';
+    switchToCadPartsTab(cat);
+  };
+
+  // Category radio buttons
+  document.querySelectorAll('input[name="cadPartCategory"]').forEach(r => {
+    r.addEventListener('change', () => {
+      loadPartForCategory(r.value);
+    });
+  });
+
+  $('cadPartSubSel')?.addEventListener('change', () => {
+    const cat = getSelectedCadCategory();
+    const sel = $('cadPartSubSel');
+    const opt = CAD_PART_OPTIONS[cat]?.find(o => o.id === sel.value);
+    if (opt) {
+      if ($('cadPartW')) $('cadPartW').value = opt.w;
+      if ($('cadPartH')) $('cadPartH').value = opt.h;
+      if ($('cadPartMatSel') && opt.mat !== 'COMMON') $('cadPartMatSel').value = opt.mat;
+      currentCadEntities = getCurrentActivePartEntities(cat, opt.id, opt.w, opt.h);
+      updateCadPartPreview();
+    }
+  });
+
+  $('cadPartMatSel')?.addEventListener('change', () => {
+    const cat = getSelectedCadCategory();
+    const sub = $('cadPartSubSel')?.value || cat;
+    const w = Number($('cadPartW')?.value) || 1000;
+    const h = Number($('cadPartH')?.value) || 1000;
+    currentCadEntities = getCurrentActivePartEntities(cat, sub, w, h);
+    updateCadPartPreview();
+  });
+
+  ['cadPartW', 'cadPartH'].forEach(id => {
+    $(id)?.addEventListener('input', updateCadPartPreview);
+  });
+
+  $('cadPartFileInput')?.addEventListener('change', (ev) => {
+    const file = ev.target.files[0];
+    if (file) handleCadFileUpload(file);
+  });
+
+  $('btnDownloadSampleDxf')?.addEventListener('click', downloadCurrentPartDxf);
+  $('btnApplyCadPart')?.addEventListener('click', saveCurrentCadPart);
+  $('btnResetCurrentCadPart')?.addEventListener('click', resetCurrentCadPart);
+  $('btnResetAllCadParts')?.addEventListener('click', resetAllCadParts);
+  $('btnQuickCadReg')?.addEventListener('click', () => switchToCadPartsTab());
+
+  $('btnPartCleanFillets')?.addEventListener('click', () => {
+    const w = Number($('cadPartW')?.value) || 1000;
+    const h = Number($('cadPartH')?.value) || 1000;
+    currentCadEntities = cleanEntities(currentCadEntities, w, h);
+    updateCadPartPreview();
+    alert('✨ 선분 원터치 정제(필렛 및 테두리 중복선 제거)가 완료되었습니다.');
+  });
+
+  $('btnPartFitSize')?.addEventListener('click', () => {
+    const targetW = Number($('cadPartW')?.value) || 1000;
+    const targetH = Number($('cadPartH')?.value) || 1000;
+    if (!currentCadEntities || !currentCadEntities.length) return;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    currentCadEntities.forEach(e => {
+      if (e.k === 'line') {
+        minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
+        minY = Math.min(minY, e.p[0][1], e.p[1][1]); maxY = Math.max(maxY, e.p[0][1], e.p[1][1]);
+      } else if (e.k === 'circle' || e.k === 'arc') {
+        minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r);
+        minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r);
+      } else if (e.k === 'poly') {
+        e.p.forEach(pt => {
+          minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]);
+          minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]);
+        });
+      }
+    });
+    const curW = maxX - minX, curH = maxY - minY;
+    if (curW <= 0 || curH <= 0) return;
+    const sx = targetW / curW, sy = targetH / curH;
+    const scaled = [];
+    currentCadEntities.forEach(e => {
+      if (e.k === 'line') {
+        scaled.push({
+          k: 'line',
+          p: [
+            [Math.round((e.p[0][0] - minX) * sx * 10) / 10, Math.round((e.p[0][1] - minY) * sy * 10) / 10],
+            [Math.round((e.p[1][0] - minX) * sx * 10) / 10, Math.round((e.p[1][1] - minY) * sy * 10) / 10]
+          ]
+        });
+      } else if (e.k === 'circle') {
+        scaled.push({
+          k: 'circle',
+          c: [Math.round((e.c[0] - minX) * sx * 10) / 10, Math.round((e.c[1] - minY) * sy * 10) / 10],
+          r: Math.round(e.r * ((sx + sy) / 2) * 10) / 10
+        });
+      } else if (e.k === 'arc') {
+        scaled.push({
+          k: 'arc',
+          c: [Math.round((e.c[0] - minX) * sx * 10) / 10, Math.round((e.c[1] - minY) * sy * 10) / 10],
+          r: Math.round(e.r * ((sx + sy) / 2) * 10) / 10,
+          a0: e.a0, a1: e.a1
+        });
+      } else if (e.k === 'poly') {
+        scaled.push({
+          k: 'poly',
+          p: e.p.map(pt => [Math.round((pt[0] - minX) * sx * 10) / 10, Math.round((pt[1] - minY) * sy * 10) / 10]),
+          c: e.c
+        });
+      }
+    });
+    currentCadEntities = scaled;
+    updateCadPartPreview();
+  });
+
+  // Drag & drop support
+  const dropZone = $('cadDropZone');
+  if (dropZone) {
+    ['dragenter', 'dragover'].forEach(name => {
+      dropZone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--accent)';
+        dropZone.style.background = 'rgba(2,132,199,0.06)';
+      });
+    });
+    ['dragleave', 'drop'].forEach(name => {
+      dropZone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--line)';
+        dropZone.style.background = 'var(--bg)';
+      });
+    });
+    dropZone.addEventListener('drop', (e) => {
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleCadFileUpload(e.dataTransfer.files[0]);
+      }
+    });
   }
 
   // 초기 시작 시 저장된 이전 상태를 최우선 복원한 후 즉시 도면 렌더링 (첫 화면 블랭크 방지)
