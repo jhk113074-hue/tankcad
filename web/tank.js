@@ -2017,14 +2017,40 @@
           bEnts.push({ t: 'line', a: [hw + 8, 0], b: [hw + 8, h], layer: 'PANEL_DETAIL' });
         } else if (type === 'fitting' || type === 'large') {
           // Fitting panel (피팅 판넬): concentric reinforced circular boss for large piping/flange
-          const cx = w / 2, cy = h / 2, minD = Math.min(w, h);
-          bEnts.push({ t: 'circle', c: [cx, cy], r: Math.round(minD * 0.35), layer: 'PANEL_DETAIL' });
-          bEnts.push({ t: 'circle', c: [cx, cy], r: Math.round(minD * 0.22), layer: 'PANEL_DETAIL' });
-          bEnts.push({ t: 'circle', c: [cx, cy], r: Math.round(minD * 0.12), layer: 'PANEL_DETAIL' });
-          const rHole = Math.round(minD * 0.285);
-          for (let deg = 0; deg < 360; deg += 45) {
-            const rad = deg * Math.PI / 180;
-            bEnts.push({ t: 'circle', c: [Math.round(cx + rHole * Math.cos(rad)), Math.round(cy + rHole * Math.sin(rad))], r: 10, layer: 'PANEL_DETAIL' });
+          const mTemplates = (sideT && (sideT[mat] || sideT.SMC)) || {};
+          const customFitting = mTemplates['fitting'] || mTemplates['panel-fitting'] || mTemplates[w + 'x' + h + '_fitting'] || mTemplates['1000x1000_fitting'];
+          if (customFitting && customFitting.length > 0) {
+            customFitting.forEach(s => {
+              if (!s) return;
+              const k = s.k || s.t || s.type;
+              if (k === 'line') {
+                const a = (s.p && s.p[0]) || s.a;
+                const b = (s.p && s.p[1]) || s.b;
+                if (a && b) bEnts.push({ t: 'line', a, b, layer: 'PANEL_DETAIL' });
+              } else if (k === 'poly') {
+                const p = s.p || s.pts || [];
+                if (p.length >= 2) {
+                  for (let k = 0; k + 1 < p.length; k++) bEnts.push({ t: 'line', a: p[k], b: p[k + 1], layer: 'PANEL_DETAIL' });
+                  if (s.c !== false && p.length > 2 && Math.hypot(p[p.length - 1][0] - p[0][0], p[p.length - 1][1] - p[0][1]) > 0.1) bEnts.push({ t: 'line', a: p[p.length - 1], b: p[0], layer: 'PANEL_DETAIL' });
+                }
+              } else if (k === 'circle' && (s.c || s.center)) {
+                const c = s.c || s.center;
+                bEnts.push({ t: 'circle', c, r: s.r || 10, layer: 'PANEL_DETAIL' });
+              } else if (k === 'arc' && (s.c || s.center)) {
+                const c = s.c || s.center;
+                bEnts.push({ t: 'circle', c, r: s.r || 10, layer: 'PANEL_DETAIL' });
+              }
+            });
+          } else {
+            const cx = w / 2, cy = h / 2, minD = Math.min(w, h);
+            bEnts.push({ t: 'circle', c: [cx, cy], r: Math.round(minD * 0.35), layer: 'PANEL_DETAIL' });
+            bEnts.push({ t: 'circle', c: [cx, cy], r: Math.round(minD * 0.22), layer: 'PANEL_DETAIL' });
+            bEnts.push({ t: 'circle', c: [cx, cy], r: Math.round(minD * 0.12), layer: 'PANEL_DETAIL' });
+            const rHole = Math.round(minD * 0.285);
+            for (let deg = 0; deg < 360; deg += 45) {
+              const rad = deg * Math.PI / 180;
+              bEnts.push({ t: 'circle', c: [Math.round(cx + rHole * Math.cos(rad)), Math.round(cy + rHole * Math.sin(rad))], r: 10, layer: 'PANEL_DETAIL' });
+            }
           }
         } else {
           const mTemplates = (sideT && (sideT[mat] || sideT.SMC)) || {};
@@ -3034,17 +3060,26 @@
           poly([toIso(x0, y0 + hw + m, z0 + m), toIso(x0, y0 + w - m, z0 + m), toIso(x0, y0 + w - m, z0 + h - m), toIso(x0, y0 + hw + m, z0 + h - m)], 'PANEL_DETAIL', true, false, depth);
         }
       } else if (pType === 'fitting' || pType === 'large') {
-        const minD = Math.min(w, h);
-        isoCircle(cx, cy, cz, Math.round(minD * 0.35), plane, 'FRAME', depth);
-        isoCircle(cx, cy, cz, Math.round(minD * 0.22), plane, 'PANEL_DETAIL', depth);
-        isoCircle(cx, cy, cz, Math.round(minD * 0.12), plane, 'FRAME', depth);
-        const rHole = Math.round(minD * 0.285);
-        for (let deg = 0; deg < 360; deg += 45) {
-          const rad = deg * Math.PI / 180;
+        const rawFitting = sideTemplates && (sideTemplates['fitting'] || sideTemplates['panel-fitting'] || sideTemplates[w + 'x' + h + '_fitting']);
+        if (rawFitting && rawFitting.length > 0) {
           if (plane === 'XZ') {
-            isoCircle(cx + rHole * Math.cos(rad), cy, cz + rHole * Math.sin(rad), 10, 'XZ', 'PANEL_DETAIL', depth, 8);
+            projectTemplateEntities(rawFitting, 'XZ', x0, y0, z0, 'PANEL_DETAIL', depth);
           } else {
-            isoCircle(cx, cy + rHole * Math.cos(rad), cz + rHole * Math.sin(rad), 10, 'YZ', 'PANEL_DETAIL', depth, 8);
+            projectTemplateEntities(rawFitting, 'YZ', x0, y0, z0, 'PANEL_DETAIL', depth);
+          }
+        } else {
+          const minD = Math.min(w, h);
+          isoCircle(cx, cy, cz, Math.round(minD * 0.35), plane, 'FRAME', depth);
+          isoCircle(cx, cy, cz, Math.round(minD * 0.22), plane, 'PANEL_DETAIL', depth);
+          isoCircle(cx, cy, cz, Math.round(minD * 0.12), plane, 'FRAME', depth);
+          const rHole = Math.round(minD * 0.285);
+          for (let deg = 0; deg < 360; deg += 45) {
+            const rad = deg * Math.PI / 180;
+            if (plane === 'XZ') {
+              isoCircle(cx + rHole * Math.cos(rad), cy, cz + rHole * Math.sin(rad), 10, 'XZ', 'PANEL_DETAIL', depth, 8);
+            } else {
+              isoCircle(cx, cy + rHole * Math.cos(rad), cz + rHole * Math.sin(rad), 10, 'YZ', 'PANEL_DETAIL', depth, 8);
+            }
           }
         }
       } else {
