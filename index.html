@@ -65,8 +65,8 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:1
 .tab-btn.active{background:var(--accent);color:var(--accent-fg);box-shadow:0 1px 3px rgba(2,132,199,0.25)}
 
 /* Sub-Tabs / Segmented Controls */
-.subtab-nav{display:flex;background:var(--surface-sub);padding:3px;border-radius:8px;border:1px solid var(--line);gap:3px;margin-bottom:12px}
-.subtab-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:7px 4px;font-size:11px;font-weight:600;border:0;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;transition:all .15s}
+.subtab-nav{display:flex;flex-wrap:wrap;background:var(--surface-sub);padding:3px;border-radius:8px;border:1px solid var(--line);gap:3px;margin-bottom:12px}
+.subtab-btn{display:flex;align-items:center;justify-content:center;gap:4px;padding:7px 4px;font-size:11px;font-weight:600;border:0;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;transition:all .15s}
 .subtab-btn:hover{color:var(--fg);background:rgba(255,255,255,0.05)}
 .subtab-btn.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,0.12);border:1px solid var(--line)}
 .subtab-content{display:none}
@@ -399,7 +399,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.66</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.67</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -421,9 +421,7 @@ canvas.drag{cursor:grabbing}
       <button type="button" class="tab-btn active" data-tab="tab-specs">📐 사양·치수</button>
       <button type="button" class="tab-btn" data-tab="tab-edit">✏️ 평면 편집</button>
       <button type="button" class="tab-btn" data-tab="tab-nozzles">📐 측면편집</button>
-      <button type="button" class="tab-btn" data-tab="tab-bom">📋 부품사양·집계</button>
-      <button type="button" class="tab-btn" data-tab="tab-cad-parts" id="tabBtnCadParts">🧩 부품·판넬 DB</button>
-      <button type="button" class="tab-btn" data-tab="tab-settings">⚙️ 환경설정</button>
+      <button type="button" class="tab-btn" data-tab="tab-settings" id="tabBtnSettings">⚙️ Setting & DB</button>
     </nav>
 
     <!-- Tab 1: Specs (사양·치수) -->
@@ -700,123 +698,125 @@ canvas.drag{cursor:grabbing}
     </div>
 
 
-    <!-- Tab 4: BOM (부품 사양 명세표 & 도면 넘버링) -->
-    <div class="tab-content" id="tab-bom">
-      <section class="box" style="margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2 id="secTitleBOM" style="margin:0;font-size:13px">📋 부품 사양 명세표 (Item List)</h2>
-          <span id="bomCountBadge" style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700">11개 등록</span>
-        </div>
-        <p class="hint" id="hintBOM" style="margin-bottom:10px">도면 표제란 상단에 표출되는 <b>AutoCAD 표준 부품 명세표(Item List)</b> 및 도면상 <b>원형 풍선 기호(①,②,③...)</b>를 직접 편집합니다.</p>
-
-        <!-- 상단 옵션 및 컨트롤 버튼 -->
-        <div style="background:var(--surface-sub);padding:8px 10px;border-radius:6px;border:1px solid var(--line);margin-bottom:10px">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--text);cursor:pointer">
-              <input type="checkbox" id="balloonFeatureToggle" checked>
-              <span id="lblBalloonToggle">도면상 풍선 기호(①,②,③...) 표시</span>
-            </label>
-            <button type="button" id="btnAutoBOM" class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;padding:4px 10px;font-size:11px" title="현재 탱크 규격·옵션으로 기본 부품 사양을 자동 재계산합니다">
-              ⚡ 자동 재계산 (Auto BOM)
-            </button>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-            <button type="button" id="btnAddBOMRow" class="btn-sm" style="font-weight:600;padding:4px 10px;font-size:11px">
-              ➕ 품목 추가
-            </button>
-            <span id="lblBomTableHint" style="font-size:10px;color:var(--muted)">* 각 칸을 직접 클릭하여 수정하면 도면에 실시간 반영됩니다.</span>
-          </div>
-        </div>
-
-        <!-- 부품 명세 인라인 테이블 -->
-        <div style="max-height:460px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--bg);margin-bottom:12px">
-          <table style="width:100%;font-size:11px;border-collapse:collapse;text-align:left">
-            <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
-              <tr>
-                <th style="padding:6px 4px;width:38px;text-align:center">NO.</th>
-                <th id="thBomItems" style="padding:6px 4px;width:115px">ITEMS (품명)</th>
-                <th id="thBomMat" style="padding:6px 4px;width:75px">MATERIAL</th>
-                <th id="thBomQty" style="padding:6px 4px;width:48px;text-align:center">QTY</th>
-                <th id="thBomSpec" style="padding:6px 4px">SPECIFICATIONS</th>
-                <th style="padding:6px 4px;width:26px;text-align:center">✕</th>
-              </tr>
-            </thead>
-            <tbody id="bomTableBody">
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="box">
-        <h2 id="secTitleKv">탱크 제원 요약</h2>
-        <div class="kv" id="kv"></div>
-        <h2 id="secTitleCnt" style="margin-top:14px">패널 수량 집계 (평면)</h2>
-        <table><thead><tr><th id="thCntSpec">패널 규격 (폭×길이)</th><th class="n" id="thCntQty">수량</th></tr></thead><tbody id="cnt"></tbody></table>
-      </section>
-    </div>
-
-    <!-- Tab 5: CAD Parts Registration (부품·판넬 DB & CAD 등록 - 모달리스 다이얼로그 런처) -->
-    <div class="tab-content" id="tab-cad-parts">
-      <section class="box">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2 id="secTitleCadParts" style="margin:0;font-size:13px">🧩 부품·판넬 DB &amp; CAD 등록</h2>
-        </div>
-        <p class="hint" id="hintCadParts" style="margin-bottom:12px">
-          도면 부품 9종 및 판넬 DB의 <b>4방향 뷰(평면·정면·우측·좌측)</b>와 <b>높이별(H)</b> CAD 형상을 넓은 전용 모달리스 다이얼로그 창에서 직접 등록하고 편집합니다.
-        </p>
-
-        <!-- Big Launcher Button -->
-        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:14px;text-align:center;margin-bottom:12px">
-          <div style="font-size:26px;margin-bottom:6px">🪟</div>
-          <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--fg)">대형 CAD 등록 창 (Modeless Dialog)</div>
-          <p style="font-size:11px;color:var(--muted);margin:0 0 10px;line-height:1.4">
-            도면 캔버스와 동시에 보며 자유롭게 창을 이동하고 4방향 CAD를 실시간으로 등록할 수 있습니다.
-          </p>
-          <button type="button" id="btnOpenCadPartsModalSide" class="pri" style="width:100%;padding:10px;font-size:13px;font-weight:700;justify-content:center;gap:8px">
-            🪟 부품·판넬 CAD 등록창 열기
-          </button>
-        </div>
-
-        <!-- Quick Jump Chips -->
-        <div style="background:var(--surface-sub);padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:12px">
-          <div style="font-size:11px;font-weight:700;margin-bottom:6px;color:var(--fg)">⚡ 부품별 빠른 등록 창 열기</div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">
-            <button type="button" class="btn-sm" onclick="openCadPartsModal('ladder')" style="padding:6px 2px;font-size:11px">🪜 외부사다리</button>
-            <button type="button" class="btn-sm" onclick="openCadPartsModal('inladder')" style="padding:6px 2px;font-size:11px">🪜 내부사다리</button>
-            <button type="button" class="btn-sm" onclick="openCadPartsModal('ext_reinf')" style="padding:6px 2px;font-size:11px">🏛️ 외부보강</button>
-            <button type="button" class="btn-sm" onclick="openCadPartsModal('manhole')" style="padding:6px 2px;font-size:11px">🔘 맨홀</button>
-            <button type="button" class="btn-sm" onclick="openCadPartsModal('airvent')" style="padding:6px 2px;font-size:11px">💨 에어벤트</button>
-            <button type="button" class="btn-sm" onclick="openCadPartsModal('nozzle')" style="padding:6px 2px;font-size:11px">💧 배관노즐</button>
-            <button type="button" class="btn-sm" onclick="openCadPartsModal('skid')" style="padding:6px 2px;font-size:11px">🏗️ 스키드</button>
-            <button type="button" class="btn-sm" onclick="openCadPartsModal('foundation')" style="padding:6px 2px;font-size:11px">🧱 기초패드</button>
-            <button type="button" class="btn-sm" onclick="openCadPartsModal('panel')" style="padding:6px 2px;font-size:11px">🔲 판넬 DB</button>
-          </div>
-        </div>
-
-        <!-- Quick Summary of Registered Custom Components -->
-        <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <span style="font-size:11px;font-weight:700">📋 등록된 커스텀 부품 요약</span>
-            <span id="sideCustomPartCountBadge" style="font-size:10px;color:var(--accent);font-weight:700">0개 커스텀</span>
-          </div>
-          <div id="sideCustomPartsSummaryList" style="font-size:11px;color:var(--muted);line-height:1.5">
-            등록된 사용자 정의 부품이 없습니다. (공장 표준 형상 적용 중)
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <!-- Tab 6: Settings (환경설정) -->
+    <!-- Tab 4: Setting & DB (설정 및 부품/판넬 DB) -->
     <div class="tab-content" id="tab-settings">
-      <!-- 환경설정 서브 탭 네비게이션 -->
+      <!-- 설정 & DB 서브 탭 네비게이션 -->
       <div class="subtab-nav">
-        <button type="button" class="subtab-btn active" data-subtab="subtab-pad">🏗️ 기초패드</button>
-        <button type="button" class="subtab-btn" data-subtab="subtab-heights">📏 단별 판넬구성</button>
-        <button type="button" class="subtab-btn" data-subtab="subtab-title">📋 표제란·시트</button>
+        <button type="button" class="subtab-btn active" data-subtab="subtab-bom" id="subtabBtnBom" style="flex:1 1 calc(50% - 4px)">📋 BOM / Item List</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-cad-parts" id="subtabBtnCadParts" style="flex:1 1 calc(50% - 4px)">🧩 CAD Parts (DWG/DXF)</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-pad" id="subtabBtnPad" style="flex:1 1 calc(33.3% - 4px)">🏗️ 기초패드</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-heights" id="subtabBtnHeights" style="flex:1 1 calc(33.3% - 4px)">📏 단별 판넬</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-title" id="subtabBtnTitle" style="flex:1 1 calc(33.3% - 4px)">📋 표제란</button>
       </div>
 
-      <!-- Subtab 1: 기초 콘크리트 패드 설정 -->
-      <div class="subtab-content active" id="subtab-pad">
+      <!-- Subtab 1: BOM (부품 사양 명세표 & 도면 넘버링) -->
+      <div class="subtab-content active" id="subtab-bom">
+        <section class="box" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h2 id="secTitleBOM" style="margin:0;font-size:13px">📋 부품 사양 명세표 (Item List)</h2>
+            <span id="bomCountBadge" style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700">11개 등록</span>
+          </div>
+          <p class="hint" id="hintBOM" style="margin-bottom:10px">도면 표제란 상단에 표출되는 <b>AutoCAD 표준 부품 명세표(Item List)</b> 및 도면상 <b>원형 풍선 기호(①,②,③...)</b>를 직접 편집합니다.</p>
+
+          <!-- 상단 옵션 및 컨트롤 버튼 -->
+          <div style="background:var(--surface-sub);padding:8px 10px;border-radius:6px;border:1px solid var(--line);margin-bottom:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+              <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--text);cursor:pointer">
+                <input type="checkbox" id="balloonFeatureToggle" checked>
+                <span id="lblBalloonToggle">도면상 풍선 기호(①,②,③...) 표시</span>
+              </label>
+              <button type="button" id="btnAutoBOM" class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;padding:4px 10px;font-size:11px" title="현재 탱크 규격·옵션으로 기본 부품 사양을 자동 재계산합니다">
+                ⚡ 자동 재계산 (Auto BOM)
+              </button>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+              <button type="button" id="btnAddBOMRow" class="btn-sm" style="font-weight:600;padding:4px 10px;font-size:11px">
+                ➕ 품목 추가
+              </button>
+              <span id="lblBomTableHint" style="font-size:10px;color:var(--muted)">* 각 칸을 직접 클릭하여 수정하면 도면에 실시간 반영됩니다.</span>
+            </div>
+          </div>
+
+          <!-- 부품 명세 인라인 테이블 -->
+          <div style="max-height:460px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--bg);margin-bottom:12px">
+            <table style="width:100%;font-size:11px;border-collapse:collapse;text-align:left">
+              <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
+                <tr>
+                  <th style="padding:6px 4px;width:38px;text-align:center">NO.</th>
+                  <th id="thBomItems" style="padding:6px 4px;width:115px">ITEMS (품명)</th>
+                  <th id="thBomMat" style="padding:6px 4px;width:75px">MATERIAL</th>
+                  <th id="thBomQty" style="padding:6px 4px;width:48px;text-align:center">QTY</th>
+                  <th id="thBomSpec" style="padding:6px 4px">SPECIFICATIONS</th>
+                  <th style="padding:6px 4px;width:26px;text-align:center">✕</th>
+                </tr>
+              </thead>
+              <tbody id="bomTableBody">
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="box">
+          <h2 id="secTitleKv">탱크 제원 요약</h2>
+          <div class="kv" id="kv"></div>
+          <h2 id="secTitleCnt" style="margin-top:14px">패널 수량 집계 (평면)</h2>
+          <table><thead><tr><th id="thCntSpec">패널 규격 (폭×길이)</th><th class="n" id="thCntQty">수량</th></tr></thead><tbody id="cnt"></tbody></table>
+        </section>
+      </div>
+
+      <!-- Subtab 2: CAD Parts Registration (부품·판넬 DB & CAD 등록 - 모달리스 다이얼로그 런처) -->
+      <div class="subtab-content" id="subtab-cad-parts">
+        <section class="box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h2 id="secTitleCadParts" style="margin:0;font-size:13px">🧩 부품·판넬 DB &amp; CAD 등록</h2>
+          </div>
+          <p class="hint" id="hintCadParts" style="margin-bottom:12px">
+            도면 부품 9종 및 판넬 DB의 <b>4방향 뷰(평면·정면·우측·좌측)</b>와 <b>높이별(H)</b> CAD 형상을 넓은 전용 모달리스 다이얼로그 창에서 직접 등록하고 편집합니다.
+          </p>
+
+          <!-- Big Launcher Button -->
+          <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:14px;text-align:center;margin-bottom:12px">
+            <div style="font-size:26px;margin-bottom:6px">🪟</div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--fg)">대형 CAD 등록 창 (Modeless Dialog)</div>
+            <p style="font-size:11px;color:var(--muted);margin:0 0 10px;line-height:1.4">
+              도면 캔버스와 동시에 보며 자유롭게 창을 이동하고 4방향 CAD를 실시간으로 등록할 수 있습니다.
+            </p>
+            <button type="button" id="btnOpenCadPartsModalSide" class="pri" style="width:100%;padding:10px;font-size:13px;font-weight:700;justify-content:center;gap:8px">
+              🪟 부품·판넬 CAD 등록창 열기
+            </button>
+          </div>
+
+          <!-- Quick Jump Chips -->
+          <div style="background:var(--surface-sub);padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:12px">
+            <div style="font-size:11px;font-weight:700;margin-bottom:6px;color:var(--fg)">⚡ 부품별 빠른 등록 창 열기</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">
+              <button type="button" class="btn-sm" onclick="openCadPartsModal('ladder')" style="padding:6px 2px;font-size:11px">🪜 외부사다리</button>
+              <button type="button" class="btn-sm" onclick="openCadPartsModal('inladder')" style="padding:6px 2px;font-size:11px">🪜 내부사다리</button>
+              <button type="button" class="btn-sm" onclick="openCadPartsModal('ext_reinf')" style="padding:6px 2px;font-size:11px">🏛️ 외부보강</button>
+              <button type="button" class="btn-sm" onclick="openCadPartsModal('manhole')" style="padding:6px 2px;font-size:11px">🔘 맨홀</button>
+              <button type="button" class="btn-sm" onclick="openCadPartsModal('airvent')" style="padding:6px 2px;font-size:11px">💨 에어벤트</button>
+              <button type="button" class="btn-sm" onclick="openCadPartsModal('nozzle')" style="padding:6px 2px;font-size:11px">💧 배관노즐</button>
+              <button type="button" class="btn-sm" onclick="openCadPartsModal('skid')" style="padding:6px 2px;font-size:11px">🏗️ 스키드</button>
+              <button type="button" class="btn-sm" onclick="openCadPartsModal('foundation')" style="padding:6px 2px;font-size:11px">🧱 기초패드</button>
+              <button type="button" class="btn-sm" onclick="openCadPartsModal('panel')" style="padding:6px 2px;font-size:11px">🔲 판넬 DB</button>
+            </div>
+          </div>
+
+          <!-- Quick Summary of Registered Custom Components -->
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:11px;font-weight:700">📋 등록된 커스텀 부품 요약</span>
+              <span id="sideCustomPartCountBadge" style="font-size:10px;color:var(--accent);font-weight:700">0개 커스텀</span>
+            </div>
+            <div id="sideCustomPartsSummaryList" style="font-size:11px;color:var(--muted);line-height:1.5">
+              등록된 사용자 정의 부품이 없습니다. (공장 표준 형상 적용 중)
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Subtab 3: 기초 콘크리트 패드 설정 -->
+      <div class="subtab-content" id="subtab-pad">
         <section class="box">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <h2 id="secTitlePad" style="margin:0">🏗️ 기초 콘크리트 패드 설정 (mm)</h2>
@@ -1068,6 +1068,7 @@ canvas.drag{cursor:grabbing}
                 <textarea id="tNotes" rows="7" style="width:100%;font-size:10.5px;padding:5px 7px" placeholder="도면 주의사항 (한 줄에 1개씩)"></textarea>
               </div>
             </div>
+          </section>
         </div>
       </div>
     </div>
@@ -1732,7 +1733,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.66</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.67</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1742,7 +1743,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.66</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.67</span></div>
     </div>
   </main>
 </div>
@@ -7140,24 +7141,25 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         target.classList.add('active');
         if (btn.getAttribute('data-tab') === 'tab-settings') {
           const actSub = document.querySelector('.subtab-btn.active');
-          if (actSub && actSub.getAttribute('data-subtab') === 'subtab-panels') {
-            loadDbPanels();
-          } else if (actSub && actSub.getAttribute('data-subtab') === 'subtab-heights') {
-            renderHeightTable();
+          if (actSub) {
+            const sId = actSub.getAttribute('data-subtab');
+            if (sId === 'subtab-bom') {
+              if (!itemList.length) initBOM();
+              renderBOMTable();
+            } else if (sId === 'subtab-panels') {
+              loadDbPanels();
+            } else if (sId === 'subtab-heights') {
+              renderHeightTable();
+            }
           }
         } else if (btn.getAttribute('data-tab') === 'tab-nozzles') {
           updateNozzleUi();
-        } else if (btn.getAttribute('data-tab') === 'tab-bom') {
-          if (!itemList.length) initBOM();
-          renderBOMTable();
-        } else if (btn.getAttribute('data-tab') === 'tab-cad-parts') {
-          openCadPartsModal();
         }
       }
     });
   });
 
-  /* Sub-Tab Navigation (환경설정 세부 탭 전환) */
+  /* Sub-Tab Navigation (설정 & DB 세부 탭 전환) */
   document.querySelectorAll('.subtab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
@@ -7166,9 +7168,13 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const target = $(btn.getAttribute('data-subtab'));
       if (target) {
         target.classList.add('active');
-        if (btn.getAttribute('data-subtab') === 'subtab-panels') {
+        const sId = btn.getAttribute('data-subtab');
+        if (sId === 'subtab-bom') {
+          if (!itemList.length) initBOM();
+          renderBOMTable();
+        } else if (sId === 'subtab-panels') {
           loadDbPanels();
-        } else if (btn.getAttribute('data-subtab') === 'subtab-heights') {
+        } else if (sId === 'subtab-heights') {
           renderHeightTable();
         }
       }
@@ -7211,7 +7217,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       tabNozzles: '📐 측면편집',
       tabBOM: '📋 부품사양·집계',
       tabCadParts: '🧩 부품 CAD 등록',
-      tabSettings: '⚙️ 환경설정',
+      tabSettings: '⚙️ Setting & DB',
       lblSheetOn: 'A1 도면 시트 포함',
       lblScale: '도면 축척 (Scale)',
       scaleAuto: '⚡ 자동 맞춤 (Auto)',
@@ -7276,9 +7282,11 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       secTitleCnt: '패널 수량 집계 (평면)',
       thCntSpec: '패널 규격 (폭×길이)',
       thCntQty: '수량',
-      subtabPad: '🏗️ 콘크리트 패드',
-      subtabHeights: '📏 단별 판넬구성',
-      subtabTitle: '📝 표제란',
+      subtabBOM: '📋 BOM / Item List',
+      subtabCadParts: '🧩 CAD Parts (DWG/DXF)',
+      subtabPad: '🏗️ 기초패드',
+      subtabHeights: '📏 단별구성',
+      subtabTitle: '📋 표제란',
       subtabPanels: '🗄️ 판넬 DB',
       miniTabProj: '📋 프로젝트',
       miniTabHeader: '🏢 회사·머리글',
@@ -7314,7 +7322,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       tabNozzles: '📐 Side & Nozzles',
       tabBOM: '📋 BOM / Item List',
       tabCadParts: '🧩 CAD Parts (DWG/DXF)',
-      tabSettings: '⚙️ Settings & DB',
+      tabSettings: '⚙️ Setting & DB',
       lblSheetOn: 'Include A1 Sheet',
       lblScale: 'Drawing Scale',
       scaleAuto: '⚡ Auto Fit (Scale)',
@@ -7379,6 +7387,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       secTitleCnt: 'Panel Quantity Summary (Plan)',
       thCntSpec: 'Panel Size (W×L)',
       thCntQty: 'Qty',
+      subtabBOM: '📋 BOM / Item List',
+      subtabCadParts: '🧩 CAD Parts (DWG/DXF)',
       subtabPad: '🏗️ Concrete Pad',
       subtabHeights: '📏 Height & Tiers',
       subtabTitle: '📝 Title Block',
@@ -7452,10 +7462,6 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if (editTabBtn) editTabBtn.textContent = t.tabEdit;
     const nozTabBtn = document.querySelector('.tab-btn[data-tab="tab-nozzles"]');
     if (nozTabBtn) nozTabBtn.textContent = t.tabNozzles;
-    const bomTabBtn = document.querySelector('.tab-btn[data-tab="tab-bom"]');
-    if (bomTabBtn) bomTabBtn.textContent = t.tabBOM;
-    const cadPartsTabBtn = document.querySelector('.tab-btn[data-tab="tab-cad-parts"]');
-    if (cadPartsTabBtn) cadPartsTabBtn.textContent = t.tabCadParts || '🧩 부품 CAD 등록';
     const setTabBtn = document.querySelector('.tab-btn[data-tab="tab-settings"]');
     if (setTabBtn) setTabBtn.textContent = t.tabSettings;
 
@@ -7596,7 +7602,11 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if ($('thCntSpec')) $('thCntSpec').textContent = t.thCntSpec;
     if ($('thCntQty')) $('thCntQty').textContent = t.thCntQty;
 
-    // Tab 5: Settings Subtabs
+    // Setting & DB Subtabs
+    const bomSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-bom"]');
+    if (bomSubBtn) bomSubBtn.textContent = t.subtabBOM || t.tabBOM;
+    const cadPartsSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-cad-parts"]');
+    if (cadPartsSubBtn) cadPartsSubBtn.textContent = t.subtabCadParts || t.tabCadParts;
     const padSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-pad"]');
     if (padSubBtn) padSubBtn.textContent = t.subtabPad;
     const heightSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-heights"]');
@@ -8442,12 +8452,36 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   const switchToBOMTab = () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    const bBtn = document.querySelector('.tab-btn[data-tab="tab-bom"]');
-    if (bBtn) bBtn.classList.add('active');
-    const bContent = $('tab-bom');
-    if (bContent) bContent.classList.add('active');
+    const setBtn = document.querySelector('.tab-btn[data-tab="tab-settings"]');
+    if (setBtn) setBtn.classList.add('active');
+    const setContent = $('tab-settings');
+    if (setContent) setContent.classList.add('active');
+
+    document.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.subtab-content').forEach(c => c.classList.remove('active'));
+    const bSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-bom"]');
+    if (bSubBtn) bSubBtn.classList.add('active');
+    const bSubContent = $('subtab-bom');
+    if (bSubContent) bSubContent.classList.add('active');
+
     if (!itemList.length) initBOM();
     renderBOMTable();
+  };
+
+  window.switchToCadPartsTab = () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const setBtn = document.querySelector('.tab-btn[data-tab="tab-settings"]');
+    if (setBtn) setBtn.classList.add('active');
+    const setContent = $('tab-settings');
+    if (setContent) setContent.classList.add('active');
+
+    document.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.subtab-content').forEach(c => c.classList.remove('active'));
+    const cadSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-cad-parts"]');
+    if (cadSubBtn) cadSubBtn.classList.add('active');
+    const cadSubContent = $('subtab-cad-parts');
+    if (cadSubContent) cadSubContent.classList.add('active');
   };
 
   if ($('gotoBOMTabBtn')) $('gotoBOMTabBtn').addEventListener('click', switchToBOMTab);
@@ -9709,7 +9743,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.66</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.67</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
