@@ -399,7 +399,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.74</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.75</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1913,7 +1913,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.74</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.75</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1923,7 +1923,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.74</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.75</span></div>
     </div>
   </main>
 </div>
@@ -3839,11 +3839,6 @@ canvas.drag{cursor:grabbing}
     ln([pxEnd, -th], [pxEnd, slabBotY], 'PANEL');
     ln([px0, slabBotY], [pxEnd, slabBotY], 'PANEL');
 
-    // 3. 기둥 중심선 (Centerlines)
-    uniqueCxs.forEach(cx => {
-      ents.push({ t: 'line', a: [cx, -th + 80], b: [cx, slabBotY - 60], layer: 'CENTER' });
-    });
-
     // 4. 콘크리트 해치 (기둥 및 하부 슬래브에 걸쳐 단절 없이 연결되는 45도 사선 무늬)
     const hatchStep = 80;
     plinths.forEach(([lx, rx]) => {
@@ -4386,11 +4381,6 @@ canvas.drag{cursor:grabbing}
     ln([px0, -th], [px0, slabBotY], 'PANEL');
     ln([pxEnd, -th], [pxEnd, slabBotY], 'PANEL');
     ln([px0, slabBotY], [pxEnd, slabBotY], 'PANEL');
-
-    // 3. 기둥 중심선 (Centerlines)
-    uniqueCxs.forEach(cx => {
-      ents.push({ t: 'line', a: [cx, -th + 80], b: [cx, slabBotY - 60], layer: 'CENTER' });
-    });
 
     // 4. 콘크리트 해치 (기둥 및 하부 슬래브에 걸쳐 단절 없이 연결되는 45도 사선 무늬)
     const hatchStep = 80;
@@ -10726,7 +10716,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.74</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.75</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();

@@ -1909,11 +1909,6 @@
     ln([pxEnd, -th], [pxEnd, slabBotY], 'PANEL');
     ln([px0, slabBotY], [pxEnd, slabBotY], 'PANEL');
 
-    // 3. 기둥 중심선 (Centerlines)
-    uniqueCxs.forEach(cx => {
-      ents.push({ t: 'line', a: [cx, -th + 80], b: [cx, slabBotY - 60], layer: 'CENTER' });
-    });
-
     // 4. 콘크리트 해치 (기둥 및 하부 슬래브에 걸쳐 단절 없이 연결되는 45도 사선 무늬)
     const hatchStep = 80;
     plinths.forEach(([lx, rx]) => {
@@ -2456,11 +2451,6 @@
     ln([px0, -th], [px0, slabBotY], 'PANEL');
     ln([pxEnd, -th], [pxEnd, slabBotY], 'PANEL');
     ln([px0, slabBotY], [pxEnd, slabBotY], 'PANEL');
-
-    // 3. 기둥 중심선 (Centerlines)
-    uniqueCxs.forEach(cx => {
-      ents.push({ t: 'line', a: [cx, -th + 80], b: [cx, slabBotY - 60], layer: 'CENTER' });
-    });
 
     // 4. 콘크리트 해치 (기둥 및 하부 슬래브에 걸쳐 단절 없이 연결되는 45도 사선 무늬)
     const hatchStep = 80;
