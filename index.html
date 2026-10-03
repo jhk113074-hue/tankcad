@@ -399,7 +399,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.68</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.69</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1902,7 +1902,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.68</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.69</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1912,7 +1912,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.68</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.69</span></div>
     </div>
   </main>
 </div>
@@ -8352,6 +8352,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     const tbody = $('modalHeightTableBody');
     if (!tbody) return;
     const isEn = currentLang === 'en';
+    const map = (activeHeightTable && activeHeightTable[currentHMode]) || {};
     const excludedH = [1300, 1800, 2300, 2800, 3300, 3800, 4300, 4800];
     const heights = Object.keys(map).map(Number).filter(h => !excludedH.includes(h)).sort((a, b) => a - b);
     const defMap = (C.getDefaultHeightTable && C.getDefaultHeightTable()[currentHMode]) || {};
@@ -8733,7 +8734,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     dlg.style.zIndex = '2025';
   }
 
-  window.openBomModal = function() {
+  function openBomModal() {
     const dlg = $('bomModelessDialog');
     const pill = $('bomMinPill');
     if (!dlg) return;
@@ -8754,23 +8755,26 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     }
     bringModelessToFront(dlg);
     renderBOMTable();
-  };
+  }
+  window.openBomModal = openBomModal;
 
-  window.closeBomModal = function() {
+  function closeBomModal() {
     const dlg = $('bomModelessDialog');
     if (dlg) dlg.style.display = 'none';
     const pill = $('bomMinPill');
     if (pill) pill.style.display = 'none';
-  };
+  }
+  window.closeBomModal = closeBomModal;
 
-  window.minimizeBomModal = function() {
+  function minimizeBomModal() {
     const dlg = $('bomModelessDialog');
     const pill = $('bomMinPill');
     if (dlg) dlg.style.display = 'none';
     if (pill) pill.style.display = 'inline-flex';
-  };
+  }
+  window.minimizeBomModal = minimizeBomModal;
 
-  window.toggleMaximizeBomModal = function() {
+  function toggleMaximizeBomModal() {
     const dlg = $('bomModelessDialog');
     const maxBtn = $('btnBomDialogMaximize');
     if (!dlg) return;
@@ -8793,9 +8797,10 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       dlg.style.height = 'calc(100vh - 20px)';
       if (maxBtn) maxBtn.textContent = '🗗';
     }
-  };
+  }
+  window.toggleMaximizeBomModal = toggleMaximizeBomModal;
 
-  window.openTitleBlockModal = function() {
+  function openTitleBlockModal() {
     const dlg = $('titleBlockModelessDialog');
     const pill = $('titleBlockMinPill');
     if (!dlg) return;
@@ -8816,23 +8821,26 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     }
     bringModelessToFront(dlg);
     updateTitleBlockSummary();
-  };
+  }
+  window.openTitleBlockModal = openTitleBlockModal;
 
-  window.closeTitleBlockModal = function() {
+  function closeTitleBlockModal() {
     const dlg = $('titleBlockModelessDialog');
     if (dlg) dlg.style.display = 'none';
     const pill = $('titleBlockMinPill');
     if (pill) pill.style.display = 'none';
-  };
+  }
+  window.closeTitleBlockModal = closeTitleBlockModal;
 
-  window.minimizeTitleBlockModal = function() {
+  function minimizeTitleBlockModal() {
     const dlg = $('titleBlockModelessDialog');
     const pill = $('titleBlockMinPill');
     if (dlg) dlg.style.display = 'none';
     if (pill) pill.style.display = 'inline-flex';
-  };
+  }
+  window.minimizeTitleBlockModal = minimizeTitleBlockModal;
 
-  window.toggleMaximizeTitleBlockModal = function() {
+  function toggleMaximizeTitleBlockModal() {
     const dlg = $('titleBlockModelessDialog');
     const maxBtn = $('btnTitleDialogMaximize');
     if (!dlg) return;
@@ -10305,7 +10313,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.68</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.69</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -13987,7 +13995,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     updateViewBadges(cat, sub, h);
   };
 
-  window.registerAllDetectedBlocks = function() {
+  function registerAllDetectedBlocks() {
     const cards = document.querySelectorAll('.cad-block-card');
     if (!cards.length) {
       alert('등록할 블록이 없습니다. (모두 제외/삭제되었거나 비어있음)');
@@ -14006,7 +14014,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     rebuild(false);
     draw();
     alert(`🎉 남아있는 ${registeredCount}개의 블록이 지정된 부품·판넬로 성공적으로 일괄 등록되었습니다! 도면에 즉시 반영되었습니다.`);
-  };
+  }
+  window.registerAllDetectedBlocks = registerAllDetectedBlocks;
 
   window.loadBlockToMainEditor = function(index) {
     const block = window._currentDetectedBlocks[index];
@@ -15018,7 +15027,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     renderRegisteredPartsTable();
   }
 
-  window.openCadPartsModal = function(category = 'ladder', view = null, height = null, subKey = null) {
+  function openCadPartsModal(category = 'ladder', view = null, height = null, subKey = null) {
     const dlg = $('cadPartsModelessDialog');
     const pill = $('cadPartsMinPill');
     if (!dlg) return;
@@ -15072,23 +15081,26 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         }
       }
     }, 60);
-  };
+  }
+  window.openCadPartsModal = openCadPartsModal;
 
-  window.closeCadPartsModal = function() {
+  function closeCadPartsModal() {
     const dlg = $('cadPartsModelessDialog');
     if (dlg) dlg.style.display = 'none';
     const pill = $('cadPartsMinPill');
     if (pill) pill.style.display = 'none';
-  };
+  }
+  window.closeCadPartsModal = closeCadPartsModal;
 
-  window.minimizeCadPartsModal = function() {
+  function minimizeCadPartsModal() {
     const dlg = $('cadPartsModelessDialog');
     const pill = $('cadPartsMinPill');
     if (dlg) dlg.style.display = 'none';
     if (pill) pill.style.display = 'inline-flex';
-  };
+  }
+  window.minimizeCadPartsModal = minimizeCadPartsModal;
 
-  window.toggleMaximizeCadPartsModal = function() {
+  function toggleMaximizeCadPartsModal() {
     const dlg = $('cadPartsModelessDialog');
     const maxBtn = $('btnCadDialogMaximize');
     if (!dlg) return;
@@ -15119,7 +15131,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         updateCadPartPreview();
       }
     }, 60);
-  };
+  }
+  window.toggleMaximizeCadPartsModal = toggleMaximizeCadPartsModal;
 
   // Draggable logic for Modeless Dialog
   (function initModelessDrag() {
