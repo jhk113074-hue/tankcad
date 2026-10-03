@@ -399,7 +399,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.75</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.76</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1913,7 +1913,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.75</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.76</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1923,7 +1923,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.75</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.76</span></div>
     </div>
   </main>
 </div>
@@ -3226,6 +3226,18 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   }
   renderHeightTable();
   $('H').addEventListener('change', () => {
+    const newH = Number($('H').value) || 3000;
+    nozzleData.forEach(n => {
+      const isOverflow = n.name === 'OVERFLOW' || (n.desc && n.desc.includes('월류'));
+      const isInlet = n.name === 'INLET' || (n.desc && (n.desc.includes('유입') || n.desc.includes('급수')));
+      if (isOverflow) {
+        n.elev = Math.max(100, newH - 200);
+      } else if (isInlet && n.face !== 'top') {
+        n.elev = Math.max(100, newH - 300);
+      } else if (typeof n.elev === 'number' && n.elev > newH - 100) {
+        n.elev = Math.max(100, newH - 150);
+      }
+    });
     updateNozzleUi();
     schedule();
   });
@@ -3714,11 +3726,120 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   /* Custom Company Logo Upload & Management (Image / CAD / SVG) */
   let customTitleLogo = null;
 
+  function vectorizeImageToCadEntities(img, maxDim = 150) {
+    try {
+      const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+      if (!w || !h) return [];
+      const scale = Math.min(1, maxDim / Math.max(w, h));
+      const cw = Math.max(10, Math.round(w * scale)), ch = Math.max(10, Math.round(h * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = cw; canvas.height = ch;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, cw, ch);
+      const imgData = ctx.getImageData(0, 0, cw, ch);
+      const data = imgData.data;
+
+      // 4개 모서리 샘플링하여 배경색(bg) 추정
+      const corners = [0, (cw - 1) * 4, ((ch - 1) * cw) * 4, ((ch - 1) * cw + (cw - 1)) * 4];
+      let bgR = 0, bgG = 0, bgB = 0, bgA = 0;
+      corners.forEach(idx => {
+        bgR += data[idx]; bgG += data[idx + 1]; bgB += data[idx + 2]; bgA += data[idx + 3];
+      });
+      bgR /= 4; bgG /= 4; bgB /= 4; bgA /= 4;
+
+      const mask = new Uint8Array(cw * ch);
+      for (let y = 0; y < ch; y++) {
+        for (let x = 0; x < cw; x++) {
+          const idx = (y * cw + x) * 4;
+          const r = data[idx], g = data[idx + 1], b = data[idx + 2], a = data[idx + 3];
+          const diff = Math.max(Math.abs(r - bgR), Math.abs(g - bgG), Math.abs(b - bgB));
+          const isFg = (a > 50) && (bgA < 50 || diff > 32);
+          if (isFg) mask[y * cw + x] = 1;
+        }
+      }
+
+      const entities = [];
+      // 1. 수평 주사선 해칭 (Horizontal Scanlines)
+      for (let y = 0; y < ch; y++) {
+        const cadY = ch - 1 - y;
+        let startX = -1;
+        for (let x = 0; x < cw; x++) {
+          const isFg = mask[y * cw + x] === 1;
+          if (isFg && startX < 0) startX = x;
+          else if (!isFg && startX >= 0) {
+            entities.push({ k: 'line', p: [[startX, cadY], [x, cadY]] });
+            startX = -1;
+          }
+        }
+        if (startX >= 0) entities.push({ k: 'line', p: [[startX, cadY], [cw, cadY]] });
+      }
+
+      // 2. 외곽 윤곽선 (경계선 병합)
+      const hSegs = {}, vSegs = {};
+      for (let y = 0; y <= ch; y++) {
+        const cadY = ch - y;
+        for (let x = 0; x < cw; x++) {
+          const top = y > 0 ? mask[(y - 1) * cw + x] : 0;
+          const bot = y < ch ? mask[y * cw + x] : 0;
+          if (top !== bot) {
+            if (!hSegs[cadY]) hSegs[cadY] = [];
+            hSegs[cadY].push([x, x + 1]);
+          }
+        }
+      }
+      for (let y = 0; y < ch; y++) {
+        const cadY0 = ch - y - 1, cadY1 = ch - y;
+        for (let x = 0; x <= cw; x++) {
+          const left = x > 0 ? mask[y * cw + (x - 1)] : 0;
+          const right = x < cw ? mask[y * cw + x] : 0;
+          if (left !== right) {
+            if (!vSegs[x]) vSegs[x] = [];
+            vSegs[x].push([cadY0, cadY1]);
+          }
+        }
+      }
+      Object.keys(hSegs).forEach(cadYStr => {
+        const cadY = Number(cadYStr);
+        const list = hSegs[cadYStr].sort((a, b) => a[0] - b[0]);
+        let [cs, ce] = list[0];
+        for (let i = 1; i < list.length; i++) {
+          if (list[i][0] <= ce) ce = Math.max(ce, list[i][1]);
+          else { entities.push({ k: 'line', p: [[cs, cadY], [ce, cadY]] }); cs = list[i][0]; ce = list[i][1]; }
+        }
+        entities.push({ k: 'line', p: [[cs, cadY], [ce, cadY]] });
+      });
+      Object.keys(vSegs).forEach(xStr => {
+        const x = Number(xStr);
+        const list = vSegs[xStr].sort((a, b) => a[0] - b[0]);
+        let [cs, ce] = list[0];
+        for (let i = 1; i < list.length; i++) {
+          if (list[i][0] <= ce) ce = Math.max(ce, list[i][1]);
+          else { entities.push({ k: 'line', p: [[x, cs], [x, ce]] }); cs = list[i][0]; ce = list[i][1]; }
+        }
+        entities.push({ k: 'line', p: [[x, cs], [x, ce]] });
+      });
+
+      return entities;
+    } catch (e) {
+      console.warn('vectorizeImageToCadEntities error:', e);
+      return [];
+    }
+  }
+
   function loadSavedCustomLogo() {
     try {
       const saved = localStorage.getItem('tankcad_title_logo_custom');
       if (saved) {
         customTitleLogo = JSON.parse(saved);
+        if (customTitleLogo && customTitleLogo.dataUrl && (!customTitleLogo.entities || !customTitleLogo.entities.length)) {
+          const img = new Image();
+          img.onload = () => {
+            customTitleLogo.entities = vectorizeImageToCadEntities(img, 150);
+            try { localStorage.setItem('tankcad_title_logo_custom', JSON.stringify(customTitleLogo)); } catch(e) {}
+            schedule();
+          };
+          img.src = customTitleLogo.dataUrl;
+        }
         updateLogoUi();
       }
     } catch (e) {}
@@ -3900,15 +4021,21 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const reader = new FileReader();
       reader.onload = (e) => {
         const dataUrl = e.target.result;
-        customTitleLogo = {
-          type: 'image',
-          name: file.name,
-          dataUrl: dataUrl
+        const img = new Image();
+        img.onload = () => {
+          const entities = vectorizeImageToCadEntities(img, 150);
+          customTitleLogo = {
+            type: 'image',
+            name: file.name,
+            dataUrl: dataUrl,
+            entities: entities
+          };
+          try { localStorage.setItem('tankcad_title_logo_custom', JSON.stringify(customTitleLogo)); } catch(e) {}
+          updateLogoUi();
+          schedule();
+          alert(isEn ? `✅ Image Logo converted to CAD vector (${entities.length} lines) and registered!` : `✅ 로고 이미지가 CAD 벡터(${entities.length}개 선)로 자동 변환되어 DWG에 반영되었습니다!`);
         };
-        try { localStorage.setItem('tankcad_title_logo_custom', JSON.stringify(customTitleLogo)); } catch(e) {}
-        updateLogoUi();
-        schedule();
-        alert(isEn ? '✅ Image Logo registered!' : '✅ 회사 로고 이미지가 성공적으로 등록되었습니다!');
+        img.src = dataUrl;
       };
       reader.readAsDataURL(file);
       return;
@@ -5173,7 +5300,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         plan = { map: C.createMap(opt), ents: iso.ents, blocks: {}, scale: 25, elev: false };
       } else if (opt.sheetKind === 'pad') {
         const conc = C.buildConcrete(opt);
-        plan = { map: C.createMap(opt), ents: conc.ents, blocks: {}, scale: 25, elev: false };
+        plan = { map: C.createMap(opt), ents: conc.ents, blocks: conc.blocks || {}, scale: 25, elev: false };
       } else {
         plan = C.buildPlan(opt, TEMPLATES);
       }

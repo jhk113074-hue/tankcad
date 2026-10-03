@@ -1631,14 +1631,28 @@
     strips.forEach(([x, w, idx]) => {
       runsForStrip(idx).forEach(([y0, y1]) => pieces.push({ x, w, y0: y0 - padOv, y1: y1 + padOv }));
     });
-    if (!pieces.length) return { ents, textH: 60 };
+    if (!pieces.length) return { ents, blocks: {}, textH: 60 };
 
-    // 1. 기초 콘크리트 패드 보 렌더링
+    // 1. 기초 콘크리트 패드 보 렌더링 (AutoCAD 블록 INSERT 생성)
+    const blocks = {};
     pieces.forEach(({ x, w, y0, y1 }) => {
-      const p = [[x, y0], [x + w, y0], [x + w, y1], [x, y1]];
-      for (let k = 0; k < 4; k++) ln(p[k], p[(k + 1) % 4], 'PANEL');
-      concDesign(ents, x, y0);
+      const len = y1 - y0;
+      const blkName = `PAD_STRIP_${w}x${len}`;
+      if (!blocks[blkName]) {
+        const bEnts = [
+          { t: 'line', a: [0, 0], b: [w, 0], layer: 'PANEL' },
+          { t: 'line', a: [w, 0], b: [w, len], layer: 'PANEL' },
+          { t: 'line', a: [w, len], b: [0, len], layer: 'PANEL' },
+          { t: 'line', a: [0, len], b: [0, 0], layer: 'PANEL' }
+        ];
+        if (w >= 190 && len >= 350) {
+          concDesign(bEnts, 0, 0);
+        }
+        blocks[blkName] = bEnts;
+      }
+      ents.push({ t: 'insert', block: blkName, p: [x, y0], w, h: len, layer: 'PANEL' });
     });
+    ents.blocks = blocks;
 
     // 2. 기초 콘크리트 위에 물탱크가 놓이는 외곽선 및 구획(Compartment)별 테두리 / 대각선 X자 표시
     const L_secs = (opt.length || []).filter(Boolean);
@@ -1695,15 +1709,15 @@
     };
 
     if (anyRemoved) {
-      tankOutline(map).forEach(([a, b]) => ln(a, b, 'DIM'));
+      tankOutline(map).forEach(([a, b]) => ln(a, b, 'FRAME'));
       // 구획 분할 경계선 표시
       compartments.forEach(comp => {
-        if (comp.x0 > 0) ln([comp.x0, comp.y0], [comp.x0, comp.y1], 'DIM');
-        if (comp.y0 > 0) ln([comp.x0, comp.y0], [comp.x1, comp.y0], 'DIM');
+        if (comp.x0 > 0) ln([comp.x0, comp.y0], [comp.x0, comp.y1], 'FRAME');
+        if (comp.y0 > 0) ln([comp.x0, comp.y0], [comp.x1, comp.y0], 'FRAME');
       });
     }
 
-    // 각 구획별로 개별 테두리 및 대각선 X자 표시
+    // 각 구획별로 개별 테두리 및 대각선 X자 표시 (FRAME 레이어 - 틀 블록 INSERT 생성)
     compartments.forEach(comp => {
       // 해당 구획 내의 모든 셀이 존재하는지 확인
       const compCells = [];
@@ -1717,13 +1731,19 @@
       const compFull = compCells.length > 0 && compCells.every(([i, j]) => map.has(i, j));
 
       if (compFull) {
-        // 1. 해당 구획의 파란색(cyan) 사각 테두리
-        const rect = [[comp.x0, comp.y0], [comp.x1, comp.y0], [comp.x1, comp.y1], [comp.x0, comp.y1]];
-        for (let k = 0; k < 4; k++) ln(rect[k], rect[(k + 1) % 4], 'DIM');
-
-        // 2. 해당 구획의 대각선 'X' 표시
-        ln([comp.x0, comp.y0], [comp.x1, comp.y1], 'DIM');
-        ln([comp.x0, comp.y1], [comp.x1, comp.y0], 'DIM');
+        const cw = comp.w, ch = comp.h;
+        const blkName = `TANK_FRAME_${cw}x${ch}`;
+        if (!blocks[blkName]) {
+          blocks[blkName] = [
+            { t: 'line', a: [0, 0], b: [cw, 0], layer: 'FRAME' },
+            { t: 'line', a: [cw, 0], b: [cw, ch], layer: 'FRAME' },
+            { t: 'line', a: [cw, ch], b: [0, ch], layer: 'FRAME' },
+            { t: 'line', a: [0, ch], b: [0, 0], layer: 'FRAME' },
+            { t: 'line', a: [0, 0], b: [cw, ch], layer: 'FRAME' },
+            { t: 'line', a: [0, ch], b: [cw, 0], layer: 'FRAME' }
+          ];
+        }
+        ents.push({ t: 'insert', block: blkName, p: [comp.x0, comp.y0], w: cw, h: ch, layer: 'FRAME' });
       }
     });
 
@@ -1797,7 +1817,7 @@
     });
     const lf = strips[0][0], rt = strips[strips.length - 1][0] + strips[strips.length - 1][1];
     dimLinear(ents, [lf, botY], [rt, botY], botY - dimGap2, false, String(rt - lf), textH, 'DIM');
-    return { ents, textH };
+    return { ents, blocks, textH };
   }
 
   /* ---------- 정면도/측면도 (TankFront / TankSide / OutForceLeft·Right / CPlateLT / CManholeLT / CFrmLT / COutPoleLT / CWallLT) ---------- */
@@ -1916,27 +1936,13 @@
     });
     hatchAlignedRect(ents, px0, slabBotY, pxEnd, slabTopY, hatchStep, 'PANEL_DETAIL', 1);
 
-    // 5. 상부 베이스 스키드 프레임 및 채널 클립 (FRAME 레이어 - 빨강)
-    ln([-30, 0], [total + 30, 0], 'FRAME');
-    // 좌측 단부 C-채널 클립 `[`
-    ln([-30, -th], [-30, 0], 'FRAME');
-    ln([-30, 0], [40, 0], 'FRAME');
-    ln([40, 0], [40, -15], 'FRAME');
-    ln([-30, -th], [40, -th], 'FRAME');
-    ln([40, -th], [40, -th + 15], 'FRAME');
-    // 중간 기둥 앵글 클립
-    for (let i = 1; i < numPlinths - 1; i++) {
-      const cx = uniqueCxs[i];
-      ln([cx - 40, 0], [cx + 15, 0], 'FRAME');
-      ln([cx - 5, 0], [cx - 5, -th], 'FRAME');
-      ln([cx - 5, -th], [cx + 35, -th], 'FRAME');
-    }
-    // 우측 단부 C-채널 클립 `]`
-    ln([total + 30, -th], [total + 30, 0], 'FRAME');
-    ln([total - 40, 0], [total + 30, 0], 'FRAME');
-    ln([total - 40, 0], [total - 40, -15], 'FRAME');
-    ln([total - 40, -th], [total + 30, -th], 'FRAME');
-    ln([total - 40, -th], [total - 40, -th + 15], 'FRAME');
+    // 5. 상부 베이스 스키드 프레임 (스틸 스키드 / 채널: 0 ~ -th) - 깨끗한 연속 빔
+    ln([-75, 0], [total + 75, 0], 'FRAME');
+    ln([-75, -th], [total + 75, -th], 'FRAME');
+    ln([-75, 0], [-75, -th], 'FRAME');
+    ln([total + 75, 0], [total + 75, -th], 'FRAME');
+    ln([0, 0], [0, -th], 'FRAME');
+    ln([total, 0], [total, -th], 'FRAME');
 
     // 6. 단부 기둥 철근 배근 형상 (REINF 레이어 - media_1790951915253.png)
     // 좌측 기둥 철근
@@ -2000,7 +2006,9 @@
 
   function buildElevation(opt, sideT, view) {
     const secs = ((view === 'front' ? opt.length : opt.width) || []).filter(Boolean).slice(0, 5);
-    const hs = (opt.hseg || []).filter(Boolean), n = hs.length, nH = hs.reduce((a, b) => a + b, 0);
+    const totalH = (opt.height || []).reduce((a, b) => a + (b || 0), 0);
+    const hs = (opt.hseg && opt.hseg.length) ? opt.hseg.filter(Boolean) : heightSegs(totalH || 3000, opt.b11);
+    const n = hs.length, nH = hs.reduce((a, b) => a + b, 0);
     const split = view === 'front' ? frontSplit : sideSplit;
     const total = secs.reduce((a, b) => a + b, 0), th = opt.frame || 75;
     const ents = [], blocks = {};
@@ -2459,25 +2467,6 @@
     });
     hatchAlignedRect(ents, px0, slabBotY, pxEnd, slabTopY, hatchStep, 'PANEL_DETAIL', 1);
 
-    // 5. 상부 베이스 스키드 채널 클립 (FRAME 레이어 - 빨강)
-    // 좌측 C-채널 클립 [
-    ln([-30, 0], [40, 0], 'FRAME');
-    ln([40, 0], [40, -15], 'FRAME');
-    ln([-30, -th], [40, -th], 'FRAME');
-    ln([40, -th], [40, -th + 15], 'FRAME');
-    // 중간 기둥 앵글 클립
-    for (let i = 1; i < numPlinths - 1; i++) {
-      const cx = uniqueCxs[i];
-      ln([cx - 40, 0], [cx + 15, 0], 'FRAME');
-      ln([cx - 5, 0], [cx - 5, -th], 'FRAME');
-      ln([cx - 5, -th], [cx + 35, -th], 'FRAME');
-    }
-    // 우측 C-채널 클립 ]
-    ln([total - 40, 0], [total + 30, 0], 'FRAME');
-    ln([total - 40, 0], [total - 40, -15], 'FRAME');
-    ln([total - 40, -th], [total + 30, -th], 'FRAME');
-    ln([total - 40, -th], [total - 40, -th + 15], 'FRAME');
-
     // 6. 단부 기둥 철근 배근 형상 (REINF 레이어 - media_1790951915253.png)
     // 좌측 기둥 철근
     ln([-50, -th - 80], [130, -th - 260], 'REINF');
@@ -2539,7 +2528,17 @@
     const topNozzles = [];
 
     nozList.forEach(n => {
-      const elev = typeof n.elev === 'number' ? n.elev : (nH - 300);
+      let rawElev = typeof n.elev === 'number' ? n.elev : (nH - 300);
+      let elev = rawElev;
+      const isOverflow = n.name === 'OVERFLOW' || (n.desc && n.desc.includes('월류'));
+      const isInlet = n.name === 'INLET' || (n.desc && (n.desc.includes('유입') || n.desc.includes('급수')));
+      if (isOverflow) {
+        elev = Math.max(100, nH - 200);
+      } else if (isInlet && n.face !== 'top') {
+        elev = Math.max(100, nH - 300);
+      } else if (elev > nH - 100) {
+        elev = Math.max(100, nH - 150);
+      }
       const isFlg = n.type === 'FLANGE';
       const spec = getNozzleSpec(n.size);
 
@@ -4024,7 +4023,17 @@
       const nozzles = getNozzleList(opt);
       nozzles.forEach(n => {
         const spec = getNozzleSpec(n.size);
-        const elev = typeof n.elev === 'number' ? n.elev : 300;
+        let rawElev = typeof n.elev === 'number' ? n.elev : (H - 300);
+        let elev = rawElev;
+        const isOverflow = n.name === 'OVERFLOW' || (n.desc && n.desc.includes('월류'));
+        const isInlet = n.name === 'INLET' || (n.desc && (n.desc.includes('유입') || n.desc.includes('급수')));
+        if (isOverflow) {
+          elev = Math.max(100, H - 200);
+        } else if (isInlet && n.face !== 'top') {
+          elev = Math.max(100, H - 300);
+        } else if (elev > H - 100) {
+          elev = Math.max(100, H - 150);
+        }
         const markLabel = formatNozzleLabel(n);
 
         if (n.face === 'front') {
@@ -4435,7 +4444,12 @@
   function bb(es) {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     (es || []).forEach(e => {
-      if (e.a && e.b) {
+      if (e.t === 'insert' && e.w && e.h && e.p) {
+        minX = Math.min(minX, e.p[0], e.p[0] + e.w);
+        maxX = Math.max(maxX, e.p[0], e.p[0] + e.w);
+        minY = Math.min(minY, e.p[1], e.p[1] + e.h);
+        maxY = Math.max(maxY, e.p[1], e.p[1] + e.h);
+      } else if (e.a && e.b) {
         minX = Math.min(minX, e.a[0], e.b[0]); maxX = Math.max(maxX, e.a[0], e.b[0]);
         minY = Math.min(minY, e.a[1], e.b[1]); maxY = Math.max(maxY, e.a[1], e.b[1]);
       } else if (e.c && e.r) {
@@ -4676,6 +4690,17 @@
             poly(scaledPts, 'SHEET');
           }
         });
+        if (t.logoImage) {
+          ents.push({
+            t: 'image',
+            href: t.logoImage,
+            x: P(logoX - 12),
+            y: P(logoY - 6.5),
+            w: P(24),
+            h: P(13),
+            layer: 'SHEET'
+          });
+        }
       } else {
         circle([logoX, logoY], 5.8);
         circle([logoX, logoY], 5.0);
@@ -4952,7 +4977,15 @@
         curColX = tableX0;
         const abbr = getNozzleAbbr(n.name);
         const svcName = n.name + (abbr ? ' [' + abbr + ']' : '') + (n.desc ? ' (' + n.desc + ')' : '');
-        const elevStr = n.face === 'top' ? 'TOP' : ('EL.+' + (typeof n.elev === 'number' ? n.elev.toLocaleString() : n.elev));
+        let actualElev = n.elev;
+        if (typeof n.elev === 'number') {
+          const isOverflow = n.name === 'OVERFLOW' || (n.desc && n.desc.includes('월류'));
+          const isInlet = n.name === 'INLET' || (n.desc && (n.desc.includes('유입') || n.desc.includes('급수')));
+          if (isOverflow) actualElev = Math.max(100, H - 200);
+          else if (isInlet && n.face !== 'top') actualElev = Math.max(100, H - 300);
+          else if (actualElev > H - 100) actualElev = Math.max(100, H - 150);
+        }
+        const elevStr = n.face === 'top' ? 'TOP' : ('EL.+' + (typeof actualElev === 'number' ? actualElev.toLocaleString() : actualElev));
         const rowVals = [
           n.mark,
           svcName,
@@ -5139,7 +5172,9 @@
         text(tbx + 72, ry + rH / 2, 2.6, v, 'left', 0, 'middle');
       });
 
-      return { map: mmap, ents, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
+      const blocks = concPlan.blocks || {};
+      ents.blocks = blocks;
+      return { map: mmap, ents, blocks, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
     }
     if (opt.sheetKind === 'iso') {
       const iso = buildIsometric(opt, templates, sideT);
@@ -5307,7 +5342,7 @@
       }
       elev = true;
     }
-    const blocks = Object.assign({}, plan.blocks, (front && front.blocks), (side && side.blocks));
+    const blocks = Object.assign({}, plan.blocks, (conc && conc.blocks), (front && front.blocks), (side && side.blocks));
     ents.blocks = blocks;
     return { map: mmap, ents, blocks, scale: N, elev, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
   }
@@ -5320,7 +5355,50 @@
     const o = [];
     const g = (c, v) => { o.push(String(c)); o.push(String(v)); };
     const n = v => (Math.round(v * 1000) / 1000).toString();
-    g(0, 'SECTION'); g(2, 'HEADER'); g(9, '$ACADVER'); g(1, 'AC1009'); g(9, '$INSUNITS'); g(70, 4); g(0, 'ENDSEC');
+
+    const entList = Array.isArray(ents) ? ents : ((ents && ents.ents) || []);
+    const dimGroups = new Map();
+    const otherEnts = [];
+
+    entList.forEach(e => {
+      if (e && e.dimId) {
+        let grp = dimGroups.get(e.dimId);
+        if (!grp) {
+          grp = { id: e.dimId, meta: e.dimMeta, roles: {}, ents: [] };
+          dimGroups.set(e.dimId, grp);
+        }
+        grp.ents.push(e);
+        if (e.dimRole) grp.roles[e.dimRole] = e;
+      } else if (e) {
+        otherEnts.push(e);
+      }
+    });
+
+    let repTextH = 0;
+    dimGroups.forEach(grp => {
+      if (grp.roles.text && grp.roles.text.h) {
+        repTextH = Math.max(repTextH, grp.roles.text.h);
+      }
+    });
+    if (!repTextH) {
+      entList.forEach(e => {
+        if (e && e.t === 'text' && e.h && (e.layer === 'DIM' || e.layer === 'PANEL')) {
+          repTextH = Math.max(repTextH, e.h);
+        }
+      });
+    }
+    const dimTxtH = Math.round((repTextH || 65) * 10) / 10;
+
+    g(0, 'SECTION'); g(2, 'HEADER');
+    g(9, '$ACADVER'); g(1, 'AC1009');
+    g(9, '$INSUNITS'); g(70, 4);
+    g(9, '$DIMTXT'); g(40, n(dimTxtH));
+    g(9, '$DIMSCALE'); g(40, 1.0);
+    g(9, '$DIMASZ'); g(40, n(dimTxtH * 0.45));
+    g(9, '$DIMEXE'); g(40, n(dimTxtH * 0.5));
+    g(9, '$DIMEXO'); g(40, n(dimTxtH * 0.3));
+    g(9, '$DIMGAP'); g(40, n(dimTxtH * 0.25));
+    g(0, 'ENDSEC');
     g(0, 'SECTION'); g(2, 'TABLES'); g(0, 'TABLE'); g(2, 'LTYPE'); g(70, 1);
     g(0, 'LTYPE'); g(2, 'CONTINUOUS'); g(70, 0); g(3, 'Solid line'); g(72, 65); g(73, 0); g(40, 0);
     g(0, 'ENDTAB');
@@ -5329,18 +5407,18 @@
     Object.entries(LAYERS).forEach(([k, c]) => { g(0, 'LAYER'); g(2, k); g(70, 0); g(62, c); g(6, 'CONTINUOUS'); });
     g(0, 'ENDTAB');
     g(0, 'TABLE'); g(2, 'STYLE'); g(70, 1);
-    g(0, 'STYLE'); g(2, 'STANDARD'); g(70, 0); g(40, 0); g(41, 0.85); g(50, 0); g(71, 0); g(42, 2.5);
+    g(0, 'STYLE'); g(2, 'STANDARD'); g(70, 0); g(40, 0); g(41, 0.85); g(50, 0); g(71, 0); g(42, n(dimTxtH));
     g(3, 'simplex.shx'); g(4, 'whgtxt.shx');
     g(0, 'ENDTAB');
     g(0, 'TABLE'); g(2, 'DIMSTYLE'); g(70, 1);
     g(0, 'DIMSTYLE'); g(2, 'STANDARD'); g(70, 0);
     g(40, 1.0);
-    g(41, 2.5);
-    g(42, 0.625);
-    g(43, 3.75);
-    g(44, 1.25);
-    g(140, 2.5);
-    g(147, 0.625);
+    g(41, n(dimTxtH * 0.45));
+    g(42, n(dimTxtH * 0.3));
+    g(43, n(dimTxtH * 1.5));
+    g(44, n(dimTxtH * 0.5));
+    g(140, n(dimTxtH));
+    g(147, n(dimTxtH * 0.25));
     g(0, 'ENDTAB');
     g(0, 'ENDSEC');
 
@@ -5383,12 +5461,9 @@
         g(40, n(e.r));
       }
       else if (e.t === 'image') {
-        const x0 = e.x, y0 = e.y, x1 = e.x + e.w, y1 = e.y + e.h;
-        writeEnt({ t: 'line', a: [x0, y0], b: [x1, y0], layer });
-        writeEnt({ t: 'line', a: [x1, y0], b: [x1, y1], layer });
-        writeEnt({ t: 'line', a: [x1, y1], b: [x0, y1], layer });
-        writeEnt({ t: 'line', a: [x0, y1], b: [x0, y0], layer });
-        writeEnt({ t: 'text', p: [(x0 + x1) / 2, (y0 + y1) / 2], s: '[LOGO]', h: 3, align: 'center', valign: 'middle', layer });
+        if (e.cadEntities && e.cadEntities.length) {
+          e.cadEntities.forEach(ce => writeEnt(ce, layer));
+        }
       }
       else if (e.t === 'text') {
         const px = e.p[0], py = e.p[1];
@@ -5440,24 +5515,6 @@
         }
       }
     };
-
-    const entList = Array.isArray(ents) ? ents : ((ents && ents.ents) || []);
-    const dimGroups = new Map();
-    const otherEnts = [];
-
-    entList.forEach(e => {
-      if (e && e.dimId) {
-        let grp = dimGroups.get(e.dimId);
-        if (!grp) {
-          grp = { id: e.dimId, meta: e.dimMeta, roles: {}, ents: [] };
-          dimGroups.set(e.dimId, grp);
-        }
-        grp.ents.push(e);
-        if (e.dimRole) grp.roles[e.dimRole] = e;
-      } else if (e) {
-        otherEnts.push(e);
-      }
-    });
 
     const allBlocks = { ...(blocks || (ents && ents.blocks) || {}) };
     const hasBlocks = Object.keys(allBlocks).length > 0 || dimGroups.size > 0;
