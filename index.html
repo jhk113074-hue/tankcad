@@ -399,7 +399,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.70</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.71</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -716,49 +716,46 @@ canvas.drag{cursor:grabbing}
             <h2 id="secTitleBOM" style="margin:0;font-size:13px">📋 부품 사양 명세표 (Item List)</h2>
             <span id="bomCountBadge" style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700">11개 등록</span>
           </div>
-          <p class="hint" id="hintBOM" style="margin-bottom:10px">도면 표제란 상단에 표출되는 <b>AutoCAD 표준 부품 명세표(Item List)</b> 및 도면상 <b>원형 풍선 기호(①,②,③...)</b>를 직접 편집합니다.</p>
+          <p class="hint" id="hintBOM" style="margin-bottom:12px">
+            도면 표제란 상단의 <b>AutoCAD 표준 부품 명세표(Item List)</b> 및 도면상 <b>원형 풍선 기호(①,②,③...)</b> 전체를 넓은 대형 모달리스 창에서 도면과 함께 보며 편집합니다.
+          </p>
 
           <!-- Big Modeless Dialog Launcher Button -->
-          <button type="button" id="btnOpenBomModeless" class="btn-sm" style="width:100%;padding:9px;background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:6px;margin-bottom:12px;cursor:pointer;box-shadow:0 2px 6px rgba(2,132,199,0.25)" onclick="openBomModal()">
-            <span style="font-size:15px">🪟</span>
+          <button type="button" id="btnOpenBomModeless" class="btn-sm" style="width:100%;padding:10px;background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700;font-size:12.5px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:6px;margin-bottom:12px;cursor:pointer;box-shadow:0 2px 6px rgba(2,132,199,0.25)" onclick="openBomModal()">
+            <span style="font-size:16px">🪟</span>
             <span id="lblOpenBomModeless">대형 부품 명세표(BOM) 창 열기 (Modeless Dialog)</span>
           </button>
 
-          <!-- 상단 옵션 및 컨트롤 버튼 -->
-          <div style="background:var(--surface-sub);padding:8px 10px;border-radius:6px;border:1px solid var(--line);margin-bottom:10px">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
-              <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--text);cursor:pointer">
+          <!-- Quick Overview Card -->
+          <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:12px;font-size:11.5px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="color:var(--muted);font-weight:600">풍선 기호(Balloon):</span>
+              <label style="display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--fg);cursor:pointer">
                 <input type="checkbox" id="balloonFeatureToggle" checked>
-                <span id="lblBalloonToggle">도면상 풍선 기호(①,②,③...) 표시</span>
+                <span id="lblBalloonToggle">도면 표시 (①,②,③...)</span>
               </label>
-              <button type="button" id="btnAutoBOM" class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;padding:4px 10px;font-size:11px" title="현재 탱크 규격·옵션으로 기본 부품 사양을 자동 재계산합니다">
-                ⚡ 자동 재계산 (Auto BOM)
-              </button>
             </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-              <button type="button" id="btnAddBOMRow" class="btn-sm" style="font-weight:600;padding:4px 10px;font-size:11px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="color:var(--muted);font-weight:600">등록 품목 수:</span>
+              <span id="sideSummaryBomCount" style="font-weight:700;color:var(--accent)">-</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="color:var(--muted);font-weight:600">등록 부품 목록:</span>
+              <div id="sideSummaryBomItems" style="display:flex;flex-wrap:wrap;gap:4px;max-height:120px;overflow-y:auto;padding:6px;background:var(--surface);border:1px solid var(--line);border-radius:6px">
+                <!-- Badges populated by updateBOMBadge() -->
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;padding-top:8px;border-top:1px dashed var(--line);gap:6px">
+              <button type="button" id="btnAutoBOM" class="btn-sm" style="flex:1;padding:5px 8px;font-size:11px;background:var(--surface);border:1px solid var(--line);color:var(--fg);font-weight:600;border-radius:4px;cursor:pointer" title="현재 탱크 규격·옵션으로 기본 부품 사양을 자동 재계산합니다">
+                ⚡ 자동 재계산
+              </button>
+              <button type="button" id="btnAddBOMRow" class="btn-sm" style="flex:1;padding:5px 8px;font-size:11px;background:var(--surface);border:1px solid var(--line);color:var(--fg);font-weight:600;border-radius:4px;cursor:pointer" onclick="openBomModal();if($('btnBomModelessAddRow'))$('btnBomModelessAddRow').click()">
                 ➕ 품목 추가
               </button>
-              <span id="lblBomTableHint" style="font-size:10px;color:var(--muted)">* 각 칸을 직접 클릭하여 수정하면 도면에 실시간 반영됩니다.</span>
+              <button type="button" class="btn-sm" style="flex:1.2;padding:5px 8px;font-size:11px;background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700;border-radius:4px;cursor:pointer" onclick="openBomModal()">
+                ✏️ 전체 편집
+              </button>
             </div>
-          </div>
-
-          <!-- 부품 명세 인라인 테이블 -->
-          <div style="max-height:460px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--bg);margin-bottom:12px">
-            <table style="width:100%;font-size:11px;border-collapse:collapse;text-align:left">
-              <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
-                <tr>
-                  <th style="padding:6px 4px;width:38px;text-align:center">NO.</th>
-                  <th id="thBomItems" style="padding:6px 4px;width:115px">ITEMS (품명)</th>
-                  <th id="thBomMat" style="padding:6px 4px;width:75px">MATERIAL</th>
-                  <th id="thBomQty" style="padding:6px 4px;width:48px;text-align:center">QTY</th>
-                  <th id="thBomSpec" style="padding:6px 4px">SPECIFICATIONS</th>
-                  <th style="padding:6px 4px;width:26px;text-align:center">✕</th>
-                </tr>
-              </thead>
-              <tbody id="bomTableBody">
-              </tbody>
-            </table>
           </div>
         </section>
 
@@ -1916,7 +1913,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.70</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.71</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1926,7 +1923,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.70</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.71</span></div>
     </div>
   </main>
 </div>
@@ -8692,10 +8689,23 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
   function updateBOMBadge() {
     const isEn = currentLang === 'en';
-    const txt = isEn ? `${(itemList || []).length} items` : `${(itemList || []).length}개`;
-    if ($('bomCountBadge')) $('bomCountBadge').textContent = txt;
+    const count = (itemList || []).length;
+    const txt = isEn ? `${count} items` : `${count}개`;
+    if ($('bomCountBadge')) $('bomCountBadge').textContent = isEn ? `${count} items registered` : `${count}개 등록`;
     if ($('bomCountBadgeSpec')) $('bomCountBadgeSpec').textContent = txt;
-    if ($('bomModelessCountBadge')) $('bomModelessCountBadge').textContent = isEn ? `${(itemList || []).length} items registered` : `${(itemList || []).length}개 등록`;
+    if ($('bomModelessCountBadge')) $('bomModelessCountBadge').textContent = isEn ? `${count} items registered` : `${count}개 등록`;
+    if ($('sideSummaryBomCount')) $('sideSummaryBomCount').textContent = isEn ? `${count} items registered` : `${count}개 품목 등록됨`;
+    if ($('sideSummaryBomItems')) {
+      if (!count) {
+        $('sideSummaryBomItems').innerHTML = `<span style="color:var(--muted);font-size:11px;padding:4px">${isEn ? 'No items registered.' : '등록된 부품이 없습니다.'}</span>`;
+      } else {
+        $('sideSummaryBomItems').innerHTML = itemList.map((it, idx) => {
+          const num = it.no || (idx + 1);
+          const name = it.name || it.items || '';
+          return `<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:4px;background:var(--surface-sub);border:1px solid var(--line);font-size:11px;font-weight:600;color:var(--fg)"><span style="color:var(--accent);font-weight:700">${num}.</span> ${name}</span>`;
+        }).join('');
+      }
+    }
   }
 
   function initBOM(forceReset = false) {
@@ -9017,6 +9027,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
     if (!itemList.length) initBOM();
     renderBOMTable();
+    openBomModal();
   };
 
   window.switchToCadPartsTab = () => {
@@ -9044,6 +9055,13 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   if (subtabBtnTitle) {
     subtabBtnTitle.addEventListener('click', () => {
       openTitleBlockModal();
+    });
+  }
+
+  const subtabBtnBom = $('subtabBtnBom');
+  if (subtabBtnBom) {
+    subtabBtnBom.addEventListener('click', () => {
+      openBomModal();
     });
   }
 
@@ -10601,7 +10619,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.70</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.71</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
