@@ -52,11 +52,13 @@ def seed_defaults(conn=None):
     cur = conn.cursor()
     cur.execute("DELETE FROM panels")
 
-    # 1. 평면 (상·하부) 템플릿 로드
+    # 1. 평면 (상·하부) 템플릿 로드 (SMC 전용)
     if os.path.exists(PANEL_JSON_PATH):
         with open(PANEL_JSON_PATH, "r", encoding="utf-8") as f:
             pt = json.load(f)
         for mat, sizes in pt.items():
+            if mat.upper() != 'SMC':
+                continue
             for skey, ents in sizes.items():
                 parts = skey.split("x")
                 w = int(parts[0]) if len(parts) > 0 and parts[0].isdigit() else 1000
@@ -68,11 +70,13 @@ def seed_defaults(conn=None):
                     VALUES (?, 'top_bottom', ?, ?, ?, ?, '공장 표준 평면 엠보싱 문양', ?, 1)
                 """, (mat, skey, w, h, name, json.dumps(ents, ensure_ascii=False)))
 
-    # 2. 측면 (입면) 템플릿 로드
+    # 2. 측면 (입면) 템플릿 로드 (SMC 전용)
     if os.path.exists(SIDE_JSON_PATH):
         with open(SIDE_JSON_PATH, "r", encoding="utf-8") as f:
             st = json.load(f)
         for mat, sizes in st.items():
+            if mat.upper() != 'SMC':
+                continue
             for skey, ents in sizes.items():
                 parts = skey.split("x")
                 w = int(parts[0]) if len(parts) > 0 and parts[0].isdigit() else 1000
@@ -91,9 +95,9 @@ def seed_defaults(conn=None):
 def get_all_panels(material=None, category=None):
     conn = get_connection()
     cur = conn.cursor()
-    query = "SELECT id, material, category, size_key, width, height, name, description, is_default, created_at, updated_at FROM panels WHERE 1=1"
+    query = "SELECT id, material, category, size_key, width, height, name, description, is_default, created_at, updated_at FROM panels WHERE material != 'STS' AND material != '_custom'"
     params = []
-    if material and material != "ALL":
+    if material and material != "ALL" and material != "STS":
         query += " AND material = ?"
         params.append(material)
     if category and category != "ALL":
@@ -197,9 +201,6 @@ def export_all_templates_dict():
         if not is_def:
             custom_map[f"{mat}_{cat}_{skey}"] = True
 
-    st["_custom"] = custom_map
-    pt["_custom"] = custom_map
-    bt["_custom"] = custom_map
     return {
         "panel_templates": pt,
         "bottom_templates": bt,

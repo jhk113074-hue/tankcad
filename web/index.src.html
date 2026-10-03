@@ -1425,8 +1425,7 @@ canvas.drag{cursor:grabbing}
                 <div>
                   <label id="lblFilterMat" style="font-size:11px;color:var(--muted);display:block;margin-bottom:2px">재질 필터</label>
                   <select id="dbFilterMat" style="width:100%;font-size:12px;padding:5px">
-                    <option value="ALL" selected>전체 재질</option>
-                    <option value="SMC">SMC (GRP)</option>
+                    <option value="SMC" selected>SMC (GRP)</option>
                   </select>
                 </div>
                 <div>
@@ -1735,6 +1734,8 @@ canvas.drag{cursor:grabbing}
 <script>
 let TEMPLATES = /*__TEMPLATES__*/;
 let SIDE_T = /*__SIDE_TEMPLATES__*/;
+const _FACTORY_TEMPLATES = JSON.parse(JSON.stringify(TEMPLATES));
+const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 (function () {
   const C = window.TankCore;
   const $ = id => document.getElementById(id);
@@ -2116,9 +2117,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       $('miniOffset').options[1].textContent = currentLang === 'en' ? '● Center (0)' : '● 중앙 (0)';
       $('miniOffset').options[2].textContent = currentLang === 'en' ? '▶ Right (+250)' : '▶ 우 (+250)';
     }
-    if ($('dbFilterMat') && $('dbFilterMat').options && $('dbFilterMat').options.length >= 2) {
-      $('dbFilterMat').options[0].textContent = currentLang === 'en' ? 'All Materials' : '전체 재질';
-      $('dbFilterMat').options[1].textContent = 'SMC (GRP)';
+    if ($('dbFilterMat') && $('dbFilterMat').options && $('dbFilterMat').options.length >= 1) {
+      $('dbFilterMat').options[0].textContent = 'SMC (GRP)';
     }
     if ($('dbFilterCat') && $('dbFilterCat').options && $('dbFilterCat').options.length >= 7) {
       $('dbFilterCat').options[0].textContent = currentLang === 'en' ? 'All Positions' : '전체 위치';
@@ -5146,24 +5146,38 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     }
 
     (ents || []).forEach(e => {
+      if (!e) return;
+      const k = e.k || e.t || e.type;
       pctx.beginPath();
-      if (e.k === 'line') {
-        pctx.moveTo(tx(e.p[0][0]), ty(e.p[0][1]));
-        pctx.lineTo(tx(e.p[1][0]), ty(e.p[1][1]));
-      } else if (e.k === 'circle') {
-        pctx.arc(tx(e.c[0]), ty(e.c[1]), e.r * scale, 0, Math.PI * 2);
-      } else if (e.k === 'arc') {
-        if (e.s && e.e) {
-          const sa = Math.atan2(-(e.s[1] - e.c[1]), e.s[0] - e.c[0]);
-          const ea = Math.atan2(-(e.e[1] - e.c[1]), e.e[0] - e.c[0]);
-          pctx.arc(tx(e.c[0]), ty(e.c[1]), e.r * scale, sa, ea, true);
-        } else {
-          pctx.arc(tx(e.c[0]), ty(e.c[1]), e.r * scale, 0, Math.PI * 2);
+      if (k === 'line') {
+        const p1 = (e.p && e.p[0]) || e.a;
+        const p2 = (e.p && e.p[1]) || e.b;
+        if (p1 && p2) {
+          pctx.moveTo(tx(p1[0]), ty(p1[1]));
+          pctx.lineTo(tx(p2[0]), ty(p2[1]));
         }
-      } else if (e.k === 'poly') {
-        if (e.p && e.p.length > 1) {
-          pctx.moveTo(tx(e.p[0][0]), ty(e.p[0][1]));
-          for (let i = 1; i < e.p.length; i++) pctx.lineTo(tx(e.p[i][0]), ty(e.p[i][1]));
+      } else if (k === 'circle' && (e.c || e.center)) {
+        const c = e.c || e.center;
+        pctx.arc(tx(c[0]), ty(c[1]), (e.r || 10) * scale, 0, Math.PI * 2);
+      } else if (k === 'arc' && (e.c || e.center)) {
+        const c = e.c || e.center;
+        const r = (e.r || 10) * scale;
+        if (e.a0 !== undefined && e.a1 !== undefined) {
+          const sa = -e.a0 * Math.PI / 180;
+          const ea = -e.a1 * Math.PI / 180;
+          pctx.arc(tx(c[0]), ty(c[1]), r, sa, ea, true);
+        } else if (e.s && e.e) {
+          const sa = Math.atan2(-(e.s[1] - c[1]), e.s[0] - c[0]);
+          const ea = Math.atan2(-(e.e[1] - c[1]), e.e[0] - c[0]);
+          pctx.arc(tx(c[0]), ty(c[1]), r, sa, ea, true);
+        } else {
+          pctx.arc(tx(c[0]), ty(c[1]), r, 0, Math.PI * 2);
+        }
+      } else if (k === 'poly') {
+        const pts = e.p || e.pts || [];
+        if (pts.length > 1) {
+          pctx.moveTo(tx(pts[0][0]), ty(pts[0][1]));
+          for (let i = 1; i < pts.length; i++) pctx.lineTo(tx(pts[i][0]), ty(pts[i][1]));
           if (e.c !== false) {
             pctx.closePath();
             pctx.fill();
@@ -5176,109 +5190,163 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
   function getBuiltinPanelsList(filterMat, filterCat) {
     const list = [];
-    const mats = ['SMC'];
-    mats.forEach(mat => {
-      // 1. Top/Roof templates
-      if (filterCat === 'ALL' || filterCat === 'top' || filterCat === 'top_bottom' || filterCat === 'common') {
-        const topDict = (typeof TEMPLATES !== 'undefined' && TEMPLATES && TEMPLATES[mat]) || {};
-        for (const [key, ents] of Object.entries(topDict)) {
-          const parts = key.split('x').map(Number);
-          const w = parts[0] || 1000, h = parts[1] || 1000;
-          list.push({
-            id: `builtin_${mat}_top_${key}`,
-            material: mat,
-            category: 'top',
-            width: w,
-            height: h,
-            size_key: key,
-            name: `${mat} ${key} 천정 표준 판넬`,
-            entities: ents,
-            is_default: true
-          });
-        }
-      }
-      // 2. Bottom templates
-      if (filterCat === 'ALL' || filterCat === 'bottom' || filterCat === 'top_bottom' || filterCat === 'common') {
-        const botDict = (typeof window.BOTTOM_T !== 'undefined' && window.BOTTOM_T && window.BOTTOM_T[mat]) || ((typeof TEMPLATES !== 'undefined' && TEMPLATES && TEMPLATES[mat]) || {});
-        for (const [key, ents] of Object.entries(botDict)) {
-          const parts = key.split('x').map(Number);
-          const w = parts[0] || 1000, h = parts[1] || 1000;
-          list.push({
-            id: `builtin_${mat}_bot_${key}`,
-            material: mat,
-            category: 'bottom',
-            width: w,
-            height: h,
-            size_key: key,
-            name: `${mat} ${key} 저판 표준 판넬`,
-            entities: ents,
-            is_default: true
-          });
-        }
-      }
-      // 3. Side elevation templates
-      if (filterCat === 'ALL' || filterCat === 'side' || filterCat === 'common') {
-        const sideDict = (typeof SIDE_T !== 'undefined' && SIDE_T && SIDE_T[mat]) || {};
-        for (const [key, ents] of Object.entries(sideDict)) {
-          const parts = key.match(/\d+/g) || [1000, 1000];
-          const w = Number(parts[0]) || 1000, h = Number(parts[1]) || 1000;
-          let label = `${mat} ${key} 측면 표준 판넬`;
-          if (key === 'flat-1x1' || key === 'flat') label = `${mat} 1×1 평판형 (피팅용)`;
-          else if (key === 'flat-half2') label = `${mat} 0.5×1 (2장 분할) 평판형`;
-          else if (key === 'fitting') label = `${mat} 피팅 가공용 판넬`;
-          list.push({
-            id: `builtin_${mat}_side_${key}`,
-            material: mat,
-            category: 'side',
-            width: w,
-            height: h,
-            size_key: key,
-            name: label,
-            entities: ents,
-            is_default: true
-          });
-        }
-      }
-    });
+    const mat = 'SMC';
 
-    // Custom panels from localStorage
+    // 1. Top/Roof templates
+    if (filterCat === 'ALL' || filterCat === 'top' || filterCat === 'top_bottom' || filterCat === 'common') {
+      const topDict = (typeof TEMPLATES !== 'undefined' && TEMPLATES && TEMPLATES[mat]) || {};
+      ['1000x1000', '1000x500', '500x1000', '500x500'].forEach(key => {
+        const parts = key.split('x').map(Number);
+        list.push({
+          id: `builtin_${mat}_top_${key}`,
+          material: mat,
+          category: 'top',
+          width: parts[0],
+          height: parts[1],
+          size_key: key,
+          name: `${mat} ${key} 천정 표준 판넬`,
+          entities: topDict[key] || [],
+          is_default: true,
+          is_custom: false
+        });
+      });
+    }
+
+    // 2. Bottom templates
+    if (filterCat === 'ALL' || filterCat === 'bottom' || filterCat === 'top_bottom' || filterCat === 'common') {
+      const botDict = (typeof window.BOTTOM_T !== 'undefined' && window.BOTTOM_T && window.BOTTOM_T[mat]) || ((typeof TEMPLATES !== 'undefined' && TEMPLATES && TEMPLATES[mat]) || {});
+      ['1000x1000', '1000x500', '500x1000', '500x500'].forEach(key => {
+        const parts = key.split('x').map(Number);
+        list.push({
+          id: `builtin_${mat}_bot_${key}`,
+          material: mat,
+          category: 'bottom',
+          width: parts[0],
+          height: parts[1],
+          size_key: key,
+          name: `${mat} ${key} 저판 표준 판넬`,
+          entities: botDict[key] || [],
+          is_default: true,
+          is_custom: false
+        });
+      });
+    }
+
+    // 3. Side elevation templates
+    if (filterCat === 'ALL' || filterCat === 'side' || filterCat === 'common') {
+      const sideDict = (typeof SIDE_T !== 'undefined' && SIDE_T && SIDE_T[mat]) || {};
+      ['1000x1000', '1000x500', '500x1000', '500x500', '1000x1500', '1000x2000', '500x1500', '500x2000', 'flat-1x1', 'flat-half2', 'fitting'].forEach(key => {
+        const parts = key.match(/\d+/g) || [1000, 1000];
+        const w = Number(parts[0]) || 1000, h = Number(parts[1]) || 1000;
+        let label = `${mat} ${key} 측면 표준 판넬`;
+        if (key === 'flat-1x1' || key === 'flat') label = `${mat} 1×1 평판형 (피팅용)`;
+        else if (key === 'flat-half2') label = `${mat} 0.5×1 (2장 분할) 평판형`;
+        else if (key === 'fitting') label = `${mat} 피팅 가공용 판넬`;
+        list.push({
+          id: `builtin_${mat}_side_${key}`,
+          material: mat,
+          category: 'side',
+          width: w,
+          height: h,
+          size_key: key,
+          name: label,
+          entities: sideDict[key] || [],
+          is_default: true,
+          is_custom: false
+        });
+      });
+    }
+
+    // 4. Manhole / Drain templates
+    if (filterCat === 'ALL' || filterCat === 'manhole') {
+      let mhEnts = [];
+      try {
+        const comp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
+        mhEnts = comp['manhole_plan'] || comp['manhole'] || [];
+      } catch(e) {}
+      list.push({
+        id: `builtin_${mat}_manhole_1000x1000`,
+        material: mat,
+        category: 'manhole',
+        width: 1000,
+        height: 1000,
+        size_key: '1000x1000',
+        name: `${mat} 1000x1000 맨홀 판넬`,
+        entities: mhEnts,
+        is_default: true,
+        is_custom: mhEnts.length > 0
+      });
+    }
+    if (filterCat === 'ALL' || filterCat === 'drain') {
+      let drEnts = [];
+      try {
+        const comp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
+        drEnts = comp['drain_plan'] || comp['drain'] || [];
+      } catch(e) {}
+      list.push({
+        id: `builtin_${mat}_drain_1000x1000`,
+        material: mat,
+        category: 'drain',
+        width: 1000,
+        height: 1000,
+        size_key: '1000x1000',
+        name: `${mat} 1000x1000 드레인 판넬`,
+        entities: drEnts,
+        is_default: true,
+        is_custom: drEnts.length > 0
+      });
+    }
+
+    // ★★★ Match with custom panels from localStorage ★★★
     try {
       const custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
       custom.forEach(cp => {
-        if (cp.width === 1300 || cp.height === 1300 || (cp.size_key && cp.size_key.includes('1300'))) return;
-        const matchesMat = (filterMat === 'ALL' || cp.material === filterMat);
-        let matchesCat = (filterCat === 'ALL' || cp.category === filterCat);
-        if (filterCat === 'top' && (cp.category === 'top_bottom' || cp.category === 'common')) matchesCat = true;
-        if (filterCat === 'bottom' && (cp.category === 'top_bottom' || cp.category === 'common')) matchesCat = true;
-        if (filterCat === 'side' && cp.category === 'common') matchesCat = true;
-        if (filterCat === 'common' && cp.category === 'all') matchesCat = true;
-        if (matchesMat && matchesCat) {
-          list.push(cp);
+        if (!cp || cp.material === 'STS' || cp.width === 1300 || cp.height === 1300 || (cp.size_key && cp.size_key.includes('1300'))) return;
+        const cpKey = cp.size_key || `${cp.width}x${cp.height}`;
+        const cpCat = cp.category;
+
+        // Find matching built-in panel in list
+        const matched = list.filter(item => {
+          if (item.size_key !== cpKey) return false;
+          if (cpCat === 'common' || cpCat === 'all') return true;
+          if (item.category === cpCat) return true;
+          if ((item.category === 'top' || item.category === 'bottom') && cpCat === 'top_bottom') return true;
+          return false;
+        });
+
+        if (matched.length > 0) {
+          matched.forEach(item => {
+            item.is_custom = true;
+            item.custom_id = cp.id;
+            item.name = cp.name || `${item.material} ${item.size_key} ${item.category} (사용자 등록)`;
+            item.entities = cp.entities;
+            item.is_default = false;
+          });
+        } else {
+          let matchesCat = (filterCat === 'ALL' || cpCat === filterCat);
+          if (filterCat === 'top' && (cpCat === 'top_bottom' || cpCat === 'common')) matchesCat = true;
+          if (filterCat === 'bottom' && (cpCat === 'top_bottom' || cpCat === 'common')) matchesCat = true;
+          if (filterCat === 'side' && cpCat === 'common') matchesCat = true;
+          if (matchesCat) {
+            list.push({
+              ...cp,
+              material: 'SMC',
+              size_key: cpKey,
+              is_custom: true,
+              is_default: false
+            });
+          }
         }
       });
-    } catch (e) {}
+    } catch(e) {}
 
     return list;
   }
 
   async function loadDbPanels() {
-    const mat = $('dbFilterMat').value;
-    const cat = $('dbFilterCat').value;
-    try {
-      const controller = new AbortController();
-      const tid = setTimeout(() => controller.abort(), 800);
-      const res = await fetch(`${API_BASE}/api/panels?material=${mat}&category=${cat}`, { signal: controller.signal });
-      clearTimeout(tid);
-      if (!res.ok) throw new Error('API 응답 실패');
-      const data = await res.json();
-      const rawPanels = data.panels || [];
-      dbPanelsList = rawPanels.filter(p => p.width !== 1300 && p.height !== 1300 && (!p.size_key || !p.size_key.includes('1300')));
-    } catch (err) {
-      dbPanelsList = getBuiltinPanelsList(mat, cat);
-    }
-    if (!dbPanelsList || !dbPanelsList.length) {
-      dbPanelsList = getBuiltinPanelsList(mat, cat);
-    }
+    const mat = 'SMC';
+    const cat = ($('dbFilterCat') && $('dbFilterCat').value) || 'ALL';
+    dbPanelsList = getBuiltinPanelsList(mat, cat);
     renderPanelTable(dbPanelsList);
     if (dbPanelsList.length > 0) {
       selectPanel(dbPanelsList[0].id);
@@ -5289,8 +5357,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     try {
       const custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
       custom.forEach(p => {
-        if (p.width === 1300 || p.height === 1300 || (p.size_key && p.size_key.includes('1300'))) return;
-        const mat = p.material || 'SMC';
+        if (!p || p.material === 'STS' || p.width === 1300 || p.height === 1300 || (p.size_key && p.size_key.includes('1300'))) return;
+        const mat = 'SMC';
         const key = p.size_key || `${p.width}x${p.height}`;
         const ents = p.entities || [];
         if (!ents.length) return;
@@ -5363,15 +5431,20 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         badgeHtml = `<span style="font-size:10px;padding:2px 5px;border-radius:4px;background:rgba(100,116,139,0.12);color:#475569;font-weight:600">🔲 ${isEn ? 'Plan' : '평면'}</span>`;
       }
 
+      const isCustom = !!p.is_custom || !p.is_default;
+      const statusBadge = isCustom
+        ? `<span style="font-size:9.5px;padding:1px 5px;border-radius:3px;background:#10b981;color:#fff;font-weight:700;margin-left:4px">🟢커스텀</span>`
+        : `<span style="font-size:9.5px;padding:1px 5px;border-radius:3px;background:rgba(100,116,139,0.15);color:var(--muted);font-weight:500;margin-left:4px">기본</span>`;
+
       return `
       <tr data-id="${p.id}" style="cursor:pointer;border-bottom:1px solid var(--line-sub)">
-        <td style="padding:6px 4px"><b>${p.material}</b> ${badgeHtml}</td>
+        <td style="padding:6px 4px"><b>SMC</b> ${badgeHtml}</td>
         <td style="padding:6px 4px;font-family:var(--font-num);font-weight:600">${p.size_key}</td>
-        <td style="padding:6px 4px;max-width:115px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.name}">${p.name}</td>
+        <td style="padding:6px 4px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.name}">${p.name} ${statusBadge}</td>
         <td style="padding:6px 4px;text-align:center;white-space:nowrap">
-          <button type="button" class="btn-sm btn-panel-apply" data-id="${p.id}" style="padding:2px 6px;font-size:10px;background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600" title="${isEn ? 'Apply this panel to current drawing' : '이 판넬을 현재 탱크 도면에 즉시 반영'}">${isEn ? '⚡Apply' : '⚡적용'}</button>
+          <button type="button" class="btn-sm btn-panel-apply" data-id="${p.id}" style="padding:2px 6px;font-size:10px;background:${isCustom ? '#10b981' : 'var(--accent)'};color:#fff;border-color:${isCustom ? '#10b981' : 'var(--accent)'};font-weight:700" title="${isEn ? 'Apply this panel to current drawing' : '이 판넬을 현재 탱크 도면에 즉시 반영'}">${isCustom ? (isEn ? '⚡Active' : '⚡적용됨') : (isEn ? '⚡Apply' : '⚡적용')}</button>
           <button type="button" class="btn-sm btn-panel-edit" data-id="${p.id}" style="padding:2px 6px;font-size:10px">${isEn ? 'Edit' : '수정'}</button>
-          ${!p.is_default ? `<button type="button" class="btn-sm btn-panel-del" data-id="${p.id}" style="padding:2px 6px;font-size:10px;color:#ef4444">${isEn ? 'Del' : '삭제'}</button>` : ''}
+          ${isCustom ? `<button type="button" class="btn-sm btn-panel-reset" data-id="${p.id}" data-cat="${p.category}" data-size="${p.size_key}" style="padding:2px 6px;font-size:10px;color:#ef4444" title="${isEn ? 'Reset to factory default shape' : '기본 표준 형상으로 초기화'}">${isEn ? '↺Reset' : '↺초기화'}</button>` : ''}
         </td>
       </tr>
       `;
@@ -5390,7 +5463,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         const pid = btn.getAttribute('data-id');
         const p = dbPanelsList.find(x => String(x.id) === String(pid));
         if (!p) return;
-        const mat = p.material || 'SMC';
+        const mat = 'SMC';
         const key = p.size_key || `${p.width}x${p.height}`;
         const ents = p.entities;
         if (!ents || !ents.length) {
@@ -5418,6 +5491,34 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
     tbody.querySelectorAll('.btn-panel-edit').forEach(btn => {
       btn.addEventListener('click', () => editPanel(btn.getAttribute('data-id')));
+    });
+
+    tbody.querySelectorAll('.btn-panel-reset').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cat = btn.getAttribute('data-cat');
+        const sizeKey = btn.getAttribute('data-size');
+        if (!confirm(`[${sizeKey} ${cat}] 판넬의 커스텀 형상을 삭제하고 공장 기본 표준 형상으로 초기화하시겠습니까?`)) return;
+        try {
+          let custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
+          custom = custom.filter(p => !(p.size_key === sizeKey && (p.category === cat || p.category === 'common' || p.category === 'all')));
+          localStorage.setItem('tankcad_custom_panels', JSON.stringify(custom));
+        } catch(e) {}
+        // Revert TEMPLATES and SIDE_T for this size to factory builtins
+        try {
+          if (typeof _FACTORY_TEMPLATES !== 'undefined' && _FACTORY_TEMPLATES.SMC && _FACTORY_TEMPLATES.SMC[sizeKey]) {
+            TEMPLATES.SMC[sizeKey] = JSON.parse(JSON.stringify(_FACTORY_TEMPLATES.SMC[sizeKey]));
+          }
+          if (typeof _FACTORY_SIDE_T !== 'undefined' && _FACTORY_SIDE_T.SMC && _FACTORY_SIDE_T.SMC[sizeKey]) {
+            SIDE_T.SMC[sizeKey] = JSON.parse(JSON.stringify(_FACTORY_SIDE_T.SMC[sizeKey]));
+          }
+        } catch(e) {}
+        applyActiveTemplates();
+        loadDbPanels();
+        rebuild(false);
+        draw();
+        alert(`✅ [${sizeKey}] 판넬이 기본 표준 형상으로 초기화되었습니다.`);
+      });
     });
 
     tbody.querySelectorAll('.btn-panel-del').forEach(btn => {
@@ -7473,6 +7574,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       regBtn.style.borderColor = '#10b981';
     }
 
+    applyActiveTemplates();
+    loadDbPanels();
     rebuild(false);
     draw();
     updateViewBadges(cat, sub, h);
@@ -7492,6 +7595,10 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         registeredCount++;
       }
     });
+    applyActiveTemplates();
+    loadDbPanels();
+    rebuild(false);
+    draw();
     alert(`🎉 남아있는 ${registeredCount}개의 블록이 지정된 부품·판넬로 성공적으로 일괄 등록되었습니다! 도면에 즉시 반영되었습니다.`);
   };
 
@@ -7684,6 +7791,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       } catch (e) { console.warn(e); }
     }
 
+    loadDbPanels();
     rebuild(false);
     draw();
     updateViewBadges(cat, sub, heightStr);
@@ -7740,6 +7848,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       }
     } catch (e) { console.warn(e); }
 
+    loadDbPanels();
     rebuild(false);
     draw();
     updateViewBadges(cat, sub, cadCurrentHeight);

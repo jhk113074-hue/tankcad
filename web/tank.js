@@ -196,19 +196,36 @@
   /* ---------- 패널 내부 도형 (CeilLT) ---------- */
   function panelShapes(templates, mat, x, y, w, h) {
     const key = w + 'x' + h;
-    const t = (templates[mat] || templates.SMC)[key] || [];
+    const t = ((templates && (templates[mat] || templates.SMC)) || {})[key] || [];
     const out = [];
     t.forEach(s => {
-      if (s.k === 'line') out.push({ t: 'line', a: [x + s.p[0][0], y + s.p[0][1]], b: [x + s.p[1][0], y + s.p[1][1]], layer: 'PANEL_DETAIL' });
-      else if (s.k === 'poly') {
-        const p = s.p.map(q => [x + q[0], y + q[1]]);
-        const isClosed = s.c !== false;
-        const cnt = isClosed ? p.length : p.length - 1;
-        for (let i = 0; i < cnt; i++) out.push({ t: 'line', a: p[i], b: p[(i + 1) % p.length], layer: 'PANEL_DETAIL' });
-      } else if (s.k === 'circle') out.push({ t: 'circle', c: [x + s.c[0], y + s.c[1]], r: s.r, layer: 'PANEL_DETAIL' });
-      else if (s.k === 'arc') {
-        const d = (p) => Math.atan2(p[1] - s.c[1], p[0] - s.c[0]) * 180 / Math.PI;
-        out.push({ t: 'arc', c: [x + s.c[0], y + s.c[1]], r: s.r, a0: d(s.s), a1: d(s.e), layer: 'PANEL_DETAIL' });
+      if (!s) return;
+      const k = s.k || s.t || s.type;
+      if (k === 'line') {
+        const a = (s.p && s.p[0]) || s.a;
+        const b = (s.p && s.p[1]) || s.b;
+        if (a && b) out.push({ t: 'line', a: [x + a[0], y + a[1]], b: [x + b[0], y + b[1]], layer: 'PANEL_DETAIL' });
+      } else if (k === 'poly') {
+        const rawP = s.p || s.pts || [];
+        if (rawP.length >= 2) {
+          const p = rawP.map(q => [x + q[0], y + q[1]]);
+          const isClosed = s.c !== false;
+          const cnt = isClosed ? p.length : p.length - 1;
+          for (let i = 0; i < cnt; i++) out.push({ t: 'line', a: p[i], b: p[(i + 1) % p.length], layer: 'PANEL_DETAIL' });
+        }
+      } else if (k === 'circle' && (s.c || s.center)) {
+        const c = s.c || s.center;
+        out.push({ t: 'circle', c: [x + c[0], y + c[1]], r: s.r || 10, layer: 'PANEL_DETAIL' });
+      } else if (k === 'arc' && (s.c || s.center)) {
+        const c = s.c || s.center;
+        const d = (p) => (p && Array.isArray(p)) ? (Math.atan2(p[1] - c[1], p[0] - c[0]) * 180 / Math.PI) : 0;
+        let a0 = 0, a1 = 360;
+        if (s.a0 !== undefined && s.a1 !== undefined) {
+          a0 = s.a0; a1 = s.a1;
+        } else if (s.s && s.e) {
+          a0 = d(s.s); a1 = d(s.e);
+        }
+        out.push({ t: 'arc', c: [x + c[0], y + c[1]], r: s.r || 10, a0, a1, layer: 'PANEL_DETAIL' });
       }
     });
     return out;
@@ -218,35 +235,48 @@
     if (!ents || !ents.length) return [];
     let minX = Infinity, maxX = -Infinity;
     ents.forEach(e => {
-      if (e.k === 'line') {
-        minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
-      } else if (e.k === 'circle' || e.k === 'arc') {
-        minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r);
-      } else if (e.k === 'poly') {
-        e.p.forEach(pt => { minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]); });
+      if (!e) return;
+      const k = e.k || e.t || e.type;
+      if (k === 'line') {
+        const p1 = (e.p && e.p[0]) || e.a;
+        const p2 = (e.p && e.p[1]) || e.b;
+        if (p1 && p2) {
+          minX = Math.min(minX, p1[0], p2[0]); maxX = Math.max(maxX, p1[0], p2[0]);
+        }
+      } else if ((k === 'circle' || k === 'arc') && e.c) {
+        minX = Math.min(minX, e.c[0] - (e.r || 10)); maxX = Math.max(maxX, e.c[0] + (e.r || 10));
+      } else if (k === 'poly') {
+        const pts = e.p || e.pts || [];
+        pts.forEach(pt => { if (pt) { minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]); } });
       }
     });
     if (minX === Infinity) return ents;
     const midX = (minX + maxX) / 2;
     return ents.map(e => {
-      if (e.k === 'line') {
+      if (!e) return e;
+      const k = e.k || e.t || e.type;
+      if (k === 'line') {
+        const p1 = (e.p && e.p[0]) || e.a;
+        const p2 = (e.p && e.p[1]) || e.b;
+        if (!p1 || !p2) return e;
         return {
           k: 'line',
           p: [
-            [Math.round((2 * midX - e.p[0][0]) * 10) / 10, e.p[0][1]],
-            [Math.round((2 * midX - e.p[1][0]) * 10) / 10, e.p[1][1]]
+            [Math.round((2 * midX - p1[0]) * 10) / 10, p1[1]],
+            [Math.round((2 * midX - p2[0]) * 10) / 10, p2[1]]
           ]
         };
-      } else if (e.k === 'circle') {
-        return { k: 'circle', c: [Math.round((2 * midX - e.c[0]) * 10) / 10, e.c[1]], r: e.r };
-      } else if (e.k === 'arc') {
-        const a0 = (180 - (e.a1 || 360) + 360) % 360;
-        const a1 = (180 - (e.a0 || 0) + 360) % 360;
-        return { k: 'arc', c: [Math.round((2 * midX - e.c[0]) * 10) / 10, e.c[1]], r: e.r, a0, a1 };
-      } else if (e.k === 'poly') {
+      } else if (k === 'circle' && e.c) {
+        return { k: 'circle', c: [Math.round((2 * midX - e.c[0]) * 10) / 10, e.c[1]], r: e.r || 10 };
+      } else if (k === 'arc' && e.c) {
+        const a0 = (180 - (e.a1 !== undefined ? e.a1 : 360) + 360) % 360;
+        const a1 = (180 - (e.a0 !== undefined ? e.a0 : 0) + 360) % 360;
+        return { k: 'arc', c: [Math.round((2 * midX - e.c[0]) * 10) / 10, e.c[1]], r: e.r || 10, a0, a1 };
+      } else if (k === 'poly') {
+        const pts = e.p || e.pts || [];
         return {
           k: 'poly',
-          p: e.p.map(pt => [Math.round((2 * midX - pt[0]) * 10) / 10, pt[1]]),
+          p: pts.map(pt => [Math.round((2 * midX - pt[0]) * 10) / 10, pt[1]]),
           c: e.c
         };
       }
@@ -1961,18 +1991,34 @@
             bEnts.push({ t: 'circle', c: [Math.round(cx + rHole * Math.cos(rad)), Math.round(cy + rHole * Math.sin(rad))], r: 10, layer: 'PANEL_DETAIL' });
           }
         } else {
-          const mTemplates = sideT[mat] || {};
+          const mTemplates = (sideT && (sideT[mat] || sideT.SMC)) || {};
           const t = mTemplates[w + 'x' + h] || [];
           t.forEach(s => {
-            if (s.k === 'line') bEnts.push({ t: 'line', a: s.p[0], b: s.p[1], layer: 'PANEL_DETAIL' });
-            else if (s.k === 'poly') {
-              for (let k = 0; k + 1 < s.p.length; k++) bEnts.push({ t: 'line', a: s.p[k], b: s.p[k + 1], layer: 'PANEL_DETAIL' });
-              if (s.c !== false) bEnts.push({ t: 'line', a: s.p[s.p.length - 1], b: s.p[0], layer: 'PANEL_DETAIL' });
-            }
-            else if (s.k === 'circle') bEnts.push({ t: 'circle', c: s.c, r: s.r, layer: 'PANEL_DETAIL' });
-            else if (s.k === 'arc') {
-              const d = (p) => Math.atan2(p[1] - s.c[1], p[0] - s.c[0]) * 180 / Math.PI;
-              bEnts.push({ t: 'arc', c: s.c, r: s.r, a0: d(s.s), a1: d(s.e), layer: 'PANEL_DETAIL' });
+            if (!s) return;
+            const k = s.k || s.t || s.type;
+            if (k === 'line') {
+              const a = (s.p && s.p[0]) || s.a;
+              const b = (s.p && s.p[1]) || s.b;
+              if (a && b) bEnts.push({ t: 'line', a, b, layer: 'PANEL_DETAIL' });
+            } else if (k === 'poly') {
+              const p = s.p || s.pts || [];
+              if (p.length >= 2) {
+                for (let k = 0; k + 1 < p.length; k++) bEnts.push({ t: 'line', a: p[k], b: p[k + 1], layer: 'PANEL_DETAIL' });
+                if (s.c !== false && p.length > 2) bEnts.push({ t: 'line', a: p[p.length - 1], b: p[0], layer: 'PANEL_DETAIL' });
+              }
+            } else if (k === 'circle' && (s.c || s.center)) {
+              const c = s.c || s.center;
+              bEnts.push({ t: 'circle', c, r: s.r || 10, layer: 'PANEL_DETAIL' });
+            } else if (k === 'arc' && (s.c || s.center)) {
+              const c = s.c || s.center;
+              const d = (p) => (p && Array.isArray(p)) ? (Math.atan2(p[1] - c[1], p[0] - c[0]) * 180 / Math.PI) : 0;
+              let a0 = 0, a1 = 360;
+              if (s.a0 !== undefined && s.a1 !== undefined) {
+                a0 = s.a0; a1 = s.a1;
+              } else if (s.s && s.e) {
+                a0 = d(s.s); a1 = d(s.e);
+              }
+              bEnts.push({ t: 'arc', c, r: s.r || 10, a0, a1, layer: 'PANEL_DETAIL' });
             }
           });
         }
@@ -2829,8 +2875,12 @@
     const projectTemplateEntities = (tList, plane, originX, originY, originZ, defaultLayer = 'PANEL_DETAIL', depth = 0) => {
       if (!tList || !tList.length) return;
       tList.forEach(s => {
-        if (s.k === 'line') {
-          const p1 = s.p[0], p2 = s.p[1];
+        if (!s) return;
+        const k = s.k || s.t || s.type;
+        if (k === 'line') {
+          const p1 = (s.p && s.p[0]) || s.a;
+          const p2 = (s.p && s.p[1]) || s.b;
+          if (!p1 || !p2) return;
           let pt1, pt2;
           if (plane === 'XZ') {
             pt1 = toIso(originX + p1[0], originY, originZ + p1[1]);
@@ -2843,21 +2893,32 @@
             pt2 = toIso(originX + p2[0], originY + p2[1], originZ);
           }
           ln(pt1, pt2, defaultLayer, depth);
-        } else if (s.k === 'poly') {
-          const pts = s.p.map(p => {
-            if (plane === 'XZ') return toIso(originX + p[0], originY, originZ + p[1]);
-            if (plane === 'YZ') return toIso(originX, originY + p[0], originZ + p[1]);
-            return toIso(originX + p[0], originY + p[1], originZ);
-          });
-          poly(pts, defaultLayer, s.c !== false, false, depth);
-        } else if (s.k === 'circle') {
-          if (plane === 'XZ') isoCircle(originX + s.c[0], originY, originZ + s.c[1], s.r, 'XZ', defaultLayer, depth);
-          else if (plane === 'YZ') isoCircle(originX, originY + s.c[0], originZ + s.c[1], s.r, 'YZ', defaultLayer, depth);
-          else isoCircle(originX + s.c[0], originY + s.c[1], originZ, s.r, 'XY', defaultLayer, depth);
-        } else if (s.k === 'arc') {
-          const cx = s.c[0], cy = s.c[1], r = s.r;
-          const a0 = Math.atan2(s.s[1] - cy, s.s[0] - cx);
-          let a1 = Math.atan2(s.e[1] - cy, s.e[0] - cx);
+        } else if (k === 'poly') {
+          const rawP = s.p || s.pts || [];
+          if (rawP.length >= 2) {
+            const pts = rawP.map(p => {
+              if (plane === 'XZ') return toIso(originX + p[0], originY, originZ + p[1]);
+              if (plane === 'YZ') return toIso(originX, originY + p[0], originZ + p[1]);
+              return toIso(originX + p[0], originY + p[1], originZ);
+            });
+            poly(pts, defaultLayer, s.c !== false, false, depth);
+          }
+        } else if (k === 'circle' && (s.c || s.center)) {
+          const c = s.c || s.center;
+          if (plane === 'XZ') isoCircle(originX + c[0], originY, originZ + c[1], s.r || 10, 'XZ', defaultLayer, depth);
+          else if (plane === 'YZ') isoCircle(originX, originY + c[0], originZ + c[1], s.r || 10, 'YZ', defaultLayer, depth);
+          else isoCircle(originX + c[0], originY + c[1], originZ, s.r || 10, 'XY', defaultLayer, depth);
+        } else if (k === 'arc' && (s.c || s.center)) {
+          const c = s.c || s.center;
+          const cx = c[0] || 0, cy = c[1] || 0, r = s.r || 10;
+          let a0 = 0, a1 = Math.PI * 2;
+          if (s.a0 !== undefined && s.a1 !== undefined) {
+            a0 = (s.a0 * Math.PI) / 180;
+            a1 = (s.a1 * Math.PI) / 180;
+          } else if (s.s && s.e) {
+            a0 = Math.atan2(s.s[1] - cy, s.s[0] - cx);
+            a1 = Math.atan2(s.e[1] - cy, s.e[0] - cx);
+          }
           let da = a1 - a0;
           while (da < 0) da += Math.PI * 2;
           const segs = Math.max(4, Math.min(10, Math.round((r * da) / 40)));
