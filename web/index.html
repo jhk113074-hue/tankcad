@@ -285,6 +285,13 @@ tr:last-child td{border-bottom:0}
 .panel-badge-flat{position:absolute;top:2px;right:2px;font-size:8px;line-height:1;padding:1px 3px;background:#0284c7;color:#fff;border-radius:2px;font-weight:700;pointer-events:none;z-index:4}
 .panel-badge-half2{position:absolute;top:2px;right:2px;font-size:8px;line-height:1;padding:1px 3px;background:#7c3aed;color:#fff;border-radius:2px;font-weight:700;pointer-events:none;z-index:4}
 .panel-badge-fitting{position:absolute;top:2px;right:2px;font-size:8px;line-height:1;padding:1px 3px;background:#10b981;color:#fff;border-radius:2px;font-weight:700;pointer-events:none;z-index:4}
+.badge-plan-nozzle{position:absolute;font-size:8px;font-weight:800;padding:1px 3px;border-radius:3px;color:#fff;z-index:7;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,0.5);line-height:1}
+.badge-noz-inlet{background:#0284c7;bottom:2px;left:4px}
+.badge-noz-outlet{background:#059669;bottom:2px;right:4px}
+.badge-noz-overflow{background:#d97706;top:4px;right:2px}
+.badge-noz-drain{background:#475569;bottom:2px;left:2px}
+.badge-noz-fire{background:#dc2626;bottom:2px;left:40%}
+.badge-noz-custom{background:#7c3aed;top:2px;left:2px}
 
 /* Modern Side Elevation Edit UI */
 .face-seg-control{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:3px;gap:4px;margin-bottom:10px}
@@ -399,7 +406,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.79</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.80</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -472,7 +479,7 @@ canvas.drag{cursor:grabbing}
           <h2 id="secTitlePlan" style="margin:0">📐 평면도 편집 모드</h2>
           <button type="button" id="eReset" class="btn-preset danger" style="padding:3px 8px;font-size:11px">🔄 편집 초기화</button>
         </div>
-        <p class="hint" id="hintPlan" style="margin-bottom:8px">도구를 선택하고 평면 격자를 클릭하여 <b>패널 삭제</b>, <b>맨홀</b>, <b>벤트</b>, <b>사다리</b>, <b>급수구</b>를 지정합니다. (위쪽: 탱크 배면)</p>
+        <p class="hint" id="hintPlan" style="margin-bottom:8px">도구를 선택하고 평면 격자를 클릭하여 <b>패널 삭제</b>, <b>맨홀</b>, <b>벤트</b>, <b>사다리</b>를 지정합니다. (위쪽: 탱크 배면)</p>
 
         <!-- 정돈된 평면도 도구 팔레트 카드 -->
         <div class="plan-tool-card">
@@ -481,7 +488,6 @@ canvas.drag{cursor:grabbing}
             <label class="plan-tool-chip"><input type="radio" name="emode" value="han"><span id="lblToolHan">🔘 맨홀 (손잡이)</span></label>
             <label class="plan-tool-chip"><input type="radio" name="emode" value="vent"><span id="lblToolVent">💨 에어벤트</span></label>
             <label class="plan-tool-chip"><input type="radio" name="emode" value="lad"><span id="lblToolLad">🪜 사다리</span></label>
-            <label class="plan-tool-chip"><input type="radio" name="emode" value="inlet"><span id="lblToolInlet">💧 급수구(INLET)</span></label>
             <label class="plan-tool-chip"><input type="radio" name="emode" value="pil"><span id="lblToolPil">🏛️ 기둥 (삭제칸)</span></label>
           </div>
         </div>
@@ -494,7 +500,7 @@ canvas.drag{cursor:grabbing}
             <div id="egrid" class="egrid" aria-label="평면도 패널 격자"></div>
           </div>
         </div>
-        <p class="hint" id="hintPartition" style="margin-top:6px">💡 칸막이가 있는 경우 각 구획별로 급수구(INLET)를 별도 설치할 수 있습니다.</p>
+        <p class="hint" id="hintPartition" style="margin-top:6px;display:none"></p>
       </section>
     </div>
 
@@ -567,9 +573,8 @@ canvas.drag{cursor:grabbing}
 
         <!-- 3. 빠른 프리셋 & 전체 비우기 -->
         <div class="preset-action-bar">
-          <div class="btn-group">
-            <button type="button" id="nozPresetSingle" class="btn-preset">⚡ 1구획 기본배관</button>
-            <button type="button" id="nozPresetDouble" class="btn-preset primary">⚡ 2구획 기본배관</button>
+          <div class="btn-group" id="nozPresetBtnGroup">
+            <button type="button" id="nozPresetSingle" class="btn-preset primary">⚡ 1구획 기본배관</button>
           </div>
           <button type="button" id="nozClearAll" class="btn-preset danger">전체 비우기</button>
         </div>
@@ -1936,7 +1941,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.79</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.80</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1946,7 +1951,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.79</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.80</span></div>
     </div>
   </main>
 </div>
@@ -7769,14 +7774,13 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       hintDims: '💡 길이는 여러 칸에 입력 시 구간별 분할(예: 3000 + 2000)됩니다. 폭은 단일 치수(mm)입니다.',
       secTitlePlan: '📐 평면도 편집 모드',
       btnResetEdit: '🔄 편집 초기화',
-      hintPlan: '도구를 선택하고 평면 격자를 클릭하여 <b>패널 삭제</b>, <b>맨홀</b>, <b>벤트</b>, <b>사다리</b>, <b>급수구</b>를 지정합니다. (위쪽: 탱크 배면)',
+      hintPlan: '도구를 선택하고 평면 격자를 클릭하여 <b>패널 삭제</b>, <b>맨홀</b>, <b>벤트</b>, <b>사다리</b>를 지정합니다. (위쪽: 탱크 배면)',
       toolDel: '❌ 패널 삭제',
       toolHan: '🔘 맨홀 (손잡이)',
       toolVent: '💨 에어벤트',
       toolLad: '🪜 사다리',
-      toolInlet: '💧 급수구(INLET)',
       toolPil: '🏛️ 기둥 (삭제칸)',
-      hintPartition: '💡 칸막이가 있는 경우 각 구획별로 급수구(INLET)를 별도 설치할 수 있습니다.',
+      hintPartition: '',
       secTitleSide: '📐 측면 편집 (판넬 및 배관)',
       pipeToggleOn: '💧 배관 ON',
       pipeToggleOff: '💧 배관 OFF',
@@ -7875,14 +7879,13 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       hintDims: '💡 Multi-entry length (e.g. 3000 + 2000) creates partitions. Width is single dimension (mm).',
       secTitlePlan: '📐 Plan View Edit Mode',
       btnResetEdit: '🔄 Reset Edit',
-      hintPlan: 'Select a tool and click the grid to <b>delete panels</b> or assign <b>manhole</b>, <b>vent</b>, <b>ladder</b>, <b>inlet</b>. (Top: Rear face)',
+      hintPlan: 'Select a tool and click the grid to <b>delete panels</b> or assign <b>manhole</b>, <b>vent</b>, <b>ladder</b>. (Top: Rear face)',
       toolDel: '❌ Delete Panel',
       toolHan: '🔘 Manhole (Handle)',
       toolVent: '💨 Air Vent',
       toolLad: '🪜 Ladder',
-      toolInlet: '💧 Water Inlet',
       toolPil: '🏛️ Pillar (Void)',
-      hintPartition: '💡 With partitions, each compartment can have an individual Water Inlet (INLET).',
+      hintPartition: '',
       secTitleSide: '📐 Side Elevation & Nozzles',
       pipeToggleOn: '💧 Nozzles ON',
       pipeToggleOff: '💧 Nozzles OFF',
@@ -8086,7 +8089,6 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if ($('lblToolHan')) $('lblToolHan').textContent = t.toolHan;
     if ($('lblToolVent')) $('lblToolVent').textContent = t.toolVent;
     if ($('lblToolLad')) $('lblToolLad').textContent = t.toolLad;
-    if ($('lblToolInlet')) $('lblToolInlet').textContent = t.toolInlet;
     if ($('lblToolPil')) $('lblToolPil').textContent = t.toolPil;
     if ($('hintPartition')) $('hintPartition').textContent = t.hintPartition;
 
@@ -8107,8 +8109,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if ($('lblToolFlatHalf')) $('lblToolFlatHalf').textContent = t.toolFlatHalf;
     if ($('lblToolFitting')) $('lblToolFitting').textContent = t.toolFitting;
     if ($('lblSecNozTool')) $('lblSecNozTool').textContent = t.secNozTool;
-    if ($('nozPresetSingle')) $('nozPresetSingle').textContent = t.nozPresetSingle;
-    if ($('nozPresetDouble')) $('nozPresetDouble').textContent = t.nozPresetDouble;
+    if (typeof updateNozzlePresetButtons === 'function') updateNozzlePresetButtons();
     if ($('nozClearAll')) $('nozClearAll').textContent = t.nozClearAll;
     if ($('nozAddCustomBtn')) $('nozAddCustomBtn').textContent = t.nozAddCustomBtn;
     if ($('nozSchedSummaryTitle')) $('nozSchedSummaryTitle').textContent = t.nozSchedTitle;
@@ -9907,6 +9908,49 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     ];
   }
 
+  function getMultiCompNozzles(map, H, numComps) {
+    if (numComps <= 1) return getSingleCompNozzles(map, H);
+    if (numComps === 2) return getDoubleCompNozzles(map, H);
+
+    const hVal = H || 3000;
+    const numCols = map ? map.cols.length : 10;
+    const isEn = currentLang === 'en';
+    const res = [];
+    const L_secs = (vals('L') || []).filter(Boolean);
+
+    for (let c = 1; c <= numComps; c++) {
+      let colStart = 1, colEnd = numCols;
+      if (L_secs.length >= numComps && map) {
+        let cum = 0;
+        for (let k = 0; k < c - 1; k++) cum += L_secs[k];
+        colStart = map.xs.findIndex(x => x >= cum) + 1;
+        if (colStart < 1) colStart = 1;
+        const cumNext = cum + L_secs[c - 1];
+        colEnd = map.xs.findIndex(x => x >= cumNext);
+        if (colEnd < colStart) colEnd = Math.min(numCols, colStart + 1);
+      } else {
+        const segSize = Math.max(1, Math.floor(numCols / numComps));
+        colStart = (c - 1) * segSize + 1;
+        colEnd = (c === numComps) ? numCols : (c * segSize);
+      }
+
+      const c_inlet = colStart;
+      const c_outlet = Math.min(colStart + 1, colEnd);
+      const c_drain = colStart;
+      const c_fire = Math.min(colStart + 2, colEnd);
+      const baseIdx = (c - 1) * 5;
+
+      res.push(
+        { id: `noz_${baseIdx + 1}`, mark: `N${baseIdx + 1}`, name: 'INLET', desc: isEn ? `Comp.${c} Inlet` : `${c}구획 유입구`, size: '100A', type: 'FLANGE', face: 'front', seg: c_inlet, offset: 0, elev: Math.max(100, hVal - 300), use: true, topCell: [0, c_inlet - 1] },
+        { id: `noz_${baseIdx + 2}`, mark: `N${baseIdx + 2}`, name: 'OUTLET', desc: isEn ? `Comp.${c} Outlet` : `${c}구획 유출구`, size: '150A', type: 'FLANGE', face: 'front', seg: c_outlet, offset: 0, elev: 300, use: true },
+        { id: `noz_${baseIdx + 3}`, mark: `N${baseIdx + 3}`, name: 'OVERFLOW', desc: isEn ? `Comp.${c} Overflow` : `${c}구획 월류관`, size: '100A', type: 'FLANGE', face: (c === 1 ? 'left' : 'right'), seg: 1, offset: 0, elev: Math.max(100, hVal - 200), use: true },
+        { id: `noz_${baseIdx + 4}`, mark: `N${baseIdx + 4}`, name: 'DRAIN', desc: isEn ? `Comp.${c} Drain` : `${c}구획 배수구`, size: '50A', type: 'SOCKET', face: 'front', seg: c_drain, offset: -250, elev: 100, use: true },
+        { id: `noz_${baseIdx + 5}`, mark: `N${baseIdx + 5}`, name: 'FIRE', desc: isEn ? `Comp.${c} Fire Water` : `${c}구획 소방용수`, size: '150A', type: 'FLANGE', face: 'front', seg: c_fire, offset: 0, elev: 200, use: true }
+      );
+    }
+    return res;
+  }
+
   function renderSegOptions(face, curSeg, map, L) {
     if (!map) return '';
     const isCols = (face === 'front' || face === 'rear');
@@ -10131,8 +10175,16 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         }
 
         let cellNozzles = [];
-        if (isTop) {
-          cellNozzles = nozzleData.filter(n => n.use !== false && n.face === 'top' && n.topCell && n.topCell[0] === tierIdx && n.topCell[1] === ci);
+        const isPipeOn = $('pipeFeatureToggle') ? $('pipeFeatureToggle').checked : true;
+        if (!isPipeOn) {
+          cellNozzles = [];
+        } else if (isTop) {
+          const topNozs = nozzleData.filter(n => n.use !== false && n.face === 'top' && n.topCell && n.topCell[0] === tierIdx && n.topCell[1] === ci);
+          const frontNozs = nozzleData.filter(n => n.use !== false && n.face === 'front' && (Number(n.seg) || 1) === (ci + 1) && tierIdx === 0);
+          const rearNozs = nozzleData.filter(n => n.use !== false && n.face === 'rear' && (Number(n.seg) || 1) === (ci + 1) && tierIdx === (map.rows.length - 1));
+          const leftNozs = nozzleData.filter(n => n.use !== false && n.face === 'left' && (Number(n.seg) || 1) === (tierIdx + 1) && ci === 0);
+          const rightNozs = nozzleData.filter(n => n.use !== false && n.face === 'right' && (Number(n.seg) || 1) === (tierIdx + 1) && ci === (map.cols.length - 1));
+          cellNozzles = [...topNozs, ...frontNozs, ...rearNozs, ...leftNozs, ...rightNozs];
         } else {
           cellNozzles = nozzleData.filter(n => {
             if (n.use === false || n.face !== currentNozFace) return false;
@@ -10153,24 +10205,50 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           }[n.name] || 'noz-marker-custom';
 
           const svcAbbr = (C && C.getNozzleAbbr) ? C.getNozzleAbbr(n.name) : ({ INLET: 'IN', OUTLET: 'OUT', OVERFLOW: 'O/F', DRAIN: 'DR', FIRE: 'FF' }[n.name] || n.name);
+          const faceKo = { front: '정면', rear: '배면', left: '좌측', right: '우측', top: '상부' }[n.face] || n.face;
 
           marker.className = `noz-marker ${svcClass}` + (n.id === selectedNozzleId ? ' selected' : '');
-          marker.title = `[${n.mark}] ${svcAbbr} ${n.size} (${n.type}) ${n.face === 'top' ? 'TOP' : 'EL.+' + n.elev + 'mm'} ${n.desc ? '[' + n.desc + ']' : ''}`;
+          marker.title = `[${n.mark}] ${svcAbbr} ${n.size} (${n.type}) [${faceKo}] ${n.face === 'top' ? '상부' : 'EL.+' + n.elev + 'mm'} ${n.desc ? '[' + n.desc + ']' : ''}`;
 
           let leftPct = 50;
-          if (n.offset === -250 || n.offset < -50) {
-            leftPct = 26;
-          } else if (n.offset === 250 || n.offset > 50) {
-            leftPct = 74;
-          } else if (cellNozzles.length >= 2) {
-            const idx = cellNozzles.indexOf(n);
-            leftPct = (idx === 0) ? 26 : 74;
-          }
-
           let topPct = 50;
-          if (!isTop && tierInt) {
-            const frac = (Number(n.elev || 0) - tierInt.y0) / tierInt.h;
-            topPct = Math.max(15, Math.min(85, Math.round((1 - frac) * 100)));
+
+          if (isTop) {
+            if (n.face === 'front') {
+              topPct = 84;
+              leftPct = (n.offset === -250 || n.offset < -50) ? 24 : (n.offset === 250 || n.offset > 50 ? 76 : 50);
+            } else if (n.face === 'rear') {
+              topPct = 16;
+              leftPct = (n.offset === -250 || n.offset < -50) ? 76 : (n.offset === 250 || n.offset > 50 ? 24 : 50);
+            } else if (n.face === 'left') {
+              leftPct = 16;
+              topPct = 50;
+            } else if (n.face === 'right') {
+              leftPct = 84;
+              topPct = 50;
+            } else {
+              leftPct = 50;
+              topPct = 50;
+            }
+            if (cellNozzles.length >= 2) {
+              const idx = cellNozzles.indexOf(n);
+              if (n.face === 'front' || n.face === 'rear') {
+                leftPct = (idx === 0) ? 24 : (idx === 1 ? 76 : 50);
+              }
+            }
+          } else {
+            if (n.offset === -250 || n.offset < -50) {
+              leftPct = 26;
+            } else if (n.offset === 250 || n.offset > 50) {
+              leftPct = 74;
+            } else if (cellNozzles.length >= 2) {
+              const idx = cellNozzles.indexOf(n);
+              leftPct = (idx === 0) ? 26 : 74;
+            }
+            if (tierInt) {
+              const frac = (Number(n.elev || 0) - tierInt.y0) / tierInt.h;
+              topPct = Math.max(15, Math.min(85, Math.round((1 - frac) * 100)));
+            }
           }
 
           marker.style.left = leftPct + '%';
@@ -10460,6 +10538,9 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       }
     }
     if (!map) return;
+    if (typeof updateNozzlePresetButtons === 'function') {
+      updateNozzlePresetButtons();
+    }
     renderNozzleElevationGrid(map);
     updateMiniInspector();
     updatePreviewTbody();
@@ -10593,6 +10674,36 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         b.appendChild(pBadge);
       }
 
+      const isPipeOn = $('pipeFeatureToggle') ? $('pipeFeatureToggle').checked : true;
+      if (!off && isPipeOn) {
+        const cellNozs = (nozzleData || []).filter(n => {
+          if (n.use === false) return false;
+          if (n.face === 'top') return n.topCell && n.topCell[0] === i && n.topCell[1] === j;
+          if (n.face === 'front') return (Number(n.seg) || 1) === (j + 1) && i === 0;
+          if (n.face === 'rear') return (Number(n.seg) || 1) === (j + 1) && i === (map.rows.length - 1);
+          if (n.face === 'left') return (Number(n.seg) || 1) === (i + 1) && j === 0;
+          if (n.face === 'right') return (Number(n.seg) || 1) === (i + 1) && j === (map.cols.length - 1);
+          return false;
+        });
+
+        cellNozs.forEach(n => {
+          const nozBadge = document.createElement('span');
+          const svcClass = {
+            INLET: 'badge-noz-inlet',
+            OUTLET: 'badge-noz-outlet',
+            OVERFLOW: 'badge-noz-overflow',
+            DRAIN: 'badge-noz-drain',
+            FIRE: 'badge-noz-fire'
+          }[n.name] || 'badge-noz-custom';
+          const faceKo = { front: '정면', rear: '배면', left: '좌측', right: '우측', top: '상부' }[n.face] || n.face;
+          const svcAbbr = (C && C.getNozzleAbbr) ? C.getNozzleAbbr(n.name) : (n.name || 'NOZ');
+          nozBadge.className = `badge-plan-nozzle ${svcClass}`;
+          nozBadge.title = `[${n.mark}] ${svcAbbr} ${n.size} (${faceKo} ${n.face === 'top' ? '상부' : 'EL.+' + n.elev + 'mm'})`;
+          nozBadge.textContent = n.mark;
+          b.appendChild(nozBadge);
+        });
+      }
+
       b.addEventListener('click', () => {
         const mode = document.querySelector('input[name=emode]:checked').value;
         if (mode === 'pil' && !removed.has(key)) return;
@@ -10602,91 +10713,6 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         } else if (mode === 'lad') {
           const ex = C.exposedSides(map, i, j), cur = ladders[key], seq = [undefined, ...ex], nx = seq[(seq.indexOf(cur) + 1) % seq.length];
           if (nx) ladders[key] = nx; else delete ladders[key];
-        } else if (mode === 'inlet') {
-          if (!removed.has(key)) {
-            // 구획 인덱스 판별
-            let compIdx = 1, totalComps = 1;
-            if (L_secs.length > 1) {
-              totalComps = L_secs.length;
-              const cx = (map.xs[j] + map.xs[j + 1]) / 2;
-              let cum = 0;
-              for (let c = 0; c < L_secs.length; c++) {
-                cum += L_secs[c];
-                if (cx < cum) { compIdx = c + 1; break; }
-              }
-            } else if (W_secs.length > 1) {
-              totalComps = W_secs.length;
-              const cy = (map.ys[i] + map.ys[i + 1]) / 2;
-              let cum = 0;
-              for (let c = 0; c < W_secs.length; c++) {
-                cum += W_secs[c];
-                if (cy < cum) { compIdx = c + 1; break; }
-              }
-            }
-
-            // 현재 클릭한 칸에 이미 INLET이 있으면 토글 제거
-            const existInThisCell = nozzleData.find(n => n.name === 'INLET' && n.face === 'top' && n.use !== false && n.topCell && n.topCell[0] === i && n.topCell[1] === j);
-            if (existInThisCell) {
-              nozzleData = nozzleData.filter(n => n.id !== existInThisCell.id);
-              if (selectedNozzleId === existInThisCell.id) selectedNozzleId = null;
-            } else {
-              // 해당 구획의 기존 INLET 찾기
-              let compInlet = nozzleData.find(n => {
-                if (n.name !== 'INLET' || n.use === false) return false;
-                if (n.compIdx === compIdx) return true;
-                if (n.desc && n.desc.includes(`${compIdx}구획`)) return true;
-                if (totalComps > 1 && n.face === 'top' && n.topCell) {
-                  const cx = (map.xs[n.topCell[1]] + map.xs[n.topCell[1] + 1]) / 2;
-                  let cum = 0;
-                  for (let c = 0; c < L_secs.length; c++) {
-                    cum += L_secs[c];
-                    if (cx < cum) return (c + 1) === compIdx;
-                  }
-                }
-                return false;
-              });
-
-              if (!compInlet && totalComps === 1) {
-                compInlet = nozzleData.find(n => n.name === 'INLET' && n.use !== false);
-              }
-
-              if (compInlet) {
-                compInlet.face = 'top';
-                compInlet.topCell = [i, j];
-                compInlet.elev = 'TOP';
-                compInlet.seg = j + 1;
-                compInlet.compIdx = compIdx;
-                compInlet.desc = totalComps > 1 ? `${compIdx}구획 유입구` : '상부 유입구';
-                compInlet.use = true;
-                selectedNozzleId = compInlet.id;
-              } else {
-                let markNum = 1;
-                while (nozzleData.some(n => n.mark === 'N' + markNum)) {
-                  markNum++;
-                }
-                const newNoz = {
-                  id: 'noz_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                  mark: 'N' + markNum,
-                  name: 'INLET',
-                  desc: totalComps > 1 ? `${compIdx}구획 유입구` : '상부 유입구',
-                  size: '100A',
-                  type: 'FLANGE',
-                  face: 'top',
-                  seg: j + 1,
-                  offset: 0,
-                  elev: 'TOP',
-                  topCell: [i, j],
-                  compIdx: compIdx,
-                  use: true
-                };
-                nozzleData.push(newNoz);
-                selectedNozzleId = newNoz.id;
-              }
-            }
-            renderNozzleElevationGrid(map);
-            if (typeof updateMiniInspector === 'function') updateMiniInspector();
-            updatePreviewTbody();
-          }
         } else if (mode === 'han' || mode === 'vent') {
           if (!removed.has(key) && map.cols[j] === 1000 && map.rows[i] === 1000) { const bit = mode === 'han' ? 1 : 2; marks[key] = (marks[key] || 0) ^ bit; if (!marks[key]) delete marks[key]; }
         } else if (removed.has(key)) { pillars.has(key) ? pillars.delete(key) : pillars.add(key); }
@@ -10705,15 +10731,6 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           tag.style.cssText = (mk & 1) ? 'bottom:2px;left:50%;transform:translateX(-50%)' : 'top:50%;left:50%;transform:translate(-50%,-50%)';
           b.appendChild(tag);
         }
-      }
-      if (!off) {
-        const topNozs = nozzleData.filter(n => n.use !== false && n.face === 'top' && n.topCell && n.topCell[0] === i && n.topCell[1] === j);
-        topNozs.forEach(tn => {
-          const tag = document.createElement('span'); tag.className = 'badge-tag badge-inlet';
-          tag.textContent = `${tn.mark} ${tn.size}`;
-          tag.style.cssText = 'top:50%;left:50%;transform:translate(-50%,-50%);z-index:3';
-          b.appendChild(tag);
-        });
       }
       if (ladders[key] && !off) {
         const sd = ladders[key];
@@ -10839,35 +10856,85 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     });
   });
 
-  $('nozPresetSingle').addEventListener('click', () => {
+  function applyCompartmentPreset(numComps) {
     const H = Number($('H').value) || 3000;
     let m = null;
     try { m = C.createMap({ length: vals('L'), width: vals('W') }); } catch (e) {}
-    nozzleData = getSingleCompNozzles(m, H);
+    nozzleData = getMultiCompNozzles(m, H, numComps);
     selectedNozzleId = nozzleData[0] ? nozzleData[0].id : null;
     renderNozzleElevationGrid(m);
+    if (m) renderGrid(m);
     updateMiniInspector();
     updatePreviewTbody();
     schedule();
-  });
+  }
 
-  $('nozPresetDouble').addEventListener('click', () => {
+  function applySingleCompInMulti(targetComp, numComps) {
     const H = Number($('H').value) || 3000;
     let m = null;
     try { m = C.createMap({ length: vals('L'), width: vals('W') }); } catch (e) {}
-    nozzleData = getDoubleCompNozzles(m, H);
-    selectedNozzleId = nozzleData[0] ? nozzleData[0].id : null;
+    const all = getMultiCompNozzles(m, H, numComps);
+    const baseIdx = (targetComp - 1) * 5;
+    const targetMarks = new Set([`N${baseIdx + 1}`, `N${baseIdx + 2}`, `N${baseIdx + 3}`, `N${baseIdx + 4}`, `N${baseIdx + 5}`]);
+    const compNozs = all.filter(n => targetMarks.has(n.mark));
+    nozzleData = (nozzleData || []).filter(n => !targetMarks.has(n.mark)).concat(compNozs);
+    selectedNozzleId = compNozs[0] ? compNozs[0].id : null;
     renderNozzleElevationGrid(m);
+    if (m) renderGrid(m);
     updateMiniInspector();
     updatePreviewTbody();
     schedule();
-  });
+  }
+
+  function updateNozzlePresetButtons() {
+    const grp = $('nozPresetBtnGroup');
+    if (!grp) return;
+    const L_secs = (vals('L') || []).filter(Boolean);
+    const W_secs = (vals('W') || []).filter(Boolean);
+    let numComps = 1;
+    if (L_secs.length > 1) numComps = L_secs.length;
+    else if (W_secs.length > 1) numComps = W_secs.length;
+
+    const isEn = currentLang === 'en';
+    grp.innerHTML = '';
+
+    if (numComps <= 1) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.id = 'nozPresetSingle';
+      btn.className = 'btn-preset primary';
+      btn.textContent = isEn ? '⚡ 1-Comp. Preset' : '⚡ 1구획 기본배관';
+      btn.title = isEn ? 'Apply standard nozzles for single compartment' : '1구획용 기본배관을 적용합니다';
+      btn.addEventListener('click', () => applyCompartmentPreset(1));
+      grp.appendChild(btn);
+    } else {
+      for (let c = 1; c <= numComps; c++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-preset';
+        btn.textContent = isEn ? `⚡ Comp.${c}` : `⚡ ${c}구획 배관`;
+        btn.title = isEn ? `Apply preset nozzles to Compartment ${c} only` : `${c}구획에만 기본배관을 적용합니다`;
+        btn.addEventListener('click', () => applySingleCompInMulti(c, numComps));
+        grp.appendChild(btn);
+      }
+      const allBtn = document.createElement('button');
+      allBtn.type = 'button';
+      allBtn.className = 'btn-preset primary';
+      allBtn.textContent = isEn ? `⚡ All ${numComps}-Comp.` : `⚡ ${numComps}구획 전체배관`;
+      allBtn.title = isEn ? `Apply nozzles to all ${numComps} compartments` : `모든 ${numComps}개 구획에 기본배관을 일괄 적용합니다`;
+      allBtn.addEventListener('click', () => applyCompartmentPreset(numComps));
+      grp.appendChild(allBtn);
+    }
+  }
 
   $('nozClearAll').addEventListener('click', () => {
     nozzleData = [];
     sidePanelTypes = {};
     selectedNozzleId = null;
-    renderNozzleElevationGrid();
+    let m = null;
+    try { m = C.createMap({ length: vals('L'), width: vals('W') }); } catch (e) {}
+    renderNozzleElevationGrid(m);
+    if (m) renderGrid(m);
     updateMiniInspector();
     updatePreviewTbody();
     schedule();
@@ -10948,6 +11015,10 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     const isEn = currentLang === 'en';
     const txt = $('pipeToggleText');
     if (txt) txt.textContent = enabled ? (isEn ? '💧 Nozzles ON' : '💧 배관 ON') : (isEn ? '💧 Nozzles OFF' : '💧 배관 OFF');
+    let m = null;
+    try { m = C.createMap({ length: vals('L'), width: vals('W') }); } catch (e) {}
+    renderNozzleElevationGrid(m);
+    if (m) renderGrid(m);
     schedule();
   };
   if ($('pipeFeatureToggle')) {
@@ -10961,7 +11032,10 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if (selectedNozzleId) {
       nozzleData = nozzleData.filter(x => x.id !== selectedNozzleId);
       selectedNozzleId = null;
-      renderNozzleElevationGrid();
+      let m = null;
+      try { m = C.createMap({ length: vals('L'), width: vals('W') }); } catch (e) {}
+      renderNozzleElevationGrid(m);
+      if (m) renderGrid(m);
       updateMiniInspector();
       updatePreviewTbody();
       schedule();
@@ -11067,7 +11141,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.79</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.80</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
