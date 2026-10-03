@@ -329,14 +329,33 @@
           layer: layer || 'FRAME'
         });
       } else if (e.k === 'arc') {
-        out.push({
-          t: 'arc',
-          c: [ox + e.c[0] * scaleX, oy + e.c[1] * scaleY],
-          r: Math.round(e.r * ((Math.abs(scaleX) + Math.abs(scaleY)) / 2)),
-          a0: e.a0 || 0,
-          a1: e.a1 || 360,
-          layer: layer || 'FRAME'
-        });
+        if (Math.abs(scaleX - scaleY) > 1e-4) {
+          const a0 = (e.a0 || 0) * Math.PI / 180;
+          const a1 = (e.a1 || 360) * Math.PI / 180;
+          let span = a1 - a0;
+          while (span <= 0) span += 2 * Math.PI;
+          const steps = Math.max(12, Math.min(36, Math.round(span * 8)));
+          const pts = [];
+          for (let s = 0; s <= steps; s++) {
+            const th = a0 + (span * s / steps);
+            pts.push([
+              ox + (e.c[0] + e.r * Math.cos(th)) * scaleX,
+              oy + (e.c[1] + e.r * Math.sin(th)) * scaleY
+            ]);
+          }
+          for (let k = 0; k + 1 < pts.length; k++) {
+            out.push({ t: 'line', a: pts[k], b: pts[k + 1], layer: layer || 'FRAME' });
+          }
+        } else {
+          out.push({
+            t: 'arc',
+            c: [ox + e.c[0] * scaleX, oy + e.c[1] * scaleY],
+            r: Math.round(e.r * Math.abs(scaleX)),
+            a0: e.a0 || 0,
+            a1: e.a1 || 360,
+            layer: layer || 'FRAME'
+          });
+        }
       } else if (e.k === 'poly') {
         const pts = e.p.map(p => [ox + p[0] * scaleX, oy + p[1] * scaleY]);
         for (let k = 0; k + 1 < pts.length; k++) {
@@ -4640,7 +4659,7 @@
 
     const ents = [], t = opt.title || {};
     const S = SHEET, x0 = S.margin, y0 = S.margin, x1 = S.w - S.margin, y1 = S.h - S.margin;
-    const line = (a, b) => ents.push({ t: 'line', a: [P(a[0]), P(a[1])], b: [P(b[0]), P(b[1])], layer: 'SHEET' });
+    const line = (a, b, color) => ents.push({ t: 'line', a: [P(a[0]), P(a[1])], b: [P(b[0]), P(b[1])], layer: 'SHEET', ...(color ? { color } : {}) });
     const circle = (c, r) => ents.push({ t: 'circle', c: [P(c[0]), P(c[1])], r: P(r), layer: 'SHEET' });
     const arc = (c, r, a0, a1) => ents.push({ t: 'arc', c: [P(c[0]), P(c[1])], r: P(r), a0: a0 || 0, a1: a1 || 360, layer: 'SHEET' });
     const poly = (pts, layer = 'SHEET') => ents.push({ t: 'poly', pts: pts.map(pt => [P(pt[0]), P(pt[1])]), layer });
@@ -4650,7 +4669,9 @@
     const tx0 = x1 - S.title, tw = S.title;
     line([tx0, y0], [tx0, y1]);
 
-    // 머리글 (회사 로고 및 영문 회사정보/주소 삽입)
+    const lang = opt.drawingLang || opt.lang || 'ko';
+
+    // 머리글 (회사 로고 및 회사정보/주소)
     let y = y1;
     // 1. 회사명 및 로고 (높이 16mm)
     y -= 16;
@@ -4668,6 +4689,7 @@
       };
       t.logoCadEntities.forEach(e => {
         if (e.k === 'line' && e.p) { addPt(e.p[0][0], e.p[0][1]); addPt(e.p[1][0], e.p[1][1]); }
+        else if (e.k === 'solid' && e.p) { e.p.forEach(pt => addPt(pt[0], pt[1])); }
         else if (e.k === 'circle' && e.c) { addPt(e.c[0] - e.r, e.c[1] - e.r); addPt(e.c[0] + e.r, e.c[1] + e.r); }
         else if (e.k === 'arc' && e.c) { addPt(e.c[0] - e.r, e.c[1] - e.r); addPt(e.c[0] + e.r, e.c[1] + e.r); }
         else if (e.k === 'poly' && e.p) { e.p.forEach(pt => addPt(pt[0], pt[1])); }
@@ -4680,7 +4702,10 @@
         const dy = logoY - (minY + oh / 2) * s;
         t.logoCadEntities.forEach(e => {
           if (e.k === 'line' && e.p) {
-            line([e.p[0][0] * s + dx, e.p[0][1] * s + dy], [e.p[1][0] * s + dx, e.p[1][1] * s + dy]);
+            line([e.p[0][0] * s + dx, e.p[0][1] * s + dy], [e.p[1][0] * s + dx, e.p[1][1] * s + dy], e.color);
+          } else if (e.k === 'solid' && e.p && e.p.length >= 4) {
+            const sp = e.p.map(pt => [P(pt[0] * s + dx), P(pt[1] * s + dy)]);
+            ents.push({ t: 'solid', p: sp, layer: 'SHEET', ...(e.color ? { color: e.color } : {}) });
           } else if (e.k === 'circle' && e.c) {
             circle([e.c[0] * s + dx, e.c[1] * s + dy], e.r * s);
           } else if (e.k === 'arc' && e.c) {
@@ -4721,24 +4746,26 @@
       circle([logoX, logoY], 5.0);
       text(logoX, logoY, 5.5, logoTxt, 'center', 0, 'middle');
     }
-    const compName = t.customer || 'YSACC CO.,LTD';
+    const defComp = lang === 'ko' ? '(주)와이에스에이씨' : 'YSACC CO., LTD';
+    const compName = t.customer || defComp;
     text(tx0 + 28 + (tw - 28) / 2, y + 8, 6.2, compName, 'center', 0, 'middle');
 
     // 2. 제품명 (높이 12mm - 설정값 연동)
     y -= 12;
     line([tx0, y], [x1, y]);
-    const defProd = (opt.material === 'STS' ? 'STS' : 'GRP') + ' PANEL WATER TANK';
+    const defProd = lang === 'ko' ? ((opt.material === 'STS' ? 'STS' : 'GRP') + ' 조립식 물탱크') : ((opt.material === 'STS' ? 'STS' : 'GRP') + ' PANEL WATER TANK');
     const prodName = (t.prodName && t.prodName.trim()) ? t.prodName.trim() : defProd;
     text(tx0 + tw / 2, y + 6, 5.5, prodName, 'center', 0, 'middle');
 
-    // 3. 영문 주소 및 연락처 (높이 16mm)
+    // 3. 주소 및 연락처 (높이 16mm)
     y -= 16;
     line([tx0, y], [x1, y]);
-    const rawAddr = t.address || '201-1, 1251, Garosu-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28420, Republic of Korea';
+    const defAddr = lang === 'ko' ? '충청북도 청주시 흥덕구 가로수로 1251, 201-1호 (28420)' : '201-1, 1251, Garosu-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28420, Republic of Korea';
+    const rawAddr = t.address || defAddr;
     const telInfo = t.tel ? (t.tel.toUpperCase().includes('TEL') ? t.tel : ('TEL : ' + t.tel)) : '';
     let addrLines = [rawAddr];
     if (rawAddr.length > 45) {
-      const splitKey = 'Cheongju-si,';
+      const splitKey = lang === 'ko' ? '청주시' : 'Cheongju-si,';
       if (rawAddr.includes(splitKey)) {
         const idx = rawAddr.indexOf(splitKey) + splitKey.length;
         addrLines = [rawAddr.slice(0, idx).trim(), rawAddr.slice(idx).trim()];
@@ -4785,12 +4812,10 @@
     let ty = y0;
     const colLabelW = 60, colValW = tw - colLabelW;
 
-    const lang = opt.drawingLang || opt.lang || 'ko';
-
     // 1. TITLE (높이 32mm, 폰트 5.5 / 6.5mm)
     const titleH = 32;
     line([tx0, ty + titleH], [x1, ty + titleH]);
-    const titleLabel = lang === 'ko' ? '도면명' : (lang === 'bilingual' ? 'TITLE (도면명)' : 'TITLE');
+    const titleLabel = lang === 'ko' ? '도면명' : (lang === 'en' ? 'TITLE' : 'TITLE (도면명)');
     text(tx0 + colLabelW / 2, ty + titleH / 2, 5.0, titleLabel, 'center', 0, 'middle');
     line([tx0 + colLabelW, ty], [tx0 + colLabelW, ty + titleH]);
     const titleVal = opt.sheetKind === 'frame' ? (lang === 'ko' ? '기초 프레임 및 스테이 도면' : 'STEEL SKID DRAWING') : opt.sheetKind === 'detail' ? (lang === 'ko' ? '탱크 상세도' : 'DETAILS DWG') : opt.sheetKind === 'pad' ? (lang === 'ko' ? '기초 콘크리트 패드 도면' : 'FOUNDATION PAD DWG') : dimStr + '\n= ' + ton + ' Ton';
@@ -4808,7 +4833,7 @@
     // 2. PROJECT (높이 22mm, 폰트 5.0 / 5.2mm)
     const projH = 22;
     line([tx0, ty + projH], [x1, ty + projH]);
-    const projLabel = lang === 'ko' ? '공사명' : (lang === 'bilingual' ? 'PROJECT (공사명)' : 'PROJECT');
+    const projLabel = lang === 'ko' ? '공사명' : (lang === 'en' ? 'PROJECT' : 'PROJECT (공사명)');
     text(tx0 + colLabelW / 2, ty + projH / 2, 5.0, projLabel, 'center', 0, 'middle');
     line([tx0 + colLabelW, ty], [tx0 + colLabelW, ty + projH]);
     text(tx0 + colLabelW + colValW / 2, ty + projH / 2, 5.2, t.project || '', 'center', 0, 'middle');
@@ -4817,11 +4842,11 @@
     // 3. 5개 사양 행 (각 13.0mm, 폰트 4.8 / 5.0mm로 대폭 확대)
     const rowH = 13.0;
     const rows = [
-      [lang === 'ko' ? '고객명' : (lang === 'bilingual' ? 'Client (고객명)' : 'Client'), t.client || ''],
-      [lang === 'ko' ? '설계감리' : (lang === 'bilingual' ? 'Consultant (감리)' : 'Consultant'), t.consultant || ''],
-      [lang === 'ko' ? '시공사' : (lang === 'bilingual' ? 'Contractor (시공)' : 'Main Contractor'), t.contractor || ''],
-      [lang === 'ko' ? '설비공사' : (lang === 'bilingual' ? 'MEP (설비)' : 'MEP Contractor'), t.mep || ''],
-      [lang === 'ko' ? '탱크규격' : (lang === 'bilingual' ? 'TANK SIZE (규격)' : 'TANK SIZE'), dimStr]
+      [lang === 'ko' ? '고객명' : (lang === 'en' ? 'CLIENT' : 'Client (고객명)'), t.client || ''],
+      [lang === 'ko' ? '설계감리' : (lang === 'en' ? 'CONSULTANT' : 'Consultant (감리)'), t.consultant || ''],
+      [lang === 'ko' ? '시공사' : (lang === 'en' ? 'MAIN CONTRACTOR' : 'Contractor (시공)'), t.contractor || ''],
+      [lang === 'ko' ? '설비공사' : (lang === 'en' ? 'MEP CONTRACTOR' : 'MEP (설비)'), t.mep || ''],
+      [lang === 'ko' ? '탱크규격' : (lang === 'en' ? 'TANK SIZE' : 'TANK SIZE (규격)'), dimStr]
     ];
     rows.slice().reverse().forEach(([k, v]) => {
       line([tx0, ty + rowH], [x1, ty + rowH]);
@@ -4835,10 +4860,10 @@
     // 4. 서명란 / DATE / SCALE / Chart No. (각 13.0mm, 폰트 4.8 / 5.0mm)
     const today = new Date(), pad2 = v => String(v).padStart(2, '0');
     const info = [
-      [lang === 'ko' ? '도면번호' : (lang === 'bilingual' ? 'DWG NO. (도번)' : 'DWG NO.'), t.dwgNo || ''],
-      [lang === 'ko' ? '도면식별' : (lang === 'bilingual' ? 'Chart No.' : 'Chart No.'), t.chartNo || ''],
-      [lang === 'ko' ? '축척' : (lang === 'bilingual' ? 'SCALE (축척)' : 'SCALE'), '1 / ' + N],
-      [lang === 'ko' ? '일자' : (lang === 'bilingual' ? 'DATE (일자)' : 'DATE'), t.date || (today.getFullYear() + '.' + pad2(today.getMonth() + 1) + '.' + pad2(today.getDate()))]
+      [lang === 'ko' ? '도면번호' : (lang === 'en' ? 'DWG NO.' : 'DWG NO. (도번)'), t.dwgNo || ''],
+      [lang === 'ko' ? '도면식별' : (lang === 'en' ? 'CHART NO.' : 'Chart No.'), t.chartNo || ''],
+      [lang === 'ko' ? '축척' : (lang === 'en' ? 'SCALE' : 'SCALE (축척)'), '1 / ' + N],
+      [lang === 'ko' ? '일자' : (lang === 'en' ? 'DATE' : 'DATE (일자)'), t.date || (today.getFullYear() + '.' + pad2(today.getMonth() + 1) + '.' + pad2(today.getDate()))]
     ];
     info.forEach(([k, v]) => {
       line([tx0, ty + rowH], [x1, ty + rowH]);
@@ -4853,7 +4878,7 @@
     line([tx0, ty + signValH], [x1, ty + signValH]);
     line([tx0, ty + signValH + signHeaderH], [x1, ty + signValH + signHeaderH]);
     const scw = tw / 3;
-    const signLabels = lang === 'ko' ? ['작도', '검토', '승인'] : (lang === 'bilingual' ? ['작도(DWN)', '검토(CHK)', '승인(APP)'] : ['DRAWN', 'CHECKED', 'APPROVED']);
+    const signLabels = lang === 'ko' ? ['작도', '검토', '승인'] : (lang === 'en' ? ['DRAWN', 'CHECKED', 'APPROVED'] : ['작도(DWN)', '검토(CHK)', '승인(APP)']);
     signLabels.forEach((k, i) => {
       text(tx0 + scw * i + scw / 2, ty + signValH + signHeaderH / 2, 4.8, k, 'center', 0, 'middle');
       if (i > 0) line([tx0 + scw * i, ty], [tx0 + scw * i, ty + signValH + signHeaderH]);
@@ -4867,7 +4892,7 @@
     let itemTableTop = ty;
     if (activeBoms.length) {
       const colDefs = [
-        { key: 'no', label: 'NO.', w: 12 },
+        { key: 'no', label: lang === 'ko' ? '번호' : 'NO.', w: 12 },
         { key: 'name', label: lang === 'ko' ? '품명' : (lang === 'en' ? 'ITEMS' : 'ITEMS (품명)'), w: 44 },
         { key: 'mat', label: lang === 'ko' ? '재질' : (lang === 'en' ? 'MATERIAL' : 'MATERIAL (재질)'), w: 32 },
         { key: 'qty', label: lang === 'ko' ? '수량' : (lang === 'en' ? 'QTY' : 'QTY (수량)'), w: 18 },
@@ -4886,7 +4911,7 @@
       const tableX0 = tx0 + 4, tableX1 = x1 - 4;
 
       // 1. 타이틀 행
-      const itemTableTitle = lang === 'en' ? '2. ITEM LIST' : (lang === 'ko' ? '2. 부품 사양 명세표' : '2. ITEM LIST (부품 사양 명세표)');
+      const itemTableTitle = lang === 'en' ? 'BILL OF MATERIALS' : (lang === 'ko' ? '부 품  사 양  명 세 표' : 'ITEM LIST (부품 사양 명세표)');
       line([tableX0, yy], [tableX1, yy]);
       text(tableX0 + tableW / 2, yy - titleH / 2, titleFontH, itemTableTitle, 'center', 0, 'middle');
       yy -= titleH;
@@ -4933,7 +4958,7 @@
     let nozTableTop = itemTableTop;
     if (activeNozzles.length) {
       const colDefs = [
-        { key: 'mark', label: 'NO.', w: 16 },
+        { key: 'mark', label: lang === 'ko' ? '기호' : 'NO.', w: 16 },
         { key: 'service', label: lang === 'ko' ? '용도' : (lang === 'en' ? 'SERVICE' : 'SERVICE (용도)'), w: 48 },
         { key: 'size', label: lang === 'ko' ? '구경' : (lang === 'en' ? 'SIZE' : 'SIZE (구경)'), w: 22 },
         { key: 'type', label: lang === 'ko' ? '타입' : (lang === 'en' ? 'TYPE' : 'TYPE (타입)'), w: 30 },
@@ -4955,7 +4980,7 @@
       const tableX0 = tx0 + 4, tableX1 = x1 - 4;
 
       // 1. 타이틀 행
-      const nozTableTitle = lang === 'en' ? 'NOZZLE SCHEDULE' : (lang === 'ko' ? '배관 노즐 일람표' : 'NOZZLE SCHEDULE (배관 노즐 일람표)');
+      const nozTableTitle = lang === 'en' ? 'NOZZLE SCHEDULE' : (lang === 'ko' ? '배 관  노 즐  일 람 표' : 'NOZZLE SCHEDULE (배관 노즐 일람표)');
       line([tableX0, yy], [tableX1, yy]);
       text(tableX0 + tableW / 2, yy - titleH / 2, titleFontH, nozTableTitle, 'center', 0, 'middle');
       yy -= titleH;
@@ -4985,7 +5010,7 @@
           else if (isInlet && n.face !== 'top') actualElev = Math.max(100, H - 300);
           else if (actualElev > H - 100) actualElev = Math.max(100, H - 150);
         }
-        const elevStr = n.face === 'top' ? 'TOP' : ('EL.+' + (typeof actualElev === 'number' ? actualElev.toLocaleString() : actualElev));
+        const elevStr = n.face === 'top' ? (lang === 'ko' ? '상부' : 'TOP') : ('EL.+' + (typeof actualElev === 'number' ? actualElev.toLocaleString() : actualElev));
         const rowVals = [
           n.mark,
           svcName,
@@ -5013,10 +5038,27 @@
     if (opt.remarks && opt.remarks.length) {
       opt.remarks.forEach(r => { if (!allNotes.includes(r)) allNotes.push(r); });
     }
-    if (!allNotes.length) allNotes = ['No special remarks.'];
+    if (!allNotes.length) allNotes = [lang === 'ko' ? '특기사항 없음.' : 'No special remarks.'];
+
+    if (lang === 'ko' && allNotes.some(n => typeof n === 'string' && (n.includes('Customers are requested') || n.includes('base concrete')))) {
+      allNotes = [
+        '기초 콘크리트는 현장 강도 및 설계 사양에 적합하게 시공하여 주십시오.',
+        '기초 콘크리트의 설계 기준 강도는 최소 180 kgf/cm² 이상이어야 합니다.',
+        '유지관리 및 보수를 위해 물탱크 주위에 최소 600mm 이상의 여유 공간을 확보하십시오.',
+        '배관용 소켓 및 노즐의 규격과 위치는 발주처(고객) 지정 사양입니다.',
+        '소켓 설치 완료 후 배관 연결 및 보온공사는 고객(발주처) 시공 범위입니다.',
+        '탱크 표면에 제품 보증서 및 취급 주의사항이 부착되어 있습니다.',
+        '운반 및 양중 시 판넬에 과도한 하중이나 충격이 가해지지 않도록 주의하십시오.',
+        '피팅(배관 연결부)에 직접적인 배관 하중이 가해지지 않도록 배관 지지대를 설치하십시오.',
+        '배관 연결 작업은 반드시 물탱크 측 노즐부터 시작하여 연결하십시오.',
+        '타공 작업 시 정확한 위치에 천공하고 편하중이 발생하지 않도록 주의하십시오.',
+        '용접 작업 시 화재 및 불티 비산에 각별히 주의하십시오.',
+        '내부 보강재 및 부속품이 상호 간섭이나 충돌이 발생하지 않도록 조립하십시오.'
+      ];
+    }
 
     let ny = y - 8;
-    const remarksTitle = lang === 'en' ? '<Remarks>' : (lang === 'ko' ? '<일반 사항 (Remarks)>' : '<Remarks / 일반 사항>');
+    const remarksTitle = lang === 'en' ? '< GENERAL REMARKS >' : (lang === 'ko' ? '< 일  반  사  항 >' : '< Remarks / 일반 사항 >');
     text(tx0 + 8, ny, 6.5, remarksTitle, 'left');
     ny -= 10.0;
 
@@ -5394,10 +5436,15 @@
     g(9, '$INSUNITS'); g(70, 4);
     g(9, '$DIMTXT'); g(40, n(dimTxtH));
     g(9, '$DIMSCALE'); g(40, 1.0);
+    g(9, '$DIMTSZ'); g(40, n(dimTxtH * 0.28));
+    g(9, '$DIMDLE'); g(40, n(dimTxtH * 0.25));
     g(9, '$DIMASZ'); g(40, n(dimTxtH * 0.45));
     g(9, '$DIMEXE'); g(40, n(dimTxtH * 0.5));
     g(9, '$DIMEXO'); g(40, n(dimTxtH * 0.3));
     g(9, '$DIMGAP'); g(40, n(dimTxtH * 0.25));
+    g(9, '$DIMTAD'); g(70, 1);
+    g(9, '$DIMASSOC'); g(70, 2);
+    g(9, '$PICKSTYLE'); g(70, 1);
     g(0, 'ENDSEC');
     g(0, 'SECTION'); g(2, 'TABLES'); g(0, 'TABLE'); g(2, 'LTYPE'); g(70, 1);
     g(0, 'LTYPE'); g(2, 'CONTINUOUS'); g(70, 0); g(3, 'Solid line'); g(72, 65); g(73, 0); g(40, 0);
@@ -5417,7 +5464,10 @@
     g(42, n(dimTxtH * 0.3));
     g(43, n(dimTxtH * 1.5));
     g(44, n(dimTxtH * 0.5));
+    g(46, n(dimTxtH * 0.25));
+    g(77, 1);
     g(140, n(dimTxtH));
+    g(142, n(dimTxtH * 0.28));
     g(147, n(dimTxtH * 0.25));
     g(0, 'ENDTAB');
     g(0, 'ENDSEC');
@@ -5426,11 +5476,21 @@
       const layer = e.layer || defLayer || '0';
       if (e.t === 'insert') {
         g(0, 'INSERT'); g(8, layer);
+        if (e.color) g(62, e.color);
         g(2, e.block);
         g(10, n(e.p[0])); g(20, n(e.p[1])); g(30, 0);
       }
+      else if (e.t === 'solid') {
+        g(0, 'SOLID'); g(8, layer);
+        if (e.color) g(62, e.color);
+        g(10, n(e.p[0][0])); g(20, n(e.p[0][1])); g(30, 0);
+        g(11, n(e.p[1][0])); g(21, n(e.p[1][1])); g(31, 0);
+        g(12, n(e.p[2][0])); g(22, n(e.p[2][1])); g(32, 0);
+        g(13, n(e.p[3][0])); g(23, n(e.p[3][1])); g(33, 0);
+      }
       else if (e.t === 'line') {
         g(0, 'LINE'); g(8, layer);
+        if (e.color) g(62, e.color);
         g(10, n(e.a[0])); g(20, n(e.a[1])); g(30, 0);
         g(11, n(e.b[0])); g(21, n(e.b[1])); g(31, 0);
       }
@@ -5438,11 +5498,13 @@
         if (e.stroke !== false && e.pts && e.pts.length > 1) {
           for (let i = 0; i < e.pts.length - 1; i++) {
             g(0, 'LINE'); g(8, layer);
+            if (e.color) g(62, e.color);
             g(10, n(e.pts[i][0])); g(20, n(e.pts[i][1])); g(30, 0);
             g(11, n(e.pts[i + 1][0])); g(21, n(e.pts[i + 1][1])); g(31, 0);
           }
           if (e.close && e.pts.length > 2) {
             g(0, 'LINE'); g(8, layer);
+            if (e.color) g(62, e.color);
             g(10, n(e.pts[e.pts.length - 1][0])); g(20, n(e.pts[e.pts.length - 1][1])); g(30, 0);
             g(11, n(e.pts[0][0])); g(21, n(e.pts[0][1])); g(31, 0);
           }
@@ -5451,12 +5513,14 @@
       else if (e.t === 'arc') {
         const nn = a => ((a % 360) + 360) % 360;
         g(0, 'ARC'); g(8, layer);
+        if (e.color) g(62, e.color);
         g(10, n(e.c[0])); g(20, n(e.c[1])); g(30, 0);
         g(40, n(e.r));
         g(50, n(nn(e.a0))); g(51, n(nn(e.a1)));
       }
       else if (e.t === 'circle') {
         g(0, 'CIRCLE'); g(8, layer);
+        if (e.color) g(62, e.color);
         g(10, n(e.c[0])); g(20, n(e.c[1])); g(30, 0);
         g(40, n(e.r));
       }

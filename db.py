@@ -324,11 +324,30 @@ def parse_dxf_string(dxf_content, target_w=None, target_h=None):
             r = round(item['r'] * sr, 1)
             entities.append({'k': 'circle', 'c': c, 'r': r})
         elif k == 'arc':
-            c = [round((item['c'][0] - min_x) * sx, 1), round((item['c'][1] - min_y) * sy, 1)]
-            r = round(item['r'] * sr, 1)
-            s = [round((item['s'][0] - min_x) * sx, 1), round((item['s'][1] - min_y) * sy, 1)]
-            e_pt = [round((item['e'][0] - min_x) * sx, 1), round((item['e'][1] - min_y) * sy, 1)]
-            entities.append({'k': 'arc', 'c': c, 'r': r, 's': s, 'e': e_pt})
+            if abs(sx - sy) > 1e-4:
+                a0_deg = item.get('a0', 0)
+                a1_deg = item.get('a1', 360)
+                a0_rad = math.radians(a0_deg % 360)
+                a1_rad = math.radians(a1_deg % 360)
+                span = a1_rad - a0_rad
+                while span <= 0: span += 2 * math.pi
+                steps = max(12, int(span * 8))
+                pts = []
+                for step in range(steps + 1):
+                    th = a0_rad + span * step / steps
+                    px = (item['c'][0] + item['r'] * math.cos(th) - min_x) * sx
+                    py = (item['c'][1] + item['r'] * math.sin(th) - min_y) * sy
+                    pts.append([round(px, 1), round(py, 1)])
+                entities.append({'k': 'poly', 'p': pts, 'c': False})
+            else:
+                c = [round((item['c'][0] - min_x) * sx, 1), round((item['c'][1] - min_y) * sy, 1)]
+                r = round(item['r'] * sx, 1)
+                s = [round((item['s'][0] - min_x) * sx, 1), round((item['s'][1] - min_y) * sy, 1)] if 's' in item else None
+                e_pt = [round((item['e'][0] - min_x) * sx, 1), round((item['e'][1] - min_y) * sy, 1)] if 'e' in item else None
+                arc_ent = {'k': 'arc', 'c': c, 'r': r, 'a0': item.get('a0', 0), 'a1': item.get('a1', 360)}
+                if s: arc_ent['s'] = s
+                if e_pt: arc_ent['e'] = e_pt
+                entities.append(arc_ent)
         elif k == 'poly':
             pts = [[round((p[0] - min_x) * sx, 1), round((p[1] - min_y) * sy, 1)] for p in item['p']]
             entities.append({'k': 'poly', 'p': pts, 'c': item.get('c', False)})
