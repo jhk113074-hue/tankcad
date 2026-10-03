@@ -80,15 +80,16 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:1
 .cad-pane{display:none}
 .cad-pane.active{display:block}
 
-/* CAD 4-Direction View Buttons */
+/* CAD 4-Direction View Buttons & Panel Position Buttons */
 .cad-view-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
-.cad-view-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 2px;background:var(--surface);border:1px solid var(--line);border-radius:6px;cursor:pointer;transition:all .15s}
-.cad-view-btn:hover{border-color:var(--accent);background:rgba(2,132,199,0.04)}
-.cad-view-btn.active{background:rgba(2,132,199,0.12);border-color:var(--accent);color:var(--accent);font-weight:700}
-.cad-view-btn .v-icon{font-size:13px;margin-bottom:2px}
-.cad-view-btn .v-name{font-size:10.5px}
-.cad-view-btn .v-stat{font-size:9px;color:var(--muted);margin-top:2px}
-.cad-view-btn.active .v-stat{color:var(--accent);font-weight:600}
+.cad-panel-pos-nav{display:none;grid-template-columns:repeat(3,1fr);gap:4px}
+.cad-view-btn, .cad-pos-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 2px;background:var(--surface);border:1px solid var(--line);border-radius:6px;cursor:pointer;transition:all .15s}
+.cad-view-btn:hover, .cad-pos-btn:hover{border-color:var(--accent);background:rgba(2,132,199,0.04)}
+.cad-view-btn.active, .cad-pos-btn.active{background:rgba(2,132,199,0.12);border-color:var(--accent);color:var(--accent);font-weight:700}
+.cad-view-btn .v-icon, .cad-pos-btn .v-icon{font-size:13px;margin-bottom:2px}
+.cad-view-btn .v-name, .cad-pos-btn .v-name{font-size:10.5px}
+.cad-view-btn .v-stat, .cad-pos-btn .v-stat{font-size:9px;color:var(--muted);margin-top:2px}
+.cad-view-btn.active .v-stat, .cad-pos-btn.active .v-stat{color:var(--accent);font-weight:600}
 
 /* Modeless Dialog Styling (대형 비모달 CAD 등록창) */
 .modeless-dialog{position:fixed;z-index:2000;width:min(1140px,95vw);height:min(800px,90vh);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(2,132,199,0.2);display:none;flex-direction:column;overflow:hidden;resize:both;min-width:680px;min-height:500px}
@@ -142,6 +143,19 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:1
 .chk-b11-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;padding:5px 7px;border-radius:5px;background:var(--surface-sub);border:1px solid var(--line);color:var(--fg);user-select:none;transition:all .15s}
 .chk-b11-pill:hover{border-color:var(--accent)}
 .chk-b11-pill input{accent-color:var(--accent);margin:0}
+
+/* 500mm Stepper Wrap & Visible Arrow Buttons */
+.dim-spin-wrap{flex:1;min-width:0;display:flex;align-items:stretch;position:relative;background:var(--bg);border:1px solid var(--line);border-radius:5px;transition:border-color .15s;overflow:hidden}
+.dim-spin-wrap:hover,.dim-spin-wrap:focus-within{border-color:var(--accent)}
+.dim-spin-wrap.is-first{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--bg))}
+.dim-spin-wrap input[type=number]{flex:1;min-width:0;width:100%;text-align:center;font-family:var(--font-num);font-size:12px;font-weight:600;padding:5px 16px 5px 3px;border:none;background:transparent;color:var(--fg);outline:none;-moz-appearance:textfield;appearance:textfield}
+.dim-spin-wrap.is-first input[type=number]{font-weight:700}
+.dim-spin-wrap input.bad{background:rgba(239,68,68,0.15)!important;color:#ef4444!important}
+.dim-spin-arrows{position:absolute;right:0;top:0;bottom:0;width:16px;display:flex;flex-direction:column;border-left:1px solid var(--line);background:var(--surface-sub);z-index:2}
+.dim-spin-btn{flex:1;border:none;background:transparent;color:var(--muted);cursor:pointer;padding:0;margin:0;font-size:7px;line-height:1;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.dim-spin-btn:hover{background:var(--accent);color:#fff}
+.dim-spin-btn:active{transform:scale(0.92)}
+.dim-spin-up{border-bottom:1px solid rgba(0,0,0,0.08)}
 
 /* Modern View & Sheet Control Bar (캔버스 상단 배치) */
 .view-sheet-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:8px;box-shadow:var(--shadow-sm);gap:8px;flex-wrap:wrap}
@@ -409,9 +423,8 @@ canvas.drag{cursor:grabbing}
       <!-- 1. 재질 및 보강 방식 (최상단 첫 번째 입력) -->
       <section class="box">
         <h2 id="secTitleMat">재질 및 보강 방식</h2>
-        <div class="opts-grid">
-          <label class="opt-card"><input type="radio" name="mat" value="SMC" checked> <span id="lblMatSMC">GRP (SMC)</span></label>
-          <label class="opt-card"><input type="radio" name="mat" value="STS"> <span id="lblMatSTS">STS (스텐)</span></label>
+        <div class="opts-grid" style="grid-template-columns:1fr">
+          <label class="opt-card" style="margin:0"><input type="radio" name="mat" value="SMC" checked> <span id="lblMatSMC">GRP (SMC)</span></label>
         </div>
         <div class="rf-pills" id="rfBox">
           <label class="rf-pill"><input type="radio" name="rf" value="0" checked> <span id="lblRf0">외부 보강</span></label>
@@ -423,7 +436,13 @@ canvas.drag{cursor:grabbing}
         <div class="seg" id="segW"><label id="lblWid">폭(WIDTH)</label></div>
         <div class="seg" id="segH">
           <label for="H" id="lblHei">높이(HEIGHT)</label>
-          <select id="H"></select>
+          <div class="dim-spin-wrap" style="flex:1">
+            <select id="H" style="width:100%;border:none;background:transparent;padding:6px 20px 6px 8px;font-size:12px;color:var(--fg);font-weight:600;outline:none"></select>
+            <div class="dim-spin-arrows">
+              <button type="button" class="dim-spin-btn dim-spin-up" id="btnHUp" title="+500mm (다음 높이)" tabindex="-1">▲</button>
+              <button type="button" class="dim-spin-btn dim-spin-down" id="btnHDown" title="-500mm (이전 높이)" tabindex="-1">▼</button>
+            </div>
+          </div>
           <label class="chk-b11-pill" title="1000/500 모듈 조합 토글"><input type="checkbox" id="b11" checked> <span id="lblB11">1×1 패널 모듈</span></label>
         </div>
         <div class="seg">
@@ -894,7 +913,7 @@ canvas.drag{cursor:grabbing}
           <!-- 하단 빠른 추가 바 -->
           <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:8px;padding:5px 6px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:6px">
             <span style="font-size:10.5px;font-weight:700" id="lblNewH">➕ 새 높이:</span>
-            <input type="number" id="newHInput" placeholder="예: 5500" step="100" min="500" max="10000" style="width:65px;padding:3px 4px;font-size:11px;text-align:center">
+            <input type="number" id="newHInput" placeholder="예: 5500" step="500" min="500" max="10000" style="width:65px;padding:3px 4px;font-size:11px;text-align:center">
             <button type="button" id="btnAddNewH" class="btn-sm" style="font-size:10.5px;padding:3px 6px">추가</button>
           </div>
         </section>
@@ -1207,7 +1226,7 @@ canvas.drag{cursor:grabbing}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:8px 12px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:6px">
           <div style="display:flex;align-items:center;gap:8px">
             <span id="lblModalNewH" style="font-size:12px;font-weight:700">➕ 새 높이 규격 추가:</span>
-            <input type="number" id="modalNewHInput" placeholder="예: 5500" step="100" min="500" max="10000" style="width:100px;padding:4px 8px;font-size:12px;text-align:center">
+            <input type="number" id="modalNewHInput" placeholder="예: 5500" step="500" min="500" max="10000" style="width:100px;padding:4px 8px;font-size:12px;text-align:center">
             <button type="button" id="btnModalAddNewH" class="btn-sm" style="font-size:12px;padding:4px 10px">행 추가</button>
           </div>
           <button type="button" id="btnModalCloseBottom" class="btn-sm" style="font-size:12px;padding:4px 12px">닫기</button>
@@ -1226,27 +1245,27 @@ canvas.drag{cursor:grabbing}
           <div>
             <label id="lblModalMat" style="font-size:11px;font-weight:600">재질</label>
             <select id="modalMat" style="width:100%;padding:5px;font-size:12px">
-              <option value="SMC">SMC (GRP)</option>
-              <option value="STS">STS (스텐)</option>
+              <option value="SMC" selected>SMC (GRP)</option>
             </select>
           </div>
           <div>
-            <label id="lblModalCat" style="font-size:11px;font-weight:600">적용 위치 / 부위</label>
+            <label id="lblModalCat" style="font-size:11px;font-weight:600">판넬 종류 / 부위</label>
             <select id="modalCat" style="width:100%;padding:5px;font-size:12px">
+              <option value="side">🏢 측면판넬 (Side Panel)</option>
               <option value="top">🏠 천정판넬 (Roof Panel)</option>
+              <option value="manhole">🔘 맨홀판넬 (Manhole Panel)</option>
               <option value="bottom">⚓ 저판판넬 (Bottom Panel)</option>
-              <option value="side">🏢 측면판넬 (Side / Elevation Panel)</option>
-              <option value="common">🌟 공통판넬 (천정·저판·측면 모든곳에 공통 사용)</option>
-              <option value="top_bottom">🔲 평면판넬 (상·하부 공용)</option>
+              <option value="drain">💧 드레인판넬 (Drain Panel)</option>
+              <option value="common">🌟 공통판넬 (모든 부위 공통 사용)</option>
             </select>
           </div>
           <div>
             <label id="lblModalW" style="font-size:11px;font-weight:600">가로 폭 (W mm)</label>
-            <input type="number" id="modalW" value="1000" step="100" style="width:100%;padding:5px;font-size:12px">
+            <input type="number" id="modalW" value="1000" step="500" style="width:100%;padding:5px;font-size:12px">
           </div>
           <div>
             <label id="lblModalH" style="font-size:11px;font-weight:600">세로 높이 (H mm)</label>
-            <input type="number" id="modalH" value="1000" step="100" style="width:100%;padding:5px;font-size:12px">
+            <input type="number" id="modalH" value="1000" step="500" style="width:100%;padding:5px;font-size:12px">
           </div>
         </div>
 
@@ -1403,20 +1422,20 @@ canvas.drag{cursor:grabbing}
                 <div>
                   <label id="lblFilterMat" style="font-size:11px;color:var(--muted);display:block;margin-bottom:2px">재질 필터</label>
                   <select id="dbFilterMat" style="width:100%;font-size:12px;padding:5px">
-                    <option value="ALL">전체 재질</option>
+                    <option value="ALL" selected>전체 재질</option>
                     <option value="SMC">SMC (GRP)</option>
-                    <option value="STS">STS (스텐)</option>
                   </select>
                 </div>
                 <div>
                   <label id="lblFilterCat" style="font-size:11px;color:var(--muted);display:block;margin-bottom:2px">위치 필터</label>
                   <select id="dbFilterCat" style="width:100%;font-size:12px;padding:5px">
                     <option value="ALL">전체 위치 (All Categories)</option>
-                    <option value="top">🏠 천정판넬 (Roof)</option>
-                    <option value="bottom">⚓ 저판판넬 (Bottom)</option>
                     <option value="side">🏢 측면판넬 (Side)</option>
+                    <option value="top">🏠 천정판넬 (Roof)</option>
+                    <option value="manhole">🔘 맨홀판넬 (Manhole)</option>
+                    <option value="bottom">⚓ 저판판넬 (Bottom)</option>
+                    <option value="drain">💧 드레인판넬 (Drain)</option>
                     <option value="common">🌟 공통판넬 (Common)</option>
-                    <option value="top_bottom">🔲 평면판넬 (상·하부)</option>
                   </select>
                 </div>
               </div>
@@ -1486,13 +1505,14 @@ canvas.drag{cursor:grabbing}
                 </div>
               </div>
 
-              <!-- 2. 4방향 뷰 및 적용 높이 설정 카드 -->
+              <!-- 2. 4방향 뷰 및 적용 높이 설정 카드 (판넬 선택 시 6대 부위로 자동 전환) -->
               <div style="background:var(--surface-sub);padding:10px 12px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                  <span style="font-size:11.5px;font-weight:700">2. 도면 투영 방향 (4방향 뷰)</span>
+                  <span id="curViewBadgeTitle" style="font-size:11.5px;font-weight:700">2. 도면 투영 방향 (4방향 뷰)</span>
                   <span id="curViewBadge" style="font-size:11px;color:var(--accent);font-weight:700">🏢 정면도 선택됨</span>
                 </div>
-                <div class="cad-view-nav" style="margin-bottom:10px">
+                <!-- 4방향 뷰 버튼 (부품용) -->
+                <div class="cad-view-nav" id="cadViewNav" style="margin-bottom:10px">
                   <button type="button" class="cad-view-btn" data-cad-view="plan" id="cadViewBtnPlan">
                     <span class="v-icon">🔲</span>
                     <span class="v-name">평면도</span>
@@ -1515,8 +1535,42 @@ canvas.drag{cursor:grabbing}
                   </button>
                 </div>
 
-                <!-- 적용 높이 & 세부 구분 -->
-                <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:8px;align-items:center">
+                <!-- 6대 부위 버튼 (판넬 전용: 측면/천정/맨홀/저판/드레인/공통) -->
+                <div class="cad-panel-pos-nav" id="cadPanelPosNav" style="display:none;margin-bottom:10px">
+                  <button type="button" class="cad-pos-btn active" data-pos="side" id="cadPosBtnSide">
+                    <span class="v-icon">🏢</span>
+                    <span class="v-name">측면판넬</span>
+                    <span class="v-stat" id="statBadgeSide">⚪ 기본</span>
+                  </button>
+                  <button type="button" class="cad-pos-btn" data-pos="top" id="cadPosBtnTop">
+                    <span class="v-icon">🏠</span>
+                    <span class="v-name">천정판넬</span>
+                    <span class="v-stat" id="statBadgeTop">⚪ 기본</span>
+                  </button>
+                  <button type="button" class="cad-pos-btn" data-pos="manhole" id="cadPosBtnManhole">
+                    <span class="v-icon">🔘</span>
+                    <span class="v-name">맨홀판넬</span>
+                    <span class="v-stat" id="statBadgeManhole">⚪ 기본</span>
+                  </button>
+                  <button type="button" class="cad-pos-btn" data-pos="bottom" id="cadPosBtnBottom">
+                    <span class="v-icon">⚓</span>
+                    <span class="v-name">저판판넬</span>
+                    <span class="v-stat" id="statBadgeBottom">⚪ 기본</span>
+                  </button>
+                  <button type="button" class="cad-pos-btn" data-pos="drain" id="cadPosBtnDrain">
+                    <span class="v-icon">💧</span>
+                    <span class="v-name">드레인판넬</span>
+                    <span class="v-stat" id="statBadgeDrain">⚪ 기본</span>
+                  </button>
+                  <button type="button" class="cad-pos-btn" data-pos="common" id="cadPosBtnCommon">
+                    <span class="v-icon">🌟</span>
+                    <span class="v-name">공통판넬</span>
+                    <span class="v-stat" id="statBadgeCommon">⚪ 기본</span>
+                  </button>
+                </div>
+
+                <!-- 적용 높이 & 세부 구분 (판넬 선택 시 높이는 숨겨짐) -->
+                <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:8px;align-items:center" id="cadPartHeightContainer">
                   <div>
                     <label id="lblCadPartHeight" style="font-size:11px;font-weight:700;display:block;margin-bottom:3px">📏 적용 높이 (Height H)</label>
                     <select id="cadPartHeightSel" style="width:100%;font-size:12px;padding:5px;font-weight:600">
@@ -1539,7 +1593,6 @@ canvas.drag{cursor:grabbing}
                       <select id="cadPartSubSel" style="flex:1;font-size:11.5px;padding:5px"></select>
                       <select id="cadPartMatSel" style="width:72px;font-size:11.5px;padding:5px">
                         <option value="SMC">SMC</option>
-                        <option value="STS">STS</option>
                         <option value="COMMON">공통</option>
                       </select>
                     </div>
@@ -2060,15 +2113,18 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       $('miniOffset').options[1].textContent = currentLang === 'en' ? '● Center (0)' : '● 중앙 (0)';
       $('miniOffset').options[2].textContent = currentLang === 'en' ? '▶ Right (+250)' : '▶ 우 (+250)';
     }
-    if ($('dbFilterMat') && $('dbFilterMat').options && $('dbFilterMat').options.length >= 3) {
+    if ($('dbFilterMat') && $('dbFilterMat').options && $('dbFilterMat').options.length >= 2) {
       $('dbFilterMat').options[0].textContent = currentLang === 'en' ? 'All Materials' : '전체 재질';
       $('dbFilterMat').options[1].textContent = 'SMC (GRP)';
-      $('dbFilterMat').options[2].textContent = currentLang === 'en' ? 'STS (Stainless)' : 'STS (스텐)';
     }
-    if ($('dbFilterCat') && $('dbFilterCat').options && $('dbFilterCat').options.length >= 3) {
-      $('dbFilterCat').options[0].textContent = currentLang === 'en' ? 'All Categories' : '전체 위치';
-      $('dbFilterCat').options[1].textContent = currentLang === 'en' ? 'Plan (Top/Bottom)' : '평면 (상·하부)';
-      $('dbFilterCat').options[2].textContent = currentLang === 'en' ? 'Elevation (Side)' : '입면 (측면)';
+    if ($('dbFilterCat') && $('dbFilterCat').options && $('dbFilterCat').options.length >= 7) {
+      $('dbFilterCat').options[0].textContent = currentLang === 'en' ? 'All Positions' : '전체 위치';
+      $('dbFilterCat').options[1].textContent = currentLang === 'en' ? '🏢 Side Panel' : '🏢 측면판넬';
+      $('dbFilterCat').options[2].textContent = currentLang === 'en' ? '🏠 Roof Panel' : '🏠 천정판넬';
+      $('dbFilterCat').options[3].textContent = currentLang === 'en' ? '🔘 Manhole Panel' : '🔘 맨홀판넬';
+      $('dbFilterCat').options[4].textContent = currentLang === 'en' ? '⚓ Bottom Panel' : '⚓ 저판판넬';
+      $('dbFilterCat').options[5].textContent = currentLang === 'en' ? '💧 Drain Panel' : '💧 드레인판넬';
+      $('dbFilterCat').options[6].textContent = currentLang === 'en' ? '🌟 Common Panel' : '🌟 공통판넬';
     }
 
     // Tab 1: Specs & Dims
@@ -2284,10 +2340,13 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     if ($('panelRegModalTitle')) $('panelRegModalTitle').innerHTML = currentLang === 'en' ? '<span>🧩</span> Register & Edit Panel Shape' : '<span>🧩</span> 판넬 등록 및 형상 편집';
     if ($('lblModalMat')) $('lblModalMat').textContent = currentLang === 'en' ? 'Material' : '재질';
     if ($('lblModalCat')) $('lblModalCat').textContent = currentLang === 'en' ? 'Category' : '적용 위치';
-    if ($('modalCat') && $('modalCat').options && $('modalCat').options.length >= 3) {
-      $('modalCat').options[0].textContent = currentLang === 'en' ? 'Plan (Top/Bottom Panel)' : '평면 (상·하부 패널)';
-      $('modalCat').options[1].textContent = currentLang === 'en' ? 'Elevation (Side Panel)' : '입면 (측면 패널)';
-      $('modalCat').options[2].textContent = currentLang === 'en' ? 'All (Plan + Elevation)' : '전체 (평면 + 입면 모두 적용)';
+    if ($('modalCat') && $('modalCat').options && $('modalCat').options.length >= 6) {
+      $('modalCat').options[0].textContent = currentLang === 'en' ? '🏢 Side Panel' : '🏢 측면판넬 (Side Panel)';
+      $('modalCat').options[1].textContent = currentLang === 'en' ? '🏠 Roof Panel' : '🏠 천정판넬 (Roof Panel)';
+      $('modalCat').options[2].textContent = currentLang === 'en' ? '🔘 Manhole Panel' : '🔘 맨홀판넬 (Manhole Panel)';
+      $('modalCat').options[3].textContent = currentLang === 'en' ? '⚓ Bottom Panel' : '⚓ 저판판넬 (Bottom Panel)';
+      $('modalCat').options[4].textContent = currentLang === 'en' ? '💧 Drain Panel' : '💧 드레인판넬 (Drain Panel)';
+      $('modalCat').options[5].textContent = currentLang === 'en' ? '🌟 Common Panel' : '🌟 공통판넬 (모든 부위 적용)';
     }
     if ($('lblModalW')) $('lblModalW').textContent = currentLang === 'en' ? 'Width (W mm)' : '가로 폭 (W mm)';
     if ($('lblModalH')) $('lblModalH').textContent = currentLang === 'en' ? 'Height (H mm)' : '세로 높이 (H mm)';
@@ -2409,14 +2468,72 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
   function makeInputs(host, arr, key) {
     arr.forEach((v, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'dim-spin-wrap' + (i === 0 ? ' is-first' : '');
+
       const inp = document.createElement('input');
-      inp.type = 'number'; inp.id = key + i; inp.min = 0; inp.step = 100; inp.value = v || '';
+      inp.type = 'number'; inp.id = key + i; inp.min = 0; inp.step = 500; inp.value = v || '';
       inp.setAttribute('aria-label', host.firstChild.textContent + ' ' + (i + 1));
       inp.addEventListener('input', schedule);
-      host.appendChild(inp);
+
+      const arrows = document.createElement('div');
+      arrows.className = 'dim-spin-arrows';
+
+      const btnUp = document.createElement('button');
+      btnUp.type = 'button';
+      btnUp.className = 'dim-spin-btn dim-spin-up';
+      btnUp.innerHTML = '▲';
+      btnUp.title = '+500mm';
+      btnUp.tabIndex = -1;
+
+      const btnDown = document.createElement('button');
+      btnDown.type = 'button';
+      btnDown.className = 'dim-spin-btn dim-spin-down';
+      btnDown.innerHTML = '▼';
+      btnDown.title = '-500mm';
+      btnDown.tabIndex = -1;
+
+      const stepVal = (delta) => {
+        let cur = Number(inp.value) || 0;
+        if (cur % 500 !== 0) {
+          cur = delta > 0 ? Math.floor(cur / 500) * 500 : Math.ceil(cur / 500) * 500;
+        }
+        let next = cur + delta;
+        if (next <= 0) {
+          next = (i === 0) ? 500 : 0;
+        }
+        inp.value = next > 0 ? next : '';
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+
+      btnUp.addEventListener('click', () => stepVal(500));
+      btnDown.addEventListener('click', () => stepVal(-500));
+
+      arrows.appendChild(btnUp);
+      arrows.appendChild(btnDown);
+      wrap.appendChild(inp);
+      wrap.appendChild(arrows);
+      host.appendChild(wrap);
     });
   }
   makeInputs($('segL'), LEN0, 'L'); makeInputs($('segW'), WID0, 'W');
+
+  $('btnHUp')?.addEventListener('click', () => {
+    const sel = $('H');
+    if (!sel || sel.options.length === 0) return;
+    if (sel.selectedIndex < sel.options.length - 1) {
+      sel.selectedIndex += 1;
+      sel.dispatchEvent(new Event('change'));
+    }
+  });
+  $('btnHDown')?.addEventListener('click', () => {
+    const sel = $('H');
+    if (!sel || sel.options.length === 0) return;
+    if (sel.selectedIndex > 0) {
+      sel.selectedIndex -= 1;
+      sel.dispatchEvent(new Event('change'));
+    }
+  });
 
   /* ---------- 높이별 각 단별 판넬크기 지정 테이블 (1x1패널모듈 포함) ---------- */
   let activeHeightTable = null;
@@ -5056,7 +5173,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
   function getBuiltinPanelsList(filterMat, filterCat) {
     const list = [];
-    const mats = (filterMat === 'ALL') ? ['SMC', 'STS'] : [filterMat];
+    const mats = ['SMC'];
     mats.forEach(mat => {
       // 1. Top/Roof templates
       if (filterCat === 'ALL' || filterCat === 'top' || filterCat === 'top_bottom' || filterCat === 'common') {
@@ -5191,6 +5308,25 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
           if (!SIDE_T[mat]) SIDE_T[mat] = {};
           SIDE_T[mat][key] = ents;
         }
+        // 맨홀판넬 (Manhole)
+        if (p.category === 'manhole') {
+          try {
+            let customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
+            customComp['manhole_plan'] = ents;
+            customComp['manhole'] = ents;
+            localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
+          } catch(e) {}
+        }
+        // 드레인판넬 (Drain)
+        if (p.category === 'drain') {
+          try {
+            let customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
+            customComp['drain_plan'] = ents;
+            customComp['drain_front'] = ents;
+            customComp['drain'] = ents;
+            localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
+          } catch(e) {}
+        }
       });
     } catch (e) {
       console.warn('applyActiveTemplates error:', e);
@@ -5214,6 +5350,10 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         badgeHtml = `<span style="font-size:10px;padding:2px 5px;border-radius:4px;background:rgba(217,119,6,0.12);color:#d97706;font-weight:600">⚓ ${isEn ? 'Bottom' : '저판'}</span>`;
       } else if (p.category === 'side') {
         badgeHtml = `<span style="font-size:10px;padding:2px 5px;border-radius:4px;background:rgba(16,185,129,0.12);color:#059669;font-weight:600">🏢 ${isEn ? 'Side' : '측면'}</span>`;
+      } else if (p.category === 'manhole') {
+        badgeHtml = `<span style="font-size:10px;padding:2px 5px;border-radius:4px;background:rgba(236,72,153,0.12);color:#db2777;font-weight:600">🔘 ${isEn ? 'Manhole' : '맨홀'}</span>`;
+      } else if (p.category === 'drain') {
+        badgeHtml = `<span style="font-size:10px;padding:2px 5px;border-radius:4px;background:rgba(6,182,212,0.12);color:#0891b2;font-weight:600">💧 ${isEn ? 'Drain' : '드레인'}</span>`;
       } else if (p.category === 'common' || p.category === 'all') {
         badgeHtml = `<span style="font-size:10px;padding:2px 5px;border-radius:4px;background:rgba(147,51,234,0.12);color:#7c3aed;font-weight:600">🌟 ${isEn ? 'Common' : '공통'}</span>`;
       } else {
@@ -6490,10 +6630,12 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       { id: 'foundation_pad', name: '기초 콘크리트 패드 빔 300x525', w: 300, h: 525, mat: 'COMMON' }
     ],
     panel: [
-      { id: 'top_1000x1000', name: '상·하부 판넬 1000×1000', w: 1000, h: 1000, mat: 'SMC' },
-      { id: 'top_1000x500', name: '상·하부 판넬 1000×500', w: 1000, h: 500, mat: 'SMC' },
-      { id: 'side_1000x1000', name: '측면 판넬 1000×1000', w: 1000, h: 1000, mat: 'SMC' },
-      { id: 'side_1000x500', name: '측면 판넬 1000×500', w: 1000, h: 500, mat: 'SMC' }
+      { id: 'panel_1000x1000', name: '표준 판넬 1000×1000', w: 1000, h: 1000, mat: 'SMC' },
+      { id: 'panel_1000x1500', name: '1.5단 판넬 1000×1500', w: 1000, h: 1500, mat: 'SMC' },
+      { id: 'panel_1000x2000', name: '2단 판넬 1000×2000', w: 1000, h: 2000, mat: 'SMC' },
+      { id: 'panel_1000x500', name: '0.5단 판넬 1000×500', w: 1000, h: 500, mat: 'SMC' },
+      { id: 'panel_500x1000', name: '분할 판넬 500×1000', w: 500, h: 1000, mat: 'SMC' },
+      { id: 'panel_500x500', name: '분할 판넬 500×500', w: 500, h: 500, mat: 'SMC' }
     ],
     ext_reinf: [
       { id: 'reinf_h_channel', name: '외부보강 메인 기둥 (H/찬넬 포스트)', w: 200, h: 2000, mat: 'COMMON' },
@@ -6582,10 +6724,21 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     });
   });
 
+  // 판넬 6대 부위 버튼 이벤트 등록
+  document.querySelectorAll('.cad-pos-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pos = btn.dataset.pos || 'side';
+      setCadCurrentView(pos);
+    });
+  });
+
   function setCadCurrentView(view) {
     cadCurrentView = view;
     document.querySelectorAll('.cad-view-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.cadView === view);
+    });
+    document.querySelectorAll('.cad-pos-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.pos === view);
     });
     const curBadge = $('curViewBadge');
     if (curBadge) {
@@ -6596,11 +6749,14 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   }
 
   function getViewIcon(v) {
-    const icons = { plan: '🔲', front: '🏢', right: '📐', left: '📐' };
+    const icons = {
+      plan: '🔲', front: '🏢', right: '📐', left: '📐',
+      side: '🏢', top: '🏠', manhole: '🔘', bottom: '⚓', drain: '💧', common: '🌟'
+    };
     return icons[v] || '📐';
   }
 
-  // 4방향 뷰 뱃지 업데이트 (🟢 사용자 등록 vs ⚪ 기본)
+  // 4방향 뷰 뱃지 및 판넬 6대 부위 뱃지 업데이트 (🟢 사용자 등록 vs ⚪ 기본)
   function updateViewBadges(cat, subKey, h) {
     const views = ['plan', 'front', 'right', 'left'];
     const customComp = getActivePartTemplates();
@@ -6644,18 +6800,49 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         badge.innerHTML = `<span style="color:var(--muted)">⚪ 기본</span>`;
       }
     });
+
+    // 판넬 6대 부위 뱃지 업데이트
+    const panelPositions = ['side', 'top', 'manhole', 'bottom', 'drain', 'common'];
+    panelPositions.forEach(pos => {
+      const badgeId = 'statBadge' + pos.charAt(0).toUpperCase() + pos.slice(1);
+      const badge = $(badgeId);
+      if (!badge) return;
+      const p = customPanels.find(x => x.category === pos && x.entities && x.entities.length);
+      if (p) {
+        badge.innerHTML = `<span style="color:#10b981;font-weight:700">🟢 등록 (${p.entities.length})</span>`;
+      } else {
+        badge.innerHTML = `<span style="color:var(--muted)">⚪ 기본</span>`;
+      }
+    });
   }
 
   function getPartDefaultEntities(cat, subKey, w, h, view = 'front') {
     if (cat === 'panel') {
       const mat = $('cadPartMatSel')?.value || 'SMC';
       const sizeKey = `${w || 1000}x${h || 1000}`;
-      const isSide = (view !== 'plan');
-      if (isSide) {
+      if (view === 'side' || view === 'front' || view === 'right' || view === 'left') {
         if (typeof SIDE_T !== 'undefined' && SIDE_T && SIDE_T[mat] && SIDE_T[mat][sizeKey]) {
           return JSON.parse(JSON.stringify(SIDE_T[mat][sizeKey]));
         }
-      } else {
+      } else if (view === 'top' || view === 'plan') {
+        if (typeof TEMPLATES !== 'undefined' && TEMPLATES && TEMPLATES[mat] && TEMPLATES[mat][sizeKey]) {
+          return JSON.parse(JSON.stringify(TEMPLATES[mat][sizeKey]));
+        }
+      } else if (view === 'bottom') {
+        if (typeof window.BOTTOM_T !== 'undefined' && window.BOTTOM_T && window.BOTTOM_T[mat] && window.BOTTOM_T[mat][sizeKey]) {
+          return JSON.parse(JSON.stringify(window.BOTTOM_T[mat][sizeKey]));
+        }
+        if (typeof TEMPLATES !== 'undefined' && TEMPLATES && TEMPLATES[mat] && TEMPLATES[mat][sizeKey]) {
+          return JSON.parse(JSON.stringify(TEMPLATES[mat][sizeKey]));
+        }
+      } else if (view === 'manhole') {
+        return generatePresetEntities('concentric', w || 1000, h || 1000);
+      } else if (view === 'drain') {
+        return generatePresetEntities('grid', w || 1000, h || 1000);
+      } else if (view === 'common') {
+        if (typeof SIDE_T !== 'undefined' && SIDE_T && SIDE_T[mat] && SIDE_T[mat][sizeKey]) {
+          return JSON.parse(JSON.stringify(SIDE_T[mat][sizeKey]));
+        }
         if (typeof TEMPLATES !== 'undefined' && TEMPLATES && TEMPLATES[mat] && TEMPLATES[mat][sizeKey]) {
           return JSON.parse(JSON.stringify(TEMPLATES[mat][sizeKey]));
         }
@@ -6673,14 +6860,17 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     if (cat === 'panel') {
       const mat = $('cadPartMatSel')?.value || 'SMC';
       const sizeKey = `${w || 1000}x${h || 1000}`;
-      const isSide = (view !== 'plan');
       try {
         const custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
-        let p = null;
-        if (isSide) {
+        let p = custom.find(x => x.material === mat && x.category === view && x.size_key === sizeKey);
+        if (!p && (view === 'side' || view === 'front' || view === 'right' || view === 'left')) {
           p = custom.find(x => x.material === mat && (x.category === 'side' || x.category === 'common') && x.size_key === sizeKey);
-        } else {
-          p = custom.find(x => x.material === mat && (x.category === 'top' || x.category === 'bottom' || x.category === 'top_bottom' || x.category === 'common') && x.size_key === sizeKey);
+        }
+        if (!p && (view === 'top' || view === 'bottom' || view === 'plan')) {
+          p = custom.find(x => x.material === mat && (x.category === view || x.category === 'top_bottom' || x.category === 'common') && x.size_key === sizeKey);
+        }
+        if (!p) {
+          p = custom.find(x => x.material === mat && x.category === 'common' && x.size_key === sizeKey);
         }
         if (p && p.entities && p.entities.length) return p.entities;
       } catch (e) {}
@@ -6895,10 +7085,10 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     } else if (name.includes('reinf') || name.includes('보강') || name.includes('ext_reinf')) {
       category = 'ext_reinf';
       sub = 'ext_reinf';
-    } else if (name.includes('manhole') || name.includes('맨홀')) {
-      category = 'manhole';
-      view = 'plan';
-      sub = 'manhole';
+    } else if (name.includes('drain') || name.includes('드레인')) {
+      category = 'panel';
+      view = 'drain';
+      sub = 'drain';
     } else if (name.includes('airvent') || name.includes('air_vent') || name.includes('에어벤트') || name.includes('vent')) {
       category = 'airvent';
       view = 'front';
@@ -6913,67 +7103,35 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     } else if (name.includes('foundation') || name.includes('pad') || name.includes('기초패드') || name.includes('기초')) {
       category = 'foundation';
       sub = 'foundation';
-    } else if (name.includes('panel') || name.includes('판넬') || name.includes('suf')) {
+    } else if (name.includes('manhole') || name.includes('맨홀')) {
+      if (w >= 800 || h >= 800 || name.includes('panel') || name.includes('판넬')) {
+        category = 'panel';
+        view = 'manhole';
+        sub = 'manhole';
+      } else {
+        category = 'manhole';
+        view = 'plan';
+        sub = 'manhole';
+      }
+    } else if (name.includes('panel') || name.includes('판넬') || name.includes('suf') || name.includes('plate') || name.includes('ceil') || name.includes('roof') || name.includes('천정') || name.includes('저판') || name.includes('측면') || ((w === 1000 || w === 500) && (h === 1000 || h === 500 || h === 1500 || h === 2000))) {
       category = 'panel';
       sub = 'side';
     }
 
-    if (name.includes('top') || name.includes('plan') || name.includes('평면')) {
-      view = 'plan';
-    } else if (name.includes('side') || name.includes('우측') || name.includes('측면')) {
-      view = 'right';
-    } else if (name.includes('rear') || name.includes('좌측') || name.includes('배면') || name.includes('left')) {
-      view = 'left';
-    } else if (name.includes('front') || name.includes('정면')) {
-      view = 'front';
-    }
-
-    const heightMatches = [
-      { regex: /1[._]?0\s*m/i, val: '1000' },
-      { regex: /1[._]?5\s*m/i, val: '1500' },
-      { regex: /2[._]?0\s*m/i, val: '2000' },
-      { regex: /2[._]?5\s*m/i, val: '2500' },
-      { regex: /3[._]?0\s*m/i, val: '3000' },
-      { regex: /3[._]?5\s*m/i, val: '3500' },
-      { regex: /4[._]?0\s*m/i, val: '4000' },
-      { regex: /4[._]?5\s*m/i, val: '4500' },
-      { regex: /5[._]?0\s*m/i, val: '5000' },
-      { regex: /1000/i, val: '1000' },
-      { regex: /1500/i, val: '1500' },
-      { regex: /2000/i, val: '2000' },
-      { regex: /2500/i, val: '2500' },
-      { regex: /3000/i, val: '3000' },
-      { regex: /3500/i, val: '3500' },
-      { regex: /4000/i, val: '4000' }
-    ];
-    for (const hm of heightMatches) {
-      if (hm.regex.test(name)) {
-        height = hm.val;
-        break;
-      }
-    }
-
-    if (['ladder', 'inladder', 'ext_reinf'].includes(category)) {
-      if (view !== 'plan') {
-        if (maxDim >= 800 && maxDim <= 1300) height = '1000';
-        else if (maxDim > 1300 && maxDim <= 1800) height = '1500';
-        else if (maxDim > 1800 && maxDim <= 2300) height = '2000';
-        else if (maxDim > 2300 && maxDim <= 2800) height = '2500';
-        else if (maxDim > 2800 && maxDim <= 3300) height = '3000';
-        else if (maxDim > 3300 && maxDim <= 3800) height = '3500';
-        else if (maxDim > 3800 && maxDim <= 4400) height = '4000';
-        else if (maxDim > 4400 && maxDim <= 4900) height = '4500';
-        else if (maxDim > 4900) height = '5000';
-      }
-    }
-
     if (category === 'panel') {
-      if (name.includes('roof') || name.includes('천정') || name.includes('top') || name.includes('상부')) {
+      height = null;
+      if (name.includes('roof') || name.includes('천정') || name.includes('top') || name.includes('상부') || name.includes('ceil')) {
         sub = 'top';
         view = 'top';
       } else if (name.includes('bot') || name.includes('저판') || name.includes('바닥') || name.includes('하부')) {
         sub = 'bottom';
         view = 'bottom';
+      } else if (name.includes('manhole') || name.includes('맨홀')) {
+        sub = 'manhole';
+        view = 'manhole';
+      } else if (name.includes('drain') || name.includes('드레인')) {
+        sub = 'drain';
+        view = 'drain';
       } else if (name.includes('com') || name.includes('common') || name.includes('공통') || name.includes('all')) {
         sub = 'common';
         view = 'common';
@@ -6981,10 +7139,100 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
         sub = 'side';
         view = 'side';
       }
+    } else {
+      if (name.includes('top') || name.includes('plan') || name.includes('평면')) {
+        view = 'plan';
+      } else if (name.includes('side') || name.includes('우측') || name.includes('측면')) {
+        view = 'right';
+      } else if (name.includes('rear') || name.includes('좌측') || name.includes('배면') || name.includes('left')) {
+        view = 'left';
+      } else if (name.includes('front') || name.includes('정면')) {
+        view = 'front';
+      }
+
+      const heightMatches = [
+        { regex: /1[._]?0\s*m/i, val: '1000' },
+        { regex: /1[._]?5\s*m/i, val: '1500' },
+        { regex: /2[._]?0\s*m/i, val: '2000' },
+        { regex: /2[._]?5\s*m/i, val: '2500' },
+        { regex: /3[._]?0\s*m/i, val: '3000' },
+        { regex: /3[._]?5\s*m/i, val: '3500' },
+        { regex: /4[._]?0\s*m/i, val: '4000' },
+        { regex: /4[._]?5\s*m/i, val: '4500' },
+        { regex: /5[._]?0\s*m/i, val: '5000' },
+        { regex: /1000/i, val: '1000' },
+        { regex: /1500/i, val: '1500' },
+        { regex: /2000/i, val: '2000' },
+        { regex: /2500/i, val: '2500' },
+        { regex: /3000/i, val: '3000' },
+        { regex: /3500/i, val: '3500' },
+        { regex: /4000/i, val: '4000' }
+      ];
+      for (const hm of heightMatches) {
+        if (hm.regex.test(name)) {
+          height = hm.val;
+          break;
+        }
+      }
+
+      if (['ladder', 'inladder', 'ext_reinf'].includes(category)) {
+        if (view !== 'plan') {
+          if (maxDim >= 800 && maxDim <= 1300) height = '1000';
+          else if (maxDim > 1300 && maxDim <= 1800) height = '1500';
+          else if (maxDim > 1800 && maxDim <= 2300) height = '2000';
+          else if (maxDim > 2300 && maxDim <= 2800) height = '2500';
+          else if (maxDim > 2800 && maxDim <= 3300) height = '3000';
+          else if (maxDim > 3300 && maxDim <= 3800) height = '3500';
+          else if (maxDim > 3800 && maxDim <= 4400) height = '4000';
+          else if (maxDim > 4400 && maxDim <= 4900) height = '4500';
+          else if (maxDim > 4900) height = '5000';
+        }
+      }
     }
 
     return { category, view, height, sub };
   }
+
+  function getBlockViewOptionsHtml(cat, selectedView) {
+    if (cat === 'panel') {
+      const opts = [
+        { v: 'side', l: '🏢 측면판넬 (Side)' },
+        { v: 'top', l: '🏠 천정판넬 (Roof)' },
+        { v: 'manhole', l: '🔘 맨홀판넬 (Manhole)' },
+        { v: 'bottom', l: '⚓ 저판판넬 (Bottom)' },
+        { v: 'drain', l: '💧 드레인판넬 (Drain)' },
+        { v: 'common', l: '🌟 공통판넬 (모든 부위)' }
+      ];
+      return opts.map(o => `<option value="${o.v}" ${selectedView === o.v ? 'selected' : ''}>${o.l}</option>`).join('');
+    } else {
+      const opts = [
+        { v: 'front', l: '🏢 정면도 (측면)' },
+        { v: 'right', l: '📐 우측면도' },
+        { v: 'left', l: '📐 좌측면도' },
+        { v: 'plan', l: '🔲 평면도 (상·하부)' }
+      ];
+      return opts.map(o => `<option value="${o.v}" ${selectedView === o.v ? 'selected' : ''}>${o.l}</option>`).join('');
+    }
+  }
+
+  window.onBlockCardCatChange = function(idx, cat) {
+    const isPanel = (cat === 'panel');
+    const viewSel = $(`blkViewSel_${idx}`);
+    const viewLbl = $(`blkViewLbl_${idx}`);
+    const sizeBox = $(`blkPanelSizeBox_${idx}`);
+    const hBox = $(`blkHBox_${idx}`);
+    const curVal = viewSel?.value;
+
+    if (viewLbl) {
+      viewLbl.textContent = isPanel ? '판넬 위치 / 종류' : '투영 방향';
+    }
+    if (viewSel) {
+      const defaultView = isPanel ? (['side', 'top', 'manhole', 'bottom', 'drain', 'common'].includes(curVal) ? curVal : 'side') : 'front';
+      viewSel.innerHTML = getBlockViewOptionsHtml(cat, defaultView);
+    }
+    if (sizeBox) sizeBox.style.display = isPanel ? 'block' : 'none';
+    if (hBox) hBox.style.display = isPanel ? 'none' : 'block';
+  };
 
   window._currentDetectedBlocks = [];
 
@@ -6998,10 +7246,11 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
     wiz.style.display = 'block';
     if (countBadge) countBadge.textContent = `${blocks.length}개 블록 감지`;
-    if (subTitle) subTitle.innerHTML = `도면 <b>[${fileName}]</b>에서 총 <b>${blocks.length}개</b>의 블록(Block)을 추출했습니다. 각 블록의 추천 대상 부품/방향/높이를 확인한 후 일괄 등록하세요.`;
+    if (subTitle) subTitle.innerHTML = `도면 <b>[${fileName}]</b>에서 총 <b>${blocks.length}개</b>의 블록(Block)을 추출했습니다. 판넬과 부품의 규격·위치를 확인한 후 일괄 등록하세요.`;
 
     const cardsHtml = blocks.map((b, idx) => {
       const rec = detectBlockRecommendation(b);
+      const isPanel = (rec.category === 'panel');
       return `
         <div class="cad-block-card" data-index="${idx}">
           <div style="display:flex;justify-content:space-between;align-items:center">
@@ -7017,13 +7266,13 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
           </div>
           <div class="blk-ctrl-row">
             <div>
-              <label style="font-size:10px;color:var(--muted);display:block">대상 부품</label>
-              <select class="blk-cat-sel">
+              <label style="font-size:10px;color:var(--muted);display:block">구분 (판넬 vs 부품)</label>
+              <select class="blk-cat-sel" id="blkCatSel_${idx}" onchange="onBlockCardCatChange(${idx}, this.value)">
+                <option value="panel" ${isPanel ? 'selected' : ''}>🔲 판넬 DB</option>
                 <option value="ladder" ${rec.category === 'ladder' ? 'selected' : ''}>🪜 외부사다리</option>
                 <option value="inladder" ${rec.category === 'inladder' ? 'selected' : ''}>🪜 내부사다리</option>
-                <option value="panel" ${rec.category === 'panel' ? 'selected' : ''}>🔲 판넬 DB</option>
                 <option value="ext_reinf" ${rec.category === 'ext_reinf' ? 'selected' : ''}>🏛️ 외부보강</option>
-                <option value="manhole" ${rec.category === 'manhole' ? 'selected' : ''}>🔘 맨홀</option>
+                <option value="manhole" ${rec.category === 'manhole' ? 'selected' : ''}>🔘 맨홀 부품</option>
                 <option value="airvent" ${rec.category === 'airvent' ? 'selected' : ''}>💨 에어벤트</option>
                 <option value="nozzle" ${rec.category === 'nozzle' ? 'selected' : ''}>💧 배관노즐</option>
                 <option value="skid" ${rec.category === 'skid' ? 'selected' : ''}>🏗️ 스키드</option>
@@ -7031,21 +7280,26 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
               </select>
             </div>
             <div>
-              <label style="font-size:10px;color:var(--muted);display:block">투영 방향 / 판넬 부위</label>
-              <select class="blk-view-sel">
-                <option value="front" ${rec.view === 'front' ? 'selected' : ''}>🏢 정면도 (측면)</option>
-                <option value="right" ${rec.view === 'right' ? 'selected' : ''}>📐 우측면도</option>
-                <option value="left" ${rec.view === 'left' ? 'selected' : ''}>📐 좌측면도</option>
-                <option value="top" ${rec.view === 'top' ? 'selected' : ''}>🏠 천정판넬 (Roof)</option>
-                <option value="bottom" ${rec.view === 'bottom' ? 'selected' : ''}>⚓ 저판판넬 (Bottom)</option>
-                <option value="side" ${rec.view === 'side' ? 'selected' : ''}>🏢 측면판넬 (Side)</option>
-                <option value="common" ${rec.view === 'common' ? 'selected' : ''}>🌟 공통판넬 (천정·저판·측면 모두)</option>
-                <option value="plan" ${rec.view === 'plan' ? 'selected' : ''}>🔲 평면도 (상·하부)</option>
+              <label style="font-size:10px;color:var(--muted);display:block" id="blkViewLbl_${idx}">
+                ${isPanel ? '판넬 위치 / 종류' : '투영 방향'}
+              </label>
+              <select class="blk-view-sel" id="blkViewSel_${idx}">
+                ${getBlockViewOptionsHtml(rec.category, rec.view)}
               </select>
             </div>
           </div>
           <div class="blk-ctrl-row" style="margin-top:2px">
-            <div>
+            <!-- 판넬인 경우: 판넬 규격(WxH mm) 입력 (적용 높이 불필요) -->
+            <div id="blkPanelSizeBox_${idx}" style="${isPanel ? '' : 'display:none;'}">
+              <label style="font-size:10px;color:var(--accent);font-weight:700;display:block">판넬 규격 (W×H mm)</label>
+              <div style="display:flex;align-items:center;gap:3px">
+                <input type="number" class="blk-w-inp" value="${b.width}" step="500" style="width:52px;padding:3px 4px;font-size:11px;font-weight:600">
+                <span style="font-size:10px;color:var(--muted)">×</span>
+                <input type="number" class="blk-h-inp" value="${b.height}" step="500" style="width:52px;padding:3px 4px;font-size:11px;font-weight:600">
+              </div>
+            </div>
+            <!-- 부품인 경우: 적용 높이 선택 -->
+            <div id="blkHBox_${idx}" style="${isPanel ? 'display:none;' : ''}">
               <label style="font-size:10px;color:var(--muted);display:block">적용 높이</label>
               <select class="blk-h-sel">
                 <option value="common" ${rec.height === 'common' ? 'selected' : ''}>🌟 공통</option>
@@ -7060,9 +7314,9 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
                 <option value="5000" ${rec.height === '5000' ? 'selected' : ''}>H=5000</option>
               </select>
             </div>
-            <div style="display:flex;align-items:flex-end;gap:3px">
-              <button type="button" class="btn-sm btn-blk-load" style="flex:1;font-size:10.5px;padding:4px" onclick="loadBlockToMainEditor(${idx})" title="메인 CAD 편집기에서 열어 회전/대칭 수정">🔍 편집</button>
-              <button type="button" class="btn-sm pri btn-blk-reg" style="flex:1.4;font-size:10.5px;padding:4px 6px;font-weight:700" onclick="registerBlockCard(${idx})" title="이 부품으로 즉시 등록">💾 등록</button>
+            <div style="display:flex;align-items:flex-end;gap:3px;margin-left:auto">
+              <button type="button" class="btn-sm btn-blk-load" style="flex:1;font-size:10.5px;padding:4px 6px" onclick="loadBlockToMainEditor(${idx})" title="메인 CAD 편집기에서 열어 회전/대칭 수정">🔍 편집</button>
+              <button type="button" class="btn-sm pri btn-blk-reg" style="flex:1.4;font-size:10.5px;padding:4px 8px;font-weight:700" onclick="registerBlockCard(${idx})" title="이 부품/판넬로 즉시 등록">💾 등록</button>
             </div>
           </div>
         </div>
@@ -7081,7 +7335,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     }, 60);
 
     wiz.scrollIntoView({ behavior: 'smooth' });
-  }
+  };
 
   window.registerBlockCard = function(index) {
     const card = document.querySelector(`.cad-block-card[data-index="${index}"]`);
@@ -7093,20 +7347,30 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const view = card.querySelector('.blk-view-sel')?.value || 'front';
     const h = card.querySelector('.blk-h-sel')?.value || '2000';
     const mat = 'SMC';
-    const w = block.width || 1000;
-    const blockH = block.height || 1000;
+    const w = Number(card.querySelector('.blk-w-inp')?.value) || block.width || 1000;
+    const blockH = Number(card.querySelector('.blk-h-inp')?.value) || block.height || 1000;
     const sub = cat;
 
     if (cat === 'panel') {
       const sizeKey = `${w}x${blockH}`;
       let panelCat = 'side';
-      if (view === 'top') panelCat = 'top';
-      else if (view === 'bottom') panelCat = 'bottom';
-      else if (view === 'common') panelCat = 'common';
-      else if (view === 'side' || view === 'front' || view === 'right' || view === 'left') panelCat = 'side';
-      else if (view === 'plan') panelCat = 'top_bottom';
+      if (['side', 'top', 'manhole', 'bottom', 'drain', 'common'].includes(view)) {
+        panelCat = view;
+      } else if (view === 'front' || view === 'right' || view === 'left') {
+        panelCat = 'side';
+      } else if (view === 'plan') {
+        panelCat = 'top';
+      }
 
-      const catLabel = (panelCat === 'top') ? '천정' : (panelCat === 'bottom') ? '저판' : (panelCat === 'common' ? '공통' : (panelCat === 'top_bottom' ? '평면' : '측면'));
+      const catLabels = {
+        side: '측면',
+        top: '천정',
+        manhole: '맨홀',
+        bottom: '저판',
+        drain: '드레인',
+        common: '공통'
+      };
+      const catLabel = catLabels[panelCat] || '측면';
       const name = `${mat} ${w}x${blockH} ${catLabel} (${block.name || '블록'})`;
       try {
         let custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
@@ -7155,7 +7419,6 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     rebuild(false);
     draw();
     updateViewBadges(cat, sub, h);
-    renderRegisteredPartsTable();
   };
 
   window.registerAllDetectedBlocks = function() {
@@ -7310,13 +7573,15 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     if (cat === 'panel') {
       const sizeKey = `${w}x${h}`;
       let panelCat = 'side';
-      if (view === 'top') panelCat = 'top';
-      else if (view === 'bottom') panelCat = 'bottom';
-      else if (view === 'common') panelCat = 'common';
-      else if (view === 'side' || view === 'front' || view === 'right' || view === 'left') panelCat = 'side';
-      else if (view === 'plan') panelCat = 'top_bottom';
+      if (['side', 'top', 'manhole', 'bottom', 'drain', 'common'].includes(view)) {
+        panelCat = view;
+      } else if (view === 'front' || view === 'right' || view === 'left') {
+        panelCat = 'side';
+      } else if (view === 'plan') {
+        panelCat = 'top';
+      }
 
-      const catLabels = { top: '천정', bottom: '저판', side: '측면', common: '공통', top_bottom: '상·하부' };
+      const catLabels = { top: '천정', bottom: '저판', side: '측면', common: '공통', manhole: '맨홀', drain: '드레인', top_bottom: '상·하부' };
       const catLabel = catLabels[panelCat] || '측면';
       const name = `${mat} ${w}x${h} 사용자 CAD (${catLabel})`;
 
@@ -7361,7 +7626,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     draw();
     updateViewBadges(cat, sub, heightStr);
     renderRegisteredPartsTable();
-    alert(`✅ [${getCategoryLabel(cat)} - ${getViewLabel(view)} (${heightStr === 'common' ? '공통' : 'H=' + heightStr})] CAD 형상이 도면에 성공적으로 등록 및 즉시 반영되었습니다!`);
+    const detailMsg = (cat === 'panel') ? `[${w}×${h} mm ${catLabel}판넬]` : `[${getCategoryLabel(cat)} - ${getViewLabel(view)} (${heightStr === 'common' ? '공통' : 'H=' + heightStr})]`;
+    alert(`✅ ${detailMsg} CAD 형상이 도면에 성공적으로 등록 및 즉시 반영되었습니다!`);
   }
 
   function saveAllViewsCadPart() {
@@ -8074,11 +8340,32 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       r.checked = (r.value === category);
     });
 
+    const isPanel = (category === 'panel');
+    const viewNav = $('cadViewNav');
+    const posNav = $('cadPanelPosNav');
+    const heightRow = $('cadPartHeightContainer');
+    const viewTitle = $('curViewBadgeTitle');
+    const lblW = $('lblCadPartW');
+    const lblH = $('lblCadPartH');
+    const btnApply = $('btnApplyCadPart');
+    const btnApplyAll = $('btnApplyAllViewsCadPart');
+
+    if (viewNav) viewNav.style.display = isPanel ? 'none' : 'grid';
+    if (posNav) posNav.style.display = isPanel ? 'grid' : 'none';
+    if (heightRow) heightRow.style.display = isPanel ? 'none' : 'grid';
+    if (viewTitle) viewTitle.textContent = isPanel ? '2. 판넬 설치 위치 및 종류 (6대 부위)' : '2. 도면 투영 방향 (4방향 뷰)';
+    if (lblW) lblW.textContent = isPanel ? '판넬 가로 규격 (W mm)' : '가로 폭 (W mm)';
+    if (lblH) lblH.textContent = isPanel ? '판넬 세로 규격 (H mm)' : '세로 높이 (H mm)';
+    if (btnApply) btnApply.textContent = isPanel ? '💾 이 판넬 규격·위치 도면 등록' : '💾 현재 방향·높이 도면 등록';
+    if (btnApplyAll) btnApplyAll.textContent = isPanel ? '🌟 공통 판넬로 등록 (모든 부위)' : '📋 전체 일괄 등록';
+
     // 방향 자동 결정 (카테고리별 최적 뷰)
     if (view) {
       cadCurrentView = view;
     } else {
-      if (['manhole', 'airvent', 'panel'].includes(category)) {
+      if (category === 'panel') {
+        cadCurrentView = 'side';
+      } else if (['manhole', 'airvent'].includes(category)) {
         cadCurrentView = 'plan';
       } else {
         cadCurrentView = 'front';
@@ -8090,9 +8377,12 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       if ($('cadPartHeightSel')) $('cadPartHeightSel').value = cadCurrentHeight;
     }
 
-    // 뷰 버튼 활성화 동기화
+    // 뷰 버튼 및 판넬 포지션 버튼 활성화 동기화
     document.querySelectorAll('.cad-view-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.cadView === cadCurrentView);
+    });
+    document.querySelectorAll('.cad-pos-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.pos === cadCurrentView);
     });
     const curBadge = $('curViewBadge');
     if (curBadge) {
@@ -8278,8 +8568,8 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   document.querySelectorAll('input[name="cadPartCategory"]').forEach(r => {
     r.addEventListener('change', () => {
       const cat = r.value;
-      const defaultView = ['manhole', 'airvent', 'panel'].includes(cat) ? 'plan' : 'front';
-      setCadCurrentView(defaultView);
+      const defaultView = (cat === 'panel') ? 'side' : (['manhole', 'airvent'].includes(cat) ? 'plan' : 'front');
+      initCadPartsView(cat, defaultView, cadCurrentHeight);
     });
   });
 
