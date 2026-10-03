@@ -72,6 +72,24 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:1
 .subtab-content{display:none}
 .subtab-content.active{display:block}
 
+/* CAD & Panel DB Sub-Navigation */
+.cad-db-nav{display:flex;background:var(--surface-sub);padding:3px;border-radius:8px;border:1px solid var(--line);gap:3px;margin-bottom:12px}
+.cad-sub-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:7px 4px;font-size:11.5px;font-weight:700;border:0;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;transition:all .15s}
+.cad-sub-btn:hover{color:var(--fg);background:rgba(255,255,255,0.05)}
+.cad-sub-btn.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,0.12);border:1px solid var(--line)}
+.cad-pane{display:none}
+.cad-pane.active{display:block}
+
+/* CAD 4-Direction View Buttons */
+.cad-view-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.cad-view-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 2px;background:var(--surface);border:1px solid var(--line);border-radius:6px;cursor:pointer;transition:all .15s}
+.cad-view-btn:hover{border-color:var(--accent);background:rgba(2,132,199,0.04)}
+.cad-view-btn.active{background:rgba(2,132,199,0.12);border-color:var(--accent);color:var(--accent);font-weight:700}
+.cad-view-btn .v-icon{font-size:13px;margin-bottom:2px}
+.cad-view-btn .v-name{font-size:10.5px}
+.cad-view-btn .v-stat{font-size:9px;color:var(--muted);margin-top:2px}
+.cad-view-btn.active .v-stat{color:var(--accent);font-weight:600}
+
 /* Mini Sub-Tabs inside Title Block (화면 고도화: 한 화면에 보기) */
 .mini-subtab-nav{display:flex;background:var(--surface-sub);padding:3px;border-radius:8px;border:1px solid var(--line);gap:3px;margin-bottom:10px}
 .mini-subtab-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:3px;padding:6px 2px;font-size:11px;font-weight:600;border:0;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap}
@@ -331,7 +349,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.54</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.55</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -354,7 +372,7 @@ canvas.drag{cursor:grabbing}
       <button type="button" class="tab-btn" data-tab="tab-edit">✏️ 평면 편집</button>
       <button type="button" class="tab-btn" data-tab="tab-nozzles">📐 측면편집</button>
       <button type="button" class="tab-btn" data-tab="tab-bom">📋 부품사양·집계</button>
-      <button type="button" class="tab-btn" data-tab="tab-cad-parts" id="tabBtnCadParts">🧩 부품 CAD 등록</button>
+      <button type="button" class="tab-btn" data-tab="tab-cad-parts" id="tabBtnCadParts">🧩 부품·판넬 DB</button>
       <button type="button" class="tab-btn" data-tab="tab-settings">⚙️ 환경설정</button>
     </nav>
 
@@ -682,121 +700,256 @@ canvas.drag{cursor:grabbing}
       </section>
     </div>
 
-    <!-- Tab 5: CAD Parts Registration (부품·판넬 CAD 등록) -->
+    <!-- Tab 5: CAD Parts Registration (부품·판넬 DB & CAD 등록) -->
     <div class="tab-content" id="tab-cad-parts">
       <section class="box">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2 id="secTitleCadParts" style="margin:0;font-size:13px">🧩 부품 CAD 등록 (DWG·DXF)</h2>
-          <button type="button" id="btnResetAllCadParts" class="btn-preset danger" style="padding:2px 8px;font-size:11px" title="모든 커스텀 부품을 공장 표준으로 초기화">🔄 전체 초기화</button>
+          <h2 id="secTitleCadParts" style="margin:0;font-size:13px">🧩 부품·판넬 DB &amp; CAD 등록</h2>
+          <button type="button" id="btnResetAllCadParts" class="btn-preset danger" style="padding:2px 8px;font-size:11px" title="모든 커스텀 부품/판넬을 공장 표준으로 초기화">🔄 전체 초기화</button>
         </div>
-        <p class="hint" id="hintCadParts" style="margin-bottom:10px">
-          탱크 도면에 그려지는 각 부품(판넬, 맨홀, 에어벤트, 사다리, 노즐, 스키드 프레임, 기초패드)의 <b>DWG / DXF 형상을 등록</b>하여 도면에 실시간 반영합니다.
+        <p class="hint" id="hintCadParts" style="margin-bottom:8px">
+          탱크 본체 판넬 DB 및 각 부품(사다리, 맨홀, 에어벤트, 노즐, 스키드, 기초패드)의 <b>4방향 뷰(평면·정면·우측·좌측)</b>와 <b>높이별(H)</b> CAD 형상을 손쉽게 등록·편집합니다.
         </p>
 
-        <!-- 1. 부품 대분류 선택 카드 -->
-        <div style="background:var(--surface-sub);padding:10px;border-radius:6px;border:1px solid var(--line);margin-bottom:10px">
-          <label id="lblCadPartCat" style="font-size:11px;font-weight:700;display:block;margin-bottom:6px">1. 등록 대상 부품 선택</label>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px">
-            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="panel" checked><span>🔲 판넬</span></label>
-            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="manhole"><span>🔘 맨홀</span></label>
-            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="airvent"><span>💨 에어벤트</span></label>
-            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="ladder"><span>🪜 사다리</span></label>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
-            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="inladder"><span>🪜 내부사다리</span></label>
-            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="nozzle"><span>💧 배관노즐</span></label>
-            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="skid"><span>🏗️ 스키드프레임</span></label>
-            <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="foundation"><span>🧱 기초패드</span></label>
-          </div>
+        <!-- 통합 서브 탭: [🔲 판넬 DB 관리] / [🧩 부품 CAD 4방향·높이별 등록] -->
+        <div class="cad-db-nav">
+          <button type="button" class="cad-sub-btn" id="cadModeBtnPanels" data-cad-mode="panels">🔲 판넬 DB 관리 (규격·엠보싱)</button>
+          <button type="button" class="cad-sub-btn active" id="cadModeBtnParts" data-cad-mode="parts">🧩 부품 CAD 4방향·높이별 등록</button>
+        </div>
 
-          <!-- 세부 항목 및 규격 -->
-          <div style="margin-top:10px;display:grid;grid-template-columns:1.2fr 0.8fr;gap:6px">
+        <!-- Pane 1: 판넬 DB 관리 -->
+        <div class="cad-pane" id="cadPanePanels">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="font-size:11px;font-weight:700;color:var(--fg)">🔲 등록된 규격별 판넬 목록</span>
+            <button type="button" id="openPanelModal" class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent);padding:3px 8px;font-size:11px">➕ 판넬 등록</button>
+          </div>
+          <p class="hint" id="hintPanelDb" style="margin-bottom:10px">탱크 규격별 판넬의 형상(엠보싱, 무늬, 보강)을 등록하고 관리합니다.</p>
+          
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
             <div>
-              <label id="lblCadPartSub" style="font-size:11px;color:var(--muted)">세부 적용 항목</label>
-              <select id="cadPartSubSel" style="width:100%;font-size:12px;padding:4px">
-              </select>
-            </div>
-            <div>
-              <label id="lblCadPartMat" style="font-size:11px;color:var(--muted)">재질 구분</label>
-              <select id="cadPartMatSel" style="width:100%;font-size:12px;padding:4px">
+              <label id="lblFilterMat" style="font-size:11px;color:var(--muted)">재질 필터</label>
+              <select id="dbFilterMat" style="width:100%;font-size:12px;padding:4px">
+                <option value="ALL">전체 재질</option>
                 <option value="SMC">SMC (GRP)</option>
                 <option value="STS">STS (스텐)</option>
-                <option value="COMMON">공통 (All)</option>
+              </select>
+            </div>
+            <div>
+              <label id="lblFilterCat" style="font-size:11px;color:var(--muted)">위치 필터</label>
+              <select id="dbFilterCat" style="width:100%;font-size:12px;padding:4px">
+                <option value="ALL">전체 위치</option>
+                <option value="top_bottom">평면 (상·하부)</option>
+                <option value="side">입면 (측면)</option>
               </select>
             </div>
           </div>
 
-          <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
-            <div>
-              <label id="lblCadPartW" style="font-size:11px;color:var(--muted)">가로 폭 (W mm)</label>
-              <input type="number" id="cadPartW" value="1000" step="50" style="width:100%;font-size:12px;padding:4px">
+          <div style="max-height:210px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;margin-bottom:12px;background:var(--bg)">
+            <table style="width:100%;font-size:11px;border-collapse:collapse" id="panelTable">
+              <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
+                <tr>
+                  <th id="thDbMat" style="padding:6px 4px;text-align:left">재질/구분</th>
+                  <th id="thDbSpec" style="padding:6px 4px;text-align:left">규격</th>
+                  <th id="thDbName" style="padding:6px 4px;text-align:left">명칭</th>
+                  <th id="thDbAct" style="padding:6px 4px;text-align:center">관리</th>
+                </tr>
+              </thead>
+              <tbody id="panelTableBody">
+                <tr><td colspan="4" style="text-align:center;padding:12px;color:var(--muted)">판넬 목록을 불러오는 중...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Panel Preview Canvas Box -->
+          <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:11px;font-weight:600;color:var(--fg)" id="previewPanelTitle">선택된 판넬 형상</span>
+              <span style="font-size:10px;color:var(--muted)" id="previewPanelInfo">-</span>
             </div>
-            <div>
-              <label id="lblCadPartH" style="font-size:11px;color:var(--muted)">세로 높이 (H mm)</label>
-              <input type="number" id="cadPartH" value="1000" step="50" style="width:100%;font-size:12px;padding:4px">
+            <div style="display:flex;justify-content:center;align-items:center;background:#0f172a;border-radius:4px;height:170px;position:relative;overflow:hidden">
+              <canvas id="panelPreviewCv" width="340" height="170" style="width:100%;height:100%"></canvas>
             </div>
+          </div>
+
+          <div style="display:flex;gap:6px;margin-top:12px">
+            <button type="button" id="syncDbBtn" class="btn-sm" style="flex:1" title="DB의 최신 판넬 형상을 현재 2D 캐드 도면에 즉시 반영">🔄 도면 동기화</button>
+            <button type="button" id="resetDbBtn" class="btn-sm" style="color:#ef4444" title="기본 공장 템플릿으로 복원">초기화</button>
           </div>
         </div>
 
-        <!-- 2. CAD 파일 불러오기 및 기본 도면 다운로드 카드 -->
-        <div style="background:var(--surface-sub);padding:10px;border-radius:6px;border:1px solid var(--line);margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <label id="lblCadPartUpload" style="font-size:11px;font-weight:700">2. CAD 도면 (DWG·DXF) 불러오기</label>
-            <button type="button" id="btnDownloadSampleDxf" class="btn-sm" style="font-size:10px;padding:2px 8px;color:var(--accent);border-color:var(--accent)" title="선택된 부품의 기본 표준 CAD 도면(.dxf)을 다운로드하여 AutoCAD에서 수정할 수 있습니다">
-              ⬇️ 기본 도면(.dxf) 받기
+        <!-- Pane 2: 부품 CAD 4방향·높이별 등록 -->
+        <div class="cad-pane active" id="cadPaneParts">
+          <!-- 1. 등록 대상 부품 선택 카드 (아이콘 칩) -->
+          <div style="background:var(--surface-sub);padding:8px 10px;border-radius:6px;border:1px solid var(--line);margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+              <label id="lblCadPartCat" style="font-size:11px;font-weight:700">1. 등록 대상 부품 선택</label>
+              <span id="lblPartCatHint" style="font-size:10px;color:var(--muted)">선택 시 4방향 뷰 자동 연결</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:4px">
+              <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="ladder" checked><span>🪜 외부사다리</span></label>
+              <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="inladder"><span>🪜 내부사다리</span></label>
+              <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="ext_reinf"><span>🏛️ 외부보강</span></label>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:4px">
+              <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="manhole"><span>🔘 맨홀</span></label>
+              <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="airvent"><span>💨 에어벤트</span></label>
+              <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="nozzle"><span>💧 배관노즐</span></label>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">
+              <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="skid"><span>🏗️ 스키드</span></label>
+              <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="foundation"><span>🧱 기초패드</span></label>
+              <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="panel"><span>🔲 판넬</span></label>
+            </div>
+          </div>
+
+          <!-- 2. 4방향 뷰 및 적용 높이 설정 카드 -->
+          <div style="background:var(--surface-sub);padding:8px 10px;border-radius:6px;border:1px solid var(--line);margin-bottom:8px">
+            <!-- 4방향 뷰 버튼 바 -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+              <span style="font-size:11px;font-weight:700">2. 도면 투영 방향 (4방향 뷰)</span>
+              <span id="curViewBadge" style="font-size:10px;color:var(--accent);font-weight:700">🏢 정면도 선택됨</span>
+            </div>
+            <div class="cad-view-nav" style="margin-bottom:8px">
+              <button type="button" class="cad-view-btn" data-cad-view="plan" id="cadViewBtnPlan">
+                <span class="v-icon">🔲</span>
+                <span class="v-name">평면도</span>
+                <span class="v-stat" id="statBadgePlan">⚪ 기본</span>
+              </button>
+              <button type="button" class="cad-view-btn active" data-cad-view="front" id="cadViewBtnFront">
+                <span class="v-icon">🏢</span>
+                <span class="v-name">정면도</span>
+                <span class="v-stat" id="statBadgeFront">⚪ 기본</span>
+              </button>
+              <button type="button" class="cad-view-btn" data-cad-view="right" id="cadViewBtnRight">
+                <span class="v-icon">📐</span>
+                <span class="v-name">우측면도</span>
+                <span class="v-stat" id="statBadgeRight">⚪ 기본</span>
+              </button>
+              <button type="button" class="cad-view-btn" data-cad-view="left" id="cadViewBtnLeft">
+                <span class="v-icon">📐</span>
+                <span class="v-name">좌측면도</span>
+                <span class="v-stat" id="statBadgeLeft">⚪ 기본</span>
+              </button>
+            </div>
+
+            <!-- 높이별 등록 & 세부 적용 선택 -->
+            <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:6px;align-items:center">
+              <div>
+                <label id="lblCadPartHeight" style="font-size:11px;font-weight:700;display:block;margin-bottom:2px">📏 적용 높이 (Height H)</label>
+                <select id="cadPartHeightSel" style="width:100%;font-size:11.5px;padding:4px;font-weight:600">
+                  <option value="common">🌟 모든 높이 공통 (Common / Auto)</option>
+                  <option value="1000">H = 1000 mm (1단)</option>
+                  <option value="1500">H = 1500 mm (1.5단)</option>
+                  <option value="2000" selected>H = 2000 mm (2단)</option>
+                  <option value="2500">H = 2500 mm (2.5단)</option>
+                  <option value="3000">H = 3000 mm (3단)</option>
+                  <option value="3500">H = 3500 mm (3.5단)</option>
+                  <option value="4000">H = 4000 mm (4단)</option>
+                  <option value="4500">H = 4500 mm (4.5단)</option>
+                  <option value="5000">H = 5000 mm (5단)</option>
+                  <option value="custom">✏️ 직접 입력 (Custom)...</option>
+                </select>
+              </div>
+              <div>
+                <label id="lblCadPartSub" style="font-size:11px;font-weight:700;display:block;margin-bottom:2px">세부 타입/재질</label>
+                <div style="display:flex;gap:4px">
+                  <select id="cadPartSubSel" style="flex:1;font-size:11px;padding:4px"></select>
+                  <select id="cadPartMatSel" style="width:68px;font-size:11px;padding:4px">
+                    <option value="SMC">SMC</option>
+                    <option value="STS">STS</option>
+                    <option value="COMMON">공통</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 규격 W x H 미세조정 -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+              <div>
+                <label id="lblCadPartW" style="font-size:10px;color:var(--muted)">가로 폭 (W mm)</label>
+                <input type="number" id="cadPartW" value="400" step="10" style="width:100%;font-size:11px;padding:3px">
+              </div>
+              <div>
+                <label id="lblCadPartH" style="font-size:10px;color:var(--muted)">세로 높이 (H mm)</label>
+                <input type="number" id="cadPartH" value="2000" step="50" style="width:100%;font-size:11px;padding:3px">
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. 실시간 CAD 2D 미리보기 & 초간편 수정 툴바 -->
+          <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:11px;font-weight:700" id="cadPreviewTitle">미리보기 (정면도 · H=2000)</span>
+              <span style="font-size:10px;color:var(--muted)" id="cadPreviewEntityCount">도형 0개</span>
+            </div>
+
+            <div style="display:flex;justify-content:center;align-items:center;background:#0f172a;border-radius:4px;height:180px;position:relative;overflow:hidden">
+              <canvas id="cadPartPreviewCv" width="360" height="180" style="width:100%;height:100%"></canvas>
+            </div>
+
+            <!-- 실시간 편집 툴바 (초간편 수정 버튼들!) -->
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;align-items:center;justify-content:space-between">
+              <div style="display:flex;gap:3px">
+                <button type="button" id="btnPartRotate90" class="btn-sm" style="font-size:10px;padding:3px 6px" title="오른쪽으로 90도 회전">🔄 90°</button>
+                <button type="button" id="btnPartMirrorH" class="btn-sm" style="font-size:10px;padding:3px 6px" title="좌우 수평 대칭 반전">↔️ 좌우반전</button>
+                <button type="button" id="btnPartMirrorV" class="btn-sm" style="font-size:10px;padding:3px 6px" title="상하 수직 대칭 반전">↕️ 상하반전</button>
+                <button type="button" id="btnPartFitSize" class="btn-sm" style="font-size:10px;padding:3px 6px;color:var(--accent)" title="현재 WxH 규격에 맞게 비율 자동 맞춤">📐 맞춤</button>
+                <button type="button" id="btnPartCleanFillets" class="btn-sm" style="font-size:10px;padding:3px 6px;color:#10b981" title="중복선 및 불필요 필렛 제거">✨ 선정제</button>
+              </div>
+              <div style="display:flex;gap:3px">
+                <button type="button" id="btnCopyFromRight" class="btn-sm" style="font-size:10px;padding:3px 6px;color:#f59e0b" title="우측면도 CAD 형상을 그대로 가져와 좌우 반전 복사">↔️ 우측복사</button>
+                <button type="button" id="btnDownloadSampleDxf" class="btn-sm" style="font-size:10px;padding:3px 6px;color:var(--accent)" title="현재 뷰 CAD를 .dxf 파일로 다운로드하여 캐드에서 편집">⬇️ DXF받기</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. CAD 파일 드래그 앤 드롭 영역 -->
+          <div style="border:2px dashed var(--line);border-radius:6px;padding:10px 8px;text-align:center;background:var(--bg);cursor:pointer;position:relative;margin-bottom:8px" id="cadDropZone">
+            <input type="file" id="cadPartFileInput" accept=".dwg,.dxf,.stp,.step" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
+            <div style="font-size:18px;margin-bottom:2px">📁</div>
+            <div style="font-size:11.5px;font-weight:600;color:var(--fg)" id="cadDropText">DWG / DXF 도면 파일을 여기로 드래그하거나 클릭하여 선택</div>
+            <div style="font-size:9.5px;color:var(--muted)">AutoCAD DWG, DXF (브라우저 직접 파싱), 3D STEP 지원</div>
+          </div>
+          <div id="cadParseStatus" style="font-size:11px;margin-top:-4px;margin-bottom:8px;display:none;padding:4px 8px;border-radius:4px"></div>
+
+          <!-- 5. 도면 저장 및 즉시 반영 버튼 -->
+          <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:6px;margin-bottom:8px">
+            <button type="button" id="btnApplyCadPart" class="pri" style="padding:7px 10px;font-size:11.5px;font-weight:700" title="현재 방향 및 높이의 CAD 형상을 도면에 등록">
+              💾 현재 방향·높이 도면 등록
+            </button>
+            <button type="button" id="btnApplyAllViewsCadPart" class="btn-sm" style="font-size:11px;background:rgba(2,132,199,0.1);color:var(--accent);border-color:var(--accent)" title="현재 CAD 형상을 4방향 전체(또는 모든 높이)에 공통 적용">
+              📋 전체 일괄 등록
+            </button>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:10px">
+            <button type="button" id="btnResetCurrentCadPart" class="btn-sm" style="flex:1;color:#ef4444;font-size:10.5px" title="현재 선택된 방향·높이를 기본 표준형으로 복원">
+              현재 뷰 기본값 복원
+            </button>
+            <button type="button" id="btnResetCurrentItemAll" class="btn-sm" style="flex:1;color:#ef4444;font-size:10.5px" title="이 부품의 4방향 및 모든 높이 설정을 공장 표준으로 초기화">
+              이 부품 전체 초기화
             </button>
           </div>
 
-          <div style="border:2px dashed var(--line);border-radius:6px;padding:14px 8px;text-align:center;background:var(--bg);cursor:pointer;position:relative" id="cadDropZone">
-            <input type="file" id="cadPartFileInput" accept=".dwg,.dxf,.stp,.step" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
-            <div style="font-size:22px;margin-bottom:4px">📁</div>
-            <div style="font-size:12px;font-weight:600;color:var(--fg)" id="cadDropText">DWG 또는 DXF 파일을 여기로 드래그하거나 클릭하여 선택</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px">지원 포맷: AutoCAD DWG, DXF (브라우저 직접 구동), 3D STEP (.stp)</div>
+          <!-- 6. 4방향 & 높이별 종합 등록 현황 표 -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0 4px">
+            <h3 style="font-size:11.5px;font-weight:700;margin:0" id="lblRegisteredPartsTitle">📋 부품별 4방향 등록 현황</h3>
+            <span style="font-size:10px;color:var(--muted)">셀 클릭 시 해당 방향으로 바로 이동</span>
           </div>
-          <div id="cadParseStatus" style="font-size:11px;margin-top:6px;display:none;padding:6px 8px;border-radius:4px"></div>
-
-          <!-- 정제 및 스케일 조정 버튼 -->
-          <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px">
-            <button type="button" id="btnPartCleanFillets" class="btn-sm" style="font-size:10px;padding:2px 6px;color:#10b981" title="중복선 및 불필요한 필렛 제거">✨ 선분 원터치 정제</button>
-            <button type="button" id="btnPartFitSize" class="btn-sm" style="font-size:10px;padding:2px 6px;color:var(--accent)" title="입력된 규격(WxH)에 맞게 비율 자동 조정">📐 규격에 강제 맞춤</button>
+          <div style="max-height:190px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--bg)">
+            <table style="width:100%;font-size:10.5px;border-collapse:collapse" id="registeredPartsTable">
+              <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
+                <tr>
+                  <th style="padding:4px 3px;text-align:left">부품</th>
+                  <th style="padding:4px 3px;text-align:center">평면</th>
+                  <th style="padding:4px 3px;text-align:center">정면</th>
+                  <th style="padding:4px 3px;text-align:center">우측</th>
+                  <th style="padding:4px 3px;text-align:center">좌측</th>
+                  <th style="padding:4px 3px;text-align:center">관리</th>
+                </tr>
+              </thead>
+              <tbody id="registeredPartsTbody"></tbody>
+            </table>
           </div>
-        </div>
-
-        <!-- 3. 실시간 CAD 2D 미리보기 카드 -->
-        <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <span style="font-size:11px;font-weight:700" id="cadPreviewTitle">선택 부품 CAD 형상 미리보기</span>
-            <span style="font-size:10px;color:var(--muted)" id="cadPreviewEntityCount">도형 0개</span>
-          </div>
-          <div style="display:flex;justify-content:center;align-items:center;background:#0f172a;border-radius:4px;height:180px;position:relative;overflow:hidden">
-            <canvas id="cadPartPreviewCv" width="360" height="180" style="width:100%;height:100%"></canvas>
-          </div>
-        </div>
-
-        <!-- 4. 도면 저장 및 즉시 반영 버튼 -->
-        <div style="display:flex;gap:6px;margin-bottom:12px">
-          <button type="button" id="btnApplyCadPart" class="pri" style="flex:1;padding:8px 12px;font-size:12px;font-weight:700" title="이 CAD 형상을 탱크 도면에 즉시 등록하고 반영합니다">
-            💾 도면에 즉시 등록·반영 (Save &amp; Apply)
-          </button>
-          <button type="button" id="btnResetCurrentCadPart" class="btn-sm" style="color:#ef4444" title="현재 선택된 부품을 기본 공장 형상으로 복원">
-            기본값 복원
-          </button>
-        </div>
-
-        <!-- 5. 등록된 부품 현황 일람표 -->
-        <h3 style="font-size:12px;font-weight:700;margin:12px 0 6px" id="lblRegisteredPartsTitle">📋 부품별 CAD 적용 현황</h3>
-        <div style="max-height:190px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--bg)">
-          <table style="width:100%;font-size:11px;border-collapse:collapse" id="registeredPartsTable">
-            <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
-              <tr>
-                <th style="padding:5px 4px;text-align:left">부품 구분</th>
-                <th style="padding:5px 4px;text-align:left">항목</th>
-                <th style="padding:5px 4px;text-align:center">상태</th>
-                <th style="padding:5px 4px;text-align:center">관리</th>
-              </tr>
-            </thead>
-            <tbody id="registeredPartsTbody"></tbody>
-          </table>
         </div>
       </section>
     </div>
@@ -808,7 +961,6 @@ canvas.drag{cursor:grabbing}
         <button type="button" class="subtab-btn active" data-subtab="subtab-pad">🏗️ 기초패드</button>
         <button type="button" class="subtab-btn" data-subtab="subtab-heights">📏 단별 판넬구성</button>
         <button type="button" class="subtab-btn" data-subtab="subtab-title">📋 표제란·시트</button>
-        <button type="button" class="subtab-btn" data-subtab="subtab-panels">🧩 판넬 DB</button>
       </div>
 
       <!-- Subtab 1: 기초 콘크리트 패드 설정 -->
@@ -1064,77 +1216,7 @@ canvas.drag{cursor:grabbing}
                 <textarea id="tNotes" rows="7" style="width:100%;font-size:10.5px;padding:5px 7px" placeholder="도면 주의사항 (한 줄에 1개씩)"></textarea>
               </div>
             </div>
-          </section>
         </div>
-      </div>
-
-      <!-- Subtab 3: 판넬 DB 관리 -->
-      <div class="subtab-content" id="subtab-panels">
-        <section class="box">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <h2 id="secTitlePanelDb" style="margin:0">🧩 탱크 판넬 DB 관리</h2>
-            <button type="button" id="openPanelModal" class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent)">➕ 판넬 등록</button>
-          </div>
-          <p class="hint" id="hintPanelDb" style="margin-bottom:8px">탱크 규격별 판넬의 형상(엠보싱, 무늬, 보강)을 등록하고 관리합니다.</p>
-          
-          <div style="background:rgba(2,132,199,0.08);border:1px solid var(--accent);border-radius:6px;padding:8px 10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px">
-            <div style="font-size:11px;color:var(--fg);line-height:1.4">
-              <b>💡 외부 탭 바로가기:</b> 판넬 및 맨홀·사다리·노즐 등 모든 부품의 CAD 등록이 메인 상단 탭 <b>[🧩 부품 CAD 등록]</b>으로 확장 배치되었습니다.
-            </div>
-            <button type="button" class="btn-sm" onclick="switchToCadPartsTab('panel')" style="background:var(--accent);color:#fff;border-color:var(--accent);white-space:nowrap;font-size:11px;padding:3px 8px;cursor:pointer">이동하기 ▶</button>
-          </div>
-          
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
-            <div>
-              <label id="lblFilterMat" style="font-size:11px;color:var(--muted)">재질 필터</label>
-              <select id="dbFilterMat" style="width:100%;font-size:12px;padding:4px">
-                <option value="ALL">전체 재질</option>
-                <option value="SMC">SMC (GRP)</option>
-                <option value="STS">STS (스텐)</option>
-              </select>
-            </div>
-            <div>
-              <label id="lblFilterCat" style="font-size:11px;color:var(--muted)">위치 필터</label>
-              <select id="dbFilterCat" style="width:100%;font-size:12px;padding:4px">
-                <option value="ALL">전체 위치</option>
-                <option value="top_bottom">평면 (상·하부)</option>
-                <option value="side">입면 (측면)</option>
-              </select>
-            </div>
-          </div>
-
-          <div style="max-height:200px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;margin-bottom:12px;background:var(--bg)">
-            <table style="width:100%;font-size:11px;border-collapse:collapse" id="panelTable">
-              <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
-                <tr>
-                  <th id="thDbMat" style="padding:6px 4px;text-align:left">재질/구분</th>
-                  <th id="thDbSpec" style="padding:6px 4px;text-align:left">규격</th>
-                  <th id="thDbName" style="padding:6px 4px;text-align:left">명칭</th>
-                  <th id="thDbAct" style="padding:6px 4px;text-align:center">관리</th>
-                </tr>
-              </thead>
-              <tbody id="panelTableBody">
-                <tr><td colspan="4" style="text-align:center;padding:12px;color:var(--muted)">판넬 목록을 불러오는 중...</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Panel Preview Canvas Box -->
-          <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:8px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-              <span style="font-size:11px;font-weight:600;color:var(--fg)" id="previewPanelTitle">선택된 판넬 형상</span>
-              <span style="font-size:10px;color:var(--muted)" id="previewPanelInfo">-</span>
-            </div>
-            <div style="display:flex;justify-content:center;align-items:center;background:#0f172a;border-radius:4px;height:170px;position:relative;overflow:hidden">
-              <canvas id="panelPreviewCv" width="340" height="170" style="width:100%;height:100%"></canvas>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:6px;margin-top:12px">
-            <button type="button" id="syncDbBtn" class="btn-sm" style="flex:1" title="DB의 최신 판넬 형상을 현재 2D 캐드 도면에 즉시 반영">🔄 도면 동기화</button>
-            <button type="button" id="resetDbBtn" class="btn-sm" style="color:#ef4444" title="기본 공장 템플릿으로 복원">초기화</button>
-          </div>
-        </section>
       </div>
     </div>
   </aside>
@@ -1159,7 +1241,7 @@ canvas.drag{cursor:grabbing}
       </div>
       <span class="sp"></span>
       <button type="button" id="copyShareUrl" title="현재 도면 및 설정이 저장된 URL 링크를 복사합니다">🔗 공유 링크</button>
-      <button type="button" id="btnQuickCadReg" class="btn-sm" style="font-weight:700;background:var(--surface-sub);border:1px solid var(--accent);color:var(--accent);padding:4px 9px;font-size:11px" title="도면에 그려지는 각 부품(판넬, 맨홀, 사다리, 노즐 등)의 DWG/DXF 형상 등록">🧩 부품 CAD 등록</button>
+      <button type="button" id="btnQuickCadReg" class="btn-sm" style="font-weight:700;background:var(--surface-sub);border:1px solid var(--accent);color:var(--accent);padding:4px 9px;font-size:11px" title="도면에 그려지는 각 부품 및 판넬 DB(DWG/DXF) 형상 등록·관리">🧩 부품·판넬 CAD</button>
       <button type="button" id="png" title="현재 화면을 PNG 이미지로 저장">📸 PNG</button>
       <button type="button" id="svg" title="벡터 SVG 도면 다운로드">📐 SVG</button>
       <button type="button" id="dxfDirect" title="AutoCAD/CADian에서 바로 열리는 DXF 파일 다운로드">💾 DXF (.dxf)</button>
@@ -1656,6 +1738,108 @@ canvas.drag{cursor:grabbing}
     return out;
   }
 
+  function mirrorEntitiesH(ents) {
+    if (!ents || !ents.length) return [];
+    let minX = Infinity, maxX = -Infinity;
+    ents.forEach(e => {
+      if (e.k === 'line') {
+        minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
+      } else if (e.k === 'circle' || e.k === 'arc') {
+        minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r);
+      } else if (e.k === 'poly') {
+        e.p.forEach(pt => { minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]); });
+      }
+    });
+    if (minX === Infinity) return ents;
+    const midX = (minX + maxX) / 2;
+    return ents.map(e => {
+      if (e.k === 'line') {
+        return {
+          k: 'line',
+          p: [
+            [Math.round((2 * midX - e.p[0][0]) * 10) / 10, e.p[0][1]],
+            [Math.round((2 * midX - e.p[1][0]) * 10) / 10, e.p[1][1]]
+          ]
+        };
+      } else if (e.k === 'circle') {
+        return { k: 'circle', c: [Math.round((2 * midX - e.c[0]) * 10) / 10, e.c[1]], r: e.r };
+      } else if (e.k === 'arc') {
+        const a0 = (180 - (e.a1 || 360) + 360) % 360;
+        const a1 = (180 - (e.a0 || 0) + 360) % 360;
+        return { k: 'arc', c: [Math.round((2 * midX - e.c[0]) * 10) / 10, e.c[1]], r: e.r, a0, a1 };
+      } else if (e.k === 'poly') {
+        return {
+          k: 'poly',
+          p: e.p.map(pt => [Math.round((2 * midX - pt[0]) * 10) / 10, pt[1]]),
+          c: e.c
+        };
+      }
+      return e;
+    });
+  }
+
+  function resolvePartEntities(customParts, cat, view, h) {
+    if (!customParts) return null;
+    if (h && customParts[`${cat}_${view}_${h}`] && customParts[`${cat}_${view}_${h}`].length) {
+      return customParts[`${cat}_${view}_${h}`];
+    }
+    if (customParts[`${cat}_${view}`] && customParts[`${cat}_${view}`].length) {
+      return customParts[`${cat}_${view}`];
+    }
+    if (view === 'left') {
+      const rightEnts = resolvePartEntities(customParts, cat, 'right', h);
+      if (rightEnts && rightEnts.length) return mirrorEntitiesH(rightEnts);
+    }
+    if (view === 'rear') {
+      return resolvePartEntities(customParts, cat, 'front', h);
+    }
+    if (view === 'plan' && customParts[cat] && customParts[cat].length) {
+      return customParts[cat];
+    }
+    if (customParts[cat] && customParts[cat].length) {
+      return customParts[cat];
+    }
+    return null;
+  }
+
+  function renderCustomEntitiesAt(out, ents, ox, oy, scaleX = 1, scaleY = 1, layer = 'FRAME') {
+    if (!ents || !ents.length) return;
+    ents.forEach(e => {
+      if (e.k === 'line') {
+        out.push({
+          t: 'line',
+          a: [ox + e.p[0][0] * scaleX, oy + e.p[0][1] * scaleY],
+          b: [ox + e.p[1][0] * scaleX, oy + e.p[1][1] * scaleY],
+          layer: layer || 'FRAME'
+        });
+      } else if (e.k === 'circle') {
+        out.push({
+          t: 'circle',
+          c: [ox + e.c[0] * scaleX, oy + e.c[1] * scaleY],
+          r: Math.round(e.r * ((Math.abs(scaleX) + Math.abs(scaleY)) / 2)),
+          layer: layer || 'FRAME'
+        });
+      } else if (e.k === 'arc') {
+        out.push({
+          t: 'arc',
+          c: [ox + e.c[0] * scaleX, oy + e.c[1] * scaleY],
+          r: Math.round(e.r * ((Math.abs(scaleX) + Math.abs(scaleY)) / 2)),
+          a0: e.a0 || 0,
+          a1: e.a1 || 360,
+          layer: layer || 'FRAME'
+        });
+      } else if (e.k === 'poly') {
+        const pts = e.p.map(p => [ox + p[0] * scaleX, oy + p[1] * scaleY]);
+        for (let k = 0; k + 1 < pts.length; k++) {
+          out.push({ t: 'line', a: pts[k], b: pts[k + 1], layer: layer || 'FRAME' });
+        }
+        if (e.c && pts.length > 2) {
+          out.push({ t: 'line', a: pts[pts.length - 1], b: pts[0], layer: layer || 'FRAME' });
+        }
+      }
+    });
+  }
+
   /* ---------- 평면도 맨홀 손잡이 / 환기구 (CCeilLT::_1000BY1000 의 CLT_HANDLE=1, CLT_AIRVENT=2) : 1000x1000 패널만 ---------- */
   function markShapes(x, y, mark, opt) {
     const customParts = opt?.partTemplates || {};
@@ -1663,8 +1847,9 @@ canvas.drag{cursor:grabbing}
     const poly = (pts, layer) => pts.forEach((p, k) => out.push({ t: 'line', a: P(...p), b: P(...pts[(k + 1) % pts.length]), layer }));
 
     if (mark & 1) { // 맨홀 (손잡이) 및 직하부 내부사다리
-      if (customParts.manhole && customParts.manhole.length > 0) {
-        customParts.manhole.forEach(e => {
+      const mhPlan = resolvePartEntities(customParts, 'manhole', 'plan');
+      if (mhPlan && mhPlan.length > 0) {
+        mhPlan.forEach(e => {
           if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'FRAME' });
           else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'FRAME' });
           else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'FRAME' });
@@ -1681,8 +1866,9 @@ canvas.drag{cursor:grabbing}
       }
 
       // 내부사다리 (IN-LADDER) 기호 (맨홀 직하부 탱크 내부 설치 위치)
-      if (customParts.inladder && customParts.inladder.length > 0) {
-        customParts.inladder.forEach(e => {
+      const inladPlan = resolvePartEntities(customParts, 'inladder', 'plan');
+      if (inladPlan && inladPlan.length > 0) {
+        inladPlan.forEach(e => {
           if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'FRAME' });
           else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'FRAME' });
           else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'FRAME' });
@@ -1700,8 +1886,9 @@ canvas.drag{cursor:grabbing}
       }
     }
     if (mark & 2) { // 에어벤트
-      if (customParts.airvent && customParts.airvent.length > 0) {
-        customParts.airvent.forEach(e => {
+      const ventPlan = resolvePartEntities(customParts, 'airvent', 'plan');
+      if (ventPlan && ventPlan.length > 0) {
+        ventPlan.forEach(e => {
           if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'REINF' });
           else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'REINF' });
           else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'REINF' });
@@ -1722,23 +1909,27 @@ canvas.drag{cursor:grabbing}
   /* ---------- 사다리 (CLadderLT) : 1 위, 2 아래, 3 오른쪽, 4 왼쪽 (평면) / 5 정면, 6 뒤(상부만), 7 우측면, 8 좌측면 ---------- */
   function ladderShapes(idx, px, py, H, opt) {
     const customParts = opt?.partTemplates || {};
-    if (idx >= 1 && idx <= 4 && customParts.ladder_plan && customParts.ladder_plan.length > 0) {
-      const out = [], L = 'FRAME';
-      const sx = idx === 3 ? 1 : idx === 4 ? -1 : 0, sy = idx === 1 ? 1 : idx === 2 ? -1 : 0;
-      const angle = sy === 1 ? 0 : (sy === -1 ? Math.PI : (sx === 1 ? Math.PI / 2 : -Math.PI / 2));
-      const cosA = Math.cos(angle), sinA = Math.sin(angle);
-      const trans = (x, y) => [px + (x * cosA - y * sinA), py + (x * sinA + y * cosA)];
-      customParts.ladder_plan.forEach(e => {
-        if (e.k === 'line') out.push({ t: 'line', a: trans(e.p[0][0], e.p[0][1]), b: trans(e.p[1][0], e.p[1][1]), layer: L });
-        else if (e.k === 'circle') out.push({ t: 'circle', c: trans(e.c[0], e.c[1]), r: e.r, layer: L });
-        else if (e.k === 'poly') {
-          const tpts = e.p.map(p => trans(p[0], p[1]));
-          for (let k = 0; k + 1 < tpts.length; k++) out.push({ t: 'line', a: tpts[k], b: tpts[k + 1], layer: L });
-          if (e.c) out.push({ t: 'line', a: tpts[tpts.length - 1], b: tpts[0], layer: L });
-        }
-      });
-      out.push({ t: 'text', p: [px + sx * 315, py + sy * 315], s: 'LADDER', h: 50, rot: sx ? 90 : 0, align: 'center', layer: 'DIM' });
-      return out;
+    if (idx >= 1 && idx <= 4) {
+      const planEnts = resolvePartEntities(customParts, 'ladder', 'plan', H);
+      if (planEnts && planEnts.length > 0) {
+        const out = [], L = 'FRAME';
+        const sx = idx === 3 ? 1 : idx === 4 ? -1 : 0, sy = idx === 1 ? 1 : idx === 2 ? -1 : 0;
+        const angle = sy === 1 ? 0 : (sy === -1 ? Math.PI : (sx === 1 ? Math.PI / 2 : -Math.PI / 2));
+        const cosA = Math.cos(angle), sinA = Math.sin(angle);
+        const trans = (x, y) => [px + (x * cosA - y * sinA), py + (x * sinA + y * cosA)];
+        planEnts.forEach(e => {
+          if (e.k === 'line') out.push({ t: 'line', a: trans(e.p[0][0], e.p[0][1]), b: trans(e.p[1][0], e.p[1][1]), layer: L });
+          else if (e.k === 'circle') out.push({ t: 'circle', c: trans(e.c[0], e.c[1]), r: e.r, layer: L });
+          else if (e.k === 'arc') out.push({ t: 'arc', c: trans(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: L });
+          else if (e.k === 'poly') {
+            const tpts = e.p.map(p => trans(p[0], p[1]));
+            for (let k = 0; k + 1 < tpts.length; k++) out.push({ t: 'line', a: tpts[k], b: tpts[k + 1], layer: L });
+            if (e.c) out.push({ t: 'line', a: tpts[tpts.length - 1], b: tpts[0], layer: L });
+          }
+        });
+        out.push({ t: 'text', p: [px + sx * 315, py + sy * 315], s: 'LADDER', h: 50, rot: sx ? 90 : 0, align: 'center', layer: 'DIM' });
+        return out;
+      }
     }
     const T = 40, FW = 270, FT = 20, TO = 250, TI = 270, TL = 250, SI = 400, FO = 200, BO = -500, MH = 150, TOP = 700, TTOP = 500, CX = 75;
     const mx = FW >> 1, out = [], L = 'FRAME';
@@ -1760,14 +1951,84 @@ canvas.drag{cursor:grabbing}
         out.push({ t: 'text', p: [px + sx * (TL + 65), py], s: 'LADDER', h: 50, rot: 90, align: 'center', layer: 'DIM' });
       }
     } else if (idx === 5) {
+      const frontEnts = resolvePartEntities(customParts, 'ladder', 'front', H);
+      if (frontEnts && frontEnts.length > 0) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        frontEnts.forEach(e => {
+          if (e.k === 'line') {
+            minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
+            minY = Math.min(minY, e.p[0][1], e.p[1][1]); maxY = Math.max(maxY, e.p[0][1], e.p[1][1]);
+          } else if (e.k === 'circle' || e.k === 'arc') {
+            minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r);
+            minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r);
+          } else if (e.k === 'poly') {
+            e.p.forEach(pt => {
+              minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]);
+              minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]);
+            });
+          }
+        });
+        const curH = (maxY - minY) || (H || 2000);
+        const scaleY = (H && curH > 0 && Math.abs(curH - H) > 150) ? (H / curH) : 1;
+        const midX = (minX + maxX) / 2;
+        renderCustomEntitiesAt(out, frontEnts, px - midX, 0 - minY * scaleY, 1, scaleY, 'FRAME');
+        return out;
+      }
       [1, -1].forEach(k => {
         pl([[k * mx, BO], [k * mx, H + MH], [k * (mx + T), H + MH], [k * (mx + T), BO]], true);
         pl([[k * mx, H + MH], [k * mx, H + TOP], [k * (mx + T), H + TOP], [k * (mx + T), H + MH]], true);
       });
       for (let y = BO + FO; y < H; y += FT + SI) { ln([-mx, y], [mx, y]); ln([-mx, y + FT], [mx, y + FT]); }
     } else if (idx === 6) {
+      const rearEnts = resolvePartEntities(customParts, 'ladder', 'rear', H) || resolvePartEntities(customParts, 'ladder', 'front', H);
+      if (rearEnts && rearEnts.length > 0) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        rearEnts.forEach(e => {
+          if (e.k === 'line') {
+            minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
+            minY = Math.min(minY, e.p[0][1], e.p[1][1]); maxY = Math.max(maxY, e.p[0][1], e.p[1][1]);
+          } else if (e.k === 'circle' || e.k === 'arc') {
+            minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r);
+            minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r);
+          } else if (e.k === 'poly') {
+            e.p.forEach(pt => {
+              minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]);
+              minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]);
+            });
+          }
+        });
+        const curH = (maxY - minY) || (H || 2000);
+        const scaleY = (H && curH > 0 && Math.abs(curH - H) > 150) ? (H / curH) : 1;
+        const midX = (minX + maxX) / 2;
+        renderCustomEntitiesAt(out, rearEnts, px - midX, 0 - minY * scaleY, 1, scaleY, 'FRAME');
+        return out;
+      }
       [1, -1].forEach(k => pl([[k * mx, H + MH], [k * mx, H + TOP], [k * (mx + T), H + TOP], [k * (mx + T), H + MH]], true));
     } else if (idx === 7 || idx === 8) {
+      const sideKey = idx === 7 ? 'right' : 'left';
+      const sideEnts = resolvePartEntities(customParts, 'ladder', sideKey, H);
+      if (sideEnts && sideEnts.length > 0) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        sideEnts.forEach(e => {
+          if (e.k === 'line') {
+            minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
+            minY = Math.min(minY, e.p[0][1], e.p[1][1]); maxY = Math.max(maxY, e.p[0][1], e.p[1][1]);
+          } else if (e.k === 'circle' || e.k === 'arc') {
+            minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r);
+            minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r);
+          } else if (e.k === 'poly') {
+            e.p.forEach(pt => {
+              minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]);
+              minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]);
+            });
+          }
+        });
+        const curH = (maxY - minY) || (H || 2000);
+        const scaleY = (H && curH > 0 && Math.abs(curH - H) > 150) ? (H / curH) : 1;
+        const anchorX = idx === 7 ? minX : maxX;
+        renderCustomEntitiesAt(out, sideEnts, px - anchorX, 0 - minY * scaleY, 1, scaleY, 'FRAME');
+        return out;
+      }
       const r = idx === 7 ? 1 : -1, Y = H + TTOP, X = (a) => r * a;
       pl([[X(CX), BO], [X(TI), BO + FO], [X(TI), Y]]);
       pl([[X(CX), BO + T], [X(TI - T), BO + FO], [X(TI - T), Y]]);
@@ -2161,8 +2422,31 @@ canvas.drag{cursor:grabbing}
         else ln([x1 + F, y0 + s0], [x1 + F, y1 - s1]);
         // 외부보강 T: 같은 변이 이어지는 다음 패널과의 이음선
         if (rf === 0 && exposed(i + a[0], j + a[1], sd)) {
-          if (sd === 'bottom') outT(ents, [x1, y0 - F], 1); else if (sd === 'top') outT(ents, [x1, y1 + F], 3);
-          else if (sd === 'left') outT(ents, [x0 - F, y1], 4); else outT(ents, [x1 + F, y1], 2);
+          const customPlanPost = resolvePartEntities(opt.customComponents, 'ext_reinf', 'plan', (opt.height && opt.height[0]) || 2000);
+          if (customPlanPost && customPlanPost.length) {
+            const pt = (sd === 'bottom') ? [x1, y0 - F] : (sd === 'top') ? [x1, y1 + F] : (sd === 'left') ? [x0 - F, y1] : [x1 + F, y1];
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            customPlanPost.forEach(e => {
+              if (e.k === 'line') { minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]); minY = Math.min(minY, e.p[0][1], e.p[1][1]); maxY = Math.max(maxY, e.p[0][1], e.p[1][1]); }
+              else if (e.k === 'circle' || e.k === 'arc') { minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r); minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r); }
+              else if (e.k === 'poly') { e.p.forEach(p => { minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]); minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]); }); }
+            });
+            const cx = (minX + maxX) / 2;
+            const deg = (sd === 'bottom') ? 0 : (sd === 'right') ? 90 : (sd === 'top') ? 180 : 270;
+            const rad = deg * Math.PI / 180, cos = Math.cos(rad), sin = Math.sin(rad);
+            customPlanPost.forEach(e => {
+              const rot = p => {
+                const dx = p[0] - cx, dy = p[1];
+                return [pt[0] + dx * cos - dy * sin, pt[1] + dx * sin + dy * cos];
+              };
+              if (e.k === 'line') ln(rot(e.p[0]), rot(e.p[1]), 'REINF');
+              else if (e.k === 'circle') ents.push({ t: 'circle', c: rot(e.c), r: e.r, layer: 'REINF' });
+              else if (e.k === 'poly') chain(e.p.map(rot), 'REINF', e.c);
+            });
+          } else {
+            if (sd === 'bottom') outT(ents, [x1, y0 - F], 1); else if (sd === 'top') outT(ents, [x1, y1 + F], 3);
+            else if (sd === 'left') outT(ents, [x0 - F, y1], 4); else outT(ents, [x1 + F, y1], 2);
+          }
         }
       });
       // 볼록 모서리: GRP=삼각형, STS=직각 꺾임 + 대각선
@@ -3369,6 +3653,7 @@ canvas.drag{cursor:grabbing}
       [0, OFF, nLen - OFF, nLen].forEach(o => ln([baseX + o, 0], [baseX + o, nH]));
       ln([baseX, 0], [baseX + nLen, 0]);
       let y = 0;
+      const customPost = resolvePartEntities(opt.customComponents, 'ext_reinf', view, nH);
       hs.forEach((hh, i) => {
         const tall = !(hh === 500 || hh === 1000 || hh === 1300);
         if (i > 0) ln([baseX, y], [baseX + (cnt > 1 ? pLen[0] - MX : pLen[0]), y]);
@@ -3378,11 +3663,25 @@ canvas.drag{cursor:grabbing}
           } else panel(xj[j], y, pLen[j], hh, gIdx + j, i);
           if (j < cnt - 1) {
             const x = xj[j + 1];
-            plate(x, y, i === 0 ? 'bot' : 'mid');
-            if (i > 0) {
-              ln([x + MX, y], [x + (j === cnt - 2 ? pLen[j + 1] : pLen[j + 1] - MX), y]);
-              const h = i === 1 ? OB.STAY + OB.CY : MY;
-              [-OFF, 0, OFF].forEach(o => ln([x + o, y - MY], [x + o, y - hs[i - 1] + h]));
+            if (customPost && customPost.length) {
+              if (i === 0) {
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                customPost.forEach(e => {
+                  if (e.k === 'line') { minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]); minY = Math.min(minY, e.p[0][1], e.p[1][1]); maxY = Math.max(maxY, e.p[0][1], e.p[1][1]); }
+                  else if (e.k === 'circle' || e.k === 'arc') { minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r); minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r); }
+                  else if (e.k === 'poly') { e.p.forEach(pt => { minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]); minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]); }); }
+                });
+                const cx = (minX + maxX) / 2;
+                const sy = (maxY > minY && Math.abs(maxY - minY - nH) > 10) ? (nH / (maxY - minY)) : 1;
+                renderCustomEntitiesAt(ents, customPost, x - cx, -minY * sy, 1, sy, 'REINF');
+              }
+            } else {
+              plate(x, y, i === 0 ? 'bot' : 'mid');
+              if (i > 0) {
+                ln([x + MX, y], [x + (j === cnt - 2 ? pLen[j + 1] : pLen[j + 1] - MX), y]);
+                const h = i === 1 ? OB.STAY + OB.CY : MY;
+                [-OFF, 0, OFF].forEach(o => ln([x + o, y - MY], [x + o, y - hs[i - 1] + h]));
+              }
             }
           }
         }
@@ -3393,9 +3692,11 @@ canvas.drag{cursor:grabbing}
       const hT = n > 1 ? OB.CY >> 1 : OB.STAY + OB.CY;
       for (let j = 0; j < cnt - 1; j++) {
         const x = xj[j + 1];
-        plate(x, nH, 'top');
-        ln([x + OFF, nH], [x + (j === cnt - 2 ? pLen[j + 1] : pLen[j + 1] - OFF), nH]);
-        [-OFF, 0, OFF].forEach(o => ln([x + o, nH - OB.MOVE], [x + o, nH - hs[n - 1] + hT]));
+        if (!customPost || !customPost.length) {
+          plate(x, nH, 'top');
+          ln([x + OFF, nH], [x + (j === cnt - 2 ? pLen[j + 1] : pLen[j + 1] - OFF), nH]);
+          [-OFF, 0, OFF].forEach(o => ln([x + o, nH - OB.MOVE], [x + o, nH - hs[n - 1] + hT]));
+        }
       }
       }
       // 맨홀 띠 (CManholeLT, 높이 100)
@@ -10760,128 +11061,367 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
   }
 
   /* ==========================================================================
-     🧩 부품 CAD 등록 (DWG·DXF) 통합 관리 시스템
+     🧩 부품·판넬 DB & CAD 등록 (4방향 뷰 및 높이별 등록 시스템)
      ========================================================================== */
+  let currentCadCategory = 'ladder';
+  let currentCadView = 'front';
+  let currentCadHeight = '2000';
+  // 4방향 기본 기하형상 생성기 (평면/정면/우측/좌측)
   const DEFAULT_PART_ENTITIES = {
-    panel: {
-      w: 1000, h: 1000, name: 'SMC 1000x1000 표준 다이아몬드 판넬',
-      get: (w, h) => generatePresetEntities('diamond', w || 1000, h || 1000)
-    },
-    manhole: {
-      w: 1000, h: 1000, name: '맨홀 Ø600 표준형 (평면/손잡이)',
-      get: () => [
-        { k: 'poly', p: [[260, 105], [735, 105], [888, 260], [888, 735], [735, 888], [262, 888], [105, 735], [105, 260]], c: true },
-        { k: 'poly', p: [[150, 280], [290, 150], [710, 150], [850, 280], [850, 720], [710, 850], [290, 850], [150, 720]], c: true },
-        { k: 'poly', p: [[310, 110], [390, 110], [390, 67], [310, 67]], c: true },
-        { k: 'poly', p: [[610, 110], [690, 110], [690, 67], [610, 67]], c: true },
-        { k: 'poly', p: [[462, 945], [538, 945], [538, 898], [462, 898]], c: true },
-        { k: 'circle', c: [500, 500], r: 300 },
-        { k: 'line', p: [[360, 230], [360, 380]] },
-        { k: 'line', p: [[640, 230], [640, 380]] },
-        { k: 'line', p: [[360, 250], [640, 250]] },
-        { k: 'line', p: [[360, 290], [640, 290]] },
-        { k: 'line', p: [[360, 330], [640, 330]] },
-        { k: 'line', p: [[360, 370], [640, 370]] }
-      ]
-    },
-    airvent: {
-      w: 1000, h: 1000, name: '에어벤트 Φ50/100A 방충망 일체형 (평면)',
-      get: () => [
-        { k: 'circle', c: [500, 500], r: 50 },
-        { k: 'circle', c: [500, 500], r: 100 },
-        { k: 'line', p: [[380, 500], [620, 500]] },
-        { k: 'line', p: [[500, 380], [500, 620]] }
-      ]
-    },
     ladder: {
-      w: 350, h: 250, name: '외부 사다리 W270 표준형 (평면 기호)',
-      get: () => [
-        { k: 'poly', p: [[0, 0], [40, 0], [40, 250], [0, 250]], c: true },
-        { k: 'poly', p: [[310, 0], [350, 0], [350, 250], [310, 250]], c: true },
-        { k: 'line', p: [[40, 250], [310, 250]] },
-        { k: 'line', p: [[40, 180], [310, 180]] },
-        { k: 'line', p: [[40, 110], [310, 110]] }
-      ]
+      get: (w, h, view) => {
+        const H = h || 2000;
+        const W = w || 400;
+        if (view === 'plan') {
+          return [
+            { k: 'poly', p: [[0, 0], [45, 0], [45, 260], [0, 260]], c: true },
+            { k: 'poly', p: [[W - 45, 0], [W, 0], [W, 260], [W - 45, 260]], c: true },
+            { k: 'line', p: [[45, 260], [W - 45, 260]] },
+            { k: 'line', p: [[45, 180], [W - 45, 180]] },
+            { k: 'line', p: [[45, 100], [W - 45, 100]] },
+            { k: 'arc', c: [W / 2, 180], r: W / 2, a0: 0, a1: 180 }
+          ];
+        } else if (view === 'front') {
+          const ents = [
+            { k: 'poly', p: [[0, 0], [35, 0], [35, H], [0, H]], c: true },
+            { k: 'poly', p: [[W - 35, 0], [W, 0], [W, H], [W - 35, H]], c: true }
+          ];
+          const step = 300;
+          for (let y = 300; y < H; y += step) {
+            ents.push({ k: 'line', p: [[35, y], [W - 35, y]] });
+            ents.push({ k: 'line', p: [[35, y + 20], [W - 35, y + 20]] });
+          }
+          if (H >= 2400) {
+            const cageStart = Math.max(2200, Math.floor(H * 0.4));
+            for (let cy = cageStart; cy < H; cy += 600) {
+              ents.push({ k: 'line', p: [[-60, cy], [W + 60, cy]] });
+            }
+            ents.push({ k: 'line', p: [[-60, cageStart], [-60, H]] });
+            ents.push({ k: 'line', p: [[W + 60, cageStart], [W + 60, H]] });
+            ents.push({ k: 'arc', c: [W / 2, H], r: W / 2 + 60, a0: 0, a1: 180 });
+          }
+          return ents;
+        } else {
+          // right or left
+          const ents = [
+            { k: 'poly', p: [[0, 0], [45, 0], [45, H], [0, H]], c: true }
+          ];
+          for (let y = 300; y < H; y += 300) {
+            ents.push({ k: 'circle', c: [22.5, y + 10], r: 10 });
+          }
+          for (let by = 500; by < H; by += 1500) {
+            ents.push({ k: 'line', p: [[45, by], [180, by]] });
+            ents.push({ k: 'line', p: [[45, by + 30], [180, by + 30]] });
+          }
+          if (H >= 2400) {
+            const cageStart = Math.max(2200, Math.floor(H * 0.4));
+            ents.push({ k: 'line', p: [[200, cageStart], [200, H]] });
+            for (let cy = cageStart; cy < H; cy += 600) {
+              ents.push({ k: 'line', p: [[22.5, cy], [200, cy]] });
+            }
+          }
+          return (view === 'left') ? mirrorEntitiesH(ents) : ents;
+        }
+      }
     },
     inladder: {
-      w: 280, h: 200, name: '내부 사다리 FRP 표준형 (평면 기호)',
-      get: () => [
-        { k: 'line', p: [[0, 0], [0, 200]] },
-        { k: 'line', p: [[280, 0], [280, 200]] },
-        { k: 'line', p: [[0, 40], [280, 40]] },
-        { k: 'line', p: [[0, 90], [280, 90]] },
-        { k: 'line', p: [[0, 140], [280, 140]] },
-        { k: 'line', p: [[0, 190], [280, 190]] }
-      ]
+      get: (w, h, view) => {
+        const H = h || 2000;
+        const W = w || 300;
+        if (view === 'plan') {
+          return [
+            { k: 'line', p: [[0, 0], [0, 200]] },
+            { k: 'line', p: [[W, 0], [W, 200]] },
+            { k: 'line', p: [[0, 50], [W, 50]] },
+            { k: 'line', p: [[0, 150], [W, 150]] }
+          ];
+        } else if (view === 'front') {
+          const ents = [
+            { k: 'line', p: [[0, 0], [0, H]] },
+            { k: 'line', p: [[W, 0], [W, H]] }
+          ];
+          for (let y = 250; y < H; y += 250) {
+            ents.push({ k: 'line', p: [[0, y], [W, y]] });
+          }
+          return ents;
+        } else {
+          const ents = [
+            { k: 'line', p: [[0, 0], [0, H]] },
+            { k: 'line', p: [[0, 0], [80, 0]] },
+            { k: 'line', p: [[0, H], [80, H]] }
+          ];
+          for (let y = 250; y < H; y += 250) {
+            ents.push({ k: 'circle', c: [0, y], r: 8 });
+          }
+          return (view === 'left') ? mirrorEntitiesH(ents) : ents;
+        }
+      }
+    },
+    manhole: {
+      get: (w, h, view) => {
+        const W = w || 1000;
+        const H = h || 1000;
+        if (view === 'plan') {
+          return [
+            { k: 'poly', p: [[260, 105], [735, 105], [888, 260], [888, 735], [735, 888], [262, 888], [105, 735], [105, 260]], c: true },
+            { k: 'poly', p: [[150, 280], [290, 150], [710, 150], [850, 280], [850, 720], [710, 850], [290, 850], [150, 720]], c: true },
+            { k: 'poly', p: [[310, 110], [390, 110], [390, 67], [310, 67]], c: true },
+            { k: 'poly', p: [[610, 110], [690, 110], [690, 67], [610, 67]], c: true },
+            { k: 'poly', p: [[462, 945], [538, 945], [538, 898], [462, 898]], c: true },
+            { k: 'circle', c: [500, 500], r: 300 },
+            { k: 'line', p: [[360, 230], [360, 380]] },
+            { k: 'line', p: [[640, 230], [640, 380]] },
+            { k: 'line', p: [[360, 250], [640, 250]] },
+            { k: 'line', p: [[360, 290], [640, 290]] },
+            { k: 'line', p: [[360, 330], [640, 330]] },
+            { k: 'line', p: [[360, 370], [640, 370]] }
+          ];
+        } else {
+          return [
+            { k: 'poly', p: [[150, 0], [850, 0], [850, 120], [150, 120]], c: true },
+            { k: 'poly', p: [[100, 120], [900, 120], [900, 160], [100, 160]], c: true },
+            { k: 'arc', c: [500, 80], r: 420, a0: 20, a1: 160 },
+            { k: 'poly', p: [[440, 180], [560, 180], [560, 230], [440, 230]], c: true }
+          ];
+        }
+      }
+    },
+    airvent: {
+      get: (w, h, view) => {
+        if (view === 'plan') {
+          return [
+            { k: 'circle', c: [500, 500], r: 60 },
+            { k: 'circle', c: [500, 500], r: 120 },
+            { k: 'line', p: [[350, 500], [650, 500]] },
+            { k: 'line', p: [[500, 350], [500, 650]] }
+          ];
+        } else {
+          return [
+            { k: 'poly', p: [[170, 0], [230, 0], [230, 300], [170, 300]], c: true },
+            { k: 'arc', c: [200, 300], r: 140, a0: 0, a1: 180 },
+            { k: 'line', p: [[60, 300], [340, 300]] },
+            { k: 'line', p: [[80, 280], [320, 280]] },
+            { k: 'line', p: [[100, 260], [300, 260]] }
+          ];
+        }
+      }
     },
     nozzle: {
-      w: 210, h: 210, name: '100A JIS 10K 플랜지 노즐 (정면)',
-      get: () => [
-        { k: 'circle', c: [105, 105], r: 105 },
-        { k: 'circle', c: [105, 105], r: 87.5 },
-        { k: 'circle', c: [105, 105], r: 57 },
-        { k: 'circle', c: [105 + 87.5, 105], r: 9.5 },
-        { k: 'circle', c: [105 - 87.5, 105], r: 9.5 },
-        { k: 'circle', c: [105, 105 + 87.5], r: 9.5 },
-        { k: 'circle', c: [105, 105 - 87.5], r: 9.5 }
-      ]
+      get: (w, h, view) => {
+        if (view === 'plan' || view === 'front') {
+          const R = (w || 210) / 2;
+          const pcd = R * 0.82;
+          const bR = R * 0.09;
+          const ents = [
+            { k: 'circle', c: [R, R], r: R },
+            { k: 'circle', c: [R, R], r: pcd },
+            { k: 'circle', c: [R, R], r: R * 0.52 }
+          ];
+          for (let ang = 0; ang < 360; ang += 90) {
+            const rad = ang * Math.PI / 180;
+            ents.push({ k: 'circle', c: [R + pcd * Math.cos(rad), R + pcd * Math.sin(rad)], r: bR });
+          }
+          return ents;
+        } else {
+          const W = w || 210, H = h || 200;
+          return [
+            { k: 'poly', p: [[0, 0], [20, 0], [20, H], [0, H]], c: true },
+            { k: 'poly', p: [[20, H * 0.2], [W, H * 0.2], [W, H * 0.8], [20, H * 0.8]], c: true },
+            { k: 'line', p: [[0, H / 2], [W, H / 2]] }
+          ];
+        }
+      }
     },
     skid: {
-      w: 75, h: 75, name: '[-75x75x6T 스키드 베이스 찬넬 단면',
-      get: () => [
-        { k: 'poly', p: [[0, 0], [75, 0], [75, 6], [6, 6], [6, 69], [75, 69], [75, 75], [0, 75]], c: true }
-      ]
+      get: (w, h, view) => {
+        const W = w || 75, H = h || 75;
+        if (view === 'plan') {
+          return [
+            { k: 'line', p: [[0, 0], [0, H]] },
+            { k: 'line', p: [[W, 0], [W, H]] },
+            { k: 'line', p: [[6, 0], [6, H]] },
+            { k: 'line', p: [[W - 6, 0], [W - 6, H]] }
+          ];
+        } else if (view === 'front' || view === 'right') {
+          return [
+            { k: 'poly', p: [[0, 0], [W, 0], [W, 6], [6, 6], [6, H - 6], [W, H - 6], [W, H], [0, H]], c: true }
+          ];
+        } else {
+          return mirrorEntitiesH([
+            { k: 'poly', p: [[0, 0], [W, 0], [W, 6], [6, 6], [6, H - 6], [W, H - 6], [W, H], [0, H]], c: true }
+          ]);
+        }
+      }
     },
     foundation: {
-      w: 300, h: 525, name: '기초 콘크리트 패드 빔 300x525 단면 (모따기 포함)',
-      get: () => [
-        { k: 'poly', p: [[0, 0], [300, 0], [300, 510], [285, 525], [15, 525], [0, 510]], c: true },
-        { k: 'circle', c: [35, 490], r: 8 },
-        { k: 'circle', c: [265, 490], r: 8 },
-        { k: 'circle', c: [35, 35], r: 8 },
-        { k: 'circle', c: [265, 35], r: 8 }
-      ]
+      get: (w, h, view) => {
+        const W = w || 300, H = h || 525;
+        if (view === 'plan') {
+          return [
+            { k: 'line', p: [[0, 0], [0, H]] },
+            { k: 'line', p: [[W, 0], [W, H]] },
+            { k: 'circle', c: [W / 2, 100], r: 15 },
+            { k: 'circle', c: [W / 2, H - 100], r: 15 }
+          ];
+        } else {
+          return [
+            { k: 'poly', p: [[0, 0], [W, 0], [W, H - 15], [W - 15, H], [15, H], [0, H - 15]], c: true },
+            { k: 'circle', c: [35, H - 35], r: 9 },
+            { k: 'circle', c: [W - 35, H - 35], r: 9 },
+            { k: 'circle', c: [35, 35], r: 9 },
+            { k: 'circle', c: [W - 35, 35], r: 9 },
+            { k: 'line', p: [[35, 35], [35, H - 35]] },
+            { k: 'line', p: [[W - 35, 35], [W - 35, H - 35]] }
+          ];
+        }
+      }
+    },
+    panel: {
+      get: (w, h, view) => {
+        const W = w || 1000, H = h || 1000;
+        return generatePresetEntities((view === 'plan') ? 'diamond' : 'chamfer', W, H);
+      }
+    },
+    ext_reinf: {
+      get: (w, h, view) => {
+        const H = h || 2000;
+        const W = w || 200;
+        const cx = W / 2;
+
+        if (view === 'plan') {
+          // T-profile / channel post plan view
+          const t = 12;
+          return [
+            { k: 'poly', p: [
+              [cx - 50, 0], [cx + 50, 0], [cx + 50, t],
+              [cx + 12, t], [cx + 12, 85], [cx - 12, 85],
+              [cx - 12, t], [cx - 50, t]
+            ], c: true },
+            { k: 'circle', c: [cx - 30, t / 2], r: 5 },
+            { k: 'circle', c: [cx + 30, t / 2], r: 5 },
+            { k: 'line', p: [[cx - 70, 0], [cx + 70, 0]] }
+          ];
+        } else if (view === 'front' || view === 'rear') {
+          const ents = [];
+          // 1. Vertical main column shaft (media_1790987370378.png 기둥 프레임)
+          ents.push({ k: 'line', p: [[cx - 40, 0], [cx - 40, H]] });
+          ents.push({ k: 'line', p: [[cx + 40, 0], [cx + 40, H]] });
+          ents.push({ k: 'line', p: [[cx - 18, 0], [cx - 18, H]] });
+          ents.push({ k: 'line', p: [[cx + 18, 0], [cx + 18, H]] });
+
+          // 2. Base bracket at bottom (하부 베이스 플레이트 & 볼트 2개)
+          ents.push({ k: 'poly', p: [[cx - 60, 0], [cx + 60, 0], [cx + 60, 12], [cx - 60, 12]], c: true });
+          ents.push({ k: 'poly', p: [[cx - 48, 12], [cx + 48, 12], [cx + 48, 110], [cx - 48, 110]], c: true });
+          ents.push({ k: 'circle', c: [cx - 24, 60], r: 5.5 });
+          ents.push({ k: 'circle', c: [cx + 24, 60], r: 5.5 });
+
+          // 3. Intermediate joint splice plates (패널 단별 중간 접합 플레이트 & 볼트 4개)
+          for (let y = 1000; y < H; y += 1000) {
+            // Outer splice plate
+            ents.push({ k: 'poly', p: [[cx - 55, y - 55], [cx + 55, y - 55], [cx + 55, y + 55], [cx - 55, y + 55]], c: true });
+            // Inner margin line
+            ents.push({ k: 'poly', p: [[cx - 48, y - 48], [cx + 48, y - 48], [cx + 48, y + 48], [cx - 48, y + 48]], c: true });
+            // 4 corner bolts
+            ents.push({ k: 'circle', c: [cx - 32, y - 32], r: 5 });
+            ents.push({ k: 'circle', c: [cx + 32, y - 32], r: 5 });
+            ents.push({ k: 'circle', c: [cx - 32, y + 32], r: 5 });
+            ents.push({ k: 'circle', c: [cx + 32, y + 32], r: 5 });
+            // Joint dividing line
+            ents.push({ k: 'line', p: [[cx - 75, y], [cx + 75, y]] });
+          }
+
+          // 4. Top connector bracket (상부 브라켓 & 볼트 2개 & 지붕 트러스 라인)
+          ents.push({ k: 'poly', p: [[cx - 48, H - 110], [cx + 48, H - 110], [cx + 48, H], [cx - 48, H]], c: true });
+          ents.push({ k: 'circle', c: [cx - 24, H - 60], r: 5.5 });
+          ents.push({ k: 'circle', c: [cx + 24, H - 60], r: 5.5 });
+          ents.push({ k: 'line', p: [[cx - 65, H], [cx + 65, H]] });
+          ents.push({ k: 'line', p: [[cx - 80, H - 25], [cx + 80, H - 25]] });
+          ents.push({ k: 'line', p: [[cx - 80, H], [cx - 48, H - 25]] });
+          ents.push({ k: 'line', p: [[cx + 80, H], [cx + 48, H - 25]] });
+
+          return ents;
+        } else {
+          // Right or Left elevation view (측면 프로파일)
+          const ents = [];
+          const colDepth = 75;
+          const wallX = cx - 40;
+          const frontX = wallX + colDepth;
+
+          // Tank wall line
+          ents.push({ k: 'line', p: [[wallX - 15, 0], [wallX - 15, H]] });
+          // Column side lines
+          ents.push({ k: 'line', p: [[wallX, 0], [wallX, H]] });
+          ents.push({ k: 'line', p: [[frontX, 0], [frontX, H]] });
+          ents.push({ k: 'line', p: [[wallX + 12, 0], [wallX + 12, H]] });
+
+          // Base bracket
+          ents.push({ k: 'poly', p: [[wallX - 25, 0], [frontX + 15, 0], [frontX + 15, 15], [wallX - 25, 15]], c: true });
+          ents.push({ k: 'circle', c: [frontX - 25, 60], r: 5 });
+
+          // Splice brackets at 1000mm intervals
+          for (let y = 1000; y < H; y += 1000) {
+            ents.push({ k: 'poly', p: [[wallX - 20, y - 55], [frontX + 10, y - 55], [frontX + 10, y + 55], [wallX - 20, y + 55]], c: true });
+            ents.push({ k: 'circle', c: [wallX + 20, y - 30], r: 5 });
+            ents.push({ k: 'circle', c: [wallX + 20, y + 30], r: 5 });
+          }
+
+          // Top roof tie bracket
+          ents.push({ k: 'poly', p: [[wallX - 25, H - 110], [frontX + 10, H - 110], [frontX + 10, H], [wallX - 25, H]], c: true });
+          ents.push({ k: 'circle', c: [frontX - 25, H - 60], r: 5 });
+
+          return (view === 'left') ? mirrorEntitiesH(ents) : ents;
+        }
+      }
     }
   };
 
   const CAD_PART_OPTIONS = {
+    ladder: [
+      { id: 'ladder_main', name: '외부 사다리 (안전망 일체형)', w: 400, h: 2000, mat: 'COMMON' }
+    ],
+    inladder: [
+      { id: 'inladder_main', name: '내부 사다리 (FRP/STS)', w: 300, h: 2000, mat: 'COMMON' }
+    ],
+    manhole: [
+      { id: 'manhole_round', name: '맨홀 Ø600 원형 (경첩/잠금식)', w: 1000, h: 1000, mat: 'COMMON' },
+      { id: 'manhole_square', name: '맨홀 600×600 사각', w: 1000, h: 1000, mat: 'COMMON' }
+    ],
+    airvent: [
+      { id: 'airvent_50', name: '에어벤트 Ø50A (방충망 부착)', w: 600, h: 600, mat: 'COMMON' },
+      { id: 'airvent_100', name: '에어벤트 Ø100A 대용량', w: 600, h: 600, mat: 'COMMON' }
+    ],
+    nozzle: [
+      { id: 'nozzle_flange_50', name: '50A JIS 10K 플랜지 노즐', w: 155, h: 155, mat: 'COMMON' },
+      { id: 'nozzle_flange_80', name: '80A JIS 10K 플랜지 노즐', w: 185, h: 185, mat: 'COMMON' },
+      { id: 'nozzle_flange_100', name: '100A JIS 10K 플랜지 노즐', w: 210, h: 210, mat: 'COMMON' },
+      { id: 'nozzle_flange_150', name: '150A JIS 10K 플랜지 노즐', w: 280, h: 280, mat: 'COMMON' },
+      { id: 'nozzle_socket', name: '소켓 노즐 (나사식 Socket)', w: 150, h: 150, mat: 'COMMON' }
+    ],
+    skid: [
+      { id: 'skid_75', name: '[-75x75x6T 베이스 찬넬', w: 75, h: 75, mat: 'COMMON' },
+      { id: 'skid_100', name: '[-100x50x5T 보강 찬넬', w: 100, h: 50, mat: 'COMMON' }
+    ],
+    foundation: [
+      { id: 'foundation_pad', name: '기초 콘크리트 패드 빔 300x525', w: 300, h: 525, mat: 'COMMON' }
+    ],
     panel: [
       { id: 'top_1000x1000', name: '상·하부 판넬 1000×1000', w: 1000, h: 1000, mat: 'SMC' },
       { id: 'top_1000x500', name: '상·하부 판넬 1000×500', w: 1000, h: 500, mat: 'SMC' },
-      { id: 'top_1000x1500', name: '상·하부 판넬 1000×1500', w: 1000, h: 1500, mat: 'SMC' },
-      { id: 'top_1000x2000', name: '상·하부 판넬 1000×2000', w: 1000, h: 2000, mat: 'SMC' },
-      { id: 'top_500x500', name: '상·하부 판넬 500×500', w: 500, h: 500, mat: 'SMC' },
-      { id: 'side_1000x1000', name: '측면 판넬 1000×1000 표준형', w: 1000, h: 1000, mat: 'SMC' },
-      { id: 'side_1000x500', name: '측면 판넬 1000×500 (상단단)', w: 1000, h: 500, mat: 'SMC' },
-      { id: 'side_1000x1500', name: '측면 판넬 1000×1500 (1.5H단)', w: 1000, h: 1500, mat: 'SMC' },
-      { id: 'side_1000x2000', name: '측면 판넬 1000×2000 (2.0H단)', w: 1000, h: 2000, mat: 'SMC' },
-      { id: 'side_flat', name: '측면 1×1 평판형 (피팅·배관용)', w: 1000, h: 1000, mat: 'SMC' }
+      { id: 'side_1000x1000', name: '측면 판넬 1000×1000', w: 1000, h: 1000, mat: 'SMC' },
+      { id: 'side_1000x500', name: '측면 판넬 1000×500', w: 1000, h: 500, mat: 'SMC' }
     ],
-    manhole: [
-      { id: 'manhole', name: '평면도 맨홀 (Ø600 림 & 손잡이)', w: 1000, h: 1000, mat: 'COMMON' }
-    ],
-    airvent: [
-      { id: 'airvent', name: '평면도 에어벤트 (Φ50/100A 방충망)', w: 1000, h: 1000, mat: 'COMMON' }
-    ],
-    ladder: [
-      { id: 'ladder_plan', name: '평면도 외부 사다리 (W270 기호)', w: 350, h: 250, mat: 'COMMON' }
-    ],
-    inladder: [
-      { id: 'inladder', name: '내부 사다리 FRP (맨홀 하부 기호)', w: 280, h: 200, mat: 'COMMON' }
-    ],
-    nozzle: [
-      { id: 'nozzle_flange', name: '플랜지 노즐 (JIS 10K 100A)', w: 210, h: 210, mat: 'COMMON' },
-      { id: 'nozzle_socket', name: '소켓 노즐 (Socket)', w: 150, h: 150, mat: 'COMMON' }
-    ],
-    skid: [
-      { id: 'skid', name: '스키드 베이스 [-75x75x6T 찬넬 단면', w: 75, h: 75, mat: 'COMMON' }
-    ],
-    foundation: [
-      { id: 'foundation', name: '기초 콘크리트 패드 빔 300x525 단면', w: 300, h: 525, mat: 'COMMON' }
+    ext_reinf: [
+      { id: 'reinf_h_channel', name: '외부보강 메인 기둥 (H/찬넬 포스트)', w: 200, h: 2000, mat: 'COMMON' },
+      { id: 'reinf_angle_twin', name: '외부보강 앵글 기둥 (Twin Angle)', w: 200, h: 2000, mat: 'COMMON' }
     ]
   };
 
+  // ==========================================
+  // 🧩 부품 및 판넬 CAD DB 통합 엔진 (4방향·높이별)
+  // ==========================================
   let currentCadEntities = [];
+  let cadCurrentView = 'front';
+  let cadCurrentHeight = '2000';
 
   function getActivePartTemplates() {
     try {
@@ -10894,22 +11434,126 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
 
   function getSelectedCadCategory() {
     const checked = document.querySelector('input[name="cadPartCategory"]:checked');
-    return checked ? checked.value : 'panel';
+    return checked ? checked.value : 'ladder';
   }
 
   function getCategoryLabel(cat) {
     const labels = {
       panel: '판넬', manhole: '맨홀', airvent: '에어벤트', ladder: '사다리',
-      inladder: '내부사다리', nozzle: '배관노즐', skid: '스키드프레임', foundation: '기초패드'
+      inladder: '내부사다리', nozzle: '배관노즐', skid: '스키드프레임', foundation: '기초패드',
+      ext_reinf: '외부보강'
     };
     return labels[cat] || cat;
   }
 
-  function getPartDefaultEntities(cat, subKey, w, h) {
+  function getViewLabel(view) {
+    const labels = { plan: '평면도', front: '정면도', right: '우측면도', left: '좌측면도' };
+    return labels[view] || view;
+  }
+
+  // CAD DB 탭 서브 네비게이션 전환 (판넬 DB vs 부품 CAD)
+  window.switchCadDbMode = function(mode) {
+    const panelsBtn = $('cadModeBtnPanels') || $('cadSubPanelsBtn');
+    const partsBtn = $('cadModeBtnParts') || $('cadSubPartsBtn');
+    const panelsPane = $('cadPanePanels');
+    const partsPane = $('cadPaneParts');
+    if (!panelsPane || !partsPane) return;
+
+    if (mode === 'panels') {
+      panelsBtn?.classList.add('active');
+      partsBtn?.classList.remove('active');
+      panelsPane.classList.add('active');
+      partsPane.classList.remove('active');
+      try { loadDbPanels(); } catch (e) {}
+    } else {
+      partsBtn?.classList.add('active');
+      panelsBtn?.classList.remove('active');
+      partsPane.classList.add('active');
+      panelsPane.classList.remove('active');
+      loadPartForCategory(getSelectedCadCategory(), cadCurrentView, cadCurrentHeight);
+    }
+  };
+
+  $('cadModeBtnPanels')?.addEventListener('click', () => switchCadDbMode('panels'));
+  $('cadModeBtnParts')?.addEventListener('click', () => switchCadDbMode('parts'));
+  $('cadSubPanelsBtn')?.addEventListener('click', () => switchCadDbMode('panels'));
+  $('cadSubPartsBtn')?.addEventListener('click', () => switchCadDbMode('parts'));
+
+  // 4방향 뷰 버튼 이벤트 등록
+  document.querySelectorAll('.cad-view-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.dataset.cadView || 'front';
+      setCadCurrentView(view);
+    });
+  });
+
+  function setCadCurrentView(view) {
+    cadCurrentView = view;
+    document.querySelectorAll('.cad-view-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.cadView === view);
+    });
+    const curBadge = $('curViewBadge');
+    if (curBadge) {
+      curBadge.textContent = `${getViewIcon(view)} ${getViewLabel(view)} 선택됨`;
+    }
+    const cat = getSelectedCadCategory();
+    loadPartForCategory(cat, cadCurrentView, cadCurrentHeight);
+  }
+
+  function getViewIcon(v) {
+    const icons = { plan: '🔲', front: '🏢', right: '📐', left: '📐' };
+    return icons[v] || '📐';
+  }
+
+  // 4방향 뷰 뱃지 업데이트 (🟢 사용자 등록 vs ⚪ 기본)
+  function updateViewBadges(cat, subKey, h) {
+    const views = ['plan', 'front', 'right', 'left'];
+    const customComp = getActivePartTemplates();
+    let customPanels = [];
+    try { customPanels = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]'); } catch (e) {}
+
+    views.forEach(v => {
+      const badgeId = 'statBadge' + v.charAt(0).toUpperCase() + v.slice(1);
+      const badge = $(badgeId);
+      if (!badge) return;
+
+      let isCustom = false;
+      let count = 0;
+
+      if (cat === 'panel') {
+        const isPlan = (v === 'plan');
+        const p = customPanels.find(x => x.category === (isPlan ? 'top_bottom' : 'side'));
+        if (p && p.entities && p.entities.length) {
+          isCustom = true;
+          count = p.entities.length;
+        }
+      } else {
+        const kH = `${cat}_${v}_${h}`;
+        const kCommon = `${cat}_${v}`;
+        const kSubH = `${subKey}_${v}_${h}`;
+        const kSubCommon = `${subKey}_${v}`;
+        const kLegacy = (v === 'plan') ? (customComp[subKey] || customComp[cat]) : null;
+
+        const ents = customComp[kH] || customComp[kSubH] || customComp[kCommon] || customComp[kSubCommon] || kLegacy;
+        if (ents && ents.length) {
+          isCustom = true;
+          count = ents.length;
+        }
+      }
+
+      if (isCustom) {
+        badge.innerHTML = `<span style="color:#10b981;font-weight:700">🟢 사용자 (${count})</span>`;
+      } else {
+        badge.innerHTML = `<span style="color:var(--muted)">⚪ 기본</span>`;
+      }
+    });
+  }
+
+  function getPartDefaultEntities(cat, subKey, w, h, view = 'front') {
     if (cat === 'panel') {
       const mat = $('cadPartMatSel')?.value || 'SMC';
       const sizeKey = `${w || 1000}x${h || 1000}`;
-      const isSide = String(subKey).startsWith('side');
+      const isSide = (view !== 'plan');
       if (isSide) {
         if (typeof SIDE_T !== 'undefined' && SIDE_T && SIDE_T[mat] && SIDE_T[mat][sizeKey]) {
           return JSON.parse(JSON.stringify(SIDE_T[mat][sizeKey]));
@@ -10923,30 +11567,49 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     }
     const def = DEFAULT_PART_ENTITIES[cat];
     if (def && typeof def.get === 'function') {
-      return def.get(w, h);
+      return def.get(w, h, view);
     }
     return [];
   }
 
-  function getCurrentActivePartEntities(cat, subKey, w, h) {
+  function getCurrentActivePartEntities(cat, subKey, w, h, view = 'front') {
     if (cat === 'panel') {
       const mat = $('cadPartMatSel')?.value || 'SMC';
       const sizeKey = `${w || 1000}x${h || 1000}`;
-      const isSide = String(subKey).startsWith('side');
+      const isSide = (view !== 'plan');
       try {
         const custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
         const p = custom.find(x => x.material === mat && x.category === (isSide ? 'side' : 'top_bottom') && x.size_key === sizeKey);
         if (p && p.entities && p.entities.length) return p.entities;
       } catch (e) {}
-      return getPartDefaultEntities(cat, subKey, w, h);
+      return getPartDefaultEntities(cat, subKey, w, h, view);
     }
+
     try {
       const customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
-      if (customComp[subKey] && customComp[subKey].length) {
+      const hStr = String(cadCurrentHeight || '2000');
+      // 우선순위: 1. 높이특화 -> 2. 세부타입 높이특화 -> 3. 뷰공통 -> 4. 세부타입 뷰공통 -> 5. 구버전 평면
+      if (hStr !== 'common' && customComp[`${cat}_${view}_${hStr}`]) {
+        return customComp[`${cat}_${view}_${hStr}`];
+      }
+      if (hStr !== 'common' && customComp[`${subKey}_${view}_${hStr}`]) {
+        return customComp[`${subKey}_${view}_${hStr}`];
+      }
+      if (customComp[`${cat}_${view}`]) {
+        return customComp[`${cat}_${view}`];
+      }
+      if (customComp[`${subKey}_${view}`]) {
+        return customComp[`${subKey}_${view}`];
+      }
+      if (view === 'plan' && customComp[subKey]) {
         return customComp[subKey];
       }
+      if (view === 'plan' && customComp[cat]) {
+        return customComp[cat];
+      }
     } catch (e) {}
-    return getPartDefaultEntities(cat, subKey, w, h);
+
+    return getPartDefaultEntities(cat, subKey, w, h, view);
   }
 
   function updateCadPartPreview() {
@@ -10955,6 +11618,13 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     const w = Number($('cadPartW')?.value) || 1000;
     const h = Number($('cadPartH')?.value) || 1000;
     renderSinglePanel(cv, w, h, currentCadEntities);
+
+    const titleEl = $('cadPreviewTitle');
+    if (titleEl) {
+      const hLabel = (cadCurrentHeight === 'common') ? '모든높이공통' : `H=${cadCurrentHeight}`;
+      titleEl.textContent = `미리보기 (${getViewLabel(cadCurrentView)} · ${hLabel})`;
+    }
+
     const countEl = $('cadPreviewEntityCount');
     if (countEl) {
       countEl.textContent = `도형 ${currentCadEntities ? currentCadEntities.length : 0}개 (${w}×${h}mm)`;
@@ -11054,13 +11724,13 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
   function downloadCurrentPartDxf() {
     const cat = getSelectedCadCategory();
     const sub = $('cadPartSubSel')?.value || cat;
-    const ents = (currentCadEntities && currentCadEntities.length) ? currentCadEntities : getPartDefaultEntities(cat, sub);
-    const dxfStr = entitiesToDxf(ents, `${cat}_${sub}`);
+    const ents = (currentCadEntities && currentCadEntities.length) ? currentCadEntities : getPartDefaultEntities(cat, sub, Number($('cadPartW')?.value) || 1000, Number($('cadPartH')?.value) || 1000, cadCurrentView);
+    const dxfStr = entitiesToDxf(ents, `${cat}_${cadCurrentView}_${cadCurrentHeight}`);
     const blob = new Blob([dxfStr], { type: 'application/dxf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `tankcad_${cat}_${sub}.dxf`;
+    a.download = `tankcad_${cat}_${cadCurrentView}_${cadCurrentHeight}.dxf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -11073,6 +11743,8 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     const mat = $('cadPartMatSel')?.value || 'SMC';
     const w = Number($('cadPartW')?.value) || 1000;
     const h = Number($('cadPartH')?.value) || 1000;
+    const view = cadCurrentView;
+    const heightStr = cadCurrentHeight;
 
     if (!currentCadEntities || !currentCadEntities.length) {
       alert('등록할 CAD 형상이 없습니다. DWG/DXF 파일을 불러오거나 기본 도면을 확인하세요.');
@@ -11081,9 +11753,9 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
 
     if (cat === 'panel') {
       const sizeKey = `${w}x${h}`;
-      const isSide = String(sub).startsWith('side');
+      const isSide = (view !== 'plan');
       const panelCat = isSide ? 'side' : 'top_bottom';
-      const name = `${mat} ${w}x${h} 사용자 CAD 판넬`;
+      const name = `${mat} ${w}x${h} 사용자 CAD (${isSide ? '측면' : '상·하부'})`;
 
       try {
         let custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
@@ -11106,15 +11778,62 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     } else {
       try {
         let customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
-        customComp[sub] = currentCadEntities;
+        // 키 저장 형식: 높이별 키와 뷰공통 키
+        if (heightStr && heightStr !== 'common') {
+          customComp[`${cat}_${view}_${heightStr}`] = currentCadEntities;
+          if (sub && sub !== cat) customComp[`${sub}_${view}_${heightStr}`] = currentCadEntities;
+        } else {
+          customComp[`${cat}_${view}`] = currentCadEntities;
+          if (sub && sub !== cat) customComp[`${sub}_${view}`] = currentCadEntities;
+          if (view === 'plan') {
+            customComp[cat] = currentCadEntities;
+            if (sub && sub !== cat) customComp[sub] = currentCadEntities;
+          }
+        }
         localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
       } catch (e) { console.warn(e); }
     }
 
     rebuild(false);
     draw();
+    updateViewBadges(cat, sub, heightStr);
     renderRegisteredPartsTable();
-    alert(`✅ [${getCategoryLabel(cat)}] CAD 형상이 도면에 성공적으로 등록 및 즉시 반영되었습니다!`);
+    alert(`✅ [${getCategoryLabel(cat)} - ${getViewLabel(view)} (${heightStr === 'common' ? '공통' : 'H=' + heightStr})] CAD 형상이 도면에 성공적으로 등록 및 즉시 반영되었습니다!`);
+  }
+
+  function saveAllViewsCadPart() {
+    const cat = getSelectedCadCategory();
+    const sub = $('cadPartSubSel')?.value || cat;
+    const w = Number($('cadPartW')?.value) || 1000;
+    const h = Number($('cadPartH')?.value) || 1000;
+
+    if (!currentCadEntities || !currentCadEntities.length) {
+      alert('일괄 등록할 CAD 형상이 없습니다.');
+      return;
+    }
+
+    if (!confirm(`현재 편집 중인 형상을 [${getCategoryLabel(cat)}]의 4개 방향(정면/우측/좌측/평면) 전체에 공통 CAD 형상으로 일괄 등록하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      let customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
+      ['plan', 'front', 'right', 'left'].forEach(v => {
+        customComp[`${cat}_${v}`] = currentCadEntities;
+        if (sub && sub !== cat) customComp[`${sub}_${v}`] = currentCadEntities;
+      });
+      if (cat !== 'panel') {
+        customComp[cat] = currentCadEntities;
+        if (sub && sub !== cat) customComp[sub] = currentCadEntities;
+      }
+      localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
+    } catch (e) { console.warn(e); }
+
+    rebuild(false);
+    draw();
+    updateViewBadges(cat, sub, cadCurrentHeight);
+    renderRegisteredPartsTable();
+    alert(`✅ [${getCategoryLabel(cat)}]의 4개 방향 전체에 현재 CAD 형상이 일괄 등록되었습니다!`);
   }
 
   function resetCurrentCadPart() {
@@ -11123,10 +11842,12 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     const mat = $('cadPartMatSel')?.value || 'SMC';
     const w = Number($('cadPartW')?.value) || 1000;
     const h = Number($('cadPartH')?.value) || 1000;
+    const view = cadCurrentView;
+    const heightStr = cadCurrentHeight;
 
     if (cat === 'panel') {
       const sizeKey = `${w}x${h}`;
-      const isSide = String(sub).startsWith('side');
+      const isSide = (view !== 'plan');
       const panelCat = isSide ? 'side' : 'top_bottom';
       try {
         let custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
@@ -11137,24 +11858,57 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     } else {
       try {
         let customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
-        delete customComp[sub];
+        delete customComp[`${cat}_${view}_${heightStr}`];
+        delete customComp[`${sub}_${view}_${heightStr}`];
+        delete customComp[`${cat}_${view}`];
+        delete customComp[`${sub}_${view}`];
+        if (view === 'plan') {
+          delete customComp[cat];
+          delete customComp[sub];
+        }
         localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
       } catch (e) {}
     }
 
-    loadPartForCategory(cat, sub);
+    loadPartForCategory(cat, view, heightStr, sub);
     rebuild(false);
     draw();
+    updateViewBadges(cat, sub, heightStr);
     renderRegisteredPartsTable();
-    alert(`🔄 [${getCategoryLabel(cat)}] CAD 형상이 공장 기본 표준형으로 복원되었습니다.`);
+    alert(`🔄 [${getCategoryLabel(cat)} - ${getViewLabel(view)}] CAD 형상이 공장 기본 표준형으로 복원되었습니다.`);
+  }
+
+  function resetCurrentItemAll() {
+    const cat = getSelectedCadCategory();
+    const sub = $('cadPartSubSel')?.value || cat;
+    if (!confirm(`[${getCategoryLabel(cat)}]에 등록된 모든 방향(4방향) 및 모든 높이의 사용자 CAD 데이터를 공장 표준으로 초기화하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      let customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
+      Object.keys(customComp).forEach(k => {
+        if (k.startsWith(cat) || k.startsWith(sub)) {
+          delete customComp[k];
+        }
+      });
+      localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
+    } catch (e) {}
+
+    loadPartForCategory(cat, cadCurrentView, cadCurrentHeight, sub);
+    rebuild(false);
+    draw();
+    updateViewBadges(cat, sub, cadCurrentHeight);
+    renderRegisteredPartsTable();
+    alert(`🔄 [${getCategoryLabel(cat)}]의 모든 등록 데이터가 초기화되었습니다.`);
   }
 
   function resetAllCadParts() {
-    if (confirm('모든 사용자 등록 부품(판넬, 맨홀, 사다리 등)의 CAD 형상을 공장 초기 표준으로 복원하시겠습니까?')) {
+    if (confirm('모든 사용자 등록 부품(사다리, 맨홀, 에어벤트, 노즐, 스키드, 패드, 판넬)의 CAD 형상을 공장 초기 표준으로 복원하시겠습니까?')) {
       localStorage.removeItem('tankcad_custom_components');
       localStorage.removeItem('tankcad_custom_panels');
       applyActiveTemplates();
-      loadPartForCategory(getSelectedCadCategory(), $('cadPartSubSel')?.value);
+      loadPartForCategory(getSelectedCadCategory(), cadCurrentView, cadCurrentHeight, $('cadPartSubSel')?.value);
       rebuild(false);
       draw();
       renderRegisteredPartsTable();
@@ -11162,6 +11916,244 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     }
   }
 
+  // 선분 및 기하 변환 헬퍼 (회전, 반전, 크기 맞춤)
+  function getEntitiesBoundingBox(ents) {
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    (ents || []).forEach(e => {
+      if (e.k === 'line') {
+        minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
+        minY = Math.min(minY, e.p[0][1], e.p[1][1]); maxY = Math.max(maxY, e.p[0][1], e.p[1][1]);
+      } else if (e.k === 'circle' || e.k === 'arc') {
+        minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r);
+        minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r);
+      } else if (e.k === 'poly') {
+        e.p.forEach(pt => {
+          minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]);
+          minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]);
+        });
+      }
+    });
+    if (minX === Infinity) return { minX: 0, maxX: 1000, minY: 0, maxY: 1000, w: 1000, h: 1000 };
+    return { minX, maxX, minY, maxY, w: maxX - minX, h: maxY - minY };
+  }
+
+  function rotateEntities90(ents) {
+    const bb = getEntitiesBoundingBox(ents);
+    const cx = (bb.minX + bb.maxX) / 2;
+    const cy = (bb.minY + bb.maxY) / 2;
+    return (ents || []).map(e => {
+      if (e.k === 'line') {
+        return {
+          k: 'line',
+          p: e.p.map(pt => [
+            Math.round((cx - (pt[1] - cy)) * 10) / 10,
+            Math.round((cy + (pt[0] - cx)) * 10) / 10
+          ])
+        };
+      } else if (e.k === 'circle') {
+        return {
+          k: 'circle',
+          c: [
+            Math.round((cx - (e.c[1] - cy)) * 10) / 10,
+            Math.round((cy + (e.c[0] - cx)) * 10) / 10
+          ],
+          r: e.r
+        };
+      } else if (e.k === 'arc') {
+        return {
+          k: 'arc',
+          c: [
+            Math.round((cx - (e.c[1] - cy)) * 10) / 10,
+            Math.round((cy + (e.c[0] - cx)) * 10) / 10
+          ],
+          r: e.r,
+          a0: (e.a0 + 90) % 360,
+          a1: (e.a1 + 90) % 360
+        };
+      } else if (e.k === 'poly') {
+        return {
+          k: 'poly',
+          p: e.p.map(pt => [
+            Math.round((cx - (pt[1] - cy)) * 10) / 10,
+            Math.round((cy + (pt[0] - cx)) * 10) / 10
+          ]),
+          c: e.c
+        };
+      }
+      return e;
+    });
+  }
+
+  function mirrorEntitiesH(ents) {
+    const bb = getEntitiesBoundingBox(ents);
+    const midX = (bb.minX + bb.maxX);
+    return (ents || []).map(e => {
+      if (e.k === 'line') {
+        return {
+          k: 'line',
+          p: e.p.map(pt => [Math.round((midX - pt[0]) * 10) / 10, pt[1]])
+        };
+      } else if (e.k === 'circle') {
+        return {
+          k: 'circle',
+          c: [Math.round((midX - e.c[0]) * 10) / 10, e.c[1]],
+          r: e.r
+        };
+      } else if (e.k === 'arc') {
+        return {
+          k: 'arc',
+          c: [Math.round((midX - e.c[0]) * 10) / 10, e.c[1]],
+          r: e.r,
+          a0: (180 - (e.a1 || 360) + 360) % 360,
+          a1: (180 - (e.a0 || 0) + 360) % 360
+        };
+      } else if (e.k === 'poly') {
+        return {
+          k: 'poly',
+          p: e.p.map(pt => [Math.round((midX - pt[0]) * 10) / 10, pt[1]]),
+          c: e.c
+        };
+      }
+      return e;
+    });
+  }
+
+  function mirrorEntitiesV(ents) {
+    const bb = getEntitiesBoundingBox(ents);
+    const midY = (bb.minY + bb.maxY);
+    return (ents || []).map(e => {
+      if (e.k === 'line') {
+        return {
+          k: 'line',
+          p: e.p.map(pt => [pt[0], Math.round((midY - pt[1]) * 10) / 10])
+        };
+      } else if (e.k === 'circle') {
+        return {
+          k: 'circle',
+          c: [e.c[0], Math.round((midY - e.c[1]) * 10) / 10],
+          r: e.r
+        };
+      } else if (e.k === 'arc') {
+        return {
+          k: 'arc',
+          c: [e.c[0], Math.round((midY - e.c[1]) * 10) / 10],
+          r: e.r,
+          a0: (- (e.a1 || 360) + 360) % 360,
+          a1: (- (e.a0 || 0) + 360) % 360
+        };
+      } else if (e.k === 'poly') {
+        return {
+          k: 'poly',
+          p: e.p.map(pt => [pt[0], Math.round((midY - pt[1]) * 10) / 10]),
+          c: e.c
+        };
+      }
+      return e;
+    });
+  }
+
+  // 툴바 액션 버튼 이벤트 연결
+  $('btnPartRotate90')?.addEventListener('click', () => {
+    if (!currentCadEntities || !currentCadEntities.length) return;
+    currentCadEntities = rotateEntities90(currentCadEntities);
+    // W, H 스왑
+    const wEl = $('cadPartW');
+    const hEl = $('cadPartH');
+    if (wEl && hEl) {
+      const tmp = wEl.value;
+      wEl.value = hEl.value;
+      hEl.value = tmp;
+    }
+    updateCadPartPreview();
+  });
+
+  $('btnPartMirrorH')?.addEventListener('click', () => {
+    if (!currentCadEntities || !currentCadEntities.length) return;
+    currentCadEntities = mirrorEntitiesH(currentCadEntities);
+    updateCadPartPreview();
+  });
+
+  $('btnPartMirrorV')?.addEventListener('click', () => {
+    if (!currentCadEntities || !currentCadEntities.length) return;
+    currentCadEntities = mirrorEntitiesV(currentCadEntities);
+    updateCadPartPreview();
+  });
+
+  $('btnPartCleanFillets')?.addEventListener('click', () => {
+    const w = Number($('cadPartW')?.value) || 1000;
+    const h = Number($('cadPartH')?.value) || 1000;
+    currentCadEntities = cleanEntities(currentCadEntities, w, h);
+    updateCadPartPreview();
+    alert('✨ 선분 원터치 정제(필렛 및 테두리 중복선 제거)가 완료되었습니다.');
+  });
+
+  $('btnPartFitSize')?.addEventListener('click', () => {
+    const targetW = Number($('cadPartW')?.value) || 1000;
+    const targetH = Number($('cadPartH')?.value) || 1000;
+    if (!currentCadEntities || !currentCadEntities.length) return;
+    const bb = getEntitiesBoundingBox(currentCadEntities);
+    if (bb.w <= 0 || bb.h <= 0) return;
+    const sx = targetW / bb.w, sy = targetH / bb.h;
+    const scaled = [];
+    currentCadEntities.forEach(e => {
+      if (e.k === 'line') {
+        scaled.push({
+          k: 'line',
+          p: [
+            [Math.round((e.p[0][0] - bb.minX) * sx * 10) / 10, Math.round((e.p[0][1] - bb.minY) * sy * 10) / 10],
+            [Math.round((e.p[1][0] - bb.minX) * sx * 10) / 10, Math.round((e.p[1][1] - bb.minY) * sy * 10) / 10]
+          ]
+        });
+      } else if (e.k === 'circle') {
+        scaled.push({
+          k: 'circle',
+          c: [Math.round((e.c[0] - bb.minX) * sx * 10) / 10, Math.round((e.c[1] - bb.minY) * sy * 10) / 10],
+          r: Math.round(e.r * ((sx + sy) / 2) * 10) / 10
+        });
+      } else if (e.k === 'arc') {
+        scaled.push({
+          k: 'arc',
+          c: [Math.round((e.c[0] - bb.minX) * sx * 10) / 10, Math.round((e.c[1] - bb.minY) * sy * 10) / 10],
+          r: Math.round(e.r * ((sx + sy) / 2) * 10) / 10,
+          a0: e.a0, a1: e.a1
+        });
+      } else if (e.k === 'poly') {
+        scaled.push({
+          k: 'poly',
+          p: e.p.map(pt => [Math.round((pt[0] - bb.minX) * sx * 10) / 10, Math.round((pt[1] - bb.minY) * sy * 10) / 10]),
+          c: e.c
+        });
+      }
+    });
+    currentCadEntities = scaled;
+    updateCadPartPreview();
+  });
+
+  // 우측면도 CAD 형상을 좌측면도로 반전 복사 (캐드 제도 편의기능)
+  $('btnCopyFromRight')?.addEventListener('click', () => {
+    const cat = getSelectedCadCategory();
+    const sub = $('cadPartSubSel')?.value || cat;
+    const w = Number($('cadPartW')?.value) || 1000;
+    const h = Number($('cadPartH')?.value) || 1000;
+
+    // 우측면도 엔티티 추출
+    const rightEnts = getCurrentActivePartEntities(cat, sub, w, h, 'right');
+    if (!rightEnts || !rightEnts.length) {
+      alert('우측면도에 등록된 형상이 없습니다.');
+      return;
+    }
+
+    // 좌우 반전
+    const mirrored = mirrorEntitiesH(rightEnts);
+    currentCadEntities = mirrored;
+
+    // 좌측면도 뷰로 자동 전환
+    setCadCurrentView('left');
+    updateCadPartPreview();
+    alert('↔️ 우측면도 CAD 형상을 좌우 반전하여 좌측면도로 복사하였습니다. [현재 방향·높이 도면 등록]을 눌러 저장하세요.');
+  });
+
+  // 파일 업로드 처리
   function handleCadFileUpload(file) {
     if (!file) return;
     const isDwg = file.name.toLowerCase().endsWith('.dwg');
@@ -11250,7 +12242,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
             if (statusEl) {
               statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
               statusEl.style.color = '#ef4444';
-              statusEl.textContent = '❌ DWG 변환 실패: ' + (data.error || '오류') + ' (AutoCAD에서 DXF로 저장 후 올리시면 즉시 등록됩니다)';
+              statusEl.textContent = '❌ DWG 변환 실패: ' + (data.error || '오류') + ' (AutoCAD에서 DXF로 저장 후 올리시면 브라우저에서 즉시 등록됩니다)';
             }
           }
         } catch (e) {
@@ -11265,7 +12257,8 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     }
   }
 
-  function loadPartForCategory(cat, targetSub = null) {
+  // 부품 카테고리별 세부 항목 및 크기 초기화
+  function loadPartForCategory(cat, view = 'front', height = '2000', targetSub = null) {
     const sel = $('cadPartSubSel');
     if (!sel) return;
     const opts = CAD_PART_OPTIONS[cat] || [];
@@ -11277,14 +12270,28 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
 
     const curOpt = opts.find(o => o.id === sel.value) || opts[0];
     if (curOpt) {
-      if ($('cadPartW')) $('cadPartW').value = curOpt.w;
-      if ($('cadPartH')) $('cadPartH').value = curOpt.h;
+      let w = curOpt.w;
+      let h = curOpt.h;
+
+      // 높이 종속 부품인 경우 높이 반영 (단, 평면도는 폭/두께)
+      if (['ladder', 'inladder', 'skid', 'foundation', 'ext_reinf'].includes(cat)) {
+        if (view !== 'plan' && height && height !== 'common') {
+          const parsedH = Number(height);
+          if (!isNaN(parsedH) && parsedH > 0) h = parsedH;
+        }
+      }
+
+      if ($('cadPartW')) $('cadPartW').value = w;
+      if ($('cadPartH')) $('cadPartH').value = h;
       if ($('cadPartMatSel') && curOpt.mat !== 'COMMON') $('cadPartMatSel').value = curOpt.mat;
-      currentCadEntities = getCurrentActivePartEntities(cat, curOpt.id, curOpt.w, curOpt.h);
+
+      currentCadEntities = getCurrentActivePartEntities(cat, curOpt.id, w, h, view);
       updateCadPartPreview();
+      updateViewBadges(cat, curOpt.id, height);
     }
   }
 
+  // 4방향 종합 등록 현황 표 렌더링
   function renderRegisteredPartsTable() {
     const tbody = $('registeredPartsTbody');
     if (!tbody) return;
@@ -11293,60 +12300,91 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     let customPanels = [];
     try { customPanels = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]'); } catch (e) {}
 
-    Object.keys(CAD_PART_OPTIONS).forEach(cat => {
-      CAD_PART_OPTIONS[cat].forEach(sub => {
+    const cats = ['ladder', 'inladder', 'ext_reinf', 'manhole', 'airvent', 'nozzle', 'skid', 'foundation', 'panel'];
+    const catLabels = {
+      ladder: '외부사다리', inladder: '내부사다리', ext_reinf: '외부보강', manhole: '맨홀', airvent: '에어벤트',
+      nozzle: '배관노즐', skid: '스키드', foundation: '기초패드', panel: '판넬'
+    };
+
+    cats.forEach(cat => {
+      const views = ['plan', 'front', 'right', 'left'];
+      const viewBadges = views.map(v => {
         let isCustom = false;
-        let entCount = 0;
         if (cat === 'panel') {
-          const isSide = sub.id.startsWith('side');
-          const p = customPanels.find(x => x.size_key === `${sub.w}x${sub.h}` && x.category === (isSide ? 'side' : 'top_bottom'));
-          if (p) { isCustom = true; entCount = p.entities?.length || 0; }
+          const isPlan = (v === 'plan');
+          const p = customPanels.find(x => x.category === (isPlan ? 'top_bottom' : 'side'));
+          if (p && p.entities && p.entities.length) isCustom = true;
         } else {
-          if (customComp[sub.id] && customComp[sub.id].length) {
-            isCustom = true;
-            entCount = customComp[sub.id].length;
-          }
+          const hasV = customComp[`${cat}_${v}`] || customComp[`${cat}_${v}_${cadCurrentHeight}`] || (v === 'plan' && customComp[cat]);
+          if (hasV && hasV.length) isCustom = true;
         }
+        return `
+          <td style="padding:4px 2px;text-align:center">
+            <button type="button" class="btn-sm" style="padding:1px 4px;font-size:9.5px;cursor:pointer;background:${isCustom ? 'rgba(16,185,129,0.1)' : 'transparent'};border-color:${isCustom ? '#10b981' : 'var(--line)'};color:${isCustom ? '#10b981' : 'var(--muted)'}" onclick="switchToCadPartsTab('${cat}', '${v}')">
+              ${isCustom ? '🟢' : '⚪'}
+            </button>
+          </td>
+        `;
+      }).join('');
 
-        const catNames = {
-          panel: '판넬', manhole: '맨홀', airvent: '에어벤트', ladder: '사다리',
-          inladder: '내부사다리', nozzle: '배관노즐', skid: '스키드', foundation: '기초패드'
-        };
-
-        rows.push(`
-          <tr style="border-bottom:1px solid var(--line)">
-            <td style="padding:5px 4px"><b>${catNames[cat] || cat}</b></td>
-            <td style="padding:5px 4px;font-size:10px" title="${sub.name}">${sub.name}</td>
-            <td style="padding:5px 4px;text-align:center">
-              ${isCustom ? `<span style="color:#10b981;font-weight:700">🟢 사용자CAD (${entCount}개)</span>` : `<span style="color:var(--muted)">⚪ 기본표준</span>`}
-            </td>
-            <td style="padding:5px 4px;text-align:center;white-space:nowrap">
-              <button type="button" class="btn-sm" style="padding:2px 4px;font-size:10px;cursor:pointer" onclick="switchToCadPartsTab('${cat}', '${sub.id}')">선택</button>
-            </td>
-          </tr>
-        `);
-      });
+      rows.push(`
+        <tr style="border-bottom:1px solid var(--line)">
+          <td style="padding:5px 4px;font-weight:600">${catLabels[cat] || cat}</td>
+          ${viewBadges}
+          <td style="padding:4px 2px;text-align:center">
+            <button type="button" class="btn-sm" style="padding:2px 5px;font-size:10px;cursor:pointer" onclick="switchToCadPartsTab('${cat}', '${cadCurrentView}')">열기</button>
+          </td>
+        </tr>
+      `);
     });
+
     tbody.innerHTML = rows.join('');
   }
 
-  function initCadPartsView(category = 'panel', subKey = null) {
+  function initCadPartsView(category = 'ladder', view = null, height = null, subKey = null) {
     const radios = document.querySelectorAll('input[name="cadPartCategory"]');
     radios.forEach(r => {
       r.checked = (r.value === category);
     });
-    loadPartForCategory(category, subKey);
+
+    // 방향 자동 결정 (카테고리별 최적 뷰)
+    if (view) {
+      cadCurrentView = view;
+    } else {
+      if (['manhole', 'airvent', 'panel'].includes(category)) {
+        cadCurrentView = 'plan';
+      } else {
+        cadCurrentView = 'front';
+      }
+    }
+
+    if (height) {
+      cadCurrentHeight = String(height);
+      if ($('cadPartHeightSel')) $('cadPartHeightSel').value = cadCurrentHeight;
+    }
+
+    // 뷰 버튼 활성화 동기화
+    document.querySelectorAll('.cad-view-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.cadView === cadCurrentView);
+    });
+    const curBadge = $('curViewBadge');
+    if (curBadge) {
+      curBadge.textContent = `${getViewIcon(cadCurrentView)} ${getViewLabel(cadCurrentView)} 선택됨`;
+    }
+
+    loadPartForCategory(category, cadCurrentView, cadCurrentHeight, subKey);
     renderRegisteredPartsTable();
   }
 
-  window.switchToCadPartsTab = (category = 'panel', subKey = null) => {
+  window.switchToCadPartsTab = (category = 'ladder', view = null, height = null, subKey = null) => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     const partTabBtn = document.querySelector('.tab-btn[data-tab="tab-cad-parts"]');
     if (partTabBtn) partTabBtn.classList.add('active');
     const target = $('tab-cad-parts');
     if (target) target.classList.add('active');
-    initCadPartsView(category, subKey);
+    switchCadDbMode('parts');
+    initCadPartsView(category, view, height, subKey);
   };
 
   window.openCadRegForPart = (bomKey) => {
@@ -11360,39 +12398,56 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       inladder: 'inladder',
       ladder: 'ladder',
       exladder: 'ladder',
-      nozzle: 'nozzle'
+      nozzle: 'nozzle',
+      reinf: 'ext_reinf',
+      ext_reinf: 'ext_reinf',
+      outbo: 'ext_reinf'
     };
-    const cat = map[bomKey] || 'panel';
+    const cat = map[bomKey] || 'ladder';
     switchToCadPartsTab(cat);
   };
 
-  // Category radio buttons
+  // 카테고리 라디오 변경
   document.querySelectorAll('input[name="cadPartCategory"]').forEach(r => {
     r.addEventListener('change', () => {
-      loadPartForCategory(r.value);
+      const cat = r.value;
+      const defaultView = ['manhole', 'airvent', 'panel'].includes(cat) ? 'plan' : 'front';
+      setCadCurrentView(defaultView);
     });
   });
 
+  // 세부 타입 변경
   $('cadPartSubSel')?.addEventListener('change', () => {
     const cat = getSelectedCadCategory();
-    const sel = $('cadPartSubSel');
-    const opt = CAD_PART_OPTIONS[cat]?.find(o => o.id === sel.value);
-    if (opt) {
-      if ($('cadPartW')) $('cadPartW').value = opt.w;
-      if ($('cadPartH')) $('cadPartH').value = opt.h;
-      if ($('cadPartMatSel') && opt.mat !== 'COMMON') $('cadPartMatSel').value = opt.mat;
-      currentCadEntities = getCurrentActivePartEntities(cat, opt.id, opt.w, opt.h);
-      updateCadPartPreview();
-    }
+    loadPartForCategory(cat, cadCurrentView, cadCurrentHeight, $('cadPartSubSel')?.value);
   });
 
+  // 재질 변경
   $('cadPartMatSel')?.addEventListener('change', () => {
     const cat = getSelectedCadCategory();
-    const sub = $('cadPartSubSel')?.value || cat;
-    const w = Number($('cadPartW')?.value) || 1000;
-    const h = Number($('cadPartH')?.value) || 1000;
-    currentCadEntities = getCurrentActivePartEntities(cat, sub, w, h);
-    updateCadPartPreview();
+    loadPartForCategory(cat, cadCurrentView, cadCurrentHeight, $('cadPartSubSel')?.value);
+  });
+
+  // 적용 높이 셀렉터 변경
+  $('cadPartHeightSel')?.addEventListener('change', (ev) => {
+    let val = ev.target.value;
+    if (val === 'custom') {
+      const inputH = prompt('적용할 탱크 높이 H(mm)를 직접 입력하세요:', '2000');
+      if (inputH && !isNaN(Number(inputH))) {
+        val = String(Number(inputH));
+        // 옵션 추가
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = `H = ${val} mm (사용자 지정)`;
+        opt.selected = true;
+        ev.target.insertBefore(opt, ev.target.lastElementChild);
+      } else {
+        ev.target.value = cadCurrentHeight || '2000';
+        return;
+      }
+    }
+    cadCurrentHeight = val;
+    loadPartForCategory(getSelectedCadCategory(), cadCurrentView, cadCurrentHeight, $('cadPartSubSel')?.value);
   });
 
   ['cadPartW', 'cadPartH'].forEach(id => {
@@ -11406,74 +12461,11 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
 
   $('btnDownloadSampleDxf')?.addEventListener('click', downloadCurrentPartDxf);
   $('btnApplyCadPart')?.addEventListener('click', saveCurrentCadPart);
+  $('btnApplyAllViewsCadPart')?.addEventListener('click', saveAllViewsCadPart);
   $('btnResetCurrentCadPart')?.addEventListener('click', resetCurrentCadPart);
+  $('btnResetCurrentItemAll')?.addEventListener('click', resetCurrentItemAll);
   $('btnResetAllCadParts')?.addEventListener('click', resetAllCadParts);
   $('btnQuickCadReg')?.addEventListener('click', () => switchToCadPartsTab());
-
-  $('btnPartCleanFillets')?.addEventListener('click', () => {
-    const w = Number($('cadPartW')?.value) || 1000;
-    const h = Number($('cadPartH')?.value) || 1000;
-    currentCadEntities = cleanEntities(currentCadEntities, w, h);
-    updateCadPartPreview();
-    alert('✨ 선분 원터치 정제(필렛 및 테두리 중복선 제거)가 완료되었습니다.');
-  });
-
-  $('btnPartFitSize')?.addEventListener('click', () => {
-    const targetW = Number($('cadPartW')?.value) || 1000;
-    const targetH = Number($('cadPartH')?.value) || 1000;
-    if (!currentCadEntities || !currentCadEntities.length) return;
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    currentCadEntities.forEach(e => {
-      if (e.k === 'line') {
-        minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
-        minY = Math.min(minY, e.p[0][1], e.p[1][1]); maxY = Math.max(maxY, e.p[0][1], e.p[1][1]);
-      } else if (e.k === 'circle' || e.k === 'arc') {
-        minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r);
-        minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r);
-      } else if (e.k === 'poly') {
-        e.p.forEach(pt => {
-          minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]);
-          minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]);
-        });
-      }
-    });
-    const curW = maxX - minX, curH = maxY - minY;
-    if (curW <= 0 || curH <= 0) return;
-    const sx = targetW / curW, sy = targetH / curH;
-    const scaled = [];
-    currentCadEntities.forEach(e => {
-      if (e.k === 'line') {
-        scaled.push({
-          k: 'line',
-          p: [
-            [Math.round((e.p[0][0] - minX) * sx * 10) / 10, Math.round((e.p[0][1] - minY) * sy * 10) / 10],
-            [Math.round((e.p[1][0] - minX) * sx * 10) / 10, Math.round((e.p[1][1] - minY) * sy * 10) / 10]
-          ]
-        });
-      } else if (e.k === 'circle') {
-        scaled.push({
-          k: 'circle',
-          c: [Math.round((e.c[0] - minX) * sx * 10) / 10, Math.round((e.c[1] - minY) * sy * 10) / 10],
-          r: Math.round(e.r * ((sx + sy) / 2) * 10) / 10
-        });
-      } else if (e.k === 'arc') {
-        scaled.push({
-          k: 'arc',
-          c: [Math.round((e.c[0] - minX) * sx * 10) / 10, Math.round((e.c[1] - minY) * sy * 10) / 10],
-          r: Math.round(e.r * ((sx + sy) / 2) * 10) / 10,
-          a0: e.a0, a1: e.a1
-        });
-      } else if (e.k === 'poly') {
-        scaled.push({
-          k: 'poly',
-          p: e.p.map(pt => [Math.round((pt[0] - minX) * sx * 10) / 10, Math.round((pt[1] - minY) * sy * 10) / 10]),
-          c: e.c
-        });
-      }
-    });
-    currentCadEntities = scaled;
-    updateCadPartPreview();
-  });
 
   // Drag & drop support
   const dropZone = $('cadDropZone');

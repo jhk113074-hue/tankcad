@@ -216,6 +216,108 @@
     return out;
   }
 
+  function mirrorEntitiesH(ents) {
+    if (!ents || !ents.length) return [];
+    let minX = Infinity, maxX = -Infinity;
+    ents.forEach(e => {
+      if (e.k === 'line') {
+        minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
+      } else if (e.k === 'circle' || e.k === 'arc') {
+        minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r);
+      } else if (e.k === 'poly') {
+        e.p.forEach(pt => { minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]); });
+      }
+    });
+    if (minX === Infinity) return ents;
+    const midX = (minX + maxX) / 2;
+    return ents.map(e => {
+      if (e.k === 'line') {
+        return {
+          k: 'line',
+          p: [
+            [Math.round((2 * midX - e.p[0][0]) * 10) / 10, e.p[0][1]],
+            [Math.round((2 * midX - e.p[1][0]) * 10) / 10, e.p[1][1]]
+          ]
+        };
+      } else if (e.k === 'circle') {
+        return { k: 'circle', c: [Math.round((2 * midX - e.c[0]) * 10) / 10, e.c[1]], r: e.r };
+      } else if (e.k === 'arc') {
+        const a0 = (180 - (e.a1 || 360) + 360) % 360;
+        const a1 = (180 - (e.a0 || 0) + 360) % 360;
+        return { k: 'arc', c: [Math.round((2 * midX - e.c[0]) * 10) / 10, e.c[1]], r: e.r, a0, a1 };
+      } else if (e.k === 'poly') {
+        return {
+          k: 'poly',
+          p: e.p.map(pt => [Math.round((2 * midX - pt[0]) * 10) / 10, pt[1]]),
+          c: e.c
+        };
+      }
+      return e;
+    });
+  }
+
+  function resolvePartEntities(customParts, cat, view, h) {
+    if (!customParts) return null;
+    if (h && customParts[`${cat}_${view}_${h}`] && customParts[`${cat}_${view}_${h}`].length) {
+      return customParts[`${cat}_${view}_${h}`];
+    }
+    if (customParts[`${cat}_${view}`] && customParts[`${cat}_${view}`].length) {
+      return customParts[`${cat}_${view}`];
+    }
+    if (view === 'left') {
+      const rightEnts = resolvePartEntities(customParts, cat, 'right', h);
+      if (rightEnts && rightEnts.length) return mirrorEntitiesH(rightEnts);
+    }
+    if (view === 'rear') {
+      return resolvePartEntities(customParts, cat, 'front', h);
+    }
+    if (view === 'plan' && customParts[cat] && customParts[cat].length) {
+      return customParts[cat];
+    }
+    if (customParts[cat] && customParts[cat].length) {
+      return customParts[cat];
+    }
+    return null;
+  }
+
+  function renderCustomEntitiesAt(out, ents, ox, oy, scaleX = 1, scaleY = 1, layer = 'FRAME') {
+    if (!ents || !ents.length) return;
+    ents.forEach(e => {
+      if (e.k === 'line') {
+        out.push({
+          t: 'line',
+          a: [ox + e.p[0][0] * scaleX, oy + e.p[0][1] * scaleY],
+          b: [ox + e.p[1][0] * scaleX, oy + e.p[1][1] * scaleY],
+          layer: layer || 'FRAME'
+        });
+      } else if (e.k === 'circle') {
+        out.push({
+          t: 'circle',
+          c: [ox + e.c[0] * scaleX, oy + e.c[1] * scaleY],
+          r: Math.round(e.r * ((Math.abs(scaleX) + Math.abs(scaleY)) / 2)),
+          layer: layer || 'FRAME'
+        });
+      } else if (e.k === 'arc') {
+        out.push({
+          t: 'arc',
+          c: [ox + e.c[0] * scaleX, oy + e.c[1] * scaleY],
+          r: Math.round(e.r * ((Math.abs(scaleX) + Math.abs(scaleY)) / 2)),
+          a0: e.a0 || 0,
+          a1: e.a1 || 360,
+          layer: layer || 'FRAME'
+        });
+      } else if (e.k === 'poly') {
+        const pts = e.p.map(p => [ox + p[0] * scaleX, oy + p[1] * scaleY]);
+        for (let k = 0; k + 1 < pts.length; k++) {
+          out.push({ t: 'line', a: pts[k], b: pts[k + 1], layer: layer || 'FRAME' });
+        }
+        if (e.c && pts.length > 2) {
+          out.push({ t: 'line', a: pts[pts.length - 1], b: pts[0], layer: layer || 'FRAME' });
+        }
+      }
+    });
+  }
+
   /* ---------- 평면도 맨홀 손잡이 / 환기구 (CCeilLT::_1000BY1000 의 CLT_HANDLE=1, CLT_AIRVENT=2) : 1000x1000 패널만 ---------- */
   function markShapes(x, y, mark, opt) {
     const customParts = opt?.partTemplates || {};
@@ -223,8 +325,9 @@
     const poly = (pts, layer) => pts.forEach((p, k) => out.push({ t: 'line', a: P(...p), b: P(...pts[(k + 1) % pts.length]), layer }));
 
     if (mark & 1) { // 맨홀 (손잡이) 및 직하부 내부사다리
-      if (customParts.manhole && customParts.manhole.length > 0) {
-        customParts.manhole.forEach(e => {
+      const mhPlan = resolvePartEntities(customParts, 'manhole', 'plan');
+      if (mhPlan && mhPlan.length > 0) {
+        mhPlan.forEach(e => {
           if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'FRAME' });
           else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'FRAME' });
           else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'FRAME' });
@@ -241,8 +344,9 @@
       }
 
       // 내부사다리 (IN-LADDER) 기호 (맨홀 직하부 탱크 내부 설치 위치)
-      if (customParts.inladder && customParts.inladder.length > 0) {
-        customParts.inladder.forEach(e => {
+      const inladPlan = resolvePartEntities(customParts, 'inladder', 'plan');
+      if (inladPlan && inladPlan.length > 0) {
+        inladPlan.forEach(e => {
           if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'FRAME' });
           else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'FRAME' });
           else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'FRAME' });
@@ -260,8 +364,9 @@
       }
     }
     if (mark & 2) { // 에어벤트
-      if (customParts.airvent && customParts.airvent.length > 0) {
-        customParts.airvent.forEach(e => {
+      const ventPlan = resolvePartEntities(customParts, 'airvent', 'plan');
+      if (ventPlan && ventPlan.length > 0) {
+        ventPlan.forEach(e => {
           if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'REINF' });
           else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'REINF' });
           else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'REINF' });
@@ -282,23 +387,27 @@
   /* ---------- 사다리 (CLadderLT) : 1 위, 2 아래, 3 오른쪽, 4 왼쪽 (평면) / 5 정면, 6 뒤(상부만), 7 우측면, 8 좌측면 ---------- */
   function ladderShapes(idx, px, py, H, opt) {
     const customParts = opt?.partTemplates || {};
-    if (idx >= 1 && idx <= 4 && customParts.ladder_plan && customParts.ladder_plan.length > 0) {
-      const out = [], L = 'FRAME';
-      const sx = idx === 3 ? 1 : idx === 4 ? -1 : 0, sy = idx === 1 ? 1 : idx === 2 ? -1 : 0;
-      const angle = sy === 1 ? 0 : (sy === -1 ? Math.PI : (sx === 1 ? Math.PI / 2 : -Math.PI / 2));
-      const cosA = Math.cos(angle), sinA = Math.sin(angle);
-      const trans = (x, y) => [px + (x * cosA - y * sinA), py + (x * sinA + y * cosA)];
-      customParts.ladder_plan.forEach(e => {
-        if (e.k === 'line') out.push({ t: 'line', a: trans(e.p[0][0], e.p[0][1]), b: trans(e.p[1][0], e.p[1][1]), layer: L });
-        else if (e.k === 'circle') out.push({ t: 'circle', c: trans(e.c[0], e.c[1]), r: e.r, layer: L });
-        else if (e.k === 'poly') {
-          const tpts = e.p.map(p => trans(p[0], p[1]));
-          for (let k = 0; k + 1 < tpts.length; k++) out.push({ t: 'line', a: tpts[k], b: tpts[k + 1], layer: L });
-          if (e.c) out.push({ t: 'line', a: tpts[tpts.length - 1], b: tpts[0], layer: L });
-        }
-      });
-      out.push({ t: 'text', p: [px + sx * 315, py + sy * 315], s: 'LADDER', h: 50, rot: sx ? 90 : 0, align: 'center', layer: 'DIM' });
-      return out;
+    if (idx >= 1 && idx <= 4) {
+      const planEnts = resolvePartEntities(customParts, 'ladder', 'plan', H);
+      if (planEnts && planEnts.length > 0) {
+        const out = [], L = 'FRAME';
+        const sx = idx === 3 ? 1 : idx === 4 ? -1 : 0, sy = idx === 1 ? 1 : idx === 2 ? -1 : 0;
+        const angle = sy === 1 ? 0 : (sy === -1 ? Math.PI : (sx === 1 ? Math.PI / 2 : -Math.PI / 2));
+        const cosA = Math.cos(angle), sinA = Math.sin(angle);
+        const trans = (x, y) => [px + (x * cosA - y * sinA), py + (x * sinA + y * cosA)];
+        planEnts.forEach(e => {
+          if (e.k === 'line') out.push({ t: 'line', a: trans(e.p[0][0], e.p[0][1]), b: trans(e.p[1][0], e.p[1][1]), layer: L });
+          else if (e.k === 'circle') out.push({ t: 'circle', c: trans(e.c[0], e.c[1]), r: e.r, layer: L });
+          else if (e.k === 'arc') out.push({ t: 'arc', c: trans(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: L });
+          else if (e.k === 'poly') {
+            const tpts = e.p.map(p => trans(p[0], p[1]));
+            for (let k = 0; k + 1 < tpts.length; k++) out.push({ t: 'line', a: tpts[k], b: tpts[k + 1], layer: L });
+            if (e.c) out.push({ t: 'line', a: tpts[tpts.length - 1], b: tpts[0], layer: L });
+          }
+        });
+        out.push({ t: 'text', p: [px + sx * 315, py + sy * 315], s: 'LADDER', h: 50, rot: sx ? 90 : 0, align: 'center', layer: 'DIM' });
+        return out;
+      }
     }
     const T = 40, FW = 270, FT = 20, TO = 250, TI = 270, TL = 250, SI = 400, FO = 200, BO = -500, MH = 150, TOP = 700, TTOP = 500, CX = 75;
     const mx = FW >> 1, out = [], L = 'FRAME';
@@ -320,14 +429,84 @@
         out.push({ t: 'text', p: [px + sx * (TL + 65), py], s: 'LADDER', h: 50, rot: 90, align: 'center', layer: 'DIM' });
       }
     } else if (idx === 5) {
+      const frontEnts = resolvePartEntities(customParts, 'ladder', 'front', H);
+      if (frontEnts && frontEnts.length > 0) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        frontEnts.forEach(e => {
+          if (e.k === 'line') {
+            minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
+            minY = Math.min(minY, e.p[0][1], e.p[1][1]); maxY = Math.max(maxY, e.p[0][1], e.p[1][1]);
+          } else if (e.k === 'circle' || e.k === 'arc') {
+            minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r);
+            minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r);
+          } else if (e.k === 'poly') {
+            e.p.forEach(pt => {
+              minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]);
+              minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]);
+            });
+          }
+        });
+        const curH = (maxY - minY) || (H || 2000);
+        const scaleY = (H && curH > 0 && Math.abs(curH - H) > 150) ? (H / curH) : 1;
+        const midX = (minX + maxX) / 2;
+        renderCustomEntitiesAt(out, frontEnts, px - midX, 0 - minY * scaleY, 1, scaleY, 'FRAME');
+        return out;
+      }
       [1, -1].forEach(k => {
         pl([[k * mx, BO], [k * mx, H + MH], [k * (mx + T), H + MH], [k * (mx + T), BO]], true);
         pl([[k * mx, H + MH], [k * mx, H + TOP], [k * (mx + T), H + TOP], [k * (mx + T), H + MH]], true);
       });
       for (let y = BO + FO; y < H; y += FT + SI) { ln([-mx, y], [mx, y]); ln([-mx, y + FT], [mx, y + FT]); }
     } else if (idx === 6) {
+      const rearEnts = resolvePartEntities(customParts, 'ladder', 'rear', H) || resolvePartEntities(customParts, 'ladder', 'front', H);
+      if (rearEnts && rearEnts.length > 0) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        rearEnts.forEach(e => {
+          if (e.k === 'line') {
+            minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
+            minY = Math.min(minY, e.p[0][1], e.p[1][1]); maxY = Math.max(maxY, e.p[0][1], e.p[1][1]);
+          } else if (e.k === 'circle' || e.k === 'arc') {
+            minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r);
+            minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r);
+          } else if (e.k === 'poly') {
+            e.p.forEach(pt => {
+              minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]);
+              minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]);
+            });
+          }
+        });
+        const curH = (maxY - minY) || (H || 2000);
+        const scaleY = (H && curH > 0 && Math.abs(curH - H) > 150) ? (H / curH) : 1;
+        const midX = (minX + maxX) / 2;
+        renderCustomEntitiesAt(out, rearEnts, px - midX, 0 - minY * scaleY, 1, scaleY, 'FRAME');
+        return out;
+      }
       [1, -1].forEach(k => pl([[k * mx, H + MH], [k * mx, H + TOP], [k * (mx + T), H + TOP], [k * (mx + T), H + MH]], true));
     } else if (idx === 7 || idx === 8) {
+      const sideKey = idx === 7 ? 'right' : 'left';
+      const sideEnts = resolvePartEntities(customParts, 'ladder', sideKey, H);
+      if (sideEnts && sideEnts.length > 0) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        sideEnts.forEach(e => {
+          if (e.k === 'line') {
+            minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
+            minY = Math.min(minY, e.p[0][1], e.p[1][1]); maxY = Math.max(maxY, e.p[0][1], e.p[1][1]);
+          } else if (e.k === 'circle' || e.k === 'arc') {
+            minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r);
+            minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r);
+          } else if (e.k === 'poly') {
+            e.p.forEach(pt => {
+              minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]);
+              minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]);
+            });
+          }
+        });
+        const curH = (maxY - minY) || (H || 2000);
+        const scaleY = (H && curH > 0 && Math.abs(curH - H) > 150) ? (H / curH) : 1;
+        const anchorX = idx === 7 ? minX : maxX;
+        renderCustomEntitiesAt(out, sideEnts, px - anchorX, 0 - minY * scaleY, 1, scaleY, 'FRAME');
+        return out;
+      }
       const r = idx === 7 ? 1 : -1, Y = H + TTOP, X = (a) => r * a;
       pl([[X(CX), BO], [X(TI), BO + FO], [X(TI), Y]]);
       pl([[X(CX), BO + T], [X(TI - T), BO + FO], [X(TI - T), Y]]);
@@ -721,8 +900,31 @@
         else ln([x1 + F, y0 + s0], [x1 + F, y1 - s1]);
         // 외부보강 T: 같은 변이 이어지는 다음 패널과의 이음선
         if (rf === 0 && exposed(i + a[0], j + a[1], sd)) {
-          if (sd === 'bottom') outT(ents, [x1, y0 - F], 1); else if (sd === 'top') outT(ents, [x1, y1 + F], 3);
-          else if (sd === 'left') outT(ents, [x0 - F, y1], 4); else outT(ents, [x1 + F, y1], 2);
+          const customPlanPost = resolvePartEntities(opt.customComponents, 'ext_reinf', 'plan', (opt.height && opt.height[0]) || 2000);
+          if (customPlanPost && customPlanPost.length) {
+            const pt = (sd === 'bottom') ? [x1, y0 - F] : (sd === 'top') ? [x1, y1 + F] : (sd === 'left') ? [x0 - F, y1] : [x1 + F, y1];
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            customPlanPost.forEach(e => {
+              if (e.k === 'line') { minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]); minY = Math.min(minY, e.p[0][1], e.p[1][1]); maxY = Math.max(maxY, e.p[0][1], e.p[1][1]); }
+              else if (e.k === 'circle' || e.k === 'arc') { minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r); minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r); }
+              else if (e.k === 'poly') { e.p.forEach(p => { minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]); minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]); }); }
+            });
+            const cx = (minX + maxX) / 2;
+            const deg = (sd === 'bottom') ? 0 : (sd === 'right') ? 90 : (sd === 'top') ? 180 : 270;
+            const rad = deg * Math.PI / 180, cos = Math.cos(rad), sin = Math.sin(rad);
+            customPlanPost.forEach(e => {
+              const rot = p => {
+                const dx = p[0] - cx, dy = p[1];
+                return [pt[0] + dx * cos - dy * sin, pt[1] + dx * sin + dy * cos];
+              };
+              if (e.k === 'line') ln(rot(e.p[0]), rot(e.p[1]), 'REINF');
+              else if (e.k === 'circle') ents.push({ t: 'circle', c: rot(e.c), r: e.r, layer: 'REINF' });
+              else if (e.k === 'poly') chain(e.p.map(rot), 'REINF', e.c);
+            });
+          } else {
+            if (sd === 'bottom') outT(ents, [x1, y0 - F], 1); else if (sd === 'top') outT(ents, [x1, y1 + F], 3);
+            else if (sd === 'left') outT(ents, [x0 - F, y1], 4); else outT(ents, [x1 + F, y1], 2);
+          }
         }
       });
       // 볼록 모서리: GRP=삼각형, STS=직각 꺾임 + 대각선
@@ -1929,6 +2131,7 @@
       [0, OFF, nLen - OFF, nLen].forEach(o => ln([baseX + o, 0], [baseX + o, nH]));
       ln([baseX, 0], [baseX + nLen, 0]);
       let y = 0;
+      const customPost = resolvePartEntities(opt.customComponents, 'ext_reinf', view, nH);
       hs.forEach((hh, i) => {
         const tall = !(hh === 500 || hh === 1000 || hh === 1300);
         if (i > 0) ln([baseX, y], [baseX + (cnt > 1 ? pLen[0] - MX : pLen[0]), y]);
@@ -1938,11 +2141,25 @@
           } else panel(xj[j], y, pLen[j], hh, gIdx + j, i);
           if (j < cnt - 1) {
             const x = xj[j + 1];
-            plate(x, y, i === 0 ? 'bot' : 'mid');
-            if (i > 0) {
-              ln([x + MX, y], [x + (j === cnt - 2 ? pLen[j + 1] : pLen[j + 1] - MX), y]);
-              const h = i === 1 ? OB.STAY + OB.CY : MY;
-              [-OFF, 0, OFF].forEach(o => ln([x + o, y - MY], [x + o, y - hs[i - 1] + h]));
+            if (customPost && customPost.length) {
+              if (i === 0) {
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                customPost.forEach(e => {
+                  if (e.k === 'line') { minX = Math.min(minX, e.p[0][0], e.p[1][0]); maxX = Math.max(maxX, e.p[0][0], e.p[1][0]); minY = Math.min(minY, e.p[0][1], e.p[1][1]); maxY = Math.max(maxY, e.p[0][1], e.p[1][1]); }
+                  else if (e.k === 'circle' || e.k === 'arc') { minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r); minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r); }
+                  else if (e.k === 'poly') { e.p.forEach(pt => { minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]); minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]); }); }
+                });
+                const cx = (minX + maxX) / 2;
+                const sy = (maxY > minY && Math.abs(maxY - minY - nH) > 10) ? (nH / (maxY - minY)) : 1;
+                renderCustomEntitiesAt(ents, customPost, x - cx, -minY * sy, 1, sy, 'REINF');
+              }
+            } else {
+              plate(x, y, i === 0 ? 'bot' : 'mid');
+              if (i > 0) {
+                ln([x + MX, y], [x + (j === cnt - 2 ? pLen[j + 1] : pLen[j + 1] - MX), y]);
+                const h = i === 1 ? OB.STAY + OB.CY : MY;
+                [-OFF, 0, OFF].forEach(o => ln([x + o, y - MY], [x + o, y - hs[i - 1] + h]));
+              }
             }
           }
         }
@@ -1953,9 +2170,11 @@
       const hT = n > 1 ? OB.CY >> 1 : OB.STAY + OB.CY;
       for (let j = 0; j < cnt - 1; j++) {
         const x = xj[j + 1];
-        plate(x, nH, 'top');
-        ln([x + OFF, nH], [x + (j === cnt - 2 ? pLen[j + 1] : pLen[j + 1] - OFF), nH]);
-        [-OFF, 0, OFF].forEach(o => ln([x + o, nH - OB.MOVE], [x + o, nH - hs[n - 1] + hT]));
+        if (!customPost || !customPost.length) {
+          plate(x, nH, 'top');
+          ln([x + OFF, nH], [x + (j === cnt - 2 ? pLen[j + 1] : pLen[j + 1] - OFF), nH]);
+          [-OFF, 0, OFF].forEach(o => ln([x + o, nH - OB.MOVE], [x + o, nH - hs[n - 1] + hT]));
+        }
       }
       }
       // 맨홀 띠 (CManholeLT, 높이 100)
