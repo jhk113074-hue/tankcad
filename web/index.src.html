@@ -5822,56 +5822,113 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
   const DEFAULT_PART_ENTITIES = {
     ladder: {
       get: (w, h, view) => {
-        const H = h || 2000;
+        let H_tank = h || 2000;
+        if (H_tank > 2200 && (H_tank - 1250) % 500 === 0) {
+          H_tank = H_tank - 1250;
+        }
+        const H = H_tank;
         const W = w || 400;
+        const handrailH = 800; // 상부 손잡이/핸드레일 높이 (지붕 위 800mm 돌출)
+        const botH = 450;      // 하부 패드 연장 높이 (탱크 바닥 아래 450mm 연장)
+
         if (view === 'plan') {
+          // 평면도 (media_1790988454574.png): 사다리 외곽 + 지붕 안쪽으로 120mm 넘어오는 상부 손잡이 브라켓
+          const railD = 250;
           return [
-            { k: 'poly', p: [[0, 0], [45, 0], [45, 260], [0, 260]], c: true },
-            { k: 'poly', p: [[W - 45, 0], [W, 0], [W, 260], [W - 45, 260]], c: true },
-            { k: 'line', p: [[45, 260], [W - 45, 260]] },
-            { k: 'line', p: [[45, 180], [W - 45, 180]] },
-            { k: 'line', p: [[45, 100], [W - 45, 100]] },
-            { k: 'arc', c: [W / 2, 180], r: W / 2, a0: 0, a1: 180 }
+            // 사다리 세로 레일
+            { k: 'poly', p: [[0, 0], [45, 0], [45, railD], [0, railD]], c: true },
+            { k: 'poly', p: [[W - 45, 0], [W, 0], [W, railD], [W - 45, railD]], c: true },
+            // 지붕 위로 넘어오는 상부 손잡이 체결 브라켓 (탱크 안쪽 -120mm)
+            { k: 'poly', p: [[0, -120], [45, -120], [45, 0], [0, 0]], c: true },
+            { k: 'poly', p: [[W - 45, -120], [W, -120], [W, 0], [W - 45, 0]], c: true },
+            // 발판
+            { k: 'line', p: [[45, 60], [W - 45, 60]] },
+            { k: 'line', p: [[45, 140], [W - 45, 140]] },
+            { k: 'line', p: [[45, 220], [W - 45, 220]] },
+            // 외곽 안전망 아치
+            { k: 'arc', c: [W / 2, railD - 60], r: W / 2 + 50, a0: 0, a1: 180 }
           ];
-        } else if (view === 'front') {
-          const ents = [
-            { k: 'poly', p: [[0, 0], [35, 0], [35, H], [0, H]], c: true },
-            { k: 'poly', p: [[W - 35, 0], [W, 0], [W, H], [W - 35, H]], c: true }
-          ];
-          const step = 300;
-          for (let y = 300; y < H; y += step) {
-            ents.push({ k: 'line', p: [[35, y], [W - 35, y]] });
-            ents.push({ k: 'line', p: [[35, y + 20], [W - 35, y + 20]] });
+        } else if (view === 'front' || view === 'rear') {
+          // 정면도 (media_1790988435703.png): 하부(-450) ~ 지붕(H) ~ 상부 손잡이(H+800) 일체형 사다리
+          const ents = [];
+          const rw = 35; // 레일 폭
+
+          // 1. 양쪽 수직 메인 레일 파이프 (-450 ~ H+800 전체 일체형)
+          ents.push({ k: 'poly', p: [[0, -botH], [rw, -botH], [rw, H + handrailH], [0, H + handrailH]], c: true });
+          ents.push({ k: 'poly', p: [[W - rw, -botH], [W, -botH], [W, H + handrailH], [W - rw, H + handrailH]], c: true });
+
+          // 2. 상부 손잡이 라운드 캡 (media_1790988435703.png 파이프 상단 라운딩)
+          ents.push({ k: 'arc', c: [rw / 2, H + handrailH], r: rw / 2, a0: 0, a1: 180 });
+          ents.push({ k: 'arc', c: [W - rw / 2, H + handrailH], r: rw / 2, a0: 0, a1: 180 });
+
+          // 3. 지붕 경계선 및 손잡이 개방 칼라 라인 (y = H)
+          ents.push({ k: 'line', p: [[0, H], [rw, H]] });
+          ents.push({ k: 'line', p: [[W - rw, H], [W, H]] });
+
+          // 4. 발판 (Rungs): 바닥(-300)부터 지붕(H)까지만 300mm 간격 배치 (H ~ H+800 손잡이 구간은 통과 개방)
+          for (let y = -300; y <= H; y += 300) {
+            ents.push({ k: 'line', p: [[rw, y], [W - rw, y]] });
+            ents.push({ k: 'line', p: [[rw, y + 20], [W - rw, y + 20]] });
           }
+
+          // 5. 하부 기초 패드 지지 플레이트
+          ents.push({ k: 'poly', p: [[-10, -botH], [rw + 10, -botH], [rw + 10, -botH + 12], [-10, -botH + 12]], c: true });
+          ents.push({ k: 'poly', p: [[W - rw - 10, -botH], [W + 10, -botH], [W + 10, -botH + 12], [W - rw - 10, -botH + 12]], c: true });
+
+          // 6. 안전망 (H >= 2400)
           if (H >= 2400) {
             const cageStart = Math.max(2200, Math.floor(H * 0.4));
-            for (let cy = cageStart; cy < H; cy += 600) {
-              ents.push({ k: 'line', p: [[-60, cy], [W + 60, cy]] });
+            for (let cy = cageStart; cy <= H + 150; cy += 550) {
+              ents.push({ k: 'line', p: [[-65, cy], [W + 65, cy]] });
             }
-            ents.push({ k: 'line', p: [[-60, cageStart], [-60, H]] });
-            ents.push({ k: 'line', p: [[W + 60, cageStart], [W + 60, H]] });
-            ents.push({ k: 'arc', c: [W / 2, H], r: W / 2 + 60, a0: 0, a1: 180 });
+            ents.push({ k: 'line', p: [[-65, cageStart], [-65, H + 150]] });
+            ents.push({ k: 'line', p: [[W + 65, cageStart], [W + 65, H + 150]] });
+            ents.push({ k: 'line', p: [[-20, cageStart], [-20, H + 150]] });
+            ents.push({ k: 'line', p: [[W + 20, cageStart], [W + 20, H + 150]] });
+            ents.push({ k: 'arc', c: [W / 2, H + 150], r: W / 2 + 65, a0: 0, a1: 180 });
           }
+
           return ents;
         } else {
-          // right or left
-          const ents = [
-            { k: 'poly', p: [[0, 0], [45, 0], [45, H], [0, H]], c: true }
-          ];
-          for (let y = 300; y < H; y += 300) {
-            ents.push({ k: 'circle', c: [22.5, y + 10], r: 10 });
+          // 우측면도 / 좌측면도 (media_1790988428025.png)
+          const ents = [];
+          const railX = 220;
+          const rw = 35;
+
+          // 1. 수직 메인 레일 파이프
+          ents.push({ k: 'poly', p: [[railX, -250], [railX + rw, -250], [railX + rw, H + 680], [railX, H + 680]], c: true });
+
+          // 2. 상부 꺾임 손잡이
+          ents.push({ k: 'poly', p: [[railX, H + 680], [railX - 35, H + handrailH], [railX - 35 + rw, H + handrailH], [railX + rw, H + 680]], c: true });
+          ents.push({ k: 'arc', c: [railX - 35 + rw / 2, H + handrailH], r: rw / 2, a0: 0, a1: 180 });
+
+          // 3. 지붕 상단 결속 수평 브라켓 (y = H)
+          ents.push({ k: 'poly', p: [[0, H - 25], [railX, H - 25], [railX, H + 15], [0, H + 15]], c: true });
+
+          // 4. 중간 벽체 스탠드오프 브라켓
+          ents.push({ k: 'poly', p: [[0, 600], [railX, 600], [railX, 630], [0, 630]], c: true });
+          if (H >= 3000) {
+            ents.push({ k: 'poly', p: [[0, 2000], [railX, 2000], [railX, 2030], [0, 2030]], c: true });
           }
-          for (let by = 500; by < H; by += 1500) {
-            ents.push({ k: 'line', p: [[45, by], [180, by]] });
-            ents.push({ k: 'line', p: [[45, by + 30], [180, by + 30]] });
+
+          // 5. 하부 대각 빗변 지지대 (패드로 사선 연결)
+          ents.push({ k: 'poly', p: [[railX, -250], [0, -botH], [0, -botH + 40], [railX, -210]], c: true });
+          ents.push({ k: 'poly', p: [[-15, -botH], [25, -botH], [25, -botH + 15], [-15, -botH + 15]], c: true });
+
+          // 6. 발판 원형 단면
+          for (let y = -200; y <= H; y += 300) {
+            ents.push({ k: 'circle', c: [railX + rw / 2, y + 10], r: 10 });
           }
+
+          // 7. 안전망 측면
           if (H >= 2400) {
             const cageStart = Math.max(2200, Math.floor(H * 0.4));
-            ents.push({ k: 'line', p: [[200, cageStart], [200, H]] });
-            for (let cy = cageStart; cy < H; cy += 600) {
-              ents.push({ k: 'line', p: [[22.5, cy], [200, cy]] });
+            ents.push({ k: 'line', p: [[railX + rw + 550, cageStart], [railX + rw + 550, H + 150]] });
+            for (let cy = cageStart; cy <= H + 150; cy += 550) {
+              ents.push({ k: 'line', p: [[railX + rw, cy], [railX + rw + 550, cy]] });
             }
           }
+
           return (view === 'left') ? mirrorEntitiesH(ents) : ents;
         }
       }
@@ -6129,7 +6186,7 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
 
   const CAD_PART_OPTIONS = {
     ladder: [
-      { id: 'ladder_main', name: '외부 사다리 (안전망 일체형)', w: 400, h: 2000, mat: 'COMMON' }
+      { id: 'ladder_main', name: '외부 사다리 (상부 손잡이·안전망 일체형)', w: 400, h: 3250, mat: 'COMMON' }
     ],
     inladder: [
       { id: 'inladder_main', name: '내부 사다리 (FRP/STS)', w: 300, h: 2000, mat: 'COMMON' }
@@ -6374,7 +6431,9 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
     const titleEl = $('cadPreviewTitle');
     if (titleEl) {
       const hLabel = (cadCurrentHeight === 'common') ? '모든높이공통' : `H=${cadCurrentHeight}`;
-      titleEl.textContent = `미리보기 (${getViewLabel(cadCurrentView)} · ${hLabel})`;
+      const isLadderHandrail = (getSelectedCadCategory() === 'ladder' && cadCurrentView !== 'plan');
+      const hDesc = isLadderHandrail ? `${hLabel} · 상부손잡이·하부패드 일체형 (${w}×${h}mm)` : `${hLabel}`;
+      titleEl.textContent = `미리보기 (${getViewLabel(cadCurrentView)} · ${hDesc})`;
     }
 
     const countEl = $('cadPreviewEntityCount');
@@ -7029,7 +7088,9 @@ let SIDE_T = /*__SIDE_TEMPLATES__*/;
       if (['ladder', 'inladder', 'skid', 'foundation', 'ext_reinf'].includes(cat)) {
         if (view !== 'plan' && height && height !== 'common') {
           const parsedH = Number(height);
-          if (!isNaN(parsedH) && parsedH > 0) h = parsedH;
+          if (!isNaN(parsedH) && parsedH > 0) {
+            h = (cat === 'ladder') ? (parsedH + 1250) : parsedH;
+          }
         }
       }
 

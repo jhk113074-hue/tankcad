@@ -447,9 +447,10 @@
           }
         });
         const curH = (maxY - minY) || (H || 2000);
-        const scaleY = (H && curH > 0 && Math.abs(curH - H) > 150) ? (H / curH) : 1;
+        const oy = (minY < -100) ? 0 : ((curH > H + 500) ? -450 : -minY);
+        const scaleY = (H && curH > 0 && Math.abs(curH - (H + 1250)) > 300 && Math.abs(curH - H) > 300) ? ((H + 1250) / curH) : 1;
         const midX = (minX + maxX) / 2;
-        renderCustomEntitiesAt(out, frontEnts, px - midX, 0 - minY * scaleY, 1, scaleY, 'FRAME');
+        renderCustomEntitiesAt(out, frontEnts, px - midX, oy, 1, scaleY, 'FRAME');
         return out;
       }
       [1, -1].forEach(k => {
@@ -476,9 +477,10 @@
           }
         });
         const curH = (maxY - minY) || (H || 2000);
-        const scaleY = (H && curH > 0 && Math.abs(curH - H) > 150) ? (H / curH) : 1;
+        const oy = (minY < -100) ? 0 : ((curH > H + 500) ? -450 : -minY);
+        const scaleY = (H && curH > 0 && Math.abs(curH - (H + 1250)) > 300 && Math.abs(curH - H) > 300) ? ((H + 1200) / curH) : 1;
         const midX = (minX + maxX) / 2;
-        renderCustomEntitiesAt(out, rearEnts, px - midX, 0 - minY * scaleY, 1, scaleY, 'FRAME');
+        renderCustomEntitiesAt(out, rearEnts, px - midX, oy, 1, scaleY, 'FRAME');
         return out;
       }
       [1, -1].forEach(k => pl([[k * mx, H + MH], [k * mx, H + TOP], [k * (mx + T), H + TOP], [k * (mx + T), H + MH]], true));
@@ -502,9 +504,10 @@
           }
         });
         const curH = (maxY - minY) || (H || 2000);
-        const scaleY = (H && curH > 0 && Math.abs(curH - H) > 150) ? (H / curH) : 1;
+        const oy = (minY < -100) ? 0 : ((curH > H + 500) ? -450 : -minY);
+        const scaleY = (H && curH > 0 && Math.abs(curH - (H + 1250)) > 300 && Math.abs(curH - H) > 300) ? ((H + 1200) / curH) : 1;
         const anchorX = idx === 7 ? minX : maxX;
-        renderCustomEntitiesAt(out, sideEnts, px - anchorX, 0 - minY * scaleY, 1, scaleY, 'FRAME');
+        renderCustomEntitiesAt(out, sideEnts, px - anchorX, oy, 1, scaleY, 'FRAME');
         return out;
       }
       const r = idx === 7 ? 1 : -1, Y = H + TTOP, X = (a) => r * a;
