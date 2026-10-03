@@ -391,7 +391,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.60</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.61</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1392,7 +1392,10 @@ canvas.drag{cursor:grabbing}
               </div>
             </div>
             <div style="display:flex;gap:6px;align-items:center">
-              <button type="button" id="btnRegisterAllBlocks" class="pri" style="padding:7px 14px;font-size:12px;font-weight:700" title="추천 매핑에 따라 모든 블록을 한 번에 등록">
+              <button type="button" id="btnClearExcludedBlocks" class="btn-sm" style="padding:6px 12px;font-size:12px;color:#ef4444;border-color:rgba(239,68,68,0.3)" onclick="clearAllBlockCards()" title="감지된 블록 목록 전체 비우기">
+                🗑️ 전체 비우기
+              </button>
+              <button type="button" id="btnRegisterAllBlocks" class="pri" style="padding:7px 14px;font-size:12px;font-weight:700" title="화면에 남아있는 블록들을 한 번에 일괄 등록">
                 ⚡ 전체 스마트 일괄 등록
               </button>
               <button type="button" id="btnCloseBlockWizard" class="btn-sm" style="padding:6px 12px;font-size:12px">
@@ -1713,7 +1716,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.60</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.61</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1723,7 +1726,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.60</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.61</span></div>
     </div>
   </main>
 </div>
@@ -9552,7 +9555,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1500":[{"k":"line","p":[[0,1000],[500,10
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.60</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.61</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -12493,10 +12496,13 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1500":[{"k":"line","p":[[0,1000],[500,10
       const rec = detectBlockRecommendation(b);
       const isPanel = (rec.category === 'panel');
       return `
-        <div class="cad-block-card" data-index="${idx}">
+        <div class="cad-block-card" data-index="${idx}" id="blkCard_${idx}">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span class="blk-badge-name" title="${b.name}">📦 ${b.name}</span>
-            <span class="blk-dim-badge">${b.width}×${b.height}mm</span>
+            <div style="display:flex;align-items:center;gap:5px">
+              <span class="blk-dim-badge">${b.width}×${b.height}mm</span>
+              <button type="button" class="btn-blk-del-top" onclick="deleteBlockCard(${idx})" title="이 블록 일괄 등록 목록에서 삭제/제외" style="border:none;background:rgba(239,68,68,0.1);color:#ef4444;border-radius:4px;cursor:pointer;padding:1px 6px;font-size:11px;font-weight:700;line-height:1.4;transition:all .15s">✕</button>
+            </div>
           </div>
           <div class="blk-thumb-wrap">
             <canvas id="blkCv_${idx}" width="280" height="130"></canvas>
@@ -12556,6 +12562,7 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1500":[{"k":"line","p":[[0,1000],[500,10
               </select>
             </div>
             <div style="display:flex;align-items:flex-end;gap:3px;margin-left:auto">
+              <button type="button" class="btn-sm" style="font-size:10.5px;padding:4px 6px;color:#ef4444;border-color:rgba(239,68,68,0.25);background:transparent" onclick="deleteBlockCard(${idx})" title="이 블록 삭제/제외">🗑️ 제외</button>
               <button type="button" class="btn-sm btn-blk-load" style="flex:1;font-size:10.5px;padding:4px 6px" onclick="loadBlockToMainEditor(${idx})" title="메인 CAD 편집기에서 열어 회전/대칭 수정">🔍 편집</button>
               <button type="button" class="btn-sm pri btn-blk-reg" style="flex:1.4;font-size:10.5px;padding:4px 8px;font-weight:700" onclick="registerBlockCard(${idx})" title="이 부품/판넬로 즉시 등록">💾 등록</button>
             </div>
@@ -12576,6 +12583,56 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1500":[{"k":"line","p":[[0,1000],[500,10
     }, 60);
 
     wiz.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  window.deleteBlockCard = function(idx) {
+    const card = document.getElementById(`blkCard_${idx}`) || document.querySelector(`.cad-block-card[data-index="${idx}"]`);
+    if (!card) return;
+
+    card.style.transition = 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+    card.style.opacity = '0';
+    card.style.transform = 'scale(0.9)';
+
+    setTimeout(() => {
+      card.remove();
+      if (window._currentDetectedBlocks && window._currentDetectedBlocks[idx] !== undefined) {
+        window._currentDetectedBlocks[idx] = null;
+      }
+      const remainingCards = document.querySelectorAll('.cad-block-card');
+      const countBadge = $('cadBlockCountBadge');
+      if (countBadge) {
+        countBadge.textContent = `${remainingCards.length}개 블록 감지`;
+      }
+      if (remainingCards.length === 0) {
+        const grid = $('cadBlockCardsGrid');
+        if (grid) {
+          grid.innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;padding:40px 16px;color:var(--muted)">
+              <div style="font-size:36px;margin-bottom:8px">🗑️</div>
+              <div style="font-size:13.5px;font-weight:700;color:var(--fg)">모든 블록이 제외 또는 삭제되었습니다.</div>
+              <div style="font-size:11px;margin-top:4px">새로운 도면(DWG/DXF)을 올리면 다시 블록이 감지됩니다.</div>
+            </div>
+          `;
+        }
+      }
+    }, 180);
+  };
+
+  window.clearAllBlockCards = function() {
+    if (!confirm('감지된 모든 블록 카드를 마법사 목록에서 삭제하시겠습니까?')) return;
+    const grid = $('cadBlockCardsGrid');
+    if (grid) {
+      grid.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:40px 16px;color:var(--muted)">
+          <div style="font-size:36px;margin-bottom:8px">🗑️</div>
+          <div style="font-size:13.5px;font-weight:700;color:var(--fg)">모든 블록이 제외 또는 삭제되었습니다.</div>
+          <div style="font-size:11px;margin-top:4px">새로운 도면(DWG/DXF)을 올리면 다시 블록이 감지됩니다.</div>
+        </div>
+      `;
+    }
+    window._currentDetectedBlocks = [];
+    const countBadge = $('cadBlockCountBadge');
+    if (countBadge) countBadge.textContent = '0개 블록';
   };
 
   window.registerBlockCard = function(index) {
@@ -12664,14 +12721,19 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1500":[{"k":"line","p":[[0,1000],[500,10
 
   window.registerAllDetectedBlocks = function() {
     const cards = document.querySelectorAll('.cad-block-card');
-    if (!cards.length) return;
+    if (!cards.length) {
+      alert('등록할 블록이 없습니다. (모두 제외/삭제되었거나 비어있음)');
+      return;
+    }
+    let registeredCount = 0;
     cards.forEach(card => {
       const idx = parseInt(card.dataset.index, 10);
-      if (!isNaN(idx)) {
+      if (!isNaN(idx) && window._currentDetectedBlocks && window._currentDetectedBlocks[idx]) {
         registerBlockCard(idx);
+        registeredCount++;
       }
     });
-    alert(`🎉 감지된 ${cards.length}개의 블록이 지정된 부품·판넬로 성공적으로 일괄 등록되었습니다! 도면에 즉시 반영되었습니다.`);
+    alert(`🎉 남아있는 ${registeredCount}개의 블록이 지정된 부품·판넬로 성공적으로 일괄 등록되었습니다! 도면에 즉시 반영되었습니다.`);
   };
 
   window.loadBlockToMainEditor = function(index) {
