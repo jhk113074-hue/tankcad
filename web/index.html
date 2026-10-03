@@ -41,7 +41,7 @@
 body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:13px;line-height:1.5;margin:0;padding:12px 16px;min-height:100vh}
 
 /* Header */
-.header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:12px;box-shadow:var(--shadow-sm)}
+.header{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:12px;box-shadow:var(--shadow-sm)}
 .header-left{display:flex;align-items:center;gap:12px}
 .logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#0284c7,#38bdf8);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;box-shadow:0 2px 4px rgba(2,132,199,0.3)}
 .header-titles h1{margin:0;font-size:18px;font-weight:700;letter-spacing:-0.02em;display:flex;align-items:center;gap:8px}
@@ -349,7 +349,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.56</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.57</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1505,7 +1505,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET</div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.57</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1515,7 +1515,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System</div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.57</span></div>
     </div>
   </main>
 </div>
@@ -2425,7 +2425,7 @@ canvas.drag{cursor:grabbing}
         else ln([x1 + F, y0 + s0], [x1 + F, y1 - s1]);
         // 외부보강 T: 같은 변이 이어지는 다음 패널과의 이음선
         if (rf === 0 && exposed(i + a[0], j + a[1], sd)) {
-          const customPlanPost = resolvePartEntities(opt.customComponents, 'ext_reinf', 'plan', (opt.height && opt.height[0]) || 2000);
+          const customPlanPost = resolvePartEntities(opt.partTemplates || opt.customComponents, 'ext_reinf', 'plan', (opt.height && opt.height[0]) || 2000);
           if (customPlanPost && customPlanPost.length) {
             const pt = (sd === 'bottom') ? [x1, y0 - F] : (sd === 'top') ? [x1, y1 + F] : (sd === 'left') ? [x0 - F, y1] : [x1 + F, y1];
             let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -3656,7 +3656,7 @@ canvas.drag{cursor:grabbing}
       [0, OFF, nLen - OFF, nLen].forEach(o => ln([baseX + o, 0], [baseX + o, nH]));
       ln([baseX, 0], [baseX + nLen, 0]);
       let y = 0;
-      const customPost = resolvePartEntities(opt.customComponents, 'ext_reinf', view, nH);
+      const customPost = resolvePartEntities(opt.partTemplates || opt.customComponents, 'ext_reinf', view, nH);
       hs.forEach((hh, i) => {
         const tall = !(hh === 500 || hh === 1000 || hh === 1300);
         if (i > 0) ln([baseX, y], [baseX + (cnt > 1 ? pLen[0] - MX : pLen[0]), y]);
@@ -9278,9 +9278,10 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
       const kindText = isEn
         ? ({ asm: 'GENERAL ASSEMBLY DWG', pad: 'FOUNDATION PAD DWG', iso: '3D ISOMETRIC DWG', frame: 'FRAME & SKID DWG', detail: 'DETAILS DWG' }[opt.sheetKind] || 'DWG')
         : ({ asm: '조립도 (종합)', pad: '기초콘크리트도 (FOUNDATION PAD)', iso: '등각 조감도 (3D ISO)', frame: '프레임도 (하부/내부)', detail: '상세도 (DETAILS)' }[opt.sheetKind] || '도면');
-      $('viewBadge').textContent = sheet
+      const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.57</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -9622,164 +9623,215 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
 
   /* Canvas Viewport */
   function size() {
-    const r = $('cv').getBoundingClientRect(), d = window.devicePixelRatio || 1;
-    cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d);
-    return { w: r.width, h: r.height, d };
+    const cvEl = $('cv');
+    const r = cvEl ? cvEl.getBoundingClientRect() : { width: 800, height: 600 };
+    const w = Math.max(100, Math.round(r.width || 800));
+    const h = Math.max(100, Math.round(r.height || 600));
+    const d = window.devicePixelRatio || 1;
+    const pw = Math.round(w * d), ph = Math.round(h * d);
+    if (cv.width !== pw || cv.height !== ph) {
+      cv.width = pw;
+      cv.height = ph;
+    }
+    return { w, h, d };
   }
+
   function bounds() {
-    let a = [1e18, 1e18, -1e18, -1e18];
+    let a = [Infinity, Infinity, -Infinity, -Infinity];
     const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
-    plan.ents.forEach(e => {
+    const addPt = (x, y) => {
+      if (typeof x === 'number' && isFinite(x) && typeof y === 'number' && isFinite(y)) {
+        if (x < a[0]) a[0] = x;
+        if (y < a[1]) a[1] = y;
+        if (x > a[2]) a[2] = x;
+        if (y > a[3]) a[3] = y;
+      }
+    };
+    (plan.ents || []).forEach(e => {
+      if (!e) return;
       if (e.t === 'insert') {
         const blk = blocks[e.block];
-        if (blk) {
+        if (blk && Array.isArray(blk)) {
+          const ex = (e.p && isFinite(e.p[0])) ? e.p[0] : 0;
+          const ey = (e.p && isFinite(e.p[1])) ? e.p[1] : 0;
           blk.forEach(be => {
-            const pts = be.t === 'line' ? [[be.a[0] + e.p[0], be.a[1] + e.p[1]], [be.b[0] + e.p[0], be.b[1] + e.p[1]]] : (be.t === 'circle' || be.t === 'arc') ? [[be.c[0] + e.p[0] - be.r, be.c[1] + e.p[1] - be.r], [be.c[0] + e.p[0] + be.r, be.c[1] + e.p[1] + be.r]] : [];
-            pts.forEach(p => { a[0] = Math.min(a[0], p[0]); a[1] = Math.min(a[1], p[1]); a[2] = Math.max(a[2], p[0]); a[3] = Math.max(a[3], p[1]); });
+            if (!be) return;
+            if (be.t === 'line' && be.a && be.b) {
+              addPt(be.a[0] + ex, be.a[1] + ey);
+              addPt(be.b[0] + ex, be.b[1] + ey);
+            } else if ((be.t === 'circle' || be.t === 'arc') && be.c) {
+              const r = be.r || 0;
+              addPt(be.c[0] + ex - r, be.c[1] + ey - r);
+              addPt(be.c[0] + ex + r, be.c[1] + ey + r);
+            }
           });
-        } else if (e.w && e.h) {
-          a[0] = Math.min(a[0], e.p[0]); a[1] = Math.min(a[1], e.p[1]);
-          a[2] = Math.max(a[2], e.p[0] + e.w); a[3] = Math.max(a[3], e.p[1] + e.h);
+        } else if (e.w && e.h && e.p) {
+          addPt(e.p[0], e.p[1]);
+          addPt(e.p[0] + e.w, e.p[1] + e.h);
         }
-      } else {
-        const pts = e.t === 'line' ? [e.a, e.b] : (e.t === 'circle' || e.t === 'arc') ? [[e.c[0] - e.r, e.c[1] - e.r], [e.c[0] + e.r, e.c[1] + e.r]] : (e.t === 'poly' && e.pts) ? e.pts : [e.p];
-        pts.forEach(p => { if (p) { a[0] = Math.min(a[0], p[0]); a[1] = Math.min(a[1], p[1]); a[2] = Math.max(a[2], p[0]); a[3] = Math.max(a[3], p[1]); } });
+      } else if (e.t === 'line' && e.a && e.b) {
+        addPt(e.a[0], e.a[1]);
+        addPt(e.b[0], e.b[1]);
+      } else if ((e.t === 'circle' || e.t === 'arc') && e.c) {
+        const r = e.r || 0;
+        addPt(e.c[0] - r, e.c[1] - r);
+        addPt(e.c[0] + r, e.c[1] + r);
+      } else if (e.t === 'poly' && Array.isArray(e.pts)) {
+        e.pts.forEach(p => { if (p && p.length >= 2) addPt(p[0], p[1]); });
+      } else if (e.p && isFinite(e.p[0]) && isFinite(e.p[1])) {
+        addPt(e.p[0], e.p[1]);
       }
     });
+    if (!isFinite(a[0]) || !isFinite(a[1]) || a[0] >= a[2] || a[1] >= a[3]) {
+      return [0, 0, 1000, 1000];
+    }
     return a;
   }
+
   function fitView() {
     if (!plan) return;
     const z = size(), b = bounds(), pad = 40;
-    if (z.w <= 0 || z.h <= 0) return;
-    const s = Math.min((z.w - pad * 2) / (b[2] - b[0]), (z.h - pad * 2) / (b[3] - b[1]));
-    if (!isFinite(s) || s <= 0) return;
+    const bw = b[2] - b[0], bh = b[3] - b[1];
+    if (z.w <= 0 || z.h <= 0 || bw <= 0 || bh <= 0) return;
+    let s = Math.min((z.w - pad * 2) / bw, (z.h - pad * 2) / bh);
+    if (!isFinite(s) || s <= 0) s = 0.025;
     view = { s, x: z.w / 2 - s * (b[0] + b[2]) / 2, y: z.h / 2 + s * (b[1] + b[3]) / 2 };
     draw();
   }
+
   const tx = x => view.x + x * view.s, ty = y => view.y - y * view.s;
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
   function draw() {
     if (!plan) return;
-    const z = size(); ctx.setTransform(z.d, 0, 0, z.d, 0, 0);
-    ctx.fillStyle = css('--cv-bg'); ctx.fillRect(0, 0, z.w, z.h);
+    try {
+      const z = size(); ctx.setTransform(z.d, 0, 0, z.d, 0, 0);
+      ctx.fillStyle = css('--cv-bg') || '#090d16'; ctx.fillRect(0, 0, z.w, z.h);
 
-    const col = { PANEL: css('--cv-panel'), PANEL_DETAIL: css('--cv-detail'), FRAME: css('--cv-frame'), REINF: css('--cv-panel'), WALL: css('--cv-frame'), DIM: css('--cv-dim'), SHEET: css('--cv-sheet'), BALLOON: css('--cv-balloon') || '#f43f5e', NOZZLE: css('--cv-nozzle') || '#10b981' };
-    const lw = { PANEL: 1.4, PANEL_DETAIL: 0.9, FRAME: 1.6, REINF: 1.2, WALL: 1, DIM: 1, SHEET: 1.3, BALLOON: 1.8, NOZZLE: 1.6 };
-    const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
+      const col = { PANEL: css('--cv-panel') || '#f1f5f9', PANEL_DETAIL: css('--cv-detail') || '#94a3b8', FRAME: css('--cv-frame') || '#fb923c', REINF: css('--cv-panel') || '#f1f5f9', WALL: css('--cv-frame') || '#fb923c', DIM: css('--cv-dim') || '#38bdf8', SHEET: css('--cv-sheet') || '#e2e8f0', BALLOON: css('--cv-balloon') || '#f43f5e', NOZZLE: css('--cv-nozzle') || '#10b981' };
+      const lw = { PANEL: 1.4, PANEL_DETAIL: 0.9, FRAME: 1.6, REINF: 1.2, WALL: 1, DIM: 1, SHEET: 1.3, BALLOON: 1.8, NOZZLE: 1.6 };
+      const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
 
-    const hasFills = (plan.ents || []).some(e => e.fill);
-    if (hasFills) {
-      const bgCol = css('--cv-bg') || '#0b1120';
-      const texts = [];
-      let curLayer = null;
-
-      const setLayer = layer => {
-        if (curLayer === layer) return;
-        ctx.stroke();
-        curLayer = layer;
-        ctx.strokeStyle = col[layer] || '#fff';
-        ctx.lineWidth = lw[layer] || 1;
-        ctx.beginPath();
-      };
-
-      const renderEnt = (e, ox = 0, oy = 0) => {
-        if (!layerOn(e)) return;
-        if (e.t === 'poly') {
-          if (e.fill && e.pts && e.pts.length > 2) {
-            ctx.stroke();
-            curLayer = null;
-            ctx.save();
-            ctx.fillStyle = bgCol;
-            ctx.beginPath();
-            ctx.moveTo(tx(e.pts[0][0] + ox), ty(e.pts[0][1] + oy));
-            for (let i = 1; i < e.pts.length; i++) ctx.lineTo(tx(e.pts[i][0] + ox), ty(e.pts[i][1] + oy));
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
-          }
-          if (e.stroke !== false && e.pts && e.pts.length > 1) {
-            setLayer(e.layer || 'PANEL');
-            ctx.moveTo(tx(e.pts[0][0] + ox), ty(e.pts[0][1] + oy));
-            for (let i = 1; i < e.pts.length; i++) ctx.lineTo(tx(e.pts[i][0] + ox), ty(e.pts[i][1] + oy));
-            if (e.close !== false) ctx.closePath();
-          }
-        } else if (e.t === 'line') {
-          setLayer(e.layer || 'PANEL');
-          ctx.moveTo(tx(e.a[0] + ox), ty(e.a[1] + oy));
-          ctx.lineTo(tx(e.b[0] + ox), ty(e.b[1] + oy));
-        } else if (e.t === 'circle') {
-          setLayer(e.layer || 'PANEL');
-          ctx.moveTo(tx(e.c[0] + ox) + e.r * view.s, ty(e.c[1] + oy));
-          ctx.arc(tx(e.c[0] + ox), ty(e.c[1] + oy), e.r * view.s, 0, 7);
-        } else if (e.t === 'arc') {
-          setLayer(e.layer || 'PANEL');
-          const r = e.r * view.s, cx = tx(e.c[0] + ox), cy = ty(e.c[1] + oy), a0 = e.a0 * Math.PI / 180, a1 = e.a1 * Math.PI / 180;
-          ctx.moveTo(cx + r * Math.cos(a0), cy - r * Math.sin(a0));
-          ctx.arc(cx, cy, r, -a0, -a1, true);
-        } else if (e.t === 'text') {
-          if (ox || oy) texts.push({ ...e, p: [e.p[0] + ox, e.p[1] + oy] });
-          else texts.push(e);
-        }
-      };
-
-      plan.ents.forEach(e => {
-        if (!layerOn(e)) return;
-        if (e.t === 'insert') {
-          const blk = blocks[e.block];
-          if (blk) blk.forEach(be => renderEnt(be, e.p[0], e.p[1]));
-        } else {
-          renderEnt(e);
-        }
-      });
-      ctx.stroke();
-
-      texts.forEach(e => {
-        const px = Math.max(3, e.h * view.s); if (px < 3) return;
-        ctx.fillStyle = col[e.layer] || '#cbd5e1';
-        const fontFam = (e.layer === 'SHEET') ? '"Consolas", "Noto Sans KR", "Malgun Gothic", monospace' : css('--font-num');
-        const isBold = (e.layer === 'SHEET' && e.h >= 5.5 * plan.scale) ? 'bold ' : '';
-        ctx.font = isBold + px + 'px ' + fontFam;
-        ctx.textAlign = e.align === 'left' ? 'left' : e.align === 'right' ? 'right' : 'center';
-        ctx.textBaseline = e.valign === 'middle' ? 'middle' : 'alphabetic';
-        ctx.save(); ctx.translate(tx(e.p[0]), ty(e.p[1])); ctx.rotate(-e.rot * Math.PI / 180); ctx.fillText(e.s, 0, 0); ctx.restore();
-      });
-    } else {
-      ['PANEL_DETAIL', 'PANEL', 'WALL', 'REINF', 'FRAME', 'DIM', 'SHEET', 'BALLOON', 'NOZZLE'].forEach(layer => {
-        ctx.strokeStyle = col[layer]; ctx.fillStyle = col[layer]; ctx.lineWidth = lw[layer]; ctx.beginPath();
+      const hasFills = (plan.ents || []).some(e => e && e.fill);
+      if (hasFills) {
+        const bgCol = css('--cv-bg') || '#0b1120';
         const texts = [];
-        const renderEnt = (e, ox = 0, oy = 0) => {
-          if (e.layer !== layer || !layerOn(e)) return;
-          if (e.t === 'line') { ctx.moveTo(tx(e.a[0] + ox), ty(e.a[1] + oy)); ctx.lineTo(tx(e.b[0] + ox), ty(e.b[1] + oy)); }
-          else if (e.t === 'circle') { ctx.moveTo(tx(e.c[0] + ox) + e.r * view.s, ty(e.c[1] + oy)); ctx.arc(tx(e.c[0] + ox), ty(e.c[1] + oy), e.r * view.s, 0, 7); }
-          else if (e.t === 'arc') { const r = e.r * view.s, cx = tx(e.c[0] + ox), cy = ty(e.c[1] + oy), a0 = e.a0 * Math.PI / 180, a1 = e.a1 * Math.PI / 180; ctx.moveTo(cx + r * Math.cos(a0), cy - r * Math.sin(a0)); ctx.arc(cx, cy, r, -a0, -a1, true); }
-          else if (e.t === 'text') texts.push(e);
+        let curLayer = null;
+
+        const setLayer = layer => {
+          if (curLayer === layer) return;
+          ctx.stroke();
+          curLayer = layer;
+          ctx.strokeStyle = col[layer] || '#fff';
+          ctx.lineWidth = lw[layer] || 1;
+          ctx.beginPath();
         };
-        plan.ents.forEach(e => {
-          if (!layerOn(e)) return;
+
+        const renderEnt = (e, ox = 0, oy = 0) => {
+          if (!e || !layerOn(e)) return;
+          if (e.t === 'poly') {
+            if (e.fill && e.pts && e.pts.length > 2) {
+              ctx.stroke();
+              curLayer = null;
+              ctx.save();
+              ctx.fillStyle = bgCol;
+              ctx.beginPath();
+              ctx.moveTo(tx(e.pts[0][0] + ox), ty(e.pts[0][1] + oy));
+              for (let i = 1; i < e.pts.length; i++) ctx.lineTo(tx(e.pts[i][0] + ox), ty(e.pts[i][1] + oy));
+              ctx.closePath();
+              ctx.fill();
+              ctx.restore();
+            }
+            if (e.stroke !== false && e.pts && e.pts.length > 1) {
+              setLayer(e.layer || 'PANEL');
+              ctx.moveTo(tx(e.pts[0][0] + ox), ty(e.pts[0][1] + oy));
+              for (let i = 1; i < e.pts.length; i++) ctx.lineTo(tx(e.pts[i][0] + ox), ty(e.pts[i][1] + oy));
+              if (e.close !== false) ctx.closePath();
+            }
+          } else if (e.t === 'line' && e.a && e.b) {
+            setLayer(e.layer || 'PANEL');
+            ctx.moveTo(tx(e.a[0] + ox), ty(e.a[1] + oy));
+            ctx.lineTo(tx(e.b[0] + ox), ty(e.b[1] + oy));
+          } else if (e.t === 'circle' && e.c) {
+            setLayer(e.layer || 'PANEL');
+            ctx.moveTo(tx(e.c[0] + ox) + (e.r || 10) * view.s, ty(e.c[1] + oy));
+            ctx.arc(tx(e.c[0] + ox), ty(e.c[1] + oy), (e.r || 10) * view.s, 0, 7);
+          } else if (e.t === 'arc' && e.c) {
+            setLayer(e.layer || 'PANEL');
+            const r = (e.r || 10) * view.s, cx = tx(e.c[0] + ox), cy = ty(e.c[1] + oy), a0 = (e.a0 || 0) * Math.PI / 180, a1 = (e.a1 || 360) * Math.PI / 180;
+            ctx.moveTo(cx + r * Math.cos(a0), cy - r * Math.sin(a0));
+            ctx.arc(cx, cy, r, -a0, -a1, true);
+          } else if (e.t === 'text' && e.p) {
+            if (ox || oy) texts.push({ ...e, p: [e.p[0] + ox, e.p[1] + oy] });
+            else texts.push(e);
+          }
+        };
+
+        (plan.ents || []).forEach(e => {
+          if (!e || !layerOn(e)) return;
           if (e.t === 'insert') {
             const blk = blocks[e.block];
-            if (blk) blk.forEach(be => renderEnt(be, e.p[0], e.p[1]));
+            const ex = (e.p && isFinite(e.p[0])) ? e.p[0] : 0;
+            const ey = (e.p && isFinite(e.p[1])) ? e.p[1] : 0;
+            if (blk && Array.isArray(blk)) blk.forEach(be => renderEnt(be, ex, ey));
           } else {
             renderEnt(e);
           }
         });
         ctx.stroke();
+
         texts.forEach(e => {
-          const px = Math.max(3, e.h * view.s); if (px < 3) return;
+          if (!e || !e.p) return;
+          const px = Math.max(3, (e.h || 10) * view.s); if (px < 3) return;
+          ctx.fillStyle = col[e.layer] || '#cbd5e1';
           const fontFam = (e.layer === 'SHEET') ? '"Consolas", "Noto Sans KR", "Malgun Gothic", monospace' : css('--font-num');
           const isBold = (e.layer === 'SHEET' && e.h >= 5.5 * plan.scale) ? 'bold ' : '';
           ctx.font = isBold + px + 'px ' + fontFam;
           ctx.textAlign = e.align === 'left' ? 'left' : e.align === 'right' ? 'right' : 'center';
           ctx.textBaseline = e.valign === 'middle' ? 'middle' : 'alphabetic';
-          ctx.save(); ctx.translate(tx(e.p[0]), ty(e.p[1])); ctx.rotate(-e.rot * Math.PI / 180); ctx.fillText(e.s, 0, 0); ctx.restore();
+          ctx.save(); ctx.translate(tx(e.p[0]), ty(e.p[1])); ctx.rotate(-(e.rot || 0) * Math.PI / 180); ctx.fillText(e.s || '', 0, 0); ctx.restore();
         });
-      });
+      } else {
+        ['PANEL_DETAIL', 'PANEL', 'WALL', 'REINF', 'FRAME', 'DIM', 'SHEET', 'BALLOON', 'NOZZLE'].forEach(layer => {
+          ctx.strokeStyle = col[layer]; ctx.fillStyle = col[layer]; ctx.lineWidth = lw[layer]; ctx.beginPath();
+          const texts = [];
+          const renderEnt = (e, ox = 0, oy = 0) => {
+            if (!e || e.layer !== layer || !layerOn(e)) return;
+            if (e.t === 'line' && e.a && e.b) { ctx.moveTo(tx(e.a[0] + ox), ty(e.a[1] + oy)); ctx.lineTo(tx(e.b[0] + ox), ty(e.b[1] + oy)); }
+            else if (e.t === 'circle' && e.c) { ctx.moveTo(tx(e.c[0] + ox) + (e.r || 10) * view.s, ty(e.c[1] + oy)); ctx.arc(tx(e.c[0] + ox), ty(e.c[1] + oy), (e.r || 10) * view.s, 0, 7); }
+            else if (e.t === 'arc' && e.c) { const r = (e.r || 10) * view.s, cx = tx(e.c[0] + ox), cy = ty(e.c[1] + oy), a0 = (e.a0 || 0) * Math.PI / 180, a1 = (e.a1 || 360) * Math.PI / 180; ctx.moveTo(cx + r * Math.cos(a0), cy - r * Math.sin(a0)); ctx.arc(cx, cy, r, -a0, -a1, true); }
+            else if (e.t === 'text' && e.p) texts.push(e);
+          };
+          (plan.ents || []).forEach(e => {
+            if (!e || !layerOn(e)) return;
+            if (e.t === 'insert') {
+              const blk = blocks[e.block];
+              const ex = (e.p && isFinite(e.p[0])) ? e.p[0] : 0;
+              const ey = (e.p && isFinite(e.p[1])) ? e.p[1] : 0;
+              if (blk && Array.isArray(blk)) blk.forEach(be => renderEnt(be, ex, ey));
+            } else {
+              renderEnt(e);
+            }
+          });
+          ctx.stroke();
+          texts.forEach(e => {
+            if (!e || !e.p) return;
+            const px = Math.max(3, (e.h || 10) * view.s); if (px < 3) return;
+            const fontFam = (e.layer === 'SHEET') ? '"Consolas", "Noto Sans KR", "Malgun Gothic", monospace' : css('--font-num');
+            const isBold = (e.layer === 'SHEET' && e.h >= 5.5 * plan.scale) ? 'bold ' : '';
+            ctx.font = isBold + px + 'px ' + fontFam;
+            ctx.textAlign = e.align === 'left' ? 'left' : e.align === 'right' ? 'right' : 'center';
+            ctx.textBaseline = e.valign === 'middle' ? 'middle' : 'alphabetic';
+            ctx.save(); ctx.translate(tx(e.p[0]), ty(e.p[1])); ctx.rotate(-(e.rot || 0) * Math.PI / 180); ctx.fillText(e.s || '', 0, 0); ctx.restore();
+          });
+        });
+      }
+    } catch (err) {
+      console.error('draw render error:', err);
     }
     const isEn = currentLang === 'en';
-    const insCnt = plan.ents.filter(e => e.t === 'insert').length;
-    const lineCnt = plan.ents.filter(e => e.t === 'line').length;
+    const insCnt = (plan.ents || []).filter(e => e && e.t === 'insert').length;
+    const lineCnt = (plan.ents || []).filter(e => e && e.t === 'line').length;
     $('status').textContent = isEn
       ? `Zoom ${(view.s * 1000).toFixed(0)}%  ·  Panel blocks ${insCnt} / Lines ${lineCnt.toLocaleString('en-US')}`
       : `배율 ${(view.s * 1000).toFixed(0)}%  ·  판넬 블럭 ${insCnt}개 / 선 ${lineCnt.toLocaleString('ko-KR')}개`;
@@ -9815,6 +9867,16 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
   $('zoomIn').addEventListener('click', () => { const z = size(); view.x = z.w / 2 - (z.w / 2 - view.x) * 1.3; view.y = z.h / 2 - (z.h / 2 - view.y) * 1.3; view.s *= 1.3; draw(); });
   $('zoomOut').addEventListener('click', () => { const z = size(); view.x = z.w / 2 - (z.w / 2 - view.x) / 1.3; view.y = z.h / 2 - (z.h / 2 - view.y) / 1.3; view.s /= 1.3; draw(); });
   window.addEventListener('resize', fitView);
+  if (typeof ResizeObserver !== 'undefined' && $('cv')) {
+    let roTimer = null;
+    const ro = new ResizeObserver(() => {
+      clearTimeout(roTimer);
+      roTimer = setTimeout(() => {
+        fitView();
+      }, 50);
+    });
+    ro.observe($('cv'));
+  }
 
   /* Universal File Downloader (Claude Artifact + Standard Browser) */
   const crcT = (() => { const t = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -12588,6 +12650,9 @@ let SIDE_T = {"SMC":{"500x1000":[],"500x1300":[{"k":"line","p":[[100,150],[100,1
     setTimeout(() => {
       fitView();
     }, 200);
+    setTimeout(() => {
+      fitView();
+    }, 500);
 
     // 백그라운드에서 DB 판넬 및 템플릿 비동기 동기화 (초기 렌더링 블로킹 원천 차단)
     setTimeout(() => {

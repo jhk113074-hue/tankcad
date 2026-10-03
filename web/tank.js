@@ -903,7 +903,7 @@
         else ln([x1 + F, y0 + s0], [x1 + F, y1 - s1]);
         // 외부보강 T: 같은 변이 이어지는 다음 패널과의 이음선
         if (rf === 0 && exposed(i + a[0], j + a[1], sd)) {
-          const customPlanPost = resolvePartEntities(opt.customComponents, 'ext_reinf', 'plan', (opt.height && opt.height[0]) || 2000);
+          const customPlanPost = resolvePartEntities(opt.partTemplates || opt.customComponents, 'ext_reinf', 'plan', (opt.height && opt.height[0]) || 2000);
           if (customPlanPost && customPlanPost.length) {
             const pt = (sd === 'bottom') ? [x1, y0 - F] : (sd === 'top') ? [x1, y1 + F] : (sd === 'left') ? [x0 - F, y1] : [x1 + F, y1];
             let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -2134,7 +2134,7 @@
       [0, OFF, nLen - OFF, nLen].forEach(o => ln([baseX + o, 0], [baseX + o, nH]));
       ln([baseX, 0], [baseX + nLen, 0]);
       let y = 0;
-      const customPost = resolvePartEntities(opt.customComponents, 'ext_reinf', view, nH);
+      const customPost = resolvePartEntities(opt.partTemplates || opt.customComponents, 'ext_reinf', view, nH);
       hs.forEach((hh, i) => {
         const tall = !(hh === 500 || hh === 1000 || hh === 1300);
         if (i > 0) ln([baseX, y], [baseX + (cnt > 1 ? pLen[0] - MX : pLen[0]), y]);

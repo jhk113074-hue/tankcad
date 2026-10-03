@@ -5,6 +5,22 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.57] - 2026-10-03
+
+### Fixed & Enhanced (캔버스 도면 렌더링 무결성 강화, 상단 헤더 고정 및 버전 표시 다중화)
+- **🖥️ 도면 캔버스 렌더링 엔진 무결성 강화 및 블랭크 방지**:
+  - `size()` 함수에서 치수 변경 없이 매 호출마다 캔버스 픽셀 버퍼(`cv.width`, `cv.height`)가 강제 초기화(Clear)되던 문제를 조건부 갱신으로 최적화.
+  - `bounds()` 바운딩 박스 계산 시 NaN / 비정상 수치 오염 방지 로직 및 유효 범위 자동 폴백(`[0, 0, 1000, 1000]`) 탑재.
+  - `fitView()` 축척 계산 시 0 이하 및 NaN 예외를 원천 방어하여 항상 도면이 캔버스 중앙에 안정적으로 배치되도록 개선.
+  - `draw()` 내부 전구간 예외 처리 및 선분·원·호·다각형 정밀 유효성 검사 도입으로 렌더링 중단 차단.
+  - 캔버스 컨테이너(`#cv`)에 `ResizeObserver` 탑재: 창 크기 조절, 사이드바 토글, 폰트 로딩 등 모든 레이아웃 변경 시 지연 없이 자동 맞춤(`fitView`) 수행.
+  - 초기화(`init`) 단계에서 500ms까지 다단계 레이아웃 안정화 맞춤 적용.
+- **📌 상단 헤더 Sticky 고정 및 버전 표시 다중화**:
+  - 화면 스크롤 시 상단 타이틀과 버전 배지가 화면 위로 사라지던 현상 해결: `.header`에 `position: sticky; top: 0; z-index: 100` 적용.
+  - 캔버스 상단 HUD 배지(`viewBadge`) 및 하단 상태표시줄(`status-bar`)에도 현재 프로그램 버전 배지(`<span class="ver-badge">v1.5.57</span>`)를 상시 표기하도록 다중화.
+- **🏛️ 외부보강 기둥(`ext_reinf`) 템플릿 전달 연동 보완**:
+  - `opt.partTemplates || opt.customComponents` 결합으로 평면도 및 입면도 보강기둥 렌더링 시 최신 사용자 등록 부품이 온전히 반영되도록 개선.
+
 ## [1.5.56] - 2026-10-03
 
 ### Enhanced (외부사다리 상부 손잡이·본체·하부패드 일체형 통합 등록 및 도면 연동)
