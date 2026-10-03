@@ -399,7 +399,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.64</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.65</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1733,7 +1733,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.64</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.65</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1743,7 +1743,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.64</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.65</span></div>
     </div>
   </main>
 </div>
@@ -2768,6 +2768,7 @@ canvas.drag{cursor:grabbing}
       if (n.face === 'top') {
         const i = Math.max(0, Math.min(n.topCell[0], map.rows.length - 1));
         const j = Math.max(0, Math.min(n.topCell[1], map.cols.length - 1));
+        if (!map.has(i, j)) return;
         const cx = (map.xs[j] + map.xs[j + 1]) / 2 + offVal;
         const cy = (map.ys[i] + map.ys[i + 1]) / 2;
         
@@ -2793,8 +2794,16 @@ canvas.drag{cursor:grabbing}
         drawLeader(ents, [cx + spec.r * 0.7, cy + spec.r * 0.7], [cx + spec.r * 0.7 + leadLen * 0.5, cy + spec.r * 0.7 + leadLen * 0.5 + stagger], [cx + spec.r * 0.7 + leadLen * 1.2, cy + spec.r * 0.7 + leadLen * 0.5 + stagger], [label], nozTextH, 'left', 'NOZZLE');
       } else if (n.face === 'front') {
         const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
+        let frontRow = -1;
+        for (let r = 0; r < map.rows.length; r++) {
+          if (map.has(r, colIdx) && !map.has(r - 1, colIdx)) {
+            frontRow = r;
+            break;
+          }
+        }
+        if (frontRow < 0) return;
         const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + offVal;
-        const yBase = -F;
+        const yBase = map.ys[frontRow] - F;
         const toRight = cx >= map.length / 2;
         const stagger = (idx % 2) * Math.round(1.5 * N);
         if (isFlg) {
@@ -2818,8 +2827,16 @@ canvas.drag{cursor:grabbing}
         }
       } else if (n.face === 'rear') {
         const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
+        let rearRow = -1;
+        for (let r = map.rows.length - 1; r >= 0; r--) {
+          if (map.has(r, colIdx) && !map.has(r + 1, colIdx)) {
+            rearRow = r;
+            break;
+          }
+        }
+        if (rearRow < 0) return;
         const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + offVal;
-        const yBase = W + F;
+        const yBase = map.ys[rearRow + 1] + F;
         const toRight = cx >= map.length / 2;
         const stagger = (idx % 2) * Math.round(1.5 * N);
         if (isFlg) {
@@ -2843,8 +2860,16 @@ canvas.drag{cursor:grabbing}
         }
       } else if (n.face === 'left') {
         const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
+        let leftCol = -1;
+        for (let c = 0; c < map.cols.length; c++) {
+          if (map.has(rowIdx, c) && !map.has(rowIdx, c - 1)) {
+            leftCol = c;
+            break;
+          }
+        }
+        if (leftCol < 0) return;
         const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2 + offVal;
-        const xBase = -F;
+        const xBase = map.xs[leftCol] - F;
         const toTop = cy >= map.width / 2;
         const stagger = (idx % 2) * Math.round(1.5 * N);
         if (isFlg) {
@@ -2854,7 +2879,7 @@ canvas.drag{cursor:grabbing}
           ln([xBase, cy + spec.r], [xPlate0, cy + spec.r], 'NOZZLE');
           chain([[xPlate1, cy - spec.rf], [xPlate0, cy - spec.rf], [xPlate0, cy + spec.rf], [xPlate1, cy + spec.rf]], 'NOZZLE', true);
           const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
-          const elbowX = (-F - Math.round(18.0 * N)) - Math.round(3.0 * N);
+          const elbowX = (xBase - Math.round(18.0 * N)) - Math.round(3.0 * N);
           const shelfEndX = elbowX - Math.round(2.5 * N);
           drawLeader(ents, [xPlate1, cy], [elbowX, ey], [shelfEndX, ey], [label], nozTextH, 'right', 'NOZZLE');
         } else {
@@ -2862,14 +2887,22 @@ canvas.drag{cursor:grabbing}
           chain([[xEnd, cy - spec.sockR], [xBase, cy - spec.sockR], [xBase, cy + spec.sockR], [xEnd, cy + spec.sockR]], 'NOZZLE', true);
           ln([xEnd, cy - spec.r], [xEnd, cy + spec.r], 'NOZZLE');
           const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
-          const elbowX = (-F - Math.round(18.0 * N)) - Math.round(3.0 * N);
+          const elbowX = (xBase - Math.round(18.0 * N)) - Math.round(3.0 * N);
           const shelfEndX = elbowX - Math.round(2.5 * N);
           drawLeader(ents, [xEnd, cy], [elbowX, ey], [shelfEndX, ey], [label], nozTextH, 'right', 'NOZZLE');
         }
       } else if (n.face === 'right') {
         const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
+        let rightCol = -1;
+        for (let c = map.cols.length - 1; c >= 0; c--) {
+          if (map.has(rowIdx, c) && !map.has(rowIdx, c + 1)) {
+            rightCol = c;
+            break;
+          }
+        }
+        if (rightCol < 0) return;
         const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2 + offVal;
-        const xBase = L + F;
+        const xBase = map.xs[rightCol + 1] + F;
         const toTop = cy >= map.width / 2;
         const stagger = (idx % 2) * Math.round(1.5 * N);
         if (isFlg) {
@@ -4208,6 +4241,9 @@ canvas.drag{cursor:grabbing}
       if (view === 'front') {
         if (n.face === 'front') {
           const colIdx = Math.max(0, Math.min(n.seg - 1, mmap.cols.length - 1));
+          let hasCol = false;
+          for (let r = 0; r < mmap.rows.length; r++) { if (mmap.has(r, colIdx)) { hasCol = true; break; } }
+          if (!hasCol) return;
           const cx = (mmap.xs[colIdx] + mmap.xs[colIdx + 1]) / 2 + (n.offset || 0);
           faceNozzles.push({ n, spec, isFlg, cx, cy: elev, elev });
         } else if (n.face === 'left') {
@@ -4215,13 +4251,18 @@ canvas.drag{cursor:grabbing}
         } else if (n.face === 'right') {
           rightNozzles.push({ n, spec, isFlg, elev });
         } else if (n.face === 'top') {
-          const colIdx = Math.max(0, Math.min(n.topCell[1], mmap.cols.length - 1));
+          const colIdx = Math.max(0, Math.min((n.topCell && n.topCell[1]) || 0, mmap.cols.length - 1));
+          const rowIdx = Math.max(0, Math.min((n.topCell && n.topCell[0]) || 0, mmap.rows.length - 1));
+          if (!mmap.has(rowIdx, colIdx)) return;
           const cx = (mmap.xs[colIdx] + mmap.xs[colIdx + 1]) / 2 + (n.offset || 0);
           topNozzles.push({ n, spec, isFlg, cx, elev: 'TOP' });
         }
       } else { // side view
         if (n.face === 'right') {
           const rowIdx = Math.max(0, Math.min(n.seg - 1, mmap.rows.length - 1));
+          let hasRow = false;
+          for (let c = 0; c < mmap.cols.length; c++) { if (mmap.has(rowIdx, c)) { hasRow = true; break; } }
+          if (!hasRow) return;
           const cy = (mmap.ys[rowIdx] + mmap.ys[rowIdx + 1]) / 2 + (n.offset || 0);
           faceNozzles.push({ n, spec, isFlg, cx: cy, cy: elev, elev });
         } else if (n.face === 'front') {
@@ -4229,7 +4270,9 @@ canvas.drag{cursor:grabbing}
         } else if (n.face === 'rear') {
           rightNozzles.push({ n, spec, isFlg, elev });
         } else if (n.face === 'top') {
-          const rowIdx = Math.max(0, Math.min(n.topCell[0], mmap.rows.length - 1));
+          const colIdx = Math.max(0, Math.min((n.topCell && n.topCell[1]) || 0, mmap.cols.length - 1));
+          const rowIdx = Math.max(0, Math.min((n.topCell && n.topCell[0]) || 0, mmap.rows.length - 1));
+          if (!mmap.has(rowIdx, colIdx)) return;
           const cy = (mmap.ys[rowIdx] + mmap.ys[rowIdx + 1]) / 2 + (n.offset || 0);
           topNozzles.push({ n, spec, isFlg, cx: cy, elev: 'TOP' });
         }
@@ -5698,9 +5741,11 @@ canvas.drag{cursor:grabbing}
           const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
           const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + (n.offset || 0);
           let frontY = 0;
+          let foundFront = false;
           for (let r = 0; r < map.rows.length; r++) {
-            if (map.has(r, colIdx) && !map.has(r - 1, colIdx)) { frontY = map.ys[r]; break; }
+            if (map.has(r, colIdx) && !map.has(r - 1, colIdx)) { frontY = map.ys[r]; foundFront = true; break; }
           }
+          if (!foundFront) return;
           const stubLen = 140;
           const nDepth = getDepth(cx, frontY - stubLen, elev);
           ln(toIso(cx, frontY, elev), toIso(cx, frontY - stubLen, elev), 'NOZZLE', nDepth);
@@ -5713,9 +5758,11 @@ canvas.drag{cursor:grabbing}
           const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
           const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2 + (n.offset || 0);
           let rightX = totalL;
+          let foundRight = false;
           for (let c = map.cols.length - 1; c >= 0; c--) {
-            if (map.has(rowIdx, c) && !map.has(rowIdx, c + 1)) { rightX = map.xs[c + 1]; break; }
+            if (map.has(rowIdx, c) && !map.has(rowIdx, c + 1)) { rightX = map.xs[c + 1]; foundRight = true; break; }
           }
+          if (!foundRight) return;
           const stubLen = 140;
           const nDepth = getDepth(rightX + stubLen, cy, elev);
           ln(toIso(rightX, cy, elev), toIso(rightX + stubLen, cy, elev), 'NOZZLE', nDepth);
@@ -5727,6 +5774,7 @@ canvas.drag{cursor:grabbing}
         } else if (n.face === 'top') {
           const colIdx = Math.max(0, Math.min((n.topCell && n.topCell[1]) || 0, map.cols.length - 1));
           const rowIdx = Math.max(0, Math.min((n.topCell && n.topCell[0]) || 0, map.rows.length - 1));
+          if (!map.has(rowIdx, colIdx)) return;
           const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + (n.offset || 0);
           const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2;
           const stubLen = 160;
@@ -8699,6 +8747,27 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
         const b = document.createElement('button');
         b.type = 'button';
+
+        let isCellDisabled = false;
+        if (isTop) {
+          if (removed.has(pk(tierIdx, ci))) isCellDisabled = true;
+        } else if (currentNozFace === 'front' || currentNozFace === 'rear') {
+          const hasCol = Array.from({length: map.rows.length}, (_, r) => r).some(r => map.has(r, ci));
+          if (!hasCol) isCellDisabled = true;
+        } else if (currentNozFace === 'left' || currentNozFace === 'right') {
+          const hasRow = Array.from({length: map.cols.length}, (_, c) => c).some(c => map.has(ci, c));
+          if (!hasRow) isCellDisabled = true;
+        }
+
+        if (isCellDisabled) {
+          b.className = 'noz-grid-btn off';
+          b.style.opacity = '0.35';
+          b.style.cursor = 'not-allowed';
+          b.title = isEn ? 'Deleted section (Nozzle cannot be placed)' : '삭제된 구역 (배관 배치 불가)';
+          grid.appendChild(b);
+          continue;
+        }
+
         let pClass = '';
         if (pType === 'flat' || pType === 'flat-1x1') pClass = ' p-flat-1x1';
         else if (pType === 'flat-half2' || pType === 'flat-0.5x2') pClass = ' p-flat-half2';
@@ -9641,7 +9710,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.64</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.65</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();

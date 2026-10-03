@@ -3390,6 +3390,27 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
         const b = document.createElement('button');
         b.type = 'button';
+
+        let isCellDisabled = false;
+        if (isTop) {
+          if (removed.has(pk(tierIdx, ci))) isCellDisabled = true;
+        } else if (currentNozFace === 'front' || currentNozFace === 'rear') {
+          const hasCol = Array.from({length: map.rows.length}, (_, r) => r).some(r => map.has(r, ci));
+          if (!hasCol) isCellDisabled = true;
+        } else if (currentNozFace === 'left' || currentNozFace === 'right') {
+          const hasRow = Array.from({length: map.cols.length}, (_, c) => c).some(c => map.has(ci, c));
+          if (!hasRow) isCellDisabled = true;
+        }
+
+        if (isCellDisabled) {
+          b.className = 'noz-grid-btn off';
+          b.style.opacity = '0.35';
+          b.style.cursor = 'not-allowed';
+          b.title = isEn ? 'Deleted section (Nozzle cannot be placed)' : '삭제된 구역 (배관 배치 불가)';
+          grid.appendChild(b);
+          continue;
+        }
+
         let pClass = '';
         if (pType === 'flat' || pType === 'flat-1x1') pClass = ' p-flat-1x1';
         else if (pType === 'flat-half2' || pType === 'flat-0.5x2') pClass = ' p-flat-half2';

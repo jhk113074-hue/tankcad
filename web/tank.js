@@ -1018,6 +1018,7 @@
       if (n.face === 'top') {
         const i = Math.max(0, Math.min(n.topCell[0], map.rows.length - 1));
         const j = Math.max(0, Math.min(n.topCell[1], map.cols.length - 1));
+        if (!map.has(i, j)) return;
         const cx = (map.xs[j] + map.xs[j + 1]) / 2 + offVal;
         const cy = (map.ys[i] + map.ys[i + 1]) / 2;
         
@@ -1043,8 +1044,16 @@
         drawLeader(ents, [cx + spec.r * 0.7, cy + spec.r * 0.7], [cx + spec.r * 0.7 + leadLen * 0.5, cy + spec.r * 0.7 + leadLen * 0.5 + stagger], [cx + spec.r * 0.7 + leadLen * 1.2, cy + spec.r * 0.7 + leadLen * 0.5 + stagger], [label], nozTextH, 'left', 'NOZZLE');
       } else if (n.face === 'front') {
         const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
+        let frontRow = -1;
+        for (let r = 0; r < map.rows.length; r++) {
+          if (map.has(r, colIdx) && !map.has(r - 1, colIdx)) {
+            frontRow = r;
+            break;
+          }
+        }
+        if (frontRow < 0) return;
         const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + offVal;
-        const yBase = -F;
+        const yBase = map.ys[frontRow] - F;
         const toRight = cx >= map.length / 2;
         const stagger = (idx % 2) * Math.round(1.5 * N);
         if (isFlg) {
@@ -1068,8 +1077,16 @@
         }
       } else if (n.face === 'rear') {
         const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
+        let rearRow = -1;
+        for (let r = map.rows.length - 1; r >= 0; r--) {
+          if (map.has(r, colIdx) && !map.has(r + 1, colIdx)) {
+            rearRow = r;
+            break;
+          }
+        }
+        if (rearRow < 0) return;
         const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + offVal;
-        const yBase = W + F;
+        const yBase = map.ys[rearRow + 1] + F;
         const toRight = cx >= map.length / 2;
         const stagger = (idx % 2) * Math.round(1.5 * N);
         if (isFlg) {
@@ -1093,8 +1110,16 @@
         }
       } else if (n.face === 'left') {
         const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
+        let leftCol = -1;
+        for (let c = 0; c < map.cols.length; c++) {
+          if (map.has(rowIdx, c) && !map.has(rowIdx, c - 1)) {
+            leftCol = c;
+            break;
+          }
+        }
+        if (leftCol < 0) return;
         const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2 + offVal;
-        const xBase = -F;
+        const xBase = map.xs[leftCol] - F;
         const toTop = cy >= map.width / 2;
         const stagger = (idx % 2) * Math.round(1.5 * N);
         if (isFlg) {
@@ -1104,7 +1129,7 @@
           ln([xBase, cy + spec.r], [xPlate0, cy + spec.r], 'NOZZLE');
           chain([[xPlate1, cy - spec.rf], [xPlate0, cy - spec.rf], [xPlate0, cy + spec.rf], [xPlate1, cy + spec.rf]], 'NOZZLE', true);
           const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
-          const elbowX = (-F - Math.round(18.0 * N)) - Math.round(3.0 * N);
+          const elbowX = (xBase - Math.round(18.0 * N)) - Math.round(3.0 * N);
           const shelfEndX = elbowX - Math.round(2.5 * N);
           drawLeader(ents, [xPlate1, cy], [elbowX, ey], [shelfEndX, ey], [label], nozTextH, 'right', 'NOZZLE');
         } else {
@@ -1112,14 +1137,22 @@
           chain([[xEnd, cy - spec.sockR], [xBase, cy - spec.sockR], [xBase, cy + spec.sockR], [xEnd, cy + spec.sockR]], 'NOZZLE', true);
           ln([xEnd, cy - spec.r], [xEnd, cy + spec.r], 'NOZZLE');
           const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
-          const elbowX = (-F - Math.round(18.0 * N)) - Math.round(3.0 * N);
+          const elbowX = (xBase - Math.round(18.0 * N)) - Math.round(3.0 * N);
           const shelfEndX = elbowX - Math.round(2.5 * N);
           drawLeader(ents, [xEnd, cy], [elbowX, ey], [shelfEndX, ey], [label], nozTextH, 'right', 'NOZZLE');
         }
       } else if (n.face === 'right') {
         const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
+        let rightCol = -1;
+        for (let c = map.cols.length - 1; c >= 0; c--) {
+          if (map.has(rowIdx, c) && !map.has(rowIdx, c + 1)) {
+            rightCol = c;
+            break;
+          }
+        }
+        if (rightCol < 0) return;
         const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2 + offVal;
-        const xBase = L + F;
+        const xBase = map.xs[rightCol + 1] + F;
         const toTop = cy >= map.width / 2;
         const stagger = (idx % 2) * Math.round(1.5 * N);
         if (isFlg) {
@@ -2458,6 +2491,9 @@
       if (view === 'front') {
         if (n.face === 'front') {
           const colIdx = Math.max(0, Math.min(n.seg - 1, mmap.cols.length - 1));
+          let hasCol = false;
+          for (let r = 0; r < mmap.rows.length; r++) { if (mmap.has(r, colIdx)) { hasCol = true; break; } }
+          if (!hasCol) return;
           const cx = (mmap.xs[colIdx] + mmap.xs[colIdx + 1]) / 2 + (n.offset || 0);
           faceNozzles.push({ n, spec, isFlg, cx, cy: elev, elev });
         } else if (n.face === 'left') {
@@ -2465,13 +2501,18 @@
         } else if (n.face === 'right') {
           rightNozzles.push({ n, spec, isFlg, elev });
         } else if (n.face === 'top') {
-          const colIdx = Math.max(0, Math.min(n.topCell[1], mmap.cols.length - 1));
+          const colIdx = Math.max(0, Math.min((n.topCell && n.topCell[1]) || 0, mmap.cols.length - 1));
+          const rowIdx = Math.max(0, Math.min((n.topCell && n.topCell[0]) || 0, mmap.rows.length - 1));
+          if (!mmap.has(rowIdx, colIdx)) return;
           const cx = (mmap.xs[colIdx] + mmap.xs[colIdx + 1]) / 2 + (n.offset || 0);
           topNozzles.push({ n, spec, isFlg, cx, elev: 'TOP' });
         }
       } else { // side view
         if (n.face === 'right') {
           const rowIdx = Math.max(0, Math.min(n.seg - 1, mmap.rows.length - 1));
+          let hasRow = false;
+          for (let c = 0; c < mmap.cols.length; c++) { if (mmap.has(rowIdx, c)) { hasRow = true; break; } }
+          if (!hasRow) return;
           const cy = (mmap.ys[rowIdx] + mmap.ys[rowIdx + 1]) / 2 + (n.offset || 0);
           faceNozzles.push({ n, spec, isFlg, cx: cy, cy: elev, elev });
         } else if (n.face === 'front') {
@@ -2479,7 +2520,9 @@
         } else if (n.face === 'rear') {
           rightNozzles.push({ n, spec, isFlg, elev });
         } else if (n.face === 'top') {
-          const rowIdx = Math.max(0, Math.min(n.topCell[0], mmap.rows.length - 1));
+          const colIdx = Math.max(0, Math.min((n.topCell && n.topCell[1]) || 0, mmap.cols.length - 1));
+          const rowIdx = Math.max(0, Math.min((n.topCell && n.topCell[0]) || 0, mmap.rows.length - 1));
+          if (!mmap.has(rowIdx, colIdx)) return;
           const cy = (mmap.ys[rowIdx] + mmap.ys[rowIdx + 1]) / 2 + (n.offset || 0);
           topNozzles.push({ n, spec, isFlg, cx: cy, elev: 'TOP' });
         }
@@ -3948,9 +3991,11 @@
           const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
           const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + (n.offset || 0);
           let frontY = 0;
+          let foundFront = false;
           for (let r = 0; r < map.rows.length; r++) {
-            if (map.has(r, colIdx) && !map.has(r - 1, colIdx)) { frontY = map.ys[r]; break; }
+            if (map.has(r, colIdx) && !map.has(r - 1, colIdx)) { frontY = map.ys[r]; foundFront = true; break; }
           }
+          if (!foundFront) return;
           const stubLen = 140;
           const nDepth = getDepth(cx, frontY - stubLen, elev);
           ln(toIso(cx, frontY, elev), toIso(cx, frontY - stubLen, elev), 'NOZZLE', nDepth);
@@ -3963,9 +4008,11 @@
           const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
           const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2 + (n.offset || 0);
           let rightX = totalL;
+          let foundRight = false;
           for (let c = map.cols.length - 1; c >= 0; c--) {
-            if (map.has(rowIdx, c) && !map.has(rowIdx, c + 1)) { rightX = map.xs[c + 1]; break; }
+            if (map.has(rowIdx, c) && !map.has(rowIdx, c + 1)) { rightX = map.xs[c + 1]; foundRight = true; break; }
           }
+          if (!foundRight) return;
           const stubLen = 140;
           const nDepth = getDepth(rightX + stubLen, cy, elev);
           ln(toIso(rightX, cy, elev), toIso(rightX + stubLen, cy, elev), 'NOZZLE', nDepth);
@@ -3977,6 +4024,7 @@
         } else if (n.face === 'top') {
           const colIdx = Math.max(0, Math.min((n.topCell && n.topCell[1]) || 0, map.cols.length - 1));
           const rowIdx = Math.max(0, Math.min((n.topCell && n.topCell[0]) || 0, map.rows.length - 1));
+          if (!map.has(rowIdx, colIdx)) return;
           const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + (n.offset || 0);
           const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2;
           const stubLen = 160;
