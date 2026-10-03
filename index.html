@@ -399,7 +399,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.71</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.72</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1913,7 +1913,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.71</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.72</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1923,7 +1923,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.71</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.72</span></div>
     </div>
   </main>
 </div>
@@ -2667,8 +2667,9 @@ canvas.drag{cursor:grabbing}
       elbowPt = null;
     }
     layer = layer || 'BALLOON';
-    const balloonR = Math.round(3.8 * scaleN);
-    const textH = Math.round(2.8 * scaleN);
+    const sLen = String(str).length;
+    const balloonR = Math.round(4.0 * scaleN);
+    const textH = Math.round((sLen >= 3 ? 3.8 : (sLen === 2 ? 4.8 : 5.6)) * scaleN);
 
     // 단부 점 (Terminal dot)
     ents.push({ t: 'circle', c: startPt, r: Math.max(3, Math.round(scaleN * 0.2)), layer, balloonNo: str });
@@ -3214,8 +3215,9 @@ canvas.drag{cursor:grabbing}
             const pElbow1 = [l.x + jogX, l.y - F - Math.round(4.0 * N)];
             const pElbow2 = [l.x + jogX, balloonY];
             const bx8 = l.x + jogX + (toRight ? Math.round(6.0 * N) : -Math.round(6.0 * N));
-            const bR = Math.round(3.8 * N);
-            const bTextH = Math.round(2.8 * N);
+            const sLen8 = String(no8).length;
+            const bR = Math.round(4.0 * N);
+            const bTextH = Math.round((sLen8 >= 3 ? 3.8 : (sLen8 === 2 ? 4.8 : 5.6)) * N);
             const dotR = Math.max(3, Math.round(N * 0.2));
 
             ents.push({ t: 'circle', c: pStart, r: dotR, layer: 'BALLOON', balloonNo: no8 });
@@ -10619,7 +10621,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.71</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.72</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -11165,7 +11167,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           const px = Math.max(3, (e.h || 10) * view.s); if (px < 3) return;
           ctx.fillStyle = col[e.layer] || '#cbd5e1';
           const fontFam = (e.layer === 'SHEET') ? '"Consolas", "Noto Sans KR", "Malgun Gothic", monospace' : css('--font-num');
-          const isBold = (e.layer === 'SHEET' && e.h >= 5.5 * plan.scale) ? 'bold ' : '';
+          const isBold = ((e.layer === 'SHEET' && e.h >= 5.5 * plan.scale) || e.layer === 'BALLOON') ? 'bold ' : '';
           ctx.font = isBold + px + 'px ' + fontFam;
           ctx.textAlign = e.align === 'left' ? 'left' : e.align === 'right' ? 'right' : 'center';
           ctx.textBaseline = e.valign === 'middle' ? 'middle' : 'alphabetic';
@@ -11201,7 +11203,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             if (!e || !e.p) return;
             const px = Math.max(3, (e.h || 10) * view.s); if (px < 3) return;
             const fontFam = (e.layer === 'SHEET') ? '"Consolas", "Noto Sans KR", "Malgun Gothic", monospace' : css('--font-num');
-            const isBold = (e.layer === 'SHEET' && e.h >= 5.5 * plan.scale) ? 'bold ' : '';
+            const isBold = ((e.layer === 'SHEET' && e.h >= 5.5 * plan.scale) || e.layer === 'BALLOON') ? 'bold ' : '';
             ctx.font = isBold + px + 'px ' + fontFam;
             ctx.textAlign = e.align === 'left' ? 'left' : e.align === 'right' ? 'right' : 'center';
             ctx.textBaseline = e.valign === 'middle' ? 'middle' : 'alphabetic';

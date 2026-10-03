@@ -737,8 +737,9 @@
       elbowPt = null;
     }
     layer = layer || 'BALLOON';
-    const balloonR = Math.round(3.8 * scaleN);
-    const textH = Math.round(2.8 * scaleN);
+    const sLen = String(str).length;
+    const balloonR = Math.round(4.0 * scaleN);
+    const textH = Math.round((sLen >= 3 ? 3.8 : (sLen === 2 ? 4.8 : 5.6)) * scaleN);
 
     // 단부 점 (Terminal dot)
     ents.push({ t: 'circle', c: startPt, r: Math.max(3, Math.round(scaleN * 0.2)), layer, balloonNo: str });
@@ -1284,8 +1285,9 @@
             const pElbow1 = [l.x + jogX, l.y - F - Math.round(4.0 * N)];
             const pElbow2 = [l.x + jogX, balloonY];
             const bx8 = l.x + jogX + (toRight ? Math.round(6.0 * N) : -Math.round(6.0 * N));
-            const bR = Math.round(3.8 * N);
-            const bTextH = Math.round(2.8 * N);
+            const sLen8 = String(no8).length;
+            const bR = Math.round(4.0 * N);
+            const bTextH = Math.round((sLen8 >= 3 ? 3.8 : (sLen8 === 2 ? 4.8 : 5.6)) * N);
             const dotR = Math.max(3, Math.round(N * 0.2));
 
             ents.push({ t: 'circle', c: pStart, r: dotR, layer: 'BALLOON', balloonNo: no8 });
