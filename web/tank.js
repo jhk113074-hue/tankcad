@@ -5436,13 +5436,17 @@
     g(9, '$INSUNITS'); g(70, 4);
     g(9, '$DIMTXT'); g(40, n(dimTxtH));
     g(9, '$DIMSCALE'); g(40, 1.0);
-    g(9, '$DIMTSZ'); g(40, n(dimTxtH * 0.28));
-    g(9, '$DIMDLE'); g(40, n(dimTxtH * 0.25));
+    g(9, '$DIMBLK'); g(1, '_OBLIQUE');
+    g(9, '$DIMBLK1'); g(1, '_OBLIQUE');
+    g(9, '$DIMBLK2'); g(1, '_OBLIQUE');
+    g(9, '$DIMLDRBLK'); g(1, '_OBLIQUE');
     g(9, '$DIMASZ'); g(40, n(dimTxtH * 0.45));
+    g(9, '$DIMDLE'); g(40, n(dimTxtH * 0.25));
     g(9, '$DIMEXE'); g(40, n(dimTxtH * 0.5));
     g(9, '$DIMEXO'); g(40, n(dimTxtH * 0.3));
     g(9, '$DIMGAP'); g(40, n(dimTxtH * 0.25));
     g(9, '$DIMTAD'); g(70, 1);
+    g(9, '$DIMTSZ'); g(40, 0);
     g(9, '$DIMASSOC'); g(70, 2);
     g(9, '$PICKSTYLE'); g(70, 1);
     g(0, 'ENDSEC');
@@ -5459,6 +5463,9 @@
     g(0, 'ENDTAB');
     g(0, 'TABLE'); g(2, 'DIMSTYLE'); g(70, 1);
     g(0, 'DIMSTYLE'); g(2, 'STANDARD'); g(70, 0);
+    g(5, '_OBLIQUE');
+    g(6, '_OBLIQUE');
+    g(7, '_OBLIQUE');
     g(40, 1.0);
     g(41, n(dimTxtH * 0.45));
     g(42, n(dimTxtH * 0.3));
@@ -5467,7 +5474,7 @@
     g(46, n(dimTxtH * 0.25));
     g(77, 1);
     g(140, n(dimTxtH));
-    g(142, n(dimTxtH * 0.28));
+    g(142, 0);
     g(147, n(dimTxtH * 0.25));
     g(0, 'ENDTAB');
     g(0, 'ENDSEC');
@@ -5581,9 +5588,17 @@
     };
 
     const allBlocks = { ...(blocks || (ents && ents.blocks) || {}) };
-    const hasBlocks = Object.keys(allBlocks).length > 0 || dimGroups.size > 0;
-    if (hasBlocks) {
-      g(0, 'SECTION'); g(2, 'BLOCKS');
+    g(0, 'SECTION'); g(2, 'BLOCKS');
+    // AutoCAD Native Oblique Arrowhead Blocks for dimension ticks
+    ['_OBLIQUE', '_ARCHTICK'].forEach(blkName => {
+      g(0, 'BLOCK'); g(8, '0'); g(2, blkName); g(70, 0);
+      g(10, 0); g(20, 0); g(30, 0);
+      g(3, blkName); g(1, '');
+      g(0, 'LINE'); g(8, '0'); g(62, 0);
+      g(10, -0.5); g(20, -0.5); g(30, 0);
+      g(11, 0.5); g(21, 0.5); g(31, 0);
+      g(0, 'ENDBLK'); g(8, '0');
+    });
       Object.entries(allBlocks).forEach(([bName, bEnts]) => {
         g(0, 'BLOCK'); g(8, '0'); g(2, bName); g(70, 0);
         g(10, 0); g(20, 0); g(30, 0);
@@ -5604,7 +5619,6 @@
         g(0, 'ENDBLK'); g(8, bLayer);
       });
       g(0, 'ENDSEC');
-    }
 
     g(0, 'SECTION'); g(2, 'ENTITIES');
     otherEnts.forEach(e => writeEnt(e, '0'));
