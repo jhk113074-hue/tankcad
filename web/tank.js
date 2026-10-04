@@ -5998,6 +5998,7 @@
     }
 
     // 4대 뷰 투영 정렬(Orthographic Alignment) 및 중심 여백 균형 배치
+    const TITLE_H = 16;
     const hasAnyMh = (opt.marks && Object.values(opt.marks).some(m => m === 1 || m === 3));
     const dim_left_1 = 75 + Math.round((hasAnyMh ? 38.0 : 30.0) * N);   // 좌측 치수선(맨홀 개방 시 3열) 및 치수 문자 가용 영역
     const dim_right_1 = 75 + Math.round(20.0 * N);  // 우측 풍선 기호 및 배관 노즐 가용 영역
