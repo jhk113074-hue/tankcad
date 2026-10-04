@@ -419,7 +419,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.8</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.9</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2109,7 +2109,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.8</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.9</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2119,7 +2119,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.8</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.9</span></div>
     </div>
   </main>
 </div>
@@ -2414,28 +2414,29 @@ canvas.drag{cursor:grabbing}
   }
 
   function resolvePartEntities(customParts, cat, view, h, opt) {
+    const v = (view === 'side') ? 'right' : (view === 'top' ? 'plan' : view);
     if (customParts) {
-      if (h && customParts[`${cat}_${view}_${h}`] && customParts[`${cat}_${view}_${h}`].length) {
-        return customParts[`${cat}_${view}_${h}`];
+      if (h && customParts[`${cat}_${v}_${h}`] && customParts[`${cat}_${v}_${h}`].length) {
+        return customParts[`${cat}_${v}_${h}`];
       }
-      if (customParts[`${cat}_${view}`] && customParts[`${cat}_${view}`].length) {
-        return customParts[`${cat}_${view}`];
+      if (customParts[`${cat}_${v}`] && customParts[`${cat}_${v}`].length) {
+        return customParts[`${cat}_${v}`];
       }
-      if (customParts[`panel_${cat}_${view}`] && customParts[`panel_${cat}_${view}`].length) {
-        return customParts[`panel_${cat}_${view}`];
+      if (customParts[`panel_${cat}_${v}`] && customParts[`panel_${cat}_${v}`].length) {
+        return customParts[`panel_${cat}_${v}`];
       }
-      if ((view === 'right' || view === 'left') && (cat === 'top' || cat === 'roof')) {
+      if ((v === 'right' || v === 'left') && (cat === 'top' || cat === 'roof')) {
         const frontEnts = resolvePartEntities(customParts, cat, 'front', h, opt);
         if (frontEnts && frontEnts.length) return frontEnts;
       }
-      if (view === 'left') {
+      if (v === 'left') {
         const rightEnts = resolvePartEntities(customParts, cat, 'right', h, opt);
         if (rightEnts && rightEnts.length) return mirrorEntitiesH(rightEnts);
       }
-      if (view === 'rear') {
+      if (v === 'rear') {
         return resolvePartEntities(customParts, cat, 'front', h, opt);
       }
-      if (view === 'plan' && customParts[cat] && customParts[cat].length) {
+      if (v === 'plan' && customParts[cat] && customParts[cat].length) {
         return customParts[cat];
       }
     }
@@ -2443,7 +2444,7 @@ canvas.drag{cursor:grabbing}
     const defs = opt?.defaultPartEntities || (typeof DEFAULT_PART_ENTITIES !== 'undefined' ? DEFAULT_PART_ENTITIES : (typeof root !== 'undefined' ? root.DEFAULT_PART_ENTITIES : (typeof window !== 'undefined' ? window.DEFAULT_PART_ENTITIES : null)));
     if (defs && defs[cat] && typeof defs[cat].get === 'function') {
       const w = (cat === 'ladder') ? 400 : (cat === 'inladder' ? 300 : 1000);
-      return defs[cat].get(w, h || (cat === 'top' ? 100 : (cat === 'manhole' ? 800 : 2000)), view);
+      return defs[cat].get(w, h || (cat === 'top' ? 100 : (cat === 'manhole' ? 800 : 2000)), v);
     }
     return null;
   }
@@ -12426,7 +12427,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.8</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.9</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -14966,12 +14967,12 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             { k: 'line', p: [[360, 330], [640, 330]] },
             { k: 'line', p: [[360, 370], [640, 370]] }
           ];
-        } else if (view === 'right' || view === 'left') {
+        } else if (view === 'right' || view === 'left' || view === 'side') {
           const T = 20, cy = 100, ms = W >> 1;
           const DO = Math.round(W * 0.456), UO = Math.round(W * 0.1);
           const mhW = 550, mhH = 60, covH = 640;
           const hx = ms - 180;
-          return [
+          const ents = [
             { k: 'line', p: [[0, 0], [W, 0]] },
             { k: 'line', p: [[0, T], [W, T]] },
             { k: 'line', p: [[0, T / 2], [W, T / 2]] },
@@ -14985,6 +14986,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             { k: 'line', p: [[0, 0], [0, T]] },
             { k: 'line', p: [[W, 0], [W, T]] }
           ];
+          return (view === 'left') ? mirrorEntitiesH(ents) : ents;
         } else {
           const T = 20, cy = 100, ms = W >> 1;
           const DO = Math.round(W * 0.456), UO = Math.round(W * 0.1);

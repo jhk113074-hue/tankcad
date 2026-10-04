@@ -288,28 +288,29 @@
   }
 
   function resolvePartEntities(customParts, cat, view, h, opt) {
+    const v = (view === 'side') ? 'right' : (view === 'top' ? 'plan' : view);
     if (customParts) {
-      if (h && customParts[`${cat}_${view}_${h}`] && customParts[`${cat}_${view}_${h}`].length) {
-        return customParts[`${cat}_${view}_${h}`];
+      if (h && customParts[`${cat}_${v}_${h}`] && customParts[`${cat}_${v}_${h}`].length) {
+        return customParts[`${cat}_${v}_${h}`];
       }
-      if (customParts[`${cat}_${view}`] && customParts[`${cat}_${view}`].length) {
-        return customParts[`${cat}_${view}`];
+      if (customParts[`${cat}_${v}`] && customParts[`${cat}_${v}`].length) {
+        return customParts[`${cat}_${v}`];
       }
-      if (customParts[`panel_${cat}_${view}`] && customParts[`panel_${cat}_${view}`].length) {
-        return customParts[`panel_${cat}_${view}`];
+      if (customParts[`panel_${cat}_${v}`] && customParts[`panel_${cat}_${v}`].length) {
+        return customParts[`panel_${cat}_${v}`];
       }
-      if ((view === 'right' || view === 'left') && (cat === 'top' || cat === 'roof')) {
+      if ((v === 'right' || v === 'left') && (cat === 'top' || cat === 'roof')) {
         const frontEnts = resolvePartEntities(customParts, cat, 'front', h, opt);
         if (frontEnts && frontEnts.length) return frontEnts;
       }
-      if (view === 'left') {
+      if (v === 'left') {
         const rightEnts = resolvePartEntities(customParts, cat, 'right', h, opt);
         if (rightEnts && rightEnts.length) return mirrorEntitiesH(rightEnts);
       }
-      if (view === 'rear') {
+      if (v === 'rear') {
         return resolvePartEntities(customParts, cat, 'front', h, opt);
       }
-      if (view === 'plan' && customParts[cat] && customParts[cat].length) {
+      if (v === 'plan' && customParts[cat] && customParts[cat].length) {
         return customParts[cat];
       }
     }
@@ -317,7 +318,7 @@
     const defs = opt?.defaultPartEntities || (typeof DEFAULT_PART_ENTITIES !== 'undefined' ? DEFAULT_PART_ENTITIES : (typeof root !== 'undefined' ? root.DEFAULT_PART_ENTITIES : (typeof window !== 'undefined' ? window.DEFAULT_PART_ENTITIES : null)));
     if (defs && defs[cat] && typeof defs[cat].get === 'function') {
       const w = (cat === 'ladder') ? 400 : (cat === 'inladder' ? 300 : 1000);
-      return defs[cat].get(w, h || (cat === 'top' ? 100 : (cat === 'manhole' ? 800 : 2000)), view);
+      return defs[cat].get(w, h || (cat === 'top' ? 100 : (cat === 'manhole' ? 800 : 2000)), v);
     }
     return null;
   }

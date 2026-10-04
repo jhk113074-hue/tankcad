@@ -8423,12 +8423,12 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             { k: 'line', p: [[360, 330], [640, 330]] },
             { k: 'line', p: [[360, 370], [640, 370]] }
           ];
-        } else if (view === 'right' || view === 'left') {
+        } else if (view === 'right' || view === 'left' || view === 'side') {
           const T = 20, cy = 100, ms = W >> 1;
           const DO = Math.round(W * 0.456), UO = Math.round(W * 0.1);
           const mhW = 550, mhH = 60, covH = 640;
           const hx = ms - 180;
-          return [
+          const ents = [
             { k: 'line', p: [[0, 0], [W, 0]] },
             { k: 'line', p: [[0, T], [W, T]] },
             { k: 'line', p: [[0, T / 2], [W, T / 2]] },
@@ -8442,6 +8442,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             { k: 'line', p: [[0, 0], [0, T]] },
             { k: 'line', p: [[W, 0], [W, T]] }
           ];
+          return (view === 'left') ? mirrorEntitiesH(ents) : ents;
         } else {
           const T = 20, cy = 100, ms = W >> 1;
           const DO = Math.round(W * 0.456), UO = Math.round(W * 0.1);
