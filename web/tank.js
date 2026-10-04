@@ -290,6 +290,10 @@
   function resolvePartEntities(customParts, cat, view, h, opt) {
     const v = (view === 'side') ? 'right' : (view === 'top' ? 'plan' : view);
     if (customParts) {
+      // 1. 직접 키 매칭 (예: cat = 'manhole_plan_D')
+      if (customParts[cat] && customParts[cat].length) {
+        return customParts[cat];
+      }
       if (h && customParts[`${cat}_${v}_${h}`] && customParts[`${cat}_${v}_${h}`].length) {
         return customParts[`${cat}_${v}_${h}`];
       }
@@ -298,6 +302,11 @@
       }
       if (customParts[`panel_${cat}_${v}`] && customParts[`panel_${cat}_${v}`].length) {
         return customParts[`panel_${cat}_${v}`];
+      }
+      // 평면도(plan)의 경우 높이와 무관하므로 height 접미사가 붙은 키(예: _plan_2000)도 탐색
+      if (v === 'plan') {
+        const hKey = Object.keys(customParts).find(k => k.startsWith(`${cat}_${v}_`) && customParts[k]?.length);
+        if (hKey) return customParts[hKey];
       }
       if ((v === 'right' || v === 'left') && (cat === 'top' || cat === 'roof')) {
         const frontEnts = resolvePartEntities(customParts, cat, 'front', h, opt);
@@ -312,6 +321,17 @@
       }
       if (v === 'plan' && customParts[cat] && customParts[cat].length) {
         return customParts[cat];
+      }
+      if (v === 'plan' && customParts[`panel_${cat}`] && customParts[`panel_${cat}`].length) {
+        return customParts[`panel_${cat}`];
+      }
+    }
+    // 판넬 DB(customPanels)에서도 확인
+    if (opt?.customPanels && (cat === 'top' || cat === 'roof' || cat === 'manhole' || cat === 'drain')) {
+      const panelCat = (cat === 'roof') ? 'top' : cat;
+      const p = opt.customPanels.find(x => x.category === panelCat && (x.view === v || (!x.view && v === 'plan')));
+      if (p && p.entities && p.entities.length) {
+        return p.entities;
       }
     }
     // Fallback to factory default entities from DEFAULT_PART_ENTITIES if available
@@ -423,8 +443,8 @@
     const angleMap = {
       'D': 0, 'south': 0,
       'U': Math.PI, 'north': Math.PI,
-      'R': -Math.PI / 2, 'east': -Math.PI / 2,
-      'L': Math.PI / 2, 'west': Math.PI / 2
+      'R': Math.PI / 2, 'east': Math.PI / 2,
+      'L': -Math.PI / 2, 'west': -Math.PI / 2
     };
     const angle = angleMap[dir] != null ? angleMap[dir] : 0;
     const cosA = Math.cos(angle), sinA = Math.sin(angle);
@@ -455,6 +475,9 @@
           } else if (k === 'arc') {
             const c = e.c || e.center;
             if (c) out.push({ t: 'arc', c: Pdirect(c[0], c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'FRAME' });
+          } else if (k === 'ellipse') {
+            const c = e.c || e.center;
+            if (c) out.push({ t: 'ellipse', c: Pdirect(c[0], c[1]), rx: e.rx, ry: e.ry, rot: e.rot || 0, layer: 'FRAME' });
           } else if (k === 'poly') {
             const pts = e.p || e.pts || [];
             for (let s = 0; s + 1 < pts.length; s++) out.push({ t: 'line', a: Pdirect(pts[s][0], pts[s][1]), b: Pdirect(pts[s + 1][0], pts[s + 1][1]), layer: 'FRAME' });
@@ -476,6 +499,9 @@
             } else if (k === 'arc') {
               const c = e.c || e.center;
               if (c) out.push({ t: 'arc', c: P(c[0], c[1]), r: e.r, a0: (e.a0 || 0) + angle * 180 / Math.PI, a1: (e.a1 || 0) + angle * 180 / Math.PI, layer: 'FRAME' });
+            } else if (k === 'ellipse') {
+              const c = e.c || e.center;
+              if (c) out.push({ t: 'ellipse', c: P(c[0], c[1]), rx: e.rx, ry: e.ry, rot: (e.rot || 0) + angle * 180 / Math.PI, layer: 'FRAME' });
             } else if (k === 'poly') {
               const pts = e.p || e.pts || [];
               for (let s = 0; s + 1 < pts.length; s++) out.push({ t: 'line', a: P(pts[s][0], pts[s][1]), b: P(pts[s + 1][0], pts[s + 1][1]), layer: 'FRAME' });
