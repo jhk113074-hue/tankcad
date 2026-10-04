@@ -8297,7 +8297,7 @@ canvas.drag{cursor:grabbing}
   }
 
   /* ---------- DXF (AutoCAD R12 ASCII, mm) ---------- */
-  const LAYERS = { PANEL: 7, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4, PAD: 8 };
+  const LAYERS = { PANEL: 7, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4, PAD: 8, GUIDE: 3 };
   const dxfText = str => Array.from(str).map(ch => { const c = ch.codePointAt(0); return c < 128 ? ch : '\\U+' + c.toString(16).toUpperCase().padStart(4, '0'); }).join('');
 
   function toDxf(ents, blocks) {
@@ -15927,73 +15927,91 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     function flushBlock() {
       flushEnt();
       if (!curBlock) return;
-      if (curBlock.name && !curBlock.name.startsWith('*') && curBlock.entities.length > 0) {
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        curBlock.entities.forEach(e => {
-          if (e.k === 'line') {
-            minX = Math.min(minX, e.p[0][0], e.p[1][0]);
-            minY = Math.min(minY, e.p[0][1], e.p[1][1]);
-            maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
-            maxY = Math.max(maxY, e.p[0][1], e.p[1][1]);
-          } else if (e.k === 'circle') {
-            minX = Math.min(minX, e.c[0] - e.r);
-            minY = Math.min(minY, e.c[1] - e.r);
-            maxX = Math.max(maxX, e.c[0] + e.r);
-            maxY = Math.max(maxY, e.c[1] + e.r);
-          } else if (e.k === 'arc') {
-            const a0Deg = e.a0 || 0, a1Deg = e.a1 || 360;
-            const a0Rad = (a0Deg % 360) * Math.PI / 180;
-            const a1Rad = (a1Deg % 360) * Math.PI / 180;
-            const arcXs = [e.c[0] + e.r * Math.cos(a0Rad), e.c[0] + e.r * Math.cos(a1Rad)];
-            const arcYs = [e.c[1] + e.r * Math.sin(a0Rad), e.c[1] + e.r * Math.sin(a1Rad)];
-            let span = (a1Deg - a0Deg) % 360;
-            if (span === 0 && a1Deg !== a0Deg) span = 360;
-            [0, 90, 180, 270].forEach(deg => {
-              const diff = (deg - a0Deg) % 360;
-              if (diff > 0 && diff < span) {
-                const rad = deg * Math.PI / 180;
-                arcXs.push(e.c[0] + e.r * Math.cos(rad));
-                arcYs.push(e.c[1] + e.r * Math.sin(rad));
-              }
-            });
-            minX = Math.min(minX, ...arcXs);
-            maxX = Math.max(maxX, ...arcXs);
-            minY = Math.min(minY, ...arcYs);
-            maxY = Math.max(maxY, ...arcYs);
-          } else if (e.k === 'poly') {
-            e.p.forEach(pt => {
-              minX = Math.min(minX, pt[0]);
-              minY = Math.min(minY, pt[1]);
-              maxX = Math.max(maxX, pt[0]);
-              maxY = Math.max(maxY, pt[1]);
-            });
-          }
-        });
-        const w = Math.round((isFinite(maxX - minX) && (maxX - minX) > 0 ? (maxX - minX) : 1000) * 10) / 10;
-        const h = Math.round((isFinite(maxY - minY) && (maxY - minY) > 0 ? (maxY - minY) : 1000) * 10) / 10;
-        const safeMinX = isFinite(minX) ? minX : 0;
-        const safeMinY = isFinite(minY) ? minY : 0;
-
-        const normEnts = curBlock.entities.map(e => {
-          if (e.k === 'line') {
-            return { k: 'line', p: [[Math.round((e.p[0][0] - safeMinX)*10)/10, Math.round((e.p[0][1] - safeMinY)*10)/10], [Math.round((e.p[1][0] - safeMinX)*10)/10, Math.round((e.p[1][1] - safeMinY)*10)/10]] };
-          } else if (e.k === 'circle') {
-            return { k: 'circle', c: [Math.round((e.c[0] - safeMinX)*10)/10, Math.round((e.c[1] - safeMinY)*10)/10], r: e.r };
-          } else if (e.k === 'arc') {
-            return { k: 'arc', c: [Math.round((e.c[0] - safeMinX)*10)/10, Math.round((e.c[1] - safeMinY)*10)/10], r: e.r, a0: e.a0, a1: e.a1 };
-          } else if (e.k === 'poly') {
-            return { k: 'poly', p: e.p.map(pt => [Math.round((pt[0] - safeMinX)*10)/10, Math.round((pt[1] - safeMinY)*10)/10]), c: e.c };
-          }
-          return e;
-        });
-
-        blocks.push({
-          name: curBlock.name,
-          width: w,
-          height: h,
-          entities: normEnts
-        });
+      // AutoCAD 시스템 블록(_ClosedBlank, _Oblique 등) 및 무명 블록(*D 등) 제외
+      if (!curBlock.name || curBlock.name.startsWith('*') || curBlock.name.startsWith('_') || !curBlock.entities.length) {
+        curBlock = null;
+        return;
       }
+
+      // 비정상적으로 긴 가이드선/G.L. 바닥선 필터링 (가로 폭 2200mm 초과 수평선 등 부품 범위를 벗어난 안내선 제거)
+      let candidateEnts = curBlock.entities;
+      if (candidateEnts.length > 3) {
+        const filtered = candidateEnts.filter(e => {
+          if (e.k === 'line') {
+            const dx = Math.abs(e.p[1][0] - e.p[0][0]);
+            const dy = Math.abs(e.p[1][1] - e.p[0][1]);
+            if (dx > 2200 && dy < 20) return false;
+          }
+          return true;
+        });
+        if (filtered.length > 0) candidateEnts = filtered;
+      }
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      candidateEnts.forEach(e => {
+        if (e.k === 'line') {
+          minX = Math.min(minX, e.p[0][0], e.p[1][0]);
+          minY = Math.min(minY, e.p[0][1], e.p[1][1]);
+          maxX = Math.max(maxX, e.p[0][0], e.p[1][0]);
+          maxY = Math.max(maxY, e.p[0][1], e.p[1][1]);
+        } else if (e.k === 'circle') {
+          minX = Math.min(minX, e.c[0] - e.r);
+          minY = Math.min(minY, e.c[1] - e.r);
+          maxX = Math.max(maxX, e.c[0] + e.r);
+          maxY = Math.max(maxY, e.c[1] + e.r);
+        } else if (e.k === 'arc') {
+          const a0Deg = e.a0 || 0, a1Deg = e.a1 || 360;
+          const a0Rad = (a0Deg % 360) * Math.PI / 180;
+          const a1Rad = (a1Deg % 360) * Math.PI / 180;
+          const arcXs = [e.c[0] + e.r * Math.cos(a0Rad), e.c[0] + e.r * Math.cos(a1Rad)];
+          const arcYs = [e.c[1] + e.r * Math.sin(a0Rad), e.c[1] + e.r * Math.sin(a1Rad)];
+          let span = (a1Deg - a0Deg) % 360;
+          if (span === 0 && a1Deg !== a0Deg) span = 360;
+          [0, 90, 180, 270].forEach(deg => {
+            const diff = (deg - a0Deg) % 360;
+            if (diff > 0 && diff < span) {
+              const rad = deg * Math.PI / 180;
+              arcXs.push(e.c[0] + e.r * Math.cos(rad));
+              arcYs.push(e.c[1] + e.r * Math.sin(rad));
+            }
+          });
+          minX = Math.min(minX, ...arcXs);
+          maxX = Math.max(maxX, ...arcXs);
+          minY = Math.min(minY, ...arcYs);
+          maxY = Math.max(maxY, ...arcYs);
+        } else if (e.k === 'poly') {
+          e.p.forEach(pt => {
+            minX = Math.min(minX, pt[0]);
+            minY = Math.min(minY, pt[1]);
+            maxX = Math.max(maxX, pt[0]);
+            maxY = Math.max(maxY, pt[1]);
+          });
+        }
+      });
+      const w = Math.round((isFinite(maxX - minX) && (maxX - minX) > 0 ? (maxX - minX) : 1000) * 10) / 10;
+      const h = Math.round((isFinite(maxY - minY) && (maxY - minY) > 0 ? (maxY - minY) : 1000) * 10) / 10;
+      const safeMinX = isFinite(minX) ? minX : 0;
+      const safeMinY = isFinite(minY) ? minY : 0;
+
+      const normEnts = candidateEnts.map(e => {
+        if (e.k === 'line') {
+          return { k: 'line', p: [[Math.round((e.p[0][0] - safeMinX)*10)/10, Math.round((e.p[0][1] - safeMinY)*10)/10], [Math.round((e.p[1][0] - safeMinX)*10)/10, Math.round((e.p[1][1] - safeMinY)*10)/10]] };
+        } else if (e.k === 'circle') {
+          return { k: 'circle', c: [Math.round((e.c[0] - safeMinX)*10)/10, Math.round((e.c[1] - safeMinY)*10)/10], r: e.r };
+        } else if (e.k === 'arc') {
+          return { k: 'arc', c: [Math.round((e.c[0] - safeMinX)*10)/10, Math.round((e.c[1] - safeMinY)*10)/10], r: e.r, a0: e.a0, a1: e.a1 };
+        } else if (e.k === 'poly') {
+          return { k: 'poly', p: e.p.map(pt => [Math.round((pt[0] - safeMinX)*10)/10, Math.round((pt[1] - safeMinY)*10)/10]), c: e.c };
+        }
+        return e;
+      });
+
+      blocks.push({
+        name: curBlock.name,
+        width: w,
+        height: h,
+        entities: normEnts
+      });
       curBlock = null;
     }
 
@@ -16935,30 +16953,30 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           t: 'line',
           a: [curX - colGap / 2, -titleTextH * 6.5],
           b: [curX - colGap / 2, maxViewH + 150],
-          layer: 'DIM'
+          layer: 'GUIDE'
         });
       }
+
+      // Column G.L. Baseline line per view at Y = 0 (독립 기준선 - 캐드에서 드래그 선택 시 타 뷰 연결 방지)
+      modelEnts.push({
+        t: 'line',
+        a: [curX - 60, 0],
+        b: [curX + colW + 60, 0],
+        layer: 'GUIDE'
+      });
+      modelEnts.push({
+        t: 'text',
+        p: [curX - 70, -subTextH * 0.5],
+        align: 'right',
+        s: 'G.L.',
+        h: Math.round(subTextH * 0.8),
+        layer: 'GUIDE'
+      });
 
       curX += colW + colGap;
     });
 
     const totalWidth = curX - colGap;
-
-    // Ground Baseline line (G.L.) across all views at Y = 0
-    modelEnts.push({
-      t: 'line',
-      a: [-300, 0],
-      b: [totalWidth + 300, 0],
-      layer: 'DIM'
-    });
-    modelEnts.push({
-      t: 'text',
-      p: [-350, -subTextH * 0.5],
-      align: 'right',
-      s: 'G.L. (EL. 0)',
-      h: subTextH,
-      layer: 'DIM'
-    });
 
     // Top Sheet Title Header (above all views)
     const headerY = maxViewH + headerTextH * 3.2;
@@ -16978,6 +16996,14 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       s: `SCALE: 1:1 (FULL SCALE)  |  UNIT: MM  |  DATE: ${nowIso}  |  AUTO-GENERATED BY TANKCAD`,
       h: headerTextH * 0.75,
       layer: 'DIM'
+    });
+
+    modelEnts.push({
+      t: 'text',
+      p: [0, headerY - headerTextH * 2.7],
+      s: '※ CAD 블록(B) 저장 시 주의: 초록색 G.L.선/구분선을 제외하고 [빨간색 부품 형상만] 선택 후 기준점(Pick Point)을 클릭하세요.',
+      h: Math.round(headerTextH * 0.55),
+      layer: 'GUIDE'
     });
 
     modelEnts.push({
