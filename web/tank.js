@@ -2405,6 +2405,7 @@
     const MX = OB.CX >> 1, MY = OB.CY >> 1, OFF = OB.OFFSET;
     const internal = (opt.rf || 0) !== 0, sts = opt.material === 'STS';
     const mat = sts ? 'STS' : 'SMC';
+    const WALL_TH = 70;
 
     const getSideBlock = (w, h, pType) => {
       const type = pType || 'std';
@@ -2638,9 +2639,10 @@
             } else panel(xj[j], y, pLen[j], hh, gIdx + j, i);
           }
           if (i > 0) {                               // 단 사이 가로 이음선 + 격자판
-            for (let j = 0; j < cnt; j++) ln([xj[j] + (j > 0 ? HX : 0) , y], [xj[j + 1] - (j < cnt - 1 ? HX : 0), y]);
+            for (let j = 0; j < cnt; j++) ln([xj[j] + (j > 0 ? HX : (baseX > 0 ? WALL_TH : 0)) , y], [xj[j + 1] - (j < cnt - 1 ? HX : 0), y]);
             for (let j = 1; j < cnt; j++) { fullPlate(xj[j], y); spans[j].push([y - HX, y + HX]); }
-            halfPlate(baseX, y, 1); halfPlate(baseX + nLen, y, -1);
+            if (baseX === 0) halfPlate(baseX, y, 1);
+            halfPlate(baseX + nLen, y, -1);
           } else if (nH > 3000) {
             for (let j = 1; j < cnt; j++) { lowPlate(xj[j], 0); spans[j].push([0, HX]); }
           }
@@ -2782,7 +2784,6 @@
     ln([total, 0], [total, -th], 'FRAME');
 
     // 구간 경계 수직벽 (CWallLT::VertWall - 70mm폭 사각형 박스 + 솔리드 채움, 원 표시 대체)
-    const WALL_TH = 70;
     for (let i = 1, bx = secs[0]; i < secs.length; bx += secs[i++]) {
       let py = 0;
       hs.forEach(hh => sideSplit(hh, 0).forEach(cy => {
@@ -3286,7 +3287,7 @@
           lx = (l.sd === 'R' || l.sd === 'L') ? l.y : (l.sd === 'U' ? total : 0);
         }
       }
-      const stayX = total * 0.5;
+      const stayX = (secs.length > 1 && Math.abs(secs[0] - total * 0.5) < 1) ? (secs[0] - 45) : (total * 0.5);
 
       if (lx <= stayX) {
         // 사다리가 좌측(또는 동일), 스테이가 우측 -> 사다리는 좌측으로, 스테이는 우측으로 인출 (크로스 원천 차단)

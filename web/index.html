@@ -416,7 +416,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.99</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.0</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2033,7 +2033,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.99</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.0</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2043,7 +2043,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.99</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.0</span></div>
     </div>
   </main>
 </div>
@@ -4455,6 +4455,7 @@ canvas.drag{cursor:grabbing}
     const MX = OB.CX >> 1, MY = OB.CY >> 1, OFF = OB.OFFSET;
     const internal = (opt.rf || 0) !== 0, sts = opt.material === 'STS';
     const mat = sts ? 'STS' : 'SMC';
+    const WALL_TH = 70;
 
     const getSideBlock = (w, h, pType) => {
       const type = pType || 'std';
@@ -4688,9 +4689,10 @@ canvas.drag{cursor:grabbing}
             } else panel(xj[j], y, pLen[j], hh, gIdx + j, i);
           }
           if (i > 0) {                               // 단 사이 가로 이음선 + 격자판
-            for (let j = 0; j < cnt; j++) ln([xj[j] + (j > 0 ? HX : 0) , y], [xj[j + 1] - (j < cnt - 1 ? HX : 0), y]);
+            for (let j = 0; j < cnt; j++) ln([xj[j] + (j > 0 ? HX : (baseX > 0 ? WALL_TH : 0)) , y], [xj[j + 1] - (j < cnt - 1 ? HX : 0), y]);
             for (let j = 1; j < cnt; j++) { fullPlate(xj[j], y); spans[j].push([y - HX, y + HX]); }
-            halfPlate(baseX, y, 1); halfPlate(baseX + nLen, y, -1);
+            if (baseX === 0) halfPlate(baseX, y, 1);
+            halfPlate(baseX + nLen, y, -1);
           } else if (nH > 3000) {
             for (let j = 1; j < cnt; j++) { lowPlate(xj[j], 0); spans[j].push([0, HX]); }
           }
@@ -4832,7 +4834,6 @@ canvas.drag{cursor:grabbing}
     ln([total, 0], [total, -th], 'FRAME');
 
     // 구간 경계 수직벽 (CWallLT::VertWall - 70mm폭 사각형 박스 + 솔리드 채움, 원 표시 대체)
-    const WALL_TH = 70;
     for (let i = 1, bx = secs[0]; i < secs.length; bx += secs[i++]) {
       let py = 0;
       hs.forEach(hh => sideSplit(hh, 0).forEach(cy => {
@@ -5336,7 +5337,7 @@ canvas.drag{cursor:grabbing}
           lx = (l.sd === 'R' || l.sd === 'L') ? l.y : (l.sd === 'U' ? total : 0);
         }
       }
-      const stayX = total * 0.5;
+      const stayX = (secs.length > 1 && Math.abs(secs[0] - total * 0.5) < 1) ? (secs[0] - 45) : (total * 0.5);
 
       if (lx <= stayX) {
         // 사다리가 좌측(또는 동일), 스테이가 우측 -> 사다리는 좌측으로, 스테이는 우측으로 인출 (크로스 원천 차단)
@@ -12028,7 +12029,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.99</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.0</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
