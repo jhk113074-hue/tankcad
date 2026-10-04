@@ -393,40 +393,126 @@
   }
 
   /* ---------- 평면도 맨홀 손잡이 / 환기구 (CCeilLT::_1000BY1000 의 CLT_HANDLE=1, CLT_AIRVENT=2) : 1000x1000 패널만 ---------- */
-  function markShapes(x, y, mark, opt) {
+  function markShapes(x, y, mark, opt, rowIdx, colIdx, map) {
     const customParts = opt?.partTemplates || {};
-    const out = [], P = (a, b) => [x + a, y + b];
+    const out = [];
+
+    // 맨홀/내부사다리 방향 결정 (D: 남/하, U: 북/상, R: 동/우, L: 서/좌)
+    let dir = 'D'; // 기본 남측(하단)
+    const cellKey = (rowIdx != null && colIdx != null) ? `${rowIdx},${colIdx}` : null;
+    if (cellKey && opt?.manholeDirs && opt.manholeDirs[cellKey]) {
+      dir = opt.manholeDirs[cellKey];
+    } else if (cellKey && opt?.ladders && opt.ladders[cellKey]) {
+      dir = opt.ladders[cellKey];
+    } else if (map && rowIdx != null && colIdx != null) {
+      // 가장 가까운 탱크 외벽을 감지하여 외벽 쪽(탱크 밖)을 향하도록 자동 방향 설정
+      const nRows = map.rows.length, nCols = map.cols.length;
+      const dSouth = rowIdx;
+      const dNorth = nRows - 1 - rowIdx;
+      const dWest = colIdx;
+      const dEast = nCols - 1 - colIdx;
+      const minD = Math.min(dSouth, dNorth, dWest, dEast);
+      if (minD === dSouth) dir = 'D';
+      else if (minD === dNorth) dir = 'U';
+      else if (minD === dWest) dir = 'L';
+      else dir = 'R';
+    }
+
+    // 표준 형상(D 기준: 내부사다리가 하단 y~210-380에 위치)을 중심(500, 500) 기준으로 회전
+    const angleMap = {
+      'D': 0, 'south': 0,
+      'U': Math.PI, 'north': Math.PI,
+      'R': -Math.PI / 2, 'east': -Math.PI / 2,
+      'L': Math.PI / 2, 'west': Math.PI / 2
+    };
+    const angle = angleMap[dir] != null ? angleMap[dir] : 0;
+    const cosA = Math.cos(angle), sinA = Math.sin(angle);
+
+    const P = (a, b) => {
+      const da = a - 500, db = b - 500;
+      const ra = 500 + (da * cosA - db * sinA);
+      const rb = 500 + (da * sinA + db * cosA);
+      return [x + ra, y + rb];
+    };
     const poly = (pts, layer) => pts.forEach((p, k) => out.push({ t: 'line', a: P(...p), b: P(...pts[(k + 1) % pts.length]), layer }));
 
     if (mark & 1) { // 맨홀 (손잡이) 및 직하부 내부사다리
-      const mhPlan = resolvePartEntities(customParts, 'manhole', 'plan', 0, opt);
-      if (mhPlan && mhPlan.length > 0) {
-        mhPlan.forEach(e => {
-          if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'FRAME' });
-          else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'FRAME' });
-          else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'FRAME' });
-          else if (e.k === 'poly') poly(e.p, 'FRAME');
+      // 방향별 등록된 전용 CAD 도면 확인
+      const dirCustom = resolvePartEntities(customParts, `manhole_plan_${dir}`, 'plan', 0, opt)
+                     || resolvePartEntities(customParts, `manhole_plan_${dir.toLowerCase()}`, 'plan', 0, opt);
+
+      if (dirCustom && dirCustom.length > 0) {
+        const Pdirect = (a, b) => [x + a, y + b];
+        dirCustom.forEach(e => {
+          const k = e.k || e.t;
+          if (k === 'line') {
+            const p1 = (e.p && e.p[0]) || e.a; const p2 = (e.p && e.p[1]) || e.b;
+            if (p1 && p2) out.push({ t: 'line', a: Pdirect(p1[0], p1[1]), b: Pdirect(p2[0], p2[1]), layer: 'FRAME' });
+          } else if (k === 'circle') {
+            const c = e.c || e.center;
+            if (c) out.push({ t: 'circle', c: Pdirect(c[0], c[1]), r: e.r, layer: 'FRAME' });
+          } else if (k === 'arc') {
+            const c = e.c || e.center;
+            if (c) out.push({ t: 'arc', c: Pdirect(c[0], c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'FRAME' });
+          } else if (k === 'poly') {
+            const pts = e.p || e.pts || [];
+            for (let s = 0; s + 1 < pts.length; s++) out.push({ t: 'line', a: Pdirect(pts[s][0], pts[s][1]), b: Pdirect(pts[s + 1][0], pts[s + 1][1]), layer: 'FRAME' });
+            if (e.c || e.close) out.push({ t: 'line', a: Pdirect(pts[pts.length - 1][0], pts[pts.length - 1][1]), b: Pdirect(pts[0][0], pts[0][1]), layer: 'FRAME' });
+          }
         });
-        out.push({ t: 'text', p: P(500, (mark & 2) ? 610 : 500), s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
+        out.push({ t: 'text', p: [x + 500, y + ((mark & 2) ? 610 : 500)], s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
       } else {
-        poly([[260, 105], [735, 105], [888, 260], [888, 735], [735, 888], [262, 888], [105, 735], [105, 260]], 'FRAME');
-        poly([[150, 280], [290, 150], [710, 150], [850, 280], [850, 720], [710, 850], [290, 850], [150, 720]], 'FRAME');
-        poly([[310, 110], [390, 110], [390, 67], [310, 67]], 'FRAME'); poly([[610, 110], [690, 110], [690, 67], [610, 67]], 'FRAME');
-        poly([[462, 945], [538, 945], [538, 898], [462, 898]], 'FRAME');
-        out.push({ t: 'circle', c: P(500, 500), r: 300, layer: 'FRAME' });
-        out.push({ t: 'text', p: P(500, (mark & 2) ? 610 : 500), s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
+        const mhPlan = resolvePartEntities(customParts, 'manhole', 'plan', 0, opt);
+        if (mhPlan && mhPlan.length > 0) {
+          mhPlan.forEach(e => {
+            const k = e.k || e.t;
+            if (k === 'line') {
+              const p1 = (e.p && e.p[0]) || e.a; const p2 = (e.p && e.p[1]) || e.b;
+              if (p1 && p2) out.push({ t: 'line', a: P(p1[0], p1[1]), b: P(p2[0], p2[1]), layer: 'FRAME' });
+            } else if (k === 'circle') {
+              const c = e.c || e.center;
+              if (c) out.push({ t: 'circle', c: P(c[0], c[1]), r: e.r, layer: 'FRAME' });
+            } else if (k === 'arc') {
+              const c = e.c || e.center;
+              if (c) out.push({ t: 'arc', c: P(c[0], c[1]), r: e.r, a0: (e.a0 || 0) + angle * 180 / Math.PI, a1: (e.a1 || 0) + angle * 180 / Math.PI, layer: 'FRAME' });
+            } else if (k === 'poly') {
+              const pts = e.p || e.pts || [];
+              for (let s = 0; s + 1 < pts.length; s++) out.push({ t: 'line', a: P(pts[s][0], pts[s][1]), b: P(pts[s + 1][0], pts[s + 1][1]), layer: 'FRAME' });
+              if (e.c || e.close) out.push({ t: 'line', a: P(pts[pts.length - 1][0], pts[pts.length - 1][1]), b: P(pts[0][0], pts[0][1]), layer: 'FRAME' });
+            }
+          });
+          out.push({ t: 'text', p: [x + 500, y + ((mark & 2) ? 610 : 500)], s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
+        } else {
+          poly([[260, 105], [735, 105], [888, 260], [888, 735], [735, 888], [262, 888], [105, 735], [105, 260]], 'FRAME');
+          poly([[150, 280], [290, 150], [710, 150], [850, 280], [850, 720], [710, 850], [290, 850], [150, 720]], 'FRAME');
+          poly([[310, 110], [390, 110], [390, 67], [310, 67]], 'FRAME'); poly([[610, 110], [690, 110], [690, 67], [610, 67]], 'FRAME');
+          poly([[462, 945], [538, 945], [538, 898], [462, 898]], 'FRAME');
+          out.push({ t: 'circle', c: [x + 500, y + 500], r: 300, layer: 'FRAME' });
+          out.push({ t: 'text', p: [x + 500, y + ((mark & 2) ? 610 : 500)], s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
+        }
       }
 
-      // 내부사다리 (IN-LADDER) 기호 (맨홀 직하부 탱크 내부 설치 위치)
+      // 내부사다리 (IN-LADDER) 기호 (맨홀 직하부 탱크 내부 설치 위치 - 외벽 쪽으로 회전)
       const inladPlan = resolvePartEntities(customParts, 'inladder', 'plan', 0, opt);
       if (inladPlan && inladPlan.length > 0) {
         inladPlan.forEach(e => {
-          if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'FRAME' });
-          else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'FRAME' });
-          else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'FRAME' });
-          else if (e.k === 'poly') poly(e.p, 'FRAME');
+          const k = e.k || e.t;
+          if (k === 'line') {
+            const p1 = (e.p && e.p[0]) || e.a; const p2 = (e.p && e.p[1]) || e.b;
+            if (p1 && p2) out.push({ t: 'line', a: P(p1[0], p1[1]), b: P(p2[0], p2[1]), layer: 'FRAME' });
+          } else if (k === 'circle') {
+            const c = e.c || e.center;
+            if (c) out.push({ t: 'circle', c: P(c[0], c[1]), r: e.r, layer: 'FRAME' });
+          } else if (k === 'arc') {
+            const c = e.c || e.center;
+            if (c) out.push({ t: 'arc', c: P(c[0], c[1]), r: e.r, a0: (e.a0 || 0) + angle * 180 / Math.PI, a1: (e.a1 || 0) + angle * 180 / Math.PI, layer: 'FRAME' });
+          } else if (k === 'poly') {
+            const pts = e.p || e.pts || [];
+            for (let s = 0; s + 1 < pts.length; s++) out.push({ t: 'line', a: P(pts[s][0], pts[s][1]), b: P(pts[s + 1][0], pts[s + 1][1]), layer: 'FRAME' });
+            if (e.c || e.close) out.push({ t: 'line', a: P(pts[pts.length - 1][0], pts[pts.length - 1][1]), b: P(pts[0][0], pts[0][1]), layer: 'FRAME' });
+          }
         });
-        out.push({ t: 'text', p: P(500, 210), s: 'IN-LADDER', h: 42, rot: 0, align: 'center', layer: 'DIM' });
+        out.push({ t: 'text', p: P(500, 210), s: 'IN-LADDER', h: 42, rot: (dir === 'L' || dir === 'R') ? 90 : 0, align: 'center', layer: 'DIM' });
       } else {
         const ladX1 = 360, ladX2 = 640;
         out.push({ t: 'line', a: P(ladX1, 230), b: P(ladX1, 380), layer: 'FRAME' });
@@ -434,17 +520,18 @@
         for (let ry = 250; ry <= 370; ry += 40) {
           out.push({ t: 'line', a: P(ladX1, ry), b: P(ladX2, ry), layer: 'FRAME' });
         }
-        out.push({ t: 'text', p: P(500, 210), s: 'IN-LADDER', h: 42, rot: 0, align: 'center', layer: 'DIM' });
+        out.push({ t: 'text', p: P(500, 210), s: 'IN-LADDER', h: 42, rot: (dir === 'L' || dir === 'R') ? 90 : 0, align: 'center', layer: 'DIM' });
       }
     }
     if (mark & 2) { // 에어벤트
       const ventPlan = resolvePartEntities(customParts, 'airvent', 'plan', 0, opt);
       if (ventPlan && ventPlan.length > 0) {
         ventPlan.forEach(e => {
-          if (e.k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'REINF' });
-          else if (e.k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'REINF' });
-          else if (e.k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'REINF' });
-          else if (e.k === 'poly') poly(e.p, 'REINF');
+          const k = e.k || e.t;
+          if (k === 'line') out.push({ t: 'line', a: P(e.p[0][0], e.p[0][1]), b: P(e.p[1][0], e.p[1][1]), layer: 'REINF' });
+          else if (k === 'circle') out.push({ t: 'circle', c: P(e.c[0], e.c[1]), r: e.r, layer: 'REINF' });
+          else if (k === 'arc') out.push({ t: 'arc', c: P(e.c[0], e.c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'REINF' });
+          else if (k === 'poly') poly(e.p, 'REINF');
         });
         out.push({ t: 'text', p: P(500, (mark & 1) ? 380 : 500), s: 'AIR VENT 100A', h: 50, rot: 0, align: 'center', layer: 'DIM' });
       } else {
@@ -458,15 +545,35 @@
     return out;
   }
 
-  /* ---------- 사다리 (CLadderLT) : 1 위, 2 아래, 3 오른쪽, 4 왼쪽 (평면) / 5 정면, 6 뒤(상부만), 7 우측면, 8 좌측면 ---------- */
+  /* ---------- 사다리 (CLadderLT) : 1 위(U/북), 2 아래(D/남), 3 오른쪽(R/동), 4 왼쪽(L/서) ---------- */
   function ladderShapes(idx, px, py, H, opt) {
     const customParts = opt?.partTemplates || {};
     if (idx >= 1 && idx <= 4) {
+      const dirCodes = { 1: 'U', 2: 'D', 3: 'R', 4: 'L' };
+      const dirNames = { 1: 'north', 2: 'south', 3: 'east', 4: 'west' };
+      const dCode = dirCodes[idx];
+      const dName = dirNames[idx];
+
+      const dirEnts = resolvePartEntities(customParts, `ladder_plan_${dCode}`, 'plan', H, opt)
+                   || resolvePartEntities(customParts, `ladder_plan_${dName}`, 'plan', H, opt);
+      if (dirEnts && dirEnts.length > 0) {
+        const out = [], L = 'FRAME';
+        const sx = idx === 3 ? 1 : idx === 4 ? -1 : 0, sy = idx === 1 ? 1 : idx === 2 ? -1 : 0;
+        renderCustomEntitiesAt(out, dirEnts, px, py, 1, 1, L);
+        out.push({ t: 'text', p: [px + (sx ? sx * 315 : 0), py + (sy ? sy * 315 : 0)], s: 'LADDER', h: 50, rot: sx ? 90 : 0, align: 'center', layer: 'DIM' });
+        return out;
+      }
+
       const planEnts = resolvePartEntities(customParts, 'ladder', 'plan', H, opt);
       if (planEnts && planEnts.length > 0) {
         const out = [], L = 'FRAME';
         const sx = idx === 3 ? 1 : idx === 4 ? -1 : 0, sy = idx === 1 ? 1 : idx === 2 ? -1 : 0;
-        const angle = sy === 1 ? 0 : (sy === -1 ? Math.PI : (sx === 1 ? Math.PI / 2 : -Math.PI / 2));
+        // Direction angle:
+        // sy === 1 (Top/U/북): points +y (UP, outward) -> angle = 0
+        // sy === -1 (Bottom/D/남): points -y (DOWN, outward) -> angle = Math.PI
+        // sx === 1 (Right/R/동): points +x (RIGHT, outward) -> angle = -Math.PI / 2
+        // sx === -1 (Left/L/서): points -x (LEFT, outward) -> angle = Math.PI / 2
+        const angle = sy === 1 ? 0 : (sy === -1 ? Math.PI : (sx === 1 ? -Math.PI / 2 : Math.PI / 2));
         const cosA = Math.cos(angle), sinA = Math.sin(angle);
         const trans = (x, y) => [px + (x * cosA - y * sinA), py + (x * sinA + y * cosA)];
         planEnts.forEach(e => {
@@ -480,7 +587,7 @@
             if (c) out.push({ t: 'circle', c: trans(c[0], c[1]), r: e.r, layer: L });
           } else if (k === 'arc') {
             const c = e.c || e.center;
-            if (c) out.push({ t: 'arc', c: trans(c[0], c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: L });
+            if (c) out.push({ t: 'arc', c: trans(c[0], c[1]), r: e.r, a0: (e.a0 || 0) + angle * 180 / Math.PI, a1: (e.a1 || 0) + angle * 180 / Math.PI, layer: L });
           } else if (k === 'poly') {
             const pts = e.p || e.pts || [];
             const tpts = pts.map(p => trans(p[0], p[1]));
@@ -488,7 +595,7 @@
             if (e.c || e.close) out.push({ t: 'line', a: tpts[tpts.length - 1], b: tpts[0], layer: L });
           }
         });
-        out.push({ t: 'text', p: [px + sx * 315, py + sy * 315], s: 'LADDER', h: 50, rot: sx ? 90 : 0, align: 'center', layer: 'DIM' });
+        out.push({ t: 'text', p: [px + (sx ? sx * 315 : 0), py + (sy ? sy * 315 : 0)], s: 'LADDER', h: 50, rot: sx ? 90 : 0, align: 'center', layer: 'DIM' });
         return out;
       }
     }
@@ -1451,7 +1558,7 @@
     ladderList(opt, map).forEach(l => ents.push(...ladderShapes(l.idx, l.x, l.y, 0, opt)));
     Object.entries(opt.marks || {}).forEach(([k, m]) => {
       const [i, j] = k.split(',').map(Number);
-      if (map.has(i, j) && map.cols[j] === 1000 && map.rows[i] === 1000) ents.push(...markShapes(map.xs[j], map.ys[i], m, opt));
+      if (map.has(i, j) && map.cols[j] === 1000 && map.rows[i] === 1000) ents.push(...markShapes(map.xs[j], map.ys[i], m, opt, i, j, map));
     });
     // 기둥 표시 (삭제된 패널 중심): 정사각 + 대각선 (원본 심볼은 미확인 → 근사)
     (opt.pillars || []).forEach(([i, j]) => {

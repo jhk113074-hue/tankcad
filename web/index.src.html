@@ -416,7 +416,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.5</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.6</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1469,6 +1469,23 @@ canvas.drag{cursor:grabbing}
                     <span class="v-stat" id="statBadgePanelLeft">⚪ 기본</span>
                   </button>
                 </div>
+                <!-- 평면도 외벽 방향성 설정 (맨홀 & 천정 전용 4방향) -->
+                <div id="cadPanelPlanDirSection" style="display:none;background:rgba(2,132,199,0.06);border:1px dashed var(--accent);border-radius:6px;padding:7px 10px;margin-top:6px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                    <span style="font-size:11px;font-weight:700;color:var(--accent)">🧭 평면도 설치 방향 (탱크 외벽 기준):</span>
+                    <span id="curPanelPlanDirBadge" style="font-size:10px;font-weight:700;color:var(--accent)">🌟 자동 회전 (Auto)</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:4px">
+                    <button type="button" class="btn-sm cad-dir-btn active" data-dir="auto" style="padding:4px 2px;font-size:10px;font-weight:700">🌟 자동</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="south" style="padding:4px 2px;font-size:10px">⬇️ 남(하)</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="north" style="padding:4px 2px;font-size:10px">⬆️ 북(상)</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="east" style="padding:4px 2px;font-size:10px">➡️ 동(우)</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="west" style="padding:4px 2px;font-size:10px">⬅️ 서(좌)</button>
+                  </div>
+                  <div style="font-size:9.5px;color:var(--muted);margin-top:4px">
+                    💡 <b>자동</b> 선택 시 외벽 위치에 맞춰 탱크 밖을 향하도록 자동 회전됩니다. 특정 방향만 따로 등록하려면 해당 버튼을 누르세요.
+                  </div>
+                </div>
               </div>
 
               <!-- 3. 판넬 규격 설정 (500mm 단위 증감) -->
@@ -1561,6 +1578,24 @@ canvas.drag{cursor:grabbing}
                     <span class="v-name">좌측면도</span>
                     <span class="v-stat" id="statBadgeLeft">⚪ 기본</span>
                   </button>
+                </div>
+
+                <!-- 평면도 외벽 방향성 설정 (사다리 & 맨홀 전용 4방향) -->
+                <div id="cadPlanDirSection" style="display:none;background:rgba(2,132,199,0.06);border:1px dashed var(--accent);border-radius:6px;padding:7px 10px;margin-bottom:10px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                    <span style="font-size:11px;font-weight:700;color:var(--accent)">🧭 평면도 설치 방향 (탱크 외벽 기준):</span>
+                    <span id="curPlanDirBadge" style="font-size:10px;font-weight:700;color:var(--accent)">🌟 자동 회전 (Auto)</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:4px">
+                    <button type="button" class="btn-sm cad-dir-btn active" data-dir="auto" style="padding:4px 2px;font-size:10px;font-weight:700">🌟 자동</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="south" style="padding:4px 2px;font-size:10px">⬇️ 남(하)</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="north" style="padding:4px 2px;font-size:10px">⬆️ 북(상)</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="east" style="padding:4px 2px;font-size:10px">➡️ 동(우)</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="west" style="padding:4px 2px;font-size:10px">⬅️ 서(좌)</button>
+                  </div>
+                  <div style="font-size:9.5px;color:var(--muted);margin-top:4px">
+                    💡 <b>자동</b> 선택 시 외벽 위치에 맞춰 탱크 밖을 향하도록 자동 회전됩니다. 특정 방향만 따로 등록하려면 해당 버튼을 누르세요.
+                  </div>
                 </div>
 
                 <!-- 적용 높이 & 세부 구분 -->
@@ -2071,7 +2106,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.5</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.6</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2081,7 +2116,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.5</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.6</span></div>
     </div>
   </main>
 </div>
@@ -4489,7 +4524,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   document.querySelectorAll('input[name=rf]').forEach(r => r.addEventListener('change', schedule));
 
   let plan = null, view = { x: 0, y: 0, s: 1 };
-  let removed = new Set(), pillars = new Set(), marks = {}, ladders = {}, topInletCell = [0, 0], shapeKey = '';
+  let removed = new Set(), pillars = new Set(), marks = {}, ladders = {}, manholeDirs = {}, topInletCell = [0, 0], shapeKey = '';
   let nozzleData = [];
   let sidePanelTypes = {};
   let currentNozFace = 'front';
@@ -5332,14 +5367,33 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           const ex = C.exposedSides(map, i, j), cur = ladders[key], seq = [undefined, ...ex], nx = seq[(seq.indexOf(cur) + 1) % seq.length];
           if (nx) ladders[key] = nx; else delete ladders[key];
         } else if (mode === 'han' || mode === 'vent') {
-          if (!removed.has(key) && map.cols[j] === 1000 && map.rows[i] === 1000) { const bit = mode === 'han' ? 1 : 2; marks[key] = (marks[key] || 0) ^ bit; if (!marks[key]) delete marks[key]; }
+          if (!removed.has(key) && map.cols[j] === 1000 && map.rows[i] === 1000) {
+            const bit = mode === 'han' ? 1 : 2;
+            marks[key] = (marks[key] || 0) ^ bit;
+            if (!marks[key]) {
+              delete marks[key];
+              delete manholeDirs[key];
+            }
+          }
         } else if (removed.has(key)) { pillars.has(key) ? pillars.delete(key) : pillars.add(key); }
         rebuild(false);
+      });
+      b.addEventListener('contextmenu', (e) => {
+        if (!off && (marks[key] & 1)) {
+          e.preventDefault();
+          const curDir = manholeDirs[key] || 'auto';
+          const seq = ['auto', 'D', 'U', 'R', 'L'];
+          const nextDir = seq[(seq.indexOf(curDir) + 1) % seq.length];
+          if (nextDir === 'auto') delete manholeDirs[key]; else manholeDirs[key] = nextDir;
+          rebuild(false);
+        }
       });
       if (!off && mk) {
         if (mk & 1) {
           const tag = document.createElement('span'); tag.className = 'badge-tag badge-manhole';
-          tag.textContent = currentLang === 'en' ? 'MANHOLE' : '맨홀';
+          const dirIndicator = { U: ' (▲북)', D: ' (▼남)', L: ' (◀서)', R: ' (▶동)' }[manholeDirs[key]] || '';
+          tag.textContent = (currentLang === 'en' ? 'MANHOLE' : '맨홀') + dirIndicator;
+          tag.title = isEn ? 'Right-click to rotate direction (Auto/S/N/E/W)' : '우클릭: 맨홀/내부사다리 방향 전환 (자동/남/북/동/서)';
           tag.style.cssText = ((mk & 2) ? 'top:2px;left:50%;transform:translateX(-50%);' : 'top:50%;left:50%;transform:translate(-50%,-50%);') + (currentLang === 'en' ? 'font-size:8px;letter-spacing:-0.3px;' : '');
           b.appendChild(tag);
         }
@@ -5420,7 +5474,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   }
 
   document.querySelectorAll('input[name=mat]').forEach(r => r.addEventListener('change', () => { Object.keys(iconCache).forEach(k => delete iconCache[k]); }));
-  $('eReset').addEventListener('click', () => { removed = new Set(); pillars = new Set(); marks = {}; ladders = {}; topInletCell = [0, 0]; rebuild(false); });
+  $('eReset').addEventListener('click', () => { removed = new Set(); pillars = new Set(); marks = {}; ladders = {}; manholeDirs = {}; topInletCell = [0, 0]; rebuild(false); });
 
   const cv = $('c'), ctx = cv.getContext('2d');
   const LY = { PANEL: 'lyPanel', PANEL_DETAIL: 'lyDetail', FRAME: 'lyFrame', REINF: 'lyReinf', WALL: 'lyWall', DIM: 'lyDim', SHEET: 'lySheet', NOZZLE: 'lyNozzle', BALLOON: 'lyBalloon', PAD: 'lyPad' };
@@ -5774,11 +5828,11 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     try {
       const m0 = C.createMap({ length: L, width: W });
       const key = m0.cols.join('+') + '|' + m0.rows.join('+');
-      if (key !== shapeKey) { shapeKey = key; removed = new Set(); pillars = new Set(); marks = {}; ladders = {}; sidePanelTypes = {}; }
+      if (key !== shapeKey) { shapeKey = key; removed = new Set(); pillars = new Set(); marks = {}; ladders = {}; manholeDirs = {}; sidePanelTypes = {}; }
       renderGrid(m0);
       updateNozzleUi(m0);
       const opt = {
-        length: L, width: W, height: H, hseg: C.heightSegs(H[0], $('b11').checked), b11: $('b11').checked, removed: [...removed].map(k => k.split(',').map(Number)), marks: Object.assign({}, marks), ladders: Object.assign({}, ladders), pillars: [...pillars].map(k => k.split(',').map(Number)), frame: Number($('frm').value), material: document.querySelector('input[name=mat]:checked').value,
+        length: L, width: W, height: H, hseg: C.heightSegs(H[0], $('b11').checked), b11: $('b11').checked, removed: [...removed].map(k => k.split(',').map(Number)), marks: Object.assign({}, marks), ladders: Object.assign({}, ladders), manholeDirs: Object.assign({}, manholeDirs), pillars: [...pillars].map(k => k.split(',').map(Number)), frame: Number($('frm').value), material: document.querySelector('input[name=mat]:checked').value,
         padFirstW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
         padMidW: $('padMidW') ? (Number($('padMidW').value) || 300) : 300,
         padLastW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
@@ -5826,7 +5880,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.5</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.6</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -5928,6 +5982,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       pillars: [...pillars],
       marks: Object.assign({}, marks),
       ladders: Object.assign({}, ladders),
+      manholeDirs: Object.assign({}, manholeDirs),
       sidePanels: Object.assign({}, sidePanelTypes),
       nozzles: nozzleData.map(n => Object.assign({}, n)),
       title: {
@@ -6031,6 +6086,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       if (Array.isArray(st.pillars)) pillars = new Set(st.pillars);
       if (st.marks && typeof st.marks === 'object') marks = Object.assign({}, st.marks);
       if (st.ladders && typeof st.ladders === 'object') ladders = Object.assign({}, st.ladders);
+      if (st.manholeDirs && typeof st.manholeDirs === 'object') manholeDirs = Object.assign({}, st.manholeDirs);
       if (st.sidePanels && typeof st.sidePanels === 'object') sidePanelTypes = Object.assign({}, st.sidePanels);
 
       if (Array.isArray(st.nozzles) && st.nozzles.length > 0) {
@@ -8751,6 +8807,9 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     const curVBadge = $('curPanelViewBadge');
     if (curVBadge) curVBadge.textContent = `${getViewIcon(cadCurrentView)} ${getViewLabel(cadCurrentView)} 선택됨`;
 
+    const panelPlanDirSec = $('cadPanelPlanDirSection');
+    if (panelPlanDirSec) panelPlanDirSec.style.display = (cadCurrentView === 'plan' && (pos === 'manhole' || pos === 'top')) ? 'block' : 'none';
+
     if (pos === 'top') {
       if ($('cadPartW')) $('cadPartW').value = 1000;
       if ($('cadPartH')) $('cadPartH').value = (cadCurrentView === 'plan') ? 1000 : 100;
@@ -8768,6 +8827,35 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     loadActivePanelToPreview();
   }
 
+  let cadCurrentPlanDir = 'auto';
+
+  function setCadPlanDir(dir) {
+    cadCurrentPlanDir = dir;
+    document.querySelectorAll('.cad-dir-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.dir === dir);
+    });
+    const labels = {
+      auto: '🌟 자동 회전 (Auto)',
+      south: '⬇️ 남측(전면 / D)',
+      north: '⬆️ 북측(배면 / U)',
+      east: '➡️ 동측(우측 / R)',
+      west: '⬅️ 서측(좌측 / L)'
+    };
+    const curBadge = $('curPlanDirBadge');
+    if (curBadge) curBadge.textContent = labels[dir] || dir;
+    const curPanelBadge = $('curPanelPlanDirBadge');
+    if (curPanelBadge) curPanelBadge.textContent = labels[dir] || dir;
+
+    const isPanel = $('cadModeBtnPanels')?.classList.contains('active');
+    if (isPanel) {
+      loadActivePanelToPreview();
+    } else {
+      const cat = getSelectedCadCategory();
+      loadPartForCategory(cat, cadCurrentView, cadCurrentHeight);
+    }
+  }
+  window.setCadPlanDir = setCadPlanDir;
+
   function setCadCurrentView(view) {
     cadCurrentView = view;
     document.querySelectorAll('.cad-view-btn').forEach(b => {
@@ -8781,6 +8869,14 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if (curPanelBadge) {
       curPanelBadge.textContent = `${getViewIcon(view)} ${getViewLabel(view)} 선택됨`;
     }
+
+    const isPlan = (view === 'plan');
+    const planDirSec = $('cadPlanDirSection');
+    const panelPlanDirSec = $('cadPanelPlanDirSection');
+    const curCat = getSelectedCadCategory();
+    if (planDirSec) planDirSec.style.display = (isPlan && (curCat === 'ladder' || curCat === 'inladder' || curCat === 'manhole' || curCat === 'top')) ? 'block' : 'none';
+    if (panelPlanDirSec) panelPlanDirSec.style.display = (isPlan && (cadCurrentPanelPos === 'manhole' || cadCurrentPanelPos === 'top')) ? 'block' : 'none';
+
     const isPanel = $('cadModeBtnPanels')?.classList.contains('active');
     if (isPanel) {
       const pos = cadCurrentPanelPos || 'top';
@@ -8805,12 +8901,51 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     }
   }
 
+  function rotatePlanEntitiesForDir(ents, dir, w, h, isPanelOrManhole) {
+    if (!ents || !ents.length || !dir || dir === 'auto' || dir === 'south' || dir === 'D') return ents;
+    const angleMap = {
+      north: Math.PI, U: Math.PI,
+      east: -Math.PI / 2, R: -Math.PI / 2,
+      west: Math.PI / 2, L: Math.PI / 2
+    };
+    const angle = angleMap[dir];
+    if (angle == null) return ents;
+    const cosA = Math.cos(angle), sinA = Math.sin(angle);
+    const cx = isPanelOrManhole ? 500 : (w / 2);
+    const cy = isPanelOrManhole ? 500 : 0;
+
+    return ents.map(e => {
+      const ne = { ...e };
+      const rot = (p) => [
+        cx + (p[0] - cx) * cosA - (p[1] - cy) * sinA,
+        cy + (p[0] - cx) * sinA + (p[1] - cy) * cosA
+      ];
+      if (e.a && e.b) {
+        ne.a = rot(e.a);
+        ne.b = rot(e.b);
+      } else if (e.p && e.p.length === 2 && Array.isArray(e.p[0])) {
+        ne.p = [rot(e.p[0]), rot(e.p[1])];
+      } else if (e.c) {
+        ne.c = rot(e.c);
+        if (e.a0 != null && e.a1 != null) {
+          ne.a0 = (e.a0 + angle * 180 / Math.PI) % 360;
+          ne.a1 = (e.a1 + angle * 180 / Math.PI) % 360;
+        }
+      } else if (e.pts) {
+        ne.pts = e.pts.map(rot);
+      } else if (e.p && e.p.length > 2 && Array.isArray(e.p[0])) {
+        ne.p = e.p.map(rot);
+      }
+      return ne;
+    });
+  }
+
   function loadActivePanelToPreview() {
     const w = Number($('cadPartW')?.value) || 1000;
     const h = Number($('cadPartH')?.value) || 1000;
     const pos = cadCurrentPanelPos || 'top';
     const view = cadCurrentView || 'plan';
-    currentCadEntities = getCurrentActivePartEntities('panel', pos, w, h, view);
+    currentCadEntities = getCurrentActivePartEntities('panel', pos, w, h, view, cadCurrentPlanDir);
     updateCadPartPreview();
     updateViewBadges('panel', pos, null);
   }
@@ -8891,6 +9026,14 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     btn.addEventListener('click', () => {
       const view = btn.dataset.cadView || 'front';
       setCadCurrentView(view);
+    });
+  });
+
+  // 평면도 외벽 방향 버튼 이벤트 등록
+  document.querySelectorAll('.cad-dir-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const dir = btn.dataset.dir || 'auto';
+      setCadPlanDir(dir);
     });
   });
 
@@ -9090,12 +9233,26 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     return [];
   }
 
-  function getCurrentActivePartEntities(cat, subKey, w, h, view = 'front') {
+  function getCurrentActivePartEntities(cat, subKey, w, h, view = 'front', dir = null) {
+    const curDir = dir || (view === 'plan' ? cadCurrentPlanDir : null);
+    const dirMap = { south: 'D', north: 'U', east: 'R', west: 'L', D: 'D', U: 'U', R: 'R', L: 'L' };
+    const dCode = curDir ? dirMap[curDir] : null;
+
     if (cat === 'panel') {
       const mat = $('cadPartMatSel')?.value || 'SMC';
       const sizeKey = `${w || 1000}x${h || 1000}`;
       const panelPos = subKey || cadCurrentPanelPos || 'top';
       try {
+        const customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
+        if (dCode && dCode !== 'D' && view === 'plan') {
+          if (customComp[`${panelPos}_plan_${dCode}`] && customComp[`${panelPos}_plan_${dCode}`].length) {
+            return JSON.parse(JSON.stringify(customComp[`${panelPos}_plan_${dCode}`]));
+          }
+          if (customComp[`panel_${panelPos}_plan_${dCode}`] && customComp[`panel_${panelPos}_plan_${dCode}`].length) {
+            return JSON.parse(JSON.stringify(customComp[`panel_${panelPos}_plan_${dCode}`]));
+          }
+        }
+
         const custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
         let p = custom.find(x => x.material === mat && x.category === panelPos && x.view === view && (x.size_key === sizeKey || view !== 'plan'));
         if (!p) {
@@ -9104,30 +9261,47 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         if (!p && (view === 'plan' || !p)) {
           p = custom.find(x => x.material === mat && x.category === panelPos && (!x.view || x.view === 'plan') && x.size_key === sizeKey);
         }
-        if (p && p.entities && p.entities.length) return JSON.parse(JSON.stringify(p.entities));
+        if (p && p.entities && p.entities.length) {
+          const res = JSON.parse(JSON.stringify(p.entities));
+          return (dCode && view === 'plan') ? rotatePlanEntitiesForDir(res, dCode, w, h, true) : res;
+        }
 
-        const customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
         if (customComp[`${panelPos}_${view}`] && customComp[`${panelPos}_${view}`].length) {
-          return JSON.parse(JSON.stringify(customComp[`${panelPos}_${view}`]));
+          const res = JSON.parse(JSON.stringify(customComp[`${panelPos}_${view}`]));
+          return (dCode && view === 'plan') ? rotatePlanEntitiesForDir(res, dCode, w, h, true) : res;
         }
         if (customComp[`panel_${panelPos}_${view}`] && customComp[`panel_${panelPos}_${view}`].length) {
-          return JSON.parse(JSON.stringify(customComp[`panel_${panelPos}_${view}`]));
+          const res = JSON.parse(JSON.stringify(customComp[`panel_${panelPos}_${view}`]));
+          return (dCode && view === 'plan') ? rotatePlanEntitiesForDir(res, dCode, w, h, true) : res;
         }
         if (view === 'plan' && customComp[panelPos] && customComp[panelPos].length) {
-          return JSON.parse(JSON.stringify(customComp[panelPos]));
+          const res = JSON.parse(JSON.stringify(customComp[panelPos]));
+          return (dCode && view === 'plan') ? rotatePlanEntitiesForDir(res, dCode, w, h, true) : res;
         }
       } catch (e) {}
-      return getPartDefaultEntities(cat, panelPos, w, h, view);
+      const defEnts = getPartDefaultEntities(cat, panelPos, w, h, view);
+      return (dCode && view === 'plan') ? rotatePlanEntitiesForDir(defEnts, dCode, w, h, true) : defEnts;
     }
 
     try {
       const customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
       const hStr = String(cadCurrentHeight || '2000');
+      if (dCode && dCode !== 'D' && view === 'plan') {
+        if (customComp[`${cat}_plan_${dCode}`] && customComp[`${cat}_plan_${dCode}`].length) {
+          return JSON.parse(JSON.stringify(customComp[`${cat}_plan_${dCode}`]));
+        }
+        if (subKey && customComp[`${subKey}_plan_${dCode}`] && customComp[`${subKey}_plan_${dCode}`].length) {
+          return JSON.parse(JSON.stringify(customComp[`${subKey}_plan_${dCode}`]));
+        }
+      }
       // If cat is top or manhole, also check customPanels
       if (cat === 'top' || cat === 'manhole') {
         const customPanels = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
         const p = customPanels.find(x => x.category === cat && (x.view === view || (!x.view && view === 'plan')));
-        if (p && p.entities && p.entities.length) return JSON.parse(JSON.stringify(p.entities));
+        if (p && p.entities && p.entities.length) {
+          const res = JSON.parse(JSON.stringify(p.entities));
+          return (dCode && view === 'plan') ? rotatePlanEntitiesForDir(res, dCode, w, h, true) : res;
+        }
       }
       // 우선순위: 1. 높이특화 -> 2. 세부타입 높이특화 -> 3. 뷰공통 -> 4. 세부타입 뷰공통 -> 5. 구버전 평면
       if (hStr !== 'common' && customComp[`${cat}_${view}_${hStr}`]) {
@@ -9137,20 +9311,25 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         return customComp[`${subKey}_${view}_${hStr}`];
       }
       if (customComp[`${cat}_${view}`]) {
-        return customComp[`${cat}_${view}`];
+        const res = customComp[`${cat}_${view}`];
+        return (dCode && view === 'plan') ? rotatePlanEntitiesForDir(res, dCode, w, h, false) : res;
       }
       if (customComp[`${subKey}_${view}`]) {
-        return customComp[`${subKey}_${view}`];
+        const res = customComp[`${subKey}_${view}`];
+        return (dCode && view === 'plan') ? rotatePlanEntitiesForDir(res, dCode, w, h, false) : res;
       }
       if (view === 'plan' && customComp[subKey]) {
-        return customComp[subKey];
+        const res = customComp[subKey];
+        return (dCode && view === 'plan') ? rotatePlanEntitiesForDir(res, dCode, w, h, false) : res;
       }
       if (view === 'plan' && customComp[cat]) {
-        return customComp[cat];
+        const res = customComp[cat];
+        return (dCode && view === 'plan') ? rotatePlanEntitiesForDir(res, dCode, w, h, false) : res;
       }
     } catch (e) {}
 
-    return getPartDefaultEntities(cat, subKey, w, h, view);
+    const defEnts = getPartDefaultEntities(cat, subKey, w, h, view);
+    return (dCode && view === 'plan') ? rotatePlanEntitiesForDir(defEnts, dCode, w, h, cat === 'manhole' || cat === 'top') : defEnts;
   }
 
   function updateCadPartPreview() {
@@ -9160,16 +9339,42 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     const h = Number($('cadPartH')?.value) || 1000;
     renderSinglePanel(cv, w, h, currentCadEntities);
 
+    // 평면도일 경우 캔버스 상단에 외벽 방향성 가이드 오버레이 렌더링
+    if (cadCurrentView === 'plan') {
+      const pctx = cv.getContext('2d');
+      const cw = cv.width, ch = cv.height;
+      pctx.save();
+      pctx.font = 'bold 10px sans-serif';
+      pctx.textAlign = 'center';
+      pctx.textBaseline = 'middle';
+
+      const dirLabels = {
+        auto: '🌟 [외벽 기준] 상단: 탱크 밖 (OUTSIDE ⬆️) | 하단: 탱크 내부 (INSIDE ⬇️)',
+        south: '⬇️ [전면/남측 외벽] 상단: 탱크 내부 | 하단: 탱크 밖 (OUTSIDE ⬇️)',
+        north: '⬆️ [배면/북측 외벽] 하단: 탱크 내부 | 상단: 탱크 밖 (OUTSIDE ⬆️)',
+        east: '➡️ [동측/우측 외벽] 좌측: 탱크 내부 | 우측: 탱크 밖 (OUTSIDE ➡️)',
+        west: '⬅️ [서측/좌측 외벽] 우측: 탱크 내부 | 좌측: 탱크 밖 (OUTSIDE ⬅️)'
+      };
+
+      const bannerText = dirLabels[cadCurrentPlanDir || 'auto'] || dirLabels.auto;
+      pctx.fillStyle = 'rgba(2, 132, 199, 0.9)';
+      pctx.fillRect(8, 6, cw - 16, 20);
+      pctx.fillStyle = '#ffffff';
+      pctx.fillText(bannerText, cw / 2, 16);
+      pctx.restore();
+    }
+
     const titleEl = $('cadPreviewTitle');
     if (titleEl) {
       const isPanel = $('cadModeBtnPanels')?.classList.contains('active');
+      const dirSuffix = (cadCurrentView === 'plan' && cadCurrentPlanDir && cadCurrentPlanDir !== 'auto') ? ` · ${cadCurrentPlanDir.toUpperCase()}` : '';
       if (isPanel) {
-        titleEl.textContent = `미리보기: [${getPanelPosLabel(cadCurrentPanelPos)} · ${getViewLabel(cadCurrentView)} · ${w}×${h}mm]`;
+        titleEl.textContent = `미리보기: [${getPanelPosLabel(cadCurrentPanelPos)} · ${getViewLabel(cadCurrentView)}${dirSuffix} · ${w}×${h}mm]`;
       } else {
         const hLabel = (cadCurrentHeight === 'common') ? '모든높이공통' : `H=${cadCurrentHeight}`;
         const isLadderHandrail = (getSelectedCadCategory() === 'ladder' && cadCurrentView !== 'plan');
         const hDesc = isLadderHandrail ? `${hLabel} · 상부손잡이·하부패드 일체형 (${w}×${h}mm)` : `${hLabel}`;
-        titleEl.textContent = `미리보기: [${getSelectedPartLabel()} · ${getViewLabel(cadCurrentView)} · ${hDesc}]`;
+        titleEl.textContent = `미리보기: [${getSelectedPartLabel()} · ${getViewLabel(cadCurrentView)}${dirSuffix} · ${hDesc}]`;
       }
     }
 
@@ -10465,6 +10670,14 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         customComp[`panel_${panelCat}_${view}`] = currentCadEntities;
         if (view === 'plan') {
           customComp[panelCat] = currentCadEntities;
+          if (cadCurrentPlanDir && cadCurrentPlanDir !== 'auto') {
+            const dirMap = { south: 'D', north: 'U', east: 'R', west: 'L', U: 'north', D: 'south', R: 'east', L: 'west' };
+            const alt = dirMap[cadCurrentPlanDir];
+            customComp[`${panelCat}_plan_${cadCurrentPlanDir}`] = currentCadEntities;
+            if (alt) customComp[`${panelCat}_plan_${alt}`] = currentCadEntities;
+            customComp[`panel_${panelCat}_plan_${cadCurrentPlanDir}`] = currentCadEntities;
+            if (alt) customComp[`panel_${panelCat}_plan_${alt}`] = currentCadEntities;
+          }
         }
         localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
 
@@ -10483,6 +10696,16 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           if (view === 'plan') {
             customComp[cat] = currentCadEntities;
             if (sub && sub !== cat) customComp[sub] = currentCadEntities;
+          }
+        }
+        if (view === 'plan' && cadCurrentPlanDir && cadCurrentPlanDir !== 'auto') {
+          const dirMap = { south: 'D', north: 'U', east: 'R', west: 'L', U: 'north', D: 'south', R: 'east', L: 'west' };
+          const alt = dirMap[cadCurrentPlanDir];
+          customComp[`${cat}_plan_${cadCurrentPlanDir}`] = currentCadEntities;
+          if (alt) customComp[`${cat}_plan_${alt}`] = currentCadEntities;
+          if (sub && sub !== cat) {
+            customComp[`${sub}_plan_${cadCurrentPlanDir}`] = currentCadEntities;
+            if (alt) customComp[`${sub}_plan_${alt}`] = currentCadEntities;
           }
         }
         if (cat === 'top' || cat === 'manhole') {
@@ -10513,7 +10736,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     draw();
     updateViewBadges(cat, sub, heightStr);
     renderRegisteredPartsTable();
-    const detailMsg = (cat === 'panel') ? `[${w}×${h} mm ${getPanelPosLabel(cadCurrentPanelPos)} · ${getViewLabel(view)}]` : `[${getCategoryLabel(cat)} - ${getViewLabel(view)} (${heightStr === 'common' ? '공통' : 'H=' + heightStr})]`;
+    const dirSuffix = (view === 'plan' && cadCurrentPlanDir && cadCurrentPlanDir !== 'auto') ? ` · ${cadCurrentPlanDir.toUpperCase()}` : '';
+    const detailMsg = (cat === 'panel') ? `[${w}×${h} mm ${getPanelPosLabel(cadCurrentPanelPos)} · ${getViewLabel(view)}${dirSuffix}]` : `[${getCategoryLabel(cat)} - ${getViewLabel(view)}${dirSuffix} (${heightStr === 'common' ? '공통' : 'H=' + heightStr})]`;
     alert(`✅ ${detailMsg} CAD 형상이 도면에 성공적으로 등록 및 즉시 반영되었습니다!`);
   }
 
@@ -10594,6 +10818,18 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         let custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
         custom = custom.filter(p => !(p.material === mat && (p.category === panelCat || (panelCat === 'top_bottom' && (p.category === 'top' || p.category === 'bottom' || p.category === 'top_bottom'))) && p.size_key === sizeKey));
         localStorage.setItem('tankcad_custom_panels', JSON.stringify(custom));
+
+        let customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
+        delete customComp[`${panelCat}_${view}`];
+        delete customComp[`panel_${panelCat}_${view}`];
+        if (view === 'plan') {
+          delete customComp[panelCat];
+          ['north', 'south', 'east', 'west', 'U', 'D', 'R', 'L'].forEach(d => {
+            delete customComp[`${panelCat}_plan_${d}`];
+            delete customComp[`panel_${panelCat}_plan_${d}`];
+          });
+        }
+        localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
         applyActiveTemplates();
       } catch (e) {}
     } else {
@@ -10606,6 +10842,10 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         if (view === 'plan') {
           delete customComp[cat];
           delete customComp[sub];
+          ['north', 'south', 'east', 'west', 'U', 'D', 'R', 'L'].forEach(d => {
+            delete customComp[`${cat}_plan_${d}`];
+            delete customComp[`${sub}_plan_${d}`];
+          });
         }
         localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
       } catch (e) {}
@@ -11205,7 +11445,13 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       if ($('cadPartH')) $('cadPartH').value = h;
       if ($('cadPartMatSel') && curOpt.mat !== 'COMMON') $('cadPartMatSel').value = curOpt.mat;
 
-      currentCadEntities = getCurrentActivePartEntities(cat, curOpt.id, w, h, view);
+      const isPlan = (view === 'plan');
+      const planDirSec = $('cadPlanDirSection');
+      if (planDirSec) {
+        planDirSec.style.display = (isPlan && (cat === 'ladder' || cat === 'inladder' || cat === 'manhole' || cat === 'top')) ? 'block' : 'none';
+      }
+
+      currentCadEntities = getCurrentActivePartEntities(cat, curOpt.id, w, h, view, cadCurrentPlanDir);
       updateCadPartPreview();
       updateViewBadges(cat, curOpt.id, height);
     }
