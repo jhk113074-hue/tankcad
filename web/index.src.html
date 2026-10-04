@@ -10987,6 +10987,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             if (sub && sub !== cat) customComp[`${sub}_${view}_${heightStr}`] = currentCadEntities;
           }
           customComp[`${cat}_${view}`] = currentCadEntities;
+          customComp[`panel_${cat}_${view}`] = currentCadEntities;
           if (sub && sub !== cat) customComp[`${sub}_${view}`] = currentCadEntities;
         }
 

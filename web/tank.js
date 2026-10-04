@@ -290,8 +290,9 @@
   function resolvePartEntities(customParts, cat, view, h, opt) {
     const v = (view === 'side') ? 'right' : (view === 'top' ? 'plan' : view);
     if (customParts) {
-      // 1. 직접 키 매칭 (예: cat = 'manhole_plan_D')
-      if (customParts[cat] && customParts[cat].length) {
+      // 1. 구체적인 전체 키 직접 매칭 (예: cat = 'manhole_plan_D')
+      // 단, 'manhole' 같은 순수 카테고리는 평면도 레거시 키가 존재하므로 입면(front/side)에서 매칭되면 안 됨
+      if (cat.includes('_') && customParts[cat] && customParts[cat].length) {
         return customParts[cat];
       }
       if (h && customParts[`${cat}_${v}_${h}`] && customParts[`${cat}_${v}_${h}`].length) {
@@ -303,22 +304,28 @@
       if (customParts[`panel_${cat}_${v}`] && customParts[`panel_${cat}_${v}`].length) {
         return customParts[`panel_${cat}_${v}`];
       }
+      // 입면(front/side)의 경우 다른 높이로 등록된 키(예: manhole_front_2000 등)도 탐색
+      if (v !== 'plan') {
+        const hKey = Object.keys(customParts).find(k => k.startsWith(`${cat}_${v}_`) && customParts[k]?.length);
+        if (hKey) return customParts[hKey];
+      }
       // 평면도(plan)의 경우 높이와 무관하므로 height 접미사가 붙은 키(예: _plan_2000)도 탐색
       if (v === 'plan') {
         const hKey = Object.keys(customParts).find(k => k.startsWith(`${cat}_${v}_`) && customParts[k]?.length);
         if (hKey) return customParts[hKey];
       }
-      if ((v === 'right' || v === 'left') && (cat === 'top' || cat === 'roof')) {
+      if ((v === 'right' || v === 'left' || v === 'rear') && (cat === 'top' || cat === 'roof' || cat === 'manhole')) {
+        if (v === 'left') {
+          const rightEnts = resolvePartEntities(customParts, cat, 'right', h, opt);
+          if (rightEnts && rightEnts.length) return mirrorEntitiesH(rightEnts);
+        }
         const frontEnts = resolvePartEntities(customParts, cat, 'front', h, opt);
         if (frontEnts && frontEnts.length) return frontEnts;
-      }
-      if (v === 'left') {
-        const rightEnts = resolvePartEntities(customParts, cat, 'right', h, opt);
-        if (rightEnts && rightEnts.length) return mirrorEntitiesH(rightEnts);
       }
       if (v === 'rear') {
         return resolvePartEntities(customParts, cat, 'front', h, opt);
       }
+      // 8. 오직 평면도(plan)일 때만 레거시 평면 키(customParts[cat]) 사용
       if (v === 'plan' && customParts[cat] && customParts[cat].length) {
         return customParts[cat];
       }
