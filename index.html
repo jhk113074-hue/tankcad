@@ -406,7 +406,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.87</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.88</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1941,7 +1941,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.87</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.88</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1951,7 +1951,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.87</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.88</span></div>
     </div>
   </main>
 </div>
@@ -4224,9 +4224,10 @@ canvas.drag{cursor:grabbing}
     const slabTopY = -clearanceH; // -600mm
     const slabT = 150;
     const slabBotY = slabTopY - slabT; // -750mm
-    const px0 = -75;
-    const pxEnd = total + 75;
-    const totalPadW = pxEnd - px0; // 4150 for 4000mm
+    const strips = concStrips(map.cols, opt);
+    const px0 = strips[0][0];
+    const pxEnd = strips[strips.length - 1][0] + strips[strips.length - 1][1];
+    const totalPadW = pxEnd - px0;
 
     const N = opt._N || 25;
     const textH = Math.round(3.0 * N);
@@ -4235,30 +4236,9 @@ canvas.drag{cursor:grabbing}
     const poly = (p, layer, closed) => { for (let k = 0; k + 1 < p.length; k++) ln(p[k], p[k + 1], layer); if (closed) ln(p[p.length - 1], p[0], layer); };
     const circ = (x, y, r, layer) => ents.push({ t: 'circle', c: [x, y], r, layer: layer || 'PANEL' });
 
-    // 1. 패드 기둥 중심선 (Plinth centerlines)
-    const cxs = [0];
-    let curX = 0;
-    secs.forEach(sn => {
-      frontSplit(sn, curX).forEach(w => {
-        curX += w;
-        cxs.push(curX);
-      });
-    });
-    const uniqueCxs = Array.from(new Set(cxs)).sort((a, b) => a - b);
-    const numPlinths = uniqueCxs.length;
-
-    // 각 기둥 경계 [leftX, rightX]
-    const plinths = [];
-    for (let i = 0; i < numPlinths; i++) {
-      const cx = uniqueCxs[i];
-      if (i === 0) {
-        plinths.push([px0, 225, cx]);
-      } else if (i === numPlinths - 1) {
-        plinths.push([total - 225, pxEnd, cx]);
-      } else {
-        plinths.push([cx - 150, cx + 150, cx]);
-      }
-    }
+    // 각 기둥 경계 [leftX, rightX, centerX]
+    const plinths = strips.map(s => [s[0], s[0] + s[1], s[0] + s[1] / 2]);
+    const numPlinths = plinths.length;
 
     // 2. 패드 기둥 및 하부 슬래브 외곽선 (Concrete outlines)
     plinths.forEach(([lx, rx]) => ln([lx, -th], [rx, -th], 'PANEL'));
@@ -4336,11 +4316,11 @@ canvas.drag{cursor:grabbing}
     const dim150X = pxEnd + Math.round(3.0 * N);
     dimLinear(ents, [pxEnd, slabBotY], [pxEnd, slabTopY], dim150X, true, String(slabT), Math.round(2.4 * N), 'DIM');
 
-    // 9. 하단 치수선: Tier 1 기둥 피치 (1000, 1000, ...), Tier 2 전체 패드 폭 (4150)
+    // 9. 하단 치수선: Tier 1 기둥 피치 (1000, 1000, ...), Tier 2 전체 패드 폭 (8400)
     const dimPitchY = slabBotY - Math.round(8.5 * N);
-    for (let i = 0; i < uniqueCxs.length - 1; i++) {
-      const cxA = uniqueCxs[i], cxB = uniqueCxs[i + 1];
-      dimLinear(ents, [cxA, slabBotY], [cxB, slabBotY], dimPitchY, false, String(cxB - cxA), Math.round(2.8 * N), 'DIM');
+    for (let i = 0; i < plinths.length - 1; i++) {
+      const cxA = plinths[i][2], cxB = plinths[i + 1][2];
+      dimLinear(ents, [cxA, slabBotY], [cxB, slabBotY], dimPitchY, false, String(Math.round(cxB - cxA)), Math.round(2.8 * N), 'DIM');
     }
     const dimTotalY = slabBotY - Math.round(16.0 * N);
     dimLinear(ents, [px0, slabBotY], [pxEnd, slabBotY], dimTotalY, false, String(totalPadW), Math.round(2.8 * N), 'DIM');
@@ -4757,39 +4737,20 @@ canvas.drag{cursor:grabbing}
     const GRD = slabTopY; // 기준 바닥 레벨
     const slabT = 150;
     const slabBotY = slabTopY - slabT; // -750mm
-    const px0 = -75;
-    const pxEnd = total + 75;
-    const totalPadW = pxEnd - px0; // 4150 for 4000mm
+    const cols = (view === 'front' ? mmap.cols : mmap.rows);
+    const strips = concStrips(cols, opt);
+    const px0 = strips[0][0];
+    const pxEnd = strips[strips.length - 1][0] + strips[strips.length - 1][1];
+    const totalPadW = pxEnd - px0;
     const N = opt._N || 25;
     const textH = Math.round(3.0 * N);
     const dimGap1 = Math.round(10.0 * N);
     const dimGap2 = Math.round(18.0 * N);
     const nozTextH = Math.round(2.2 * N);
 
-    // 1. 패드 기둥 중심선 (Plinth centerlines)
-    const cxs = [0];
-    let curX = 0;
-    secs.forEach(sn => {
-      split(sn, curX).forEach(w => {
-        curX += w;
-        cxs.push(curX);
-      });
-    });
-    const uniqueCxs = Array.from(new Set(cxs)).sort((a, b) => a - b);
-    const numPlinths = uniqueCxs.length;
-
-    // 각 기둥 경계 [leftX, rightX]
-    const plinths = [];
-    for (let i = 0; i < numPlinths; i++) {
-      const cx = uniqueCxs[i];
-      if (i === 0) {
-        plinths.push([px0, 225, cx]);
-      } else if (i === numPlinths - 1) {
-        plinths.push([total - 225, pxEnd, cx]);
-      } else {
-        plinths.push([cx - 150, cx + 150, cx]);
-      }
-    }
+    // 각 기둥 경계 [leftX, rightX, centerX]
+    const plinths = strips.map(s => [s[0], s[0] + s[1], s[0] + s[1] / 2]);
+    const numPlinths = plinths.length;
 
     // 2. 패드 기둥 및 하부 슬래브 외곽선 (Concrete outlines)
     plinths.forEach(([lx, rx]) => ln([lx, -th], [rx, -th], 'PANEL'));
@@ -4853,11 +4814,11 @@ canvas.drag{cursor:grabbing}
     const dim150X = pxEnd + Math.round(3.0 * N);
     dimLinear(ents, [pxEnd, slabBotY], [pxEnd, slabTopY], dim150X, true, String(slabT), Math.round(2.4 * N), 'DIM');
 
-    // 9. 하단 치수선: Tier 1 기둥 피치 (1000, 1000, ...), Tier 2 전체 패드 폭 (4150)
+    // 9. 하단 치수선: Tier 1 기둥 피치 (1000, 1000, ...), Tier 2 전체 패드 폭 (8400)
     const dimPitchY = slabBotY - Math.round(8.5 * N);
-    for (let i = 0; i < uniqueCxs.length - 1; i++) {
-      const cxA = uniqueCxs[i], cxB = uniqueCxs[i + 1];
-      dimLinear(ents, [cxA, slabBotY], [cxB, slabBotY], dimPitchY, false, String(cxB - cxA), Math.round(2.8 * N), 'DIM');
+    for (let i = 0; i < plinths.length - 1; i++) {
+      const cxA = plinths[i][2], cxB = plinths[i + 1][2];
+      dimLinear(ents, [cxA, slabBotY], [cxB, slabBotY], dimPitchY, false, String(Math.round(cxB - cxA)), Math.round(2.8 * N), 'DIM');
     }
     const dimTotalY = slabBotY - Math.round(16.0 * N);
     dimLinear(ents, [px0, slabBotY], [pxEnd, slabBotY], dimTotalY, false, String(totalPadW), Math.round(2.8 * N), 'DIM');
@@ -11649,7 +11610,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.87</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.88</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -12097,6 +12058,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       ctx.fillRect(0, 0, cv.width, cv.height);
       ctx.restore();
       ctx.setTransform(z.d, 0, 0, z.d, 0, 0);
+      ctx.beginPath();
 
       const col = { PANEL: css('--cv-panel') || '#f1f5f9', PANEL_DETAIL: css('--cv-detail') || '#94a3b8', FRAME: css('--cv-frame') || '#fb923c', REINF: css('--cv-panel') || '#f1f5f9', WALL: css('--cv-frame') || '#fb923c', DIM: css('--cv-dim') || '#38bdf8', SHEET: css('--cv-sheet') || '#e2e8f0', BALLOON: css('--cv-balloon') || '#f43f5e', NOZZLE: css('--cv-nozzle') || '#10b981' };
       const lw = { PANEL: 1.4, PANEL_DETAIL: 0.9, FRAME: 1.6, REINF: 1.2, WALL: 1, DIM: 1, SHEET: 1.3, BALLOON: 1.8, NOZZLE: 1.6 };
@@ -12135,7 +12097,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
         const setLayer = layer => {
           if (curLayer === layer) return;
-          ctx.stroke();
+          if (curLayer !== null) ctx.stroke();
           curLayer = layer;
           ctx.strokeStyle = col[layer] || '#fff';
           ctx.lineWidth = lw[layer] || 1;
@@ -12146,8 +12108,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           if (!e || !layerOn(e)) return;
           if (e.t === 'poly') {
             if (e.fill && e.pts && e.pts.length > 2) {
-              ctx.stroke();
-              curLayer = null;
+              if (curLayer !== null) { ctx.stroke(); ctx.beginPath(); curLayer = null; }
               ctx.save();
               ctx.fillStyle = bgCol;
               ctx.beginPath();
@@ -12156,6 +12117,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
               ctx.closePath();
               ctx.fill();
               ctx.restore();
+              ctx.beginPath();
             }
             if (e.stroke !== false && e.pts && e.pts.length > 1) {
               setLayer(e.layer || 'PANEL');
@@ -12164,8 +12126,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
               if (e.close !== false) ctx.closePath();
             }
           } else if (e.t === 'solid' && e.p && e.p.length >= 4) {
-            ctx.stroke();
-            curLayer = null;
+            if (curLayer !== null) { ctx.stroke(); ctx.beginPath(); curLayer = null; }
             const aciMap = { 1: '#ef4444', 2: '#eab308', 3: '#22c55e', 4: '#06b6d4', 5: '#2563eb', 6: '#d946ef', 7: '#cbd5e1' };
             ctx.save();
             ctx.fillStyle = aciMap[e.color] || col[e.layer] || '#cbd5e1';
@@ -12177,10 +12138,10 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             ctx.closePath();
             ctx.fill();
             ctx.restore();
+            ctx.beginPath();
           } else if (e.t === 'line' && e.a && e.b) {
             if (e.color) {
-              ctx.stroke();
-              curLayer = null;
+              if (curLayer !== null) { ctx.stroke(); ctx.beginPath(); curLayer = null; }
               const aciMap = { 1: '#ef4444', 2: '#eab308', 3: '#22c55e', 4: '#06b6d4', 5: '#2563eb', 6: '#d946ef', 7: '#cbd5e1' };
               ctx.save();
               ctx.strokeStyle = aciMap[e.color] || col[e.layer] || '#fff';
@@ -12190,6 +12151,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
               ctx.lineTo(tx(e.b[0] + ox), ty(e.b[1] + oy));
               ctx.stroke();
               ctx.restore();
+              ctx.beginPath();
             } else {
               setLayer(e.layer || 'PANEL');
               ctx.moveTo(tx(e.a[0] + ox), ty(e.a[1] + oy));
@@ -12223,7 +12185,11 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             renderEnt(e);
           }
         });
-        ctx.stroke();
+        if (curLayer !== null) {
+          ctx.stroke();
+          ctx.beginPath();
+          curLayer = null;
+        }
 
         texts.forEach(e => {
           if (!e || !e.p) return;
@@ -12269,6 +12235,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
               ctx.closePath();
               ctx.fill();
               ctx.restore();
+              ctx.beginPath();
             }
             else if (e.t === 'circle' && e.c) { ctx.moveTo(tx(e.c[0] + ox) + (e.r || 10) * view.s, ty(e.c[1] + oy)); ctx.arc(tx(e.c[0] + ox), ty(e.c[1] + oy), (e.r || 10) * view.s, 0, 7); }
             else if (e.t === 'arc' && e.c) { const r = (e.r || 10) * view.s, cx = tx(e.c[0] + ox), cy = ty(e.c[1] + oy), a0 = (e.a0 || 0) * Math.PI / 180, a1 = (e.a1 || 360) * Math.PI / 180; ctx.moveTo(cx + r * Math.cos(a0), cy - r * Math.sin(a0)); ctx.arc(cx, cy, r, -a0, -a1, true); }
@@ -12287,6 +12254,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             }
           });
           ctx.stroke();
+          ctx.beginPath();
           texts.forEach(e => {
             if (!e || !e.p) return;
             const px = Math.max(3, (e.h || 10) * view.s); if (px < 3) return;
@@ -12300,6 +12268,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           images.forEach(renderImageEnt);
         });
       }
+      ctx.beginPath();
     } catch (err) {
       console.error('draw render error:', err);
     }

@@ -2266,9 +2266,10 @@
     const slabTopY = -clearanceH; // -600mm
     const slabT = 150;
     const slabBotY = slabTopY - slabT; // -750mm
-    const px0 = -75;
-    const pxEnd = total + 75;
-    const totalPadW = pxEnd - px0; // 4150 for 4000mm
+    const strips = concStrips(map.cols, opt);
+    const px0 = strips[0][0];
+    const pxEnd = strips[strips.length - 1][0] + strips[strips.length - 1][1];
+    const totalPadW = pxEnd - px0;
 
     const N = opt._N || 25;
     const textH = Math.round(3.0 * N);
@@ -2277,30 +2278,9 @@
     const poly = (p, layer, closed) => { for (let k = 0; k + 1 < p.length; k++) ln(p[k], p[k + 1], layer); if (closed) ln(p[p.length - 1], p[0], layer); };
     const circ = (x, y, r, layer) => ents.push({ t: 'circle', c: [x, y], r, layer: layer || 'PANEL' });
 
-    // 1. 패드 기둥 중심선 (Plinth centerlines)
-    const cxs = [0];
-    let curX = 0;
-    secs.forEach(sn => {
-      frontSplit(sn, curX).forEach(w => {
-        curX += w;
-        cxs.push(curX);
-      });
-    });
-    const uniqueCxs = Array.from(new Set(cxs)).sort((a, b) => a - b);
-    const numPlinths = uniqueCxs.length;
-
-    // 각 기둥 경계 [leftX, rightX]
-    const plinths = [];
-    for (let i = 0; i < numPlinths; i++) {
-      const cx = uniqueCxs[i];
-      if (i === 0) {
-        plinths.push([px0, 225, cx]);
-      } else if (i === numPlinths - 1) {
-        plinths.push([total - 225, pxEnd, cx]);
-      } else {
-        plinths.push([cx - 150, cx + 150, cx]);
-      }
-    }
+    // 각 기둥 경계 [leftX, rightX, centerX]
+    const plinths = strips.map(s => [s[0], s[0] + s[1], s[0] + s[1] / 2]);
+    const numPlinths = plinths.length;
 
     // 2. 패드 기둥 및 하부 슬래브 외곽선 (Concrete outlines)
     plinths.forEach(([lx, rx]) => ln([lx, -th], [rx, -th], 'PANEL'));
@@ -2378,11 +2358,11 @@
     const dim150X = pxEnd + Math.round(3.0 * N);
     dimLinear(ents, [pxEnd, slabBotY], [pxEnd, slabTopY], dim150X, true, String(slabT), Math.round(2.4 * N), 'DIM');
 
-    // 9. 하단 치수선: Tier 1 기둥 피치 (1000, 1000, ...), Tier 2 전체 패드 폭 (4150)
+    // 9. 하단 치수선: Tier 1 기둥 피치 (1000, 1000, ...), Tier 2 전체 패드 폭 (8400)
     const dimPitchY = slabBotY - Math.round(8.5 * N);
-    for (let i = 0; i < uniqueCxs.length - 1; i++) {
-      const cxA = uniqueCxs[i], cxB = uniqueCxs[i + 1];
-      dimLinear(ents, [cxA, slabBotY], [cxB, slabBotY], dimPitchY, false, String(cxB - cxA), Math.round(2.8 * N), 'DIM');
+    for (let i = 0; i < plinths.length - 1; i++) {
+      const cxA = plinths[i][2], cxB = plinths[i + 1][2];
+      dimLinear(ents, [cxA, slabBotY], [cxB, slabBotY], dimPitchY, false, String(Math.round(cxB - cxA)), Math.round(2.8 * N), 'DIM');
     }
     const dimTotalY = slabBotY - Math.round(16.0 * N);
     dimLinear(ents, [px0, slabBotY], [pxEnd, slabBotY], dimTotalY, false, String(totalPadW), Math.round(2.8 * N), 'DIM');
@@ -2799,39 +2779,20 @@
     const GRD = slabTopY; // 기준 바닥 레벨
     const slabT = 150;
     const slabBotY = slabTopY - slabT; // -750mm
-    const px0 = -75;
-    const pxEnd = total + 75;
-    const totalPadW = pxEnd - px0; // 4150 for 4000mm
+    const cols = (view === 'front' ? mmap.cols : mmap.rows);
+    const strips = concStrips(cols, opt);
+    const px0 = strips[0][0];
+    const pxEnd = strips[strips.length - 1][0] + strips[strips.length - 1][1];
+    const totalPadW = pxEnd - px0;
     const N = opt._N || 25;
     const textH = Math.round(3.0 * N);
     const dimGap1 = Math.round(10.0 * N);
     const dimGap2 = Math.round(18.0 * N);
     const nozTextH = Math.round(2.2 * N);
 
-    // 1. 패드 기둥 중심선 (Plinth centerlines)
-    const cxs = [0];
-    let curX = 0;
-    secs.forEach(sn => {
-      split(sn, curX).forEach(w => {
-        curX += w;
-        cxs.push(curX);
-      });
-    });
-    const uniqueCxs = Array.from(new Set(cxs)).sort((a, b) => a - b);
-    const numPlinths = uniqueCxs.length;
-
-    // 각 기둥 경계 [leftX, rightX]
-    const plinths = [];
-    for (let i = 0; i < numPlinths; i++) {
-      const cx = uniqueCxs[i];
-      if (i === 0) {
-        plinths.push([px0, 225, cx]);
-      } else if (i === numPlinths - 1) {
-        plinths.push([total - 225, pxEnd, cx]);
-      } else {
-        plinths.push([cx - 150, cx + 150, cx]);
-      }
-    }
+    // 각 기둥 경계 [leftX, rightX, centerX]
+    const plinths = strips.map(s => [s[0], s[0] + s[1], s[0] + s[1] / 2]);
+    const numPlinths = plinths.length;
 
     // 2. 패드 기둥 및 하부 슬래브 외곽선 (Concrete outlines)
     plinths.forEach(([lx, rx]) => ln([lx, -th], [rx, -th], 'PANEL'));
@@ -2895,11 +2856,11 @@
     const dim150X = pxEnd + Math.round(3.0 * N);
     dimLinear(ents, [pxEnd, slabBotY], [pxEnd, slabTopY], dim150X, true, String(slabT), Math.round(2.4 * N), 'DIM');
 
-    // 9. 하단 치수선: Tier 1 기둥 피치 (1000, 1000, ...), Tier 2 전체 패드 폭 (4150)
+    // 9. 하단 치수선: Tier 1 기둥 피치 (1000, 1000, ...), Tier 2 전체 패드 폭 (8400)
     const dimPitchY = slabBotY - Math.round(8.5 * N);
-    for (let i = 0; i < uniqueCxs.length - 1; i++) {
-      const cxA = uniqueCxs[i], cxB = uniqueCxs[i + 1];
-      dimLinear(ents, [cxA, slabBotY], [cxB, slabBotY], dimPitchY, false, String(cxB - cxA), Math.round(2.8 * N), 'DIM');
+    for (let i = 0; i < plinths.length - 1; i++) {
+      const cxA = plinths[i][2], cxB = plinths[i + 1][2];
+      dimLinear(ents, [cxA, slabBotY], [cxB, slabBotY], dimPitchY, false, String(Math.round(cxB - cxA)), Math.round(2.8 * N), 'DIM');
     }
     const dimTotalY = slabBotY - Math.round(16.0 * N);
     dimLinear(ents, [px0, slabBotY], [pxEnd, slabBotY], dimTotalY, false, String(totalPadW), Math.round(2.8 * N), 'DIM');
