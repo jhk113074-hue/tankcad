@@ -748,19 +748,21 @@
   /* 사다리 배치: opt.ladders = {'i,j': 'U'|'D'|'L'|'R'} (해당 칸의 노출면 중앙) */
   function ladderList(opt, map) {
     const res = [];
-    Object.entries(opt.ladders || {}).forEach(([k, sd]) => {
-      const [i, j] = k.split(',').map(Number);
-      if (!map.has(i, j)) return;
-      const x0 = map.xs[j], x1 = x0 + map.cols[j], y0 = map.ys[i], y1 = y0 + map.rows[i];
-      const cx = (x0 + x1) >> 1, cy = (y0 + y1) >> 1;
-      if (sd === 'U') res.push({ sd, idx: 1, x: cx, y: y1 });
-      else if (sd === 'D') res.push({ sd, idx: 2, x: cx, y: y0 });
-      else if (sd === 'R') res.push({ sd, idx: 3, x: x1, y: cy });
-      else if (sd === 'L') res.push({ sd, idx: 4, x: x0, y: cy });
-    });
-    // 사다리가 명시적으로 설정되지 않았거나 지정된 셀이 삭제된 경우,
-    // 실제로 존재하는 노출 외벽 셀을 자동 탐색하여 유효한 기본 사다리 위치 제공
-    if (res.length === 0 && map && map.rows && map.cols) {
+    if (opt && opt.ladders !== undefined && opt.ladders !== null) {
+      Object.entries(opt.ladders).forEach(([k, sd]) => {
+        const [i, j] = k.split(',').map(Number);
+        if (!map.has(i, j)) return;
+        const x0 = map.xs[j], x1 = x0 + map.cols[j], y0 = map.ys[i], y1 = y0 + map.rows[i];
+        const cx = (x0 + x1) >> 1, cy = (y0 + y1) >> 1;
+        if (sd === 'U') res.push({ sd, idx: 1, x: cx, y: y1 });
+        else if (sd === 'D') res.push({ sd, idx: 2, x: cx, y: y0 });
+        else if (sd === 'R') res.push({ sd, idx: 3, x: x1, y: cy });
+        else if (sd === 'L') res.push({ sd, idx: 4, x: x0, y: cy });
+      });
+      return res; // 사용자가 명시한 ladders 객체(빈 객체 {} 포함)를 그대로 반환 (사다리 전체 삭제 시 0개 정상 적용)
+    }
+    // opt.ladders 속성 자체가 전달되지 않은 경우(null/undefined)에만 기본 사다리 제공
+    if (map && map.rows && map.cols) {
       let defLadder = null;
       // 1순위: 전면 노출 외벽 (D) 중 가장 전면(낮은 i) 및 우측(높은 j) 셀
       for (let i = 0; i < map.rows.length; i++) {
@@ -1362,7 +1364,9 @@
       if (m === 1) manholeCount++;
       else if (m === 2) ventCount++;
     });
-    const ladderCount = Object.keys(opt.ladders || {}).length || 1;
+    const ladderCount = (opt && opt.ladders !== undefined && opt.ladders !== null)
+      ? Object.keys(opt.ladders).length
+      : 1;
     const nozzleList = getNozzleList(opt);
     const padH = (typeof opt.padH === 'number' && !isNaN(opt.padH)) ? opt.padH : (600 - (opt.frame || 75));
 
@@ -1374,8 +1378,8 @@
         { no: 4, key: 'corner', name: 'Corner Frame', mat: 'HDG', qty: '4 Sets', spec: 'L-70x70x8.0T' },
         { no: 5, key: 'airvent', name: 'Air Vent', mat: 'ABS', qty: `${ventCount || 1} EA`, spec: 'Φ50 (Insect screen #20 attached)' },
         { no: 6, key: 'manhole', name: 'Manhole', mat: mat, qty: `${manholeCount || 1} EA`, spec: 'Ø600 Double cover with lock' },
-        { no: 7, key: 'inladder', name: 'Internal Ladder', mat: 'FRP', qty: `${ladderCount} Set`, spec: `L=${H}mm` },
-        { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: `${ladderCount} Set`, spec: 'Vertical: 20x30x1.2T, W=270' },
+        { no: 7, key: 'inladder', name: 'Internal Ladder', mat: 'FRP', qty: ladderCount > 0 ? `${ladderCount} Set` : '-', spec: `L=${H}mm` },
+        { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: ladderCount > 0 ? `${ladderCount} Set` : '-', spec: 'Vertical: 20x30x1.2T, W=270' },
         { no: 9, key: 'flangebar', name: 'Flange Bar', mat: 'HDG', qty: '1 Set', spec: 'L-65x30x3T etc.' },
         { no: 10, key: 'stay', name: 'Internal Stay', mat: 'SS316+PE', qty: '1 Set', spec: 'Φ-10.7 Tie-Rod(M12)' },
         { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0} EA`, spec: 'JIS 10K Flange / Socket' }
@@ -1388,8 +1392,8 @@
         { no: 4, key: 'corner', name: '코너 프레임 (Corner Frame)', mat: 'HDG', qty: '4조', spec: 'L-70x70x8.0T' },
         { no: 5, key: 'airvent', name: '에어벤트 (Air Vent)', mat: 'ABS', qty: `${ventCount || 1}개`, spec: 'Φ50 (합성수지 방충망 #20 부착)' },
         { no: 6, key: 'manhole', name: '맨홀 (Manhole)', mat: mat, qty: `${manholeCount || 1}개`, spec: 'Ø600 쇄정식 이중덮개 부착' },
-        { no: 7, key: 'inladder', name: '내부 사다리 (Internal Ladder)', mat: 'FRP', qty: `${ladderCount}조`, spec: `L=${H}mm` },
-        { no: 8, key: 'exladder', name: '외부 사다리 (External Ladder)', mat: 'HDG', qty: `${ladderCount}조`, spec: '세로대: 20x30x1.2T, 폭 270' },
+        { no: 7, key: 'inladder', name: '내부 사다리 (Internal Ladder)', mat: 'FRP', qty: ladderCount > 0 ? `${ladderCount}조` : '-', spec: `L=${H}mm` },
+        { no: 8, key: 'exladder', name: '외부 사다리 (External Ladder)', mat: 'HDG', qty: ladderCount > 0 ? `${ladderCount}조` : '-', spec: '세로대: 20x30x1.2T, 폭 270' },
         { no: 9, key: 'flangebar', name: '플랜지 바 (Flange Bar)', mat: 'HDG', qty: '1식', spec: 'L-65x30x3T 등' },
         { no: 10, key: 'stay', name: '내부 스테이 (Internal Stay)', mat: 'SS316+PE', qty: '1식', spec: 'Φ-10.7 Tie-Rod(M12)' },
         { no: 11, key: 'nozzle', name: '배관 노즐 (Nozzles)', mat: 'STS304', qty: `${nozzleList.length || 0}개`, spec: 'JIS 10K Flange / Socket' }
@@ -1402,8 +1406,8 @@
         { no: 4, key: 'corner', name: 'Corner Frame', mat: 'HDG', qty: '4 Sets (4조)', spec: 'L-70x70x8.0T' },
         { no: 5, key: 'airvent', name: 'Air Vent', mat: 'ABS', qty: `${ventCount || 1} EA`, spec: 'Φ50 (Insect screen #20 attached)' },
         { no: 6, key: 'manhole', name: 'Manhole', mat: mat, qty: `${manholeCount || 1} EA`, spec: 'Ø600 Double cover with lock' },
-        { no: 7, key: 'inladder', name: 'Internal Ladder', mat: 'FRP', qty: `${ladderCount} Set (조)`, spec: `L=${H}mm` },
-        { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: `${ladderCount} Set (조)`, spec: 'Vertical: 20x30x1.2T, W=270' },
+        { no: 7, key: 'inladder', name: 'Internal Ladder', mat: 'FRP', qty: ladderCount > 0 ? `${ladderCount} Set (조)` : '-', spec: `L=${H}mm` },
+        { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: ladderCount > 0 ? `${ladderCount} Set (조)` : '-', spec: 'Vertical: 20x30x1.2T, W=270' },
         { no: 9, key: 'flangebar', name: 'Flange Bar', mat: 'HDG', qty: '1 Set (1식)', spec: 'L-65x30x3T etc.' },
         { no: 10, key: 'stay', name: 'Internal Stay', mat: 'SS316+PE', qty: '1 Set (1식)', spec: 'Φ-10.7 Tie-Rod(M12)' },
         { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0} EA`, spec: 'JIS 10K Flange / Socket' }
@@ -3592,11 +3596,11 @@
 
       if (lx <= stayX) {
         // 사다리가 좌측(또는 동일), 스테이가 우측 -> 사다리는 좌측으로, 스테이는 우측으로 인출 (크로스 원천 차단)
-        drawBalloonCallout(ents, [lx, nH + 100], [lx, elevTopY - Math.round(5 * N)], [lx - Math.round(10 * N), elevTopY], getItemNo('exladder') || 8, N, 'BALLOON');
+        if (lads.length > 0) drawBalloonCallout(ents, [lx, nH + 100], [lx, elevTopY - Math.round(5 * N)], [lx - Math.round(10 * N), elevTopY], getItemNo('exladder') || 8, N, 'BALLOON');
         drawBalloonCallout(ents, [stayX, nH * 0.5], [stayX, elevTopY - Math.round(5 * N)], [stayX + Math.round(10 * N), elevTopY], getItemNo('stay') || 10, N, 'BALLOON');
       } else {
         // 사다리가 우측, 스테이가 좌측 -> 사다리는 우측으로, 스테이는 좌측으로 인출 (크로스 원천 차단)
-        drawBalloonCallout(ents, [lx, nH + 100], [lx, elevTopY - Math.round(5 * N)], [lx + Math.round(10 * N), elevTopY], getItemNo('exladder') || 8, N, 'BALLOON');
+        if (lads.length > 0) drawBalloonCallout(ents, [lx, nH + 100], [lx, elevTopY - Math.round(5 * N)], [lx + Math.round(10 * N), elevTopY], getItemNo('exladder') || 8, N, 'BALLOON');
         drawBalloonCallout(ents, [stayX, nH * 0.5], [stayX, elevTopY - Math.round(5 * N)], [stayX - Math.round(10 * N), elevTopY], getItemNo('stay') || 10, N, 'BALLOON');
       }
 
