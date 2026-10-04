@@ -3730,17 +3730,13 @@
       });
     });
 
-    // 6) 좌측 및 후면 실루엣 외곽선 (Left & Rear Silhouette Boundaries)
+    // 6) 좌측 실루엣 외곽선 (Left Silhouette Boundaries)
     const rearSlabY = totalW + PAD_OV;
     const rearSlabDepth = getDepth((px0 + pxEnd) / 2, rearSlabY, (slabBotY + slabTopY) / 2);
     // 좌측면 하단 GL 기준선 (x = px0, z = slabBotY, y: -PAD_OV ~ totalW + PAD_OV)
     ln(toIso(px0, -PAD_OV, slabBotY), toIso(px0, rearSlabY, slabBotY), 'PAD', rearSlabDepth);
     // 좌측면 후면 수직선 (x = px0, y = rearSlabY, z: slabBotY ~ -th)
     ln(toIso(px0, rearSlabY, slabBotY), toIso(px0, rearSlabY, -th), 'PAD', rearSlabDepth);
-    // 후면 하단 GL 기준선 (z = slabBotY, y = rearSlabY, x: px0 ~ pxEnd)
-    ln(toIso(px0, rearSlabY, slabBotY), toIso(pxEnd, rearSlabY, slabBotY), 'PAD', rearSlabDepth);
-    // 후면 우측 수직선 (x = pxEnd, y = rearSlabY, z: slabBotY ~ slabTopY)
-    ln(toIso(pxEnd, rearSlabY, slabBotY), toIso(pxEnd, rearSlabY, slabTopY), 'PAD', rearSlabDepth);
     inFoundation = false;
 
     // 베이스 찬넬 림 (Skid Channel 100mm)

@@ -416,7 +416,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.96</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.97</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2033,7 +2033,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.96</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.97</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2043,7 +2043,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.96</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.97</span></div>
     </div>
   </main>
 </div>
@@ -5780,17 +5780,13 @@ canvas.drag{cursor:grabbing}
       });
     });
 
-    // 6) 좌측 및 후면 실루엣 외곽선 (Left & Rear Silhouette Boundaries)
+    // 6) 좌측 실루엣 외곽선 (Left Silhouette Boundaries)
     const rearSlabY = totalW + PAD_OV;
     const rearSlabDepth = getDepth((px0 + pxEnd) / 2, rearSlabY, (slabBotY + slabTopY) / 2);
     // 좌측면 하단 GL 기준선 (x = px0, z = slabBotY, y: -PAD_OV ~ totalW + PAD_OV)
     ln(toIso(px0, -PAD_OV, slabBotY), toIso(px0, rearSlabY, slabBotY), 'PAD', rearSlabDepth);
     // 좌측면 후면 수직선 (x = px0, y = rearSlabY, z: slabBotY ~ -th)
     ln(toIso(px0, rearSlabY, slabBotY), toIso(px0, rearSlabY, -th), 'PAD', rearSlabDepth);
-    // 후면 하단 GL 기준선 (z = slabBotY, y = rearSlabY, x: px0 ~ pxEnd)
-    ln(toIso(px0, rearSlabY, slabBotY), toIso(pxEnd, rearSlabY, slabBotY), 'PAD', rearSlabDepth);
-    // 후면 우측 수직선 (x = pxEnd, y = rearSlabY, z: slabBotY ~ slabTopY)
-    ln(toIso(pxEnd, rearSlabY, slabBotY), toIso(pxEnd, rearSlabY, slabTopY), 'PAD', rearSlabDepth);
     inFoundation = false;
 
     // 베이스 찬넬 림 (Skid Channel 100mm)
@@ -12000,7 +11996,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.96</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.97</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
