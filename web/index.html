@@ -406,7 +406,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.82</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.84</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1941,7 +1941,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.82</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.84</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1951,7 +1951,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.82</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.84</span></div>
     </div>
   </main>
 </div>
@@ -3362,6 +3362,15 @@ canvas.drag{cursor:grabbing}
     }
 
     const N = opt._N || 25;
+    const textH = Math.round(3.0 * N);
+    const dimGap1 = Math.round(10.0 * N);
+    const dimGap2 = Math.round(18.0 * N);
+
+    // 치수는 풍선과 노즐이 없을 때 기준 100% 고정 (media_1791083394539.png 기준)
+    const baseX = -F - dimGap1;
+    const baseY = -F - dimGap1;
+    const overallX = baseX - Math.round(8.0 * N);
+    const overallY = baseY - Math.round(8.0 * N);
 
     // 배관 노즐 (INLET, OUTLET, OVERFLOW, DRAIN, FIRE 등) 평면도 배치 (글로벌 표준 간결 표기)
     const nozList = getNozzleList(opt);
@@ -3412,24 +3421,22 @@ canvas.drag{cursor:grabbing}
         const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + offVal;
         const yBase = map.ys[frontRow] - F;
         const toRight = cx >= map.length / 2;
-        const stagger = (idx % 2) * Math.round(1.5 * N);
+        const stagger = (idx % 2) * Math.round(1.8 * N);
+        // 치수는 고정이므로 전면 노즐 지시선과 라벨은 치수선 바깥 아래(overallY 아래)로 인출하여 치수선 및 치수 문자와 완전 비간섭!
+        const ey = overallY - Math.round(2.5 * N) - stagger;
+        const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
+        const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
         if (isFlg) {
           const yPlate1 = yBase - spec.neckLen;
           const yPlate0 = yPlate1 + spec.flgThick;
           ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'NOZZLE');
           ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'NOZZLE');
           chain([[cx - spec.rf, yPlate1], [cx + spec.rf, yPlate1], [cx + spec.rf, yPlate0], [cx - spec.rf, yPlate0]], 'NOZZLE', true);
-          const ey = yPlate1 - Math.round(1.5 * N) - stagger;
-          const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
-          const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
           drawLeader(ents, [cx, yPlate1], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE', null, { face: 'front', view: 'plan' });
         } else {
           const yEnd = yBase - spec.sockLen;
           chain([[cx - spec.sockR, yEnd], [cx + spec.sockR, yEnd], [cx + spec.sockR, yBase], [cx - spec.sockR, yBase]], 'NOZZLE', true);
           ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'NOZZLE');
-          const ey = yEnd - Math.round(1.5 * N) - stagger;
-          const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
-          const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
           drawLeader(ents, [cx, yEnd], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE', null, { face: 'front', view: 'plan' });
         }
       } else if (n.face === 'rear') {
@@ -3478,24 +3485,22 @@ canvas.drag{cursor:grabbing}
         const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2 + offVal;
         const xBase = map.xs[leftCol] - F;
         const toTop = cy >= map.width / 2;
-        const stagger = (idx % 2) * Math.round(1.5 * N);
+        const stagger = (idx % 2) * Math.round(1.8 * N);
+        // 치수는 고정이므로 좌측 노즐 지시선과 라벨은 좌측 치수선 바깥(overallX 좌측)으로 인출하여 치수선 및 문자와 완전 비간섭!
+        const elbowX = overallX - Math.round(2.5 * N);
+        const shelfEndX = elbowX - Math.round(2.5 * N);
+        const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
         if (isFlg) {
           const xPlate1 = xBase - spec.neckLen;
           const xPlate0 = xPlate1 + spec.flgThick;
           ln([xBase, cy - spec.r], [xPlate0, cy - spec.r], 'NOZZLE');
           ln([xBase, cy + spec.r], [xPlate0, cy + spec.r], 'NOZZLE');
           chain([[xPlate1, cy - spec.rf], [xPlate0, cy - spec.rf], [xPlate0, cy + spec.rf], [xPlate1, cy + spec.rf]], 'NOZZLE', true);
-          const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
-          const elbowX = xPlate1 - Math.round(2.0 * N);
-          const shelfEndX = elbowX - Math.round(2.5 * N);
           drawLeader(ents, [xPlate1, cy], [elbowX, ey], [shelfEndX, ey], [label], nozTextH, 'right', 'NOZZLE', null, { face: 'left', view: 'plan' });
         } else {
           const xEnd = xBase - spec.sockLen;
           chain([[xEnd, cy - spec.sockR], [xBase, cy - spec.sockR], [xBase, cy + spec.sockR], [xEnd, cy + spec.sockR]], 'NOZZLE', true);
           ln([xEnd, cy - spec.r], [xEnd, cy + spec.r], 'NOZZLE');
-          const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
-          const elbowX = xEnd - Math.round(2.0 * N);
-          const shelfEndX = elbowX - Math.round(2.5 * N);
           drawLeader(ents, [xEnd, cy], [elbowX, ey], [shelfEndX, ey], [label], nozTextH, 'right', 'NOZZLE', null, { face: 'left', view: 'plan' });
         }
       } else if (n.face === 'right') {
@@ -3534,36 +3539,7 @@ canvas.drag{cursor:grabbing}
       }
     });
 
-    // 치수선 (축척 비례 계산 및 배관/풍선/외곽 간섭 방지 동적 여백 계산)
-    const textH = Math.round(3.0 * N);
-    const dimGap1 = Math.round(10.0 * N);
-    const dimGap2 = Math.round(18.0 * N);
-
-    let maxFrontNozExt = 0;
-    let maxLeftNozExt = 0;
-    let maxRearNozExt = 0;
-
-    nozList.forEach(n => {
-      const spec = getNozzleSpec(n.size);
-      const protrude = (n.type === 'FLANGE') ? (spec.neckLen + 20) : (spec.sockLen + 20);
-      if (n.face === 'front') {
-        if (protrude > maxFrontNozExt) maxFrontNozExt = protrude;
-      } else if (n.face === 'left') {
-        if (protrude > maxLeftNozExt) maxLeftNozExt = protrude;
-      } else if (n.face === 'rear') {
-        if (protrude > maxRearNozExt) maxRearNozExt = protrude;
-      }
-    });
-
-    const frontClearance = maxFrontNozExt > 0 ? (maxFrontNozExt + Math.round(6.0 * N)) : 0;
-    const leftClearance = maxLeftNozExt > 0 ? (maxLeftNozExt + Math.round(6.0 * N)) : 0;
-    const rearClearance = maxRearNozExt > 0 ? (maxRearNozExt + Math.round(6.0 * N)) : 0;
-
-    const baseX = -F - Math.max(dimGap1, leftClearance);
-    const baseY = -F - Math.max(dimGap1, frontClearance);
-    const overallX = baseX - Math.round(8.0 * N);
-    const overallY = baseY - Math.round(8.0 * N);
-
+    // 치수선 (치수는 풍선과 노즐이 없을 때 기준 100% 고정 - media_1791083394539.png)
     dimLinear(ents, [-F, 0], [0, 0], baseY, false, String(F), textH, 'DIM');
     map.cols.forEach((c, j) => dimLinear(ents, [map.xs[j], 0], [map.xs[j + 1], 0], baseY, false, String(c), textH, 'DIM'));
     dimLinear(ents, [L, 0], [L + F, 0], baseY, false, String(F), textH, 'DIM');
@@ -3581,9 +3557,9 @@ canvas.drag{cursor:grabbing}
         return it ? it.no : '';
       };
 
-      const topBaseY = W + F + Math.max(Math.round(18 * N), rearClearance + Math.round(8 * N));
+      const topBaseY = W + F + Math.round(18 * N);
       const topStaggerY = topBaseY + Math.round(10 * N);
-      const rightBaseX = L + F + Math.round(18 * N);
+      const rightBaseX = L + F + Math.round(8 * N);
       const botClearY = overallY - Math.round(14 * N);
       const leftClearX = overallX - Math.round(14 * N);
 
@@ -4975,8 +4951,8 @@ canvas.drag{cursor:grabbing}
       minLeftNozX = Math.min(minLeftNozX, -235);
     }
 
-    const leftNozMargin = (groupLeft.length > 0) ? Math.abs(minLeftNozX - (-75)) + Math.round(5.0 * N) : 0;
-    const X0 = -75 - Math.max(dimGap1, leftNozMargin);
+    // 치수는 풍선과 노즐이 없을 때 기준 100% 고정 (-75 - dimGap1, overallX)
+    const X0 = -75 - dimGap1;
     const overallX = X0 - Math.round(8.0 * N);
 
     // 치수 (FrontDim / SideDim: 축척 비례 계산 - media_1790951915253.png 표준 정위치)
@@ -6797,13 +6773,26 @@ canvas.drag{cursor:grabbing}
   const SCALES = [10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 125, 150, 200, 250, 300];
   const SHEET = { w: 841, h: 594, title: 200, margin: 10 };   // 종이 mm (표제란 200mm 최적 확장)
   function pickScale(L, W, H, isAsm5 = false) {
-    const extraIso = isAsm5 ? Math.max(1200, Math.round((L + W) * 0.65)) : 0;
-    const w_model = L + 150 + Math.max(L + 500, W + 150) + extraIso;
+    if (isAsm5) {
+      const isoW = Math.round((L + W) * 0.55);
+      const w_model = (L + 300) + Math.max(W + 300, isoW);
+      // 3행 배치: Row 1(Plan W), Row 2(Elev H+700), Row 3(Pad W+800)
+      const h_model = W + 400 + H + 700 + W + 800;
+      const avail_w = SHEET.w - SHEET.title - SHEET.margin * 2; // 621 mm
+      const avail_h = SHEET.h - SHEET.margin * 2;              // 574 mm
+      for (const n of SCALES) {
+        const w_paper = w_model / n + 100;
+        const h_paper = h_model / n + 110;
+        if (w_paper <= avail_w - 20 && h_paper <= avail_h - 20) return n;
+      }
+      return SCALES[SCALES.length - 1];
+    }
+    const w_model = L + 150 + Math.max(L + 500, W + 150);
     const h_model = W + 400 + H + 800;
     const avail_w = SHEET.w - SHEET.title - SHEET.margin * 2; // 621 mm
     const avail_h = SHEET.h - SHEET.margin * 2;              // 574 mm
     for (const n of SCALES) {
-      const w_paper = w_model / n + (isAsm5 ? 120 : 100);
+      const w_paper = w_model / n + 100;
       const h_paper = h_model / n + 110;
       if (w_paper <= avail_w - 20 && h_paper <= avail_h - 20) return n;
     }
@@ -7601,77 +7590,9 @@ canvas.drag{cursor:grabbing}
     const EXTC = 400;
     const GRD = -600;
 
-    const len2 = Math.max(totalL, totalW);
-    const col1_w = (dim_left_1 + totalL + dim_right_1) / N;
-    const col2_w = (dim_left_1 + len2 + dim_right_1) / N;
-
-    const row1_h = (EXTC + totalW + dim_bottom_1) / N + TITLE_H;
-    const row2_h = front ? ((H + 100 - GRD + dim_bottom_1) / N + TITLE_H) : 0;
-
     const isAsm5 = (!opt.sheetKind || opt.sheetKind === 'asm');
-    const areaW = tx0 - x0; // 약 600mm
-    const areaH = y1 - y0; // 약 564mm
-
-    // 가로 3열(또는 2열) 여백 및 간격 균형 배분
-    let col1_tank_cx, col2_tank_cx, col3_cx, col3_avail_w;
-
-    if (isAsm5) {
-      // 3열 배치 (Col 1: 평면/정면, Col 2: 패드/측면, Col 3: 등각조감도)
-      // Col 3에 쾌적한 전용 영역 할당
-      const col3_target_w = Math.max(120, Math.min(180, areaW - col1_w - col2_w - 30));
-      const total_3col_w = col1_w + col2_w + col3_target_w;
-      const rem_w = Math.max(0, areaW - total_3col_w);
-      const gap_x = Math.max(18, Math.min(30, rem_w / 4));
-      const left_margin = Math.max(10, (areaW - total_3col_w - gap_x * 2) / 2);
-
-      col1_tank_cx = x0 + left_margin + (dim_left_1 + totalL / 2) / N;
-      col2_tank_cx = col1_tank_cx + (totalL / 2 + dim_right_1) / N + gap_x + (dim_left_1 + len2 / 2) / N;
-
-      const col3_left = col2_tank_cx + (len2 / 2 + dim_right_1) / N + gap_x;
-      col3_avail_w = Math.max(90, (tx0 - 10) - col3_left);
-      col3_cx = col3_left + col3_avail_w / 2;
-    } else {
-      const total_views_w = col1_w + col2_w;
-      const avail_w = Math.max(0, areaW - total_views_w);
-      let left_margin = Math.max(16, avail_w * 0.28);
-      let right_margin = Math.max(16, avail_w * 0.28);
-      let gap_x = avail_w - left_margin - right_margin;
-      if (gap_x > 50) {
-        const extra = (gap_x - 50) / 2;
-        left_margin += extra;
-        right_margin += extra;
-        gap_x = 50;
-      }
-      col1_tank_cx = x0 + left_margin + (dim_left_1 + totalL / 2) / N;
-      col2_tank_cx = col1_tank_cx + (totalL / 2 + dim_right_1) / N + gap_x + (dim_left_1 + len2 / 2) / N;
-    }
-
-    // 세로 여백 및 간격 균형 배분
-    const total_views_h = row1_h + row2_h;
-    const avail_h = Math.max(0, areaH - total_views_h);
-    let top_margin = Math.max(16, avail_h * 0.28);
-    let bottom_margin = Math.max(16, avail_h * 0.28);
-    let gap_y = avail_h - top_margin - bottom_margin;
-    if (gap_y > 60) {
-      const extra = (gap_y - 60) / 2;
-      top_margin += extra;
-      bottom_margin += extra;
-      gap_y = 60;
-    }
-
-    const row1_tank_cy = y1 - top_margin - (PAD_OVERHANG + 50) / N - totalW / (2 * N);
-    const row2_ground_y = y0 + bottom_margin + TITLE_H + dim_bottom_1 / N;
-
-    // 1열(TOP & FRONT) 수직 투영 100% 일치
-    const dx1 = P(col1_tank_cx) - totalL / 2;
-    // 2열(CON'C & SIDE)
-    const dx2_conc = P(col2_tank_cx) - totalL / 2;
-    const dx2_side = P(col2_tank_cx) - totalW / 2;
-
-    // 1행(TOP & CON'C) 수평 투영 및 중심 높이 100% 일치
-    const dy1 = P(row1_tank_cy) - totalW / 2;
-    // 2행(FRONT & SIDE) 수평 그라운드 투영 100% 일치
-    const dy2 = P(row2_ground_y) - GRD;
+    const areaW = tx0 - x0;
+    const areaH = y1 - y0;
 
     const translateEnts = (es, dx, dy) => {
       es.forEach(e => {
@@ -7682,43 +7603,112 @@ canvas.drag{cursor:grabbing}
       });
     };
 
-    // 1행 뷰 배치 (TOP VIEW & BASIC CON'C)
-    translateEnts(plan.ents, dx1, dy1);
-    translateEnts(conc.ents, dx2_conc, dy1);
-
-    // 1행 뷰 타이틀 (평면도 & 기초패드도) - 치수선과 절대 겹치지 않게 동일한 Y 선상에 수평 정렬
-    const dimGap2 = Math.round(18.0 * N);
-    const row1_title_y = (dy1 - PAD_OVERHANG - dimGap2) / N - 14.0;
     const viewTitlePlan = lang === 'en' ? 'PLAN VIEW' : (lang === 'bilingual' ? '평 면 도 (PLAN VIEW)' : '평  면  도');
     const viewTitlePad = lang === 'en' ? 'FOUNDATION PAD PLAN' : (lang === 'bilingual' ? '기 초 패 드 도 (FOUNDATION PLAN)' : '기  초  패  드  도');
-    drawViewTitleBubble(col1_tank_cx, row1_title_y, 1, 1, viewTitlePlan);
-    drawViewTitleBubble(col2_tank_cx, row1_title_y, 1, 2, viewTitlePad);
+    const viewTitleFront = lang === 'en' ? 'FRONT ELEVATION' : (lang === 'bilingual' ? '정 면 도 (FRONT ELEVATION)' : '정  면  도');
+    const viewTitleSide = lang === 'en' ? 'RIGHT SIDE ELEVATION' : (lang === 'bilingual' ? '우 측 면 도 (SIDE ELEVATION)' : '우  측  면  도');
+    const viewTitleIso = lang === 'en' ? '3D ISOMETRIC VIEW' : (lang === 'bilingual' ? '등 각 조 감 도 (3D ISOMETRIC)' : '등  각  조  감  도');
 
     let elev = false;
     if (front && side) {
-      // 2행 뷰 배치 (정면도 & 우측면도)
-      translateEnts(front.ents, dx1, dy2);
-      translateEnts(side.ents, dx2_side, dy2);
+      // 2열 폭 계산
+      const col1_w = (dim_left_1 + totalL + dim_right_1) / N;
+      const col2_w = (dim_left_1 + totalW + dim_right_1) / N;
+      const total_2col_w = col1_w + col2_w;
+      const rem_w = Math.max(0, areaW - total_2col_w);
+      const gap_x = Math.max(25, Math.min(50, rem_w * 0.35));
+      const left_margin = Math.max(12, (rem_w - gap_x) / 2);
 
-      // 2행 뷰 타이틀 - 동일한 Y 선상에 수평 정렬
-      const row2_title_y = (dy2 + GRD - dim_bottom_1) / N - 14.0;
-      const viewTitleFront = lang === 'en' ? 'FRONT ELEVATION' : (lang === 'bilingual' ? '정 면 도 (FRONT ELEVATION)' : '정  면  도');
-      const viewTitleSide = lang === 'en' ? 'RIGHT SIDE ELEVATION' : (lang === 'bilingual' ? '우 측 면 도 (SIDE ELEVATION)' : '우  측  면  도');
+      const col1_tank_cx = x0 + left_margin + (dim_left_1 + totalL / 2) / N;
+      const col2_tank_cx = col1_tank_cx + (totalL / 2 + dim_right_1) / N + gap_x + (dim_left_1 + totalW / 2) / N;
+
+      // 3행 높이 계산:
+      // Row 1: 평면도 (PLAN VIEW)
+      // Row 2: 정면도 및 우측면도 (FRONT & SIDE ELEVATION)
+      // Row 3: 기초 패드도 (FOUNDATION PAD PLAN)
+      const row1_top_extent = (totalW / 2 + 500) / N;
+      const row1_bottom_extent = (totalW / 2 + dim_bottom_1 + 300) / N + TITLE_H;
+      const row1_total_h = row1_top_extent + row1_bottom_extent;
+
+      const row2_top_extent = (H + 200) / N;
+      const row2_bottom_extent = (-GRD + dim_bottom_1) / N + TITLE_H;
+      const row2_total_h = row2_top_extent + row2_bottom_extent;
+
+      const row3_top_extent = (totalW / 2 + PAD_OVERHANG + 500) / N;
+      const row3_bottom_extent = (totalW / 2 + PAD_OVERHANG + dim_bottom_1 + 300) / N + TITLE_H;
+      const row3_total_h = row3_top_extent + row3_bottom_extent;
+
+      const total_content_h = row1_total_h + row2_total_h + row3_total_h;
+      const free_h = Math.max(0, areaH - total_content_h);
+
+      const gap_12 = Math.max(10, Math.min(25, free_h * 0.28));
+      const gap_23 = Math.max(10, Math.min(25, free_h * 0.28));
+      const rem_margin = Math.max(20, free_h - gap_12 - gap_23);
+      const m_top = Math.max(10, rem_margin * 0.45);
+      const m_bottom = Math.max(10, rem_margin * 0.55);
+
+      const row1_top_y = y1 - m_top;
+      const row1_tank_cy = row1_top_y - row1_top_extent;
+      const row1_bottom_y = row1_tank_cy - row1_bottom_extent;
+      const row1_title_y = row1_tank_cy - (totalW / 2 + dim_bottom_1 + 300) / N - 14.0;
+
+      const row2_top_y = row1_bottom_y - gap_12;
+      const row2_ground_y = row2_top_y - row2_top_extent;
+      const row2_bottom_y = row2_ground_y - row2_bottom_extent;
+      const row2_title_y = (row2_ground_y * N + GRD - dim_bottom_1) / N - 14.0;
+
+      const row3_top_y = row2_bottom_y - gap_23;
+      const row3_pad_cy = row3_top_y - row3_top_extent;
+      const row3_bottom_y = row3_pad_cy - row3_bottom_extent;
+      const row3_title_y = row3_pad_cy - (totalW / 2 + PAD_OVERHANG + dim_bottom_1 + 300) / N - 14.0;
+
+      // 1열(TOP & FRONT) 수직 투영 100% 일치
+      const dx1 = P(col1_tank_cx) - totalL / 2;
+      // 2열(SIDE)
+      const dx2_side = P(col2_tank_cx) - totalW / 2;
+
+      // 1행(TOP)
+      const dy1 = P(row1_tank_cy) - totalW / 2;
+      // 2행(FRONT & SIDE) 수평 그라운드 투영 100% 일치
+      const dy2 = P(row2_ground_y) - GRD;
+
+      // 1. Row 1 Col 1: 평면도 배치
+      translateEnts(plan.ents, dx1, dy1);
+      drawViewTitleBubble(col1_tank_cx, row1_title_y, 1, 1, viewTitlePlan);
+
+      // 2. Row 2 Col 1: 정면도 배치
+      translateEnts(front.ents, dx1, dy2);
       drawViewTitleBubble(col1_tank_cx, row2_title_y, 1, 3, viewTitleFront);
+
+      // 3. Row 2 Col 2: 우측면도 배치
+      translateEnts(side.ents, dx2_side, dy2);
       drawViewTitleBubble(col2_tank_cx, row2_title_y, 1, 4, viewTitleSide);
 
-      // 5. 등각 조감도 (View 5: 3D ISOMETRIC VIEW) 배치
-      if (isAsm5 && col3_avail_w) {
+      // 4. Row 3 Center: 기초 패드도 배치 (하단 중앙)
+      let pad_cx = (col1_tank_cx + col2_tank_cx) / 2;
+      const pad_half_w = (totalL / 2 + PAD_OVERHANG + dim_left_1) / N;
+      if (pad_cx + pad_half_w > tx0 - 15) pad_cx = tx0 - 15 - pad_half_w;
+      if (pad_cx - pad_half_w < x0 + 15) pad_cx = x0 + 15 + pad_half_w;
+
+      const dx_pad = P(pad_cx) - totalL / 2;
+      const dy_pad = P(row3_pad_cy) - totalW / 2;
+      translateEnts(conc.ents, dx_pad, dy_pad);
+      drawViewTitleBubble(pad_cx, row3_title_y, 1, 2, viewTitlePad);
+
+      // 5. Row 1 Col 2: 등각 조감도 배치 (우측 상단)
+      if (isAsm5) {
         const iso = buildIsometric(opt, templates, sideT);
         const b_iso = bb(iso.ents);
         const isoW_mm = (b_iso[2] - b_iso[0]) / N;
         const isoH_mm = (b_iso[3] - b_iso[1]) / N;
 
-        const iso_avail_h = Math.max(120, (row1_tank_cy + totalW / (2 * N)) - (row2_title_y + 12));
-        const isoFitScale = Math.min((col3_avail_w * 0.90) / isoW_mm, (iso_avail_h * 0.85) / isoH_mm);
+        const iso_avail_w = Math.max(100, (tx0 - 15) - (col1_tank_cx + totalL / (2 * N) + dim_right_1 / N + gap_x * 0.5));
+        const iso_avail_h = Math.max(100, row1_top_y - (row1_bottom_y + 16));
+        const isoFitScale = Math.min((iso_avail_w * 0.92) / isoW_mm, (iso_avail_h * 0.88) / isoH_mm);
 
-        const iso_cy = (row1_tank_cy + row2_ground_y) / 2 + 10;
-        const isoDx = P(col3_cx) - ((b_iso[0] + b_iso[2]) / 2) * isoFitScale;
+        const iso_cx = col2_tank_cx;
+        const iso_cy = (row1_top_y + (row1_bottom_y + 18)) / 2;
+        const isoDx = P(iso_cx) - ((b_iso[0] + b_iso[2]) / 2) * isoFitScale;
         const isoDy = P(iso_cy) - ((b_iso[1] + b_iso[3]) / 2) * isoFitScale;
 
         iso.ents.forEach(e => {
@@ -7728,10 +7718,27 @@ canvas.drag{cursor:grabbing}
           else ents.push({ ...e, p: [e.p[0] * isoFitScale + isoDx, e.p[1] * isoFitScale + isoDy], h: e.h * isoFitScale });
         });
 
-        const viewTitleIso = lang === 'en' ? '3D ISOMETRIC VIEW' : (lang === 'bilingual' ? '등 각 조 감 도 (3D ISOMETRIC)' : '등  각  조  감  도');
-        drawViewTitleBubble(col3_cx, row2_title_y, 1, 5, viewTitleIso);
+        const iso_bottom_y = (isoDy + b_iso[1] * isoFitScale) / N;
+        const row1_iso_title_y = Math.min(row1_title_y, iso_bottom_y - 14.0);
+        drawViewTitleBubble(iso_cx, row1_iso_title_y, 1, 5, viewTitleIso);
       }
       elev = true;
+    } else {
+      // 2-row fallback (단순 평면 + 패드)
+      const center_cx = (x0 + tx0) / 2;
+      const row1_cy = y0 + areaH * 0.72;
+      const row2_cy = y0 + areaH * 0.28;
+      const dx_p = P(center_cx) - totalL / 2;
+      const dy_p = P(row1_cy) - totalW / 2;
+      translateEnts(plan.ents, dx_p, dy_p);
+      const title_p_y = (dy_p - dim_bottom_1) / N - 14.0;
+      drawViewTitleBubble(center_cx, title_p_y, 1, 1, viewTitlePlan);
+
+      const dx_c = P(center_cx) - totalL / 2;
+      const dy_c = P(row2_cy) - totalW / 2;
+      translateEnts(conc.ents, dx_c, dy_c);
+      const title_c_y = (dy_c - PAD_OVERHANG - dim_bottom_1) / N - 14.0;
+      drawViewTitleBubble(center_cx, title_c_y, 1, 2, viewTitlePad);
     }
 
     // 모든 뷰 통합 후 풍선 기호(bubble)와 번호(text)의 좌표 100% 일치 동기화 (치수 및 개별 뷰 불변 유지)
@@ -11549,7 +11556,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.82</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.84</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
