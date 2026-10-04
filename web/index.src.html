@@ -416,7 +416,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.93</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.94</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1027,6 +1027,7 @@ canvas.drag{cursor:grabbing}
       <button type="button" id="toggleSide" title="사이드바 접기/펼치기">◀ 패널</button>
       <div class="tool-group">
         <label class="layer-chip"><input type="checkbox" id="lyPanel" checked> <span id="lblLyPanel">패널</span></label>
+        <label class="layer-chip"><input type="checkbox" id="lyPad" checked> <span id="lblLyPad">🏗️ 패드</span></label>
         <label class="layer-chip"><input type="checkbox" id="lyNozzle" checked> <span id="lblLyNozzle">💧 노즐</span></label>
         <label class="layer-chip"><input type="checkbox" id="lyBalloon" checked> <span id="lblLyBalloon">🎈 풍선기호</span></label>
         <label class="layer-chip"><input type="checkbox" id="lyDetail" checked> <span id="lblLyDetail">상세</span></label>
@@ -2032,7 +2033,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.93</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.94</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2042,7 +2043,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.93</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.94</span></div>
     </div>
   </main>
 </div>
@@ -2274,6 +2275,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       btnShareUrl: '🔗 공유 링크',
       btnSaveDwg: '💾 DWG 저장 (.dwg)',
       lyPanel: '패널',
+      lyPad: '🏗️ 패드',
       lyNozzle: '💧 노즐',
       lyBalloon: '🎈 풍선기호',
       lyDetail: '상세',
@@ -2382,6 +2384,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       btnShareUrl: '🔗 Share URL',
       btnSaveDwg: '💾 Save DWG (.dwg)',
       lyPanel: 'Panel',
+      lyPad: '🏗️ Pad',
       lyNozzle: '💧 Nozzle',
       lyBalloon: '🎈 Balloon',
       lyDetail: 'Detail',
@@ -2771,6 +2774,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       $('toggleSide').title = currentLang === 'en' ? 'Collapse / Expand Sidebar' : '사이드바 접기/펼치기';
     }
     if ($('lblLyPanel')) $('lblLyPanel').textContent = t.lyPanel;
+    if ($('lblLyPad')) $('lblLyPad').textContent = t.lyPad;
     if ($('lblLyNozzle')) $('lblLyNozzle').textContent = t.lyNozzle;
     if ($('lblLyBalloon')) $('lblLyBalloon').textContent = t.lyBalloon;
     if ($('lblLyDetail')) $('lblLyDetail').textContent = t.lyDetail;
@@ -5381,7 +5385,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   $('eReset').addEventListener('click', () => { removed = new Set(); pillars = new Set(); marks = {}; ladders = {}; topInletCell = [0, 0]; rebuild(false); });
 
   const cv = $('c'), ctx = cv.getContext('2d');
-  const LY = { PANEL: 'lyPanel', PANEL_DETAIL: 'lyDetail', FRAME: 'lyFrame', REINF: 'lyReinf', WALL: 'lyWall', DIM: 'lyDim', SHEET: 'lySheet', NOZZLE: 'lyNozzle', BALLOON: 'lyBalloon' };
+  const LY = { PANEL: 'lyPanel', PANEL_DETAIL: 'lyDetail', FRAME: 'lyFrame', REINF: 'lyReinf', WALL: 'lyWall', DIM: 'lyDim', SHEET: 'lySheet', NOZZLE: 'lyNozzle', BALLOON: 'lyBalloon', PAD: 'lyPad' };
   const layerOn = e => {
     if (e.layer === 'BALLOON') {
       const b1 = $('lyBalloon') ? $('lyBalloon').checked : true;
@@ -5390,6 +5394,17 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     }
     if (e.layer === 'NOZZLE') {
       return $('lyNozzle') ? $('lyNozzle').checked : true;
+    }
+    if (e.layer === 'PAD' || e.isFoundation) {
+      return $('lyPad') ? $('lyPad').checked : true;
+    }
+    if (e.layer === 'PANEL') {
+      return $('lyPanel') ? $('lyPanel').checked : true;
+    }
+    if (e.layer === 'PANEL_DETAIL') {
+      const panelOn = $('lyPanel') ? $('lyPanel').checked : true;
+      const detailOn = $('lyDetail') ? $('lyDetail').checked : true;
+      return panelOn && detailOn;
     }
     return $(LY[e.layer]) ? $(LY[e.layer]).checked : true;
   };
@@ -5772,7 +5787,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.93</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.94</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -6229,8 +6244,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       ctx.setTransform(z.d, 0, 0, z.d, 0, 0);
       ctx.beginPath();
 
-      const col = { PANEL: css('--cv-panel') || '#f1f5f9', PANEL_DETAIL: css('--cv-detail') || '#94a3b8', FRAME: css('--cv-frame') || '#fb923c', REINF: css('--cv-panel') || '#f1f5f9', WALL: css('--cv-frame') || '#fb923c', DIM: css('--cv-dim') || '#38bdf8', SHEET: css('--cv-sheet') || '#e2e8f0', BALLOON: css('--cv-balloon') || '#f43f5e', NOZZLE: css('--cv-nozzle') || '#10b981' };
-      const lw = { PANEL: 1.4, PANEL_DETAIL: 0.9, FRAME: 1.6, REINF: 1.2, WALL: 1, DIM: 1, SHEET: 1.3, BALLOON: 1.8, NOZZLE: 1.6 };
+      const col = { PANEL: css('--cv-panel') || '#f1f5f9', PANEL_DETAIL: css('--cv-detail') || '#94a3b8', FRAME: css('--cv-frame') || '#fb923c', REINF: css('--cv-panel') || '#f1f5f9', WALL: css('--cv-frame') || '#fb923c', DIM: css('--cv-dim') || '#38bdf8', SHEET: css('--cv-sheet') || '#e2e8f0', BALLOON: css('--cv-balloon') || '#f43f5e', NOZZLE: css('--cv-nozzle') || '#10b981', PAD: css('--cv-detail') || '#94a3b8' };
+      const lw = { PANEL: 1.4, PANEL_DETAIL: 0.9, FRAME: 1.6, REINF: 1.2, WALL: 1, DIM: 1, SHEET: 1.3, BALLOON: 1.8, NOZZLE: 1.6, PAD: 1.2 };
       const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
 
       const renderImageEnt = (e) => {
@@ -6373,7 +6388,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         });
         images.forEach(renderImageEnt);
       } else {
-        ['PANEL_DETAIL', 'PANEL', 'WALL', 'REINF', 'FRAME', 'DIM', 'SHEET', 'BALLOON', 'NOZZLE'].forEach(layer => {
+        ['PAD', 'PANEL_DETAIL', 'PANEL', 'WALL', 'REINF', 'FRAME', 'DIM', 'SHEET', 'BALLOON', 'NOZZLE'].forEach(layer => {
           ctx.strokeStyle = col[layer]; ctx.fillStyle = col[layer]; ctx.lineWidth = lw[layer]; ctx.beginPath();
           const texts = [];
           const images = [];

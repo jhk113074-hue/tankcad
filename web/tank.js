@@ -1978,8 +1978,8 @@
   }
   // CConcLT::ConcDesign (자갈 무늬), 기준점 (px,py)
   function concDesign(ents, px, py) {
-    [[150, 300, 40], [100, 180, 30], [130, 100, 20], [135, 70, 10], [120, 50, 10]].forEach(c => ents.push({ t: 'circle', c: [px + c[0], py + c[1]], r: c[2], layer: 'PANEL_DETAIL' }));
-    [[[40, 50], [180, 200]], [[10, 100], [150, 250]], [[50, 200], [190, 350]]].forEach(l => ents.push({ t: 'line', a: [px + l[0][0], py + l[0][1]], b: [px + l[1][0], py + l[1][1]], layer: 'PANEL_DETAIL' }));
+    [[150, 300, 40], [100, 180, 30], [130, 100, 20], [135, 70, 10], [120, 50, 10]].forEach(c => ents.push({ t: 'circle', c: [px + c[0], py + c[1]], r: c[2], layer: 'PAD' }));
+    [[[40, 50], [180, 200]], [[10, 100], [150, 250]], [[50, 200], [190, 350]]].forEach(l => ents.push({ t: 'line', a: [px + l[0][0], py + l[0][1]], b: [px + l[1][0], py + l[1][1]], layer: 'PAD' }));
   }
   const PAD_OVERHANG = 200; // 상하 대칭 각 200mm 돌출 (총 EXTC = 400mm)
   const EXTC = PAD_OVERHANG * 2;
@@ -2026,17 +2026,17 @@
       const blkName = `PAD_STRIP_${w}x${len}`;
       if (!blocks[blkName]) {
         const bEnts = [
-          { t: 'line', a: [0, 0], b: [w, 0], layer: 'PANEL' },
-          { t: 'line', a: [w, 0], b: [w, len], layer: 'PANEL' },
-          { t: 'line', a: [w, len], b: [0, len], layer: 'PANEL' },
-          { t: 'line', a: [0, len], b: [0, 0], layer: 'PANEL' }
+          { t: 'line', a: [0, 0], b: [w, 0], layer: 'PAD' },
+          { t: 'line', a: [w, 0], b: [w, len], layer: 'PAD' },
+          { t: 'line', a: [w, len], b: [0, len], layer: 'PAD' },
+          { t: 'line', a: [0, len], b: [0, 0], layer: 'PAD' }
         ];
         if (w >= 190 && len >= 350) {
           concDesign(bEnts, 0, 0);
         }
         blocks[blkName] = bEnts;
       }
-      ents.push({ t: 'insert', block: blkName, p: [x, y0], w, h: len, layer: 'PANEL' });
+      ents.push({ t: 'insert', block: blkName, p: [x, y0], w, h: len, layer: 'PAD' });
     });
     ents.blocks = blocks;
 
@@ -2283,24 +2283,24 @@
     const numPlinths = plinths.length;
 
     // 2. 패드 기둥 및 하부 슬래브 외곽선 (Concrete outlines)
-    plinths.forEach(([lx, rx]) => ln([lx, -th], [rx, -th], 'PANEL'));
+    plinths.forEach(([lx, rx]) => ln([lx, -th], [rx, -th], 'PAD'));
     for (let i = 0; i < plinths.length - 1; i++) {
       const curRx = plinths[i][1];
       const nextLx = plinths[i + 1][0];
-      ln([curRx, -th], [curRx, slabTopY], 'PANEL');
-      ln([curRx, slabTopY], [nextLx, slabTopY], 'PANEL');
-      ln([nextLx, slabTopY], [nextLx, -th], 'PANEL');
+      ln([curRx, -th], [curRx, slabTopY], 'PAD');
+      ln([curRx, slabTopY], [nextLx, slabTopY], 'PAD');
+      ln([nextLx, slabTopY], [nextLx, -th], 'PAD');
     }
-    ln([px0, -th], [px0, slabBotY], 'PANEL');
-    ln([pxEnd, -th], [pxEnd, slabBotY], 'PANEL');
-    ln([px0, slabBotY], [pxEnd, slabBotY], 'PANEL');
+    ln([px0, -th], [px0, slabBotY], 'PAD');
+    ln([pxEnd, -th], [pxEnd, slabBotY], 'PAD');
+    ln([px0, slabBotY], [pxEnd, slabBotY], 'PAD');
 
     // 4. 콘크리트 해치 (기둥 및 하부 슬래브에 걸쳐 단절 없이 연결되는 45도 사선 무늬)
     const hatchStep = 80;
     plinths.forEach(([lx, rx]) => {
-      hatchAlignedRect(ents, lx, slabTopY, rx, -th, hatchStep, 'PANEL_DETAIL', 1);
+      hatchAlignedRect(ents, lx, slabTopY, rx, -th, hatchStep, 'PAD', 1);
     });
-    hatchAlignedRect(ents, px0, slabBotY, pxEnd, slabTopY, hatchStep, 'PANEL_DETAIL', 1);
+    hatchAlignedRect(ents, px0, slabBotY, pxEnd, slabTopY, hatchStep, 'PAD', 1);
 
     // 5. 상부 베이스 스키드 프레임 (스틸 스키드 / 채널: 0 ~ -th) - 깨끗한 연속 빔
     ln([-75, 0], [total + 75, 0], 'FRAME');
@@ -2795,24 +2795,24 @@
     const numPlinths = plinths.length;
 
     // 2. 패드 기둥 및 하부 슬래브 외곽선 (Concrete outlines)
-    plinths.forEach(([lx, rx]) => ln([lx, -th], [rx, -th], 'PANEL'));
+    plinths.forEach(([lx, rx]) => ln([lx, -th], [rx, -th], 'PAD'));
     for (let i = 0; i < plinths.length - 1; i++) {
       const curRx = plinths[i][1];
       const nextLx = plinths[i + 1][0];
-      ln([curRx, -th], [curRx, slabTopY], 'PANEL');
-      ln([curRx, slabTopY], [nextLx, slabTopY], 'PANEL');
-      ln([nextLx, slabTopY], [nextLx, -th], 'PANEL');
+      ln([curRx, -th], [curRx, slabTopY], 'PAD');
+      ln([curRx, slabTopY], [nextLx, slabTopY], 'PAD');
+      ln([nextLx, slabTopY], [nextLx, -th], 'PAD');
     }
-    ln([px0, -th], [px0, slabBotY], 'PANEL');
-    ln([pxEnd, -th], [pxEnd, slabBotY], 'PANEL');
-    ln([px0, slabBotY], [pxEnd, slabBotY], 'PANEL');
+    ln([px0, -th], [px0, slabBotY], 'PAD');
+    ln([pxEnd, -th], [pxEnd, slabBotY], 'PAD');
+    ln([px0, slabBotY], [pxEnd, slabBotY], 'PAD');
 
     // 4. 콘크리트 해치 (기둥 및 하부 슬래브에 걸쳐 단절 없이 연결되는 45도 사선 무늬)
     const hatchStep = 80;
     plinths.forEach(([lx, rx]) => {
-      hatchAlignedRect(ents, lx, slabTopY, rx, -th, hatchStep, 'PANEL_DETAIL', 1);
+      hatchAlignedRect(ents, lx, slabTopY, rx, -th, hatchStep, 'PAD', 1);
     });
-    hatchAlignedRect(ents, px0, slabBotY, pxEnd, slabTopY, hatchStep, 'PANEL_DETAIL', 1);
+    hatchAlignedRect(ents, px0, slabBotY, pxEnd, slabTopY, hatchStep, 'PAD', 1);
 
     // 6. 단부 기둥 철근 배근 형상 (REINF 레이어 - media_1790951915253.png)
     // 좌측 기둥 철근
@@ -3289,17 +3289,18 @@
     const getDepth = (x, y, z) => y - x - z;
 
     let inFoundation = false;
-    const ln = (a, b, layer, depth = 0) => ents.push({ t: 'line', a, b, layer: layer || 'PANEL', depth });
+    const ln = (a, b, layer, depth = 0) => ents.push({ t: 'line', a, b, layer: inFoundation ? 'PAD' : (layer || 'PANEL'), depth, isFoundation: inFoundation });
     const poly = (pts, layer, close = true, fill = false, depth = 0) => {
+      const actLayer = inFoundation ? 'PAD' : (layer || 'PANEL');
       if (fill) {
-        ents.push({ t: 'poly', pts, fill: true, stroke: false, close: false, layer: layer || 'PANEL', depth, isFoundation: inFoundation });
+        ents.push({ t: 'poly', pts, fill: true, stroke: false, close: false, layer: actLayer, depth, isFoundation: inFoundation });
         if (close !== false) {
-          for (let i = 0; i < pts.length - 1; i++) ln(pts[i], pts[i + 1], layer, depth);
-          if (pts.length > 2) ln(pts[pts.length - 1], pts[0], layer, depth);
+          for (let i = 0; i < pts.length - 1; i++) ln(pts[i], pts[i + 1], actLayer, depth);
+          if (pts.length > 2) ln(pts[pts.length - 1], pts[0], actLayer, depth);
         }
       } else {
-        for (let i = 0; i < pts.length - 1; i++) ln(pts[i], pts[i + 1], layer, depth);
-        if (close && pts.length > 2) ln(pts[pts.length - 1], pts[0], layer, depth);
+        for (let i = 0; i < pts.length - 1; i++) ln(pts[i], pts[i + 1], actLayer, depth);
+        if (close && pts.length > 2) ln(pts[pts.length - 1], pts[0], actLayer, depth);
       }
     };
 
@@ -3697,6 +3698,7 @@
         }
       });
     });
+    inFoundation = false;
 
     // 베이스 찬넬 림 (Skid Channel 100mm)
     // 1) 전면 탱크 하부 찬넬
@@ -3707,8 +3709,8 @@
         const x0 = map.xs[j], x1 = map.xs[j + 1];
         const skidDepth = y0 - (x0 + x1) / 2 - (-th / 2);
         poly([toIso(x0, y0, 0), toIso(x1, y0, 0), toIso(x1, y0, -th), toIso(x0, y0, -th)], 'FRAME', true, true, skidDepth);
-        ln(toIso(x0, y0, -th + 15), toIso(x1, y0, -th + 15), 'PANEL_DETAIL', skidDepth);
-        ln(toIso(x0, y0, -15), toIso(x1, y0, -15), 'PANEL_DETAIL', skidDepth);
+        ln(toIso(x0, y0, -th + 15), toIso(x1, y0, -th + 15), 'FRAME', skidDepth);
+        ln(toIso(x0, y0, -15), toIso(x1, y0, -15), 'FRAME', skidDepth);
       }
     }
 
@@ -3720,12 +3722,10 @@
         const xWall = map.xs[j + 1];
         const skidDepth = (y0 + y1) / 2 - xWall - (-th / 2);
         poly([toIso(xWall, y0, 0), toIso(xWall, y1, 0), toIso(xWall, y1, -th), toIso(xWall, y0, -th)], 'FRAME', true, true, skidDepth);
-        ln(toIso(xWall, y0, -th + 15), toIso(xWall, y1, -th + 15), 'PANEL_DETAIL', skidDepth);
-        ln(toIso(xWall, y0, -15), toIso(xWall, y1, -15), 'PANEL_DETAIL', skidDepth);
+        ln(toIso(xWall, y0, -th + 15), toIso(xWall, y1, -th + 15), 'FRAME', skidDepth);
+        ln(toIso(xWall, y0, -15), toIso(xWall, y1, -15), 'FRAME', skidDepth);
       }
     }
-
-    inFoundation = false;
     // 2. 전면 벽체 판넬 (Front-Facing Walls: normal -Y, 'D')
     for (let i = 0; i < map.rows.length; i++) {
       const y0 = map.ys[i];
@@ -5892,7 +5892,7 @@
   }
 
   /* ---------- DXF (AutoCAD R12 ASCII, mm) ---------- */
-  const LAYERS = { PANEL: 7, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4 };
+  const LAYERS = { PANEL: 7, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4, PAD: 8 };
   const dxfText = str => Array.from(str).map(ch => { const c = ch.codePointAt(0); return c < 128 ? ch : '\\U+' + c.toString(16).toUpperCase().padStart(4, '0'); }).join('');
 
   function toDxf(ents, blocks) {
