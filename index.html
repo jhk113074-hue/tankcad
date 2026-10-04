@@ -419,7 +419,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.6</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.7</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2109,7 +2109,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.6</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.7</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2119,7 +2119,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.6</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.7</span></div>
     </div>
   </main>
 </div>
@@ -2443,7 +2443,7 @@ canvas.drag{cursor:grabbing}
     const defs = opt?.defaultPartEntities || (typeof DEFAULT_PART_ENTITIES !== 'undefined' ? DEFAULT_PART_ENTITIES : (typeof root !== 'undefined' ? root.DEFAULT_PART_ENTITIES : (typeof window !== 'undefined' ? window.DEFAULT_PART_ENTITIES : null)));
     if (defs && defs[cat] && typeof defs[cat].get === 'function') {
       const w = (cat === 'ladder') ? 400 : (cat === 'inladder' ? 300 : 1000);
-      return defs[cat].get(w, h || (cat === 'top' ? 100 : (cat === 'manhole' ? 180 : 2000)), view);
+      return defs[cat].get(w, h || (cat === 'top' ? 100 : (cat === 'manhole' ? 800 : 2000)), view);
     }
     return null;
   }
@@ -4834,11 +4834,13 @@ canvas.drag{cursor:grabbing}
         circ(x - MX + OB.SPACE + ms, y + OB.STAY + OB.CY - ms, R, 'REINF'); circ(x + MX - OB.SPACE - ms, y + OB.STAY + OB.CY - ms, R, 'REINF');
       }
     }
-    // CManholeLT::Form (외부보강, 손잡이/환기구 없음) — pos: 0 단일 1 왼쪽 2 중간 3 오른쪽
+    // CManholeLT::Form (개방형 이중덮개 맨홀 형상) — pos: 0 단일 1 왼쪽 2 중간 3 오른쪽
     function manhole(x, y, cx, cy, pos, shape) {
-      const customParts = opt?.partTemplates || {};
-      if (shape & 1) {
-        const customMh = resolvePartEntities(customParts, 'manhole', view, cy, opt);
+      const customParts = opt?.partTemplates || opt?.customComponents || {};
+      const hasMhShape = (shape & 1) || (shape & 2) || (shape === 5) || (shape === 6);
+      if (hasMhShape) {
+        const customMh = resolvePartEntities(customParts, 'manhole', view, cy, opt)
+                      || resolvePartEntities(customParts, 'manhole', view === 'side' ? 'right' : 'front', cy, opt);
         if (customMh && customMh.length > 0) {
           let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
           customMh.forEach(e => {
@@ -4867,7 +4869,7 @@ canvas.drag{cursor:grabbing}
         });
         const tw = (maxX - minX) || 1000;
         renderCustomEntitiesAt(ents, customTop, x - minX * (cx / tw), y - minY, cx / tw, 1, 'PANEL');
-        if (shape & 1) {
+        if (hasMhShape) {
           const top = (MH.STAY || 20) + cy, ms = cx >> 1, mh = 275;
           poly([[x + ms - mh, y + 60], [x + ms - mh, y + top], [x + ms + mh, y + top], [x + ms + mh, y + 60]], 'PANEL');
         }
@@ -4885,10 +4887,45 @@ canvas.drag{cursor:grabbing}
       const solY = (a, b, xx) => gRound((b[1] - a[1]) * (xx - a[0]) / (b[0] - a[0]) + a[1]);
       if (two) {
         const top = T + cy;
-        if (shape & 1) { const mh = 275, yy = solY([ms - 456, 60], [ms - 100, top], ms - mh); poly([[x + ms - mh, y + yy], [x + ms - mh, y + top], [x + ms + mh, y + top], [x + ms + mh, y + yy]], 'PANEL'); }
-        if (shape & 2) {
-          const y1 = solY([ms + 456, 60], [ms + 100, top], ms + 290), y2 = solY([ms + 456, 60], [ms + 100, top], ms + 310);
-          poly([[x + ms + 290, y + y1], [x + ms + 290, y + top], [x + ms + 310, y + top], [x + ms + 310, y + y2]], 'PANEL');
+        if ((shape & 1) || (shape === 5)) {
+          // 개방형 맨홀 기본 형상 (정면도: 넥 프레임 + 기립된 팔각 덮개 + X자 리브, 상단 높이 top + 700)
+          const mhW = 550, mhH = 60, covW = 580, covH = 640;
+          rect(x + ms - mhW / 2, y + top, x + ms + mhW / 2, y + top + mhH, 'PANEL');
+          const ch = 120;
+          const cx0 = x + ms, cy0 = y + top + mhH;
+          const octOuter = [
+            [cx0 - covW / 2 + ch, cy0], [cx0 + covW / 2 - ch, cy0],
+            [cx0 + covW / 2, cy0 + ch], [cx0 + covW / 2, cy0 + covH - ch],
+            [cx0 + covW / 2 - ch, cy0 + covH], [cx0 - covW / 2 + ch, cy0 + covH],
+            [cx0 - covW / 2, cy0 + covH - ch], [cx0 - covW / 2, cy0 + ch]
+          ];
+          poly(octOuter, 'PANEL', true);
+          const ich = 90, iw = covW - 140, ih = covH - 140, icy0 = cy0 + 70;
+          const octInner = [
+            [cx0 - iw / 2 + ich, icy0], [cx0 + iw / 2 - ich, icy0],
+            [cx0 + iw / 2, icy0 + ich], [cx0 + iw / 2, icy0 + ih - ich],
+            [cx0 + iw / 2 - ich, icy0 + ih], [cx0 - iw / 2 + ich, icy0 + ih],
+            [cx0 - iw / 2, icy0 + ih - ich], [cx0 - iw / 2, icy0 + ich]
+          ];
+          poly(octInner, 'PANEL', true);
+          const centerCoverY = cy0 + covH / 2;
+          circ(cx0, centerCoverY, 50, 'PANEL');
+          circ(cx0, centerCoverY, 25, 'PANEL');
+          ln([cx0 - 35, centerCoverY - 35], [cx0 - iw / 2 + ich * 0.7, icy0 + ich * 0.7], 'PANEL');
+          ln([cx0 + 35, centerCoverY - 35], [cx0 + iw / 2 - ich * 0.7, icy0 + ich * 0.7], 'PANEL');
+          ln([cx0 - 35, centerCoverY + 35], [cx0 - iw / 2 + ich * 0.7, icy0 + ih - ich * 0.7], 'PANEL');
+          ln([cx0 + 35, centerCoverY + 35], [cx0 + iw / 2 - ich * 0.7, icy0 + ih - ich * 0.7], 'PANEL');
+          rect(cx0 - 25, cy0 + covH, cx0 + 25, cy0 + covH + 25, 'PANEL');
+          rect(cx0 - 40, cy0 - 15, cx0 + 40, cy0 + 15, 'PANEL');
+        }
+        if ((shape & 2) || (shape === 6)) {
+          // 개방형 맨홀 기본 형상 (측면도: 넥 프레임 + 기립된 덮개 측면 프로파일, 상단 높이 top + 700)
+          const mhW = 550, mhH = 60, covH = 640;
+          rect(x + ms - mhW / 2, y + top, x + ms + mhW / 2, y + top + mhH, 'PANEL');
+          const hx = x + ms - 180;
+          rect(hx - 15, y + top + mhH, hx + 15, y + top + mhH + covH, 'PANEL');
+          ln([hx + 15, y + top + mhH + 60], [x + ms + 140, y + top + mhH], 'PANEL');
+          rect(hx - 25, y + top + mhH - 10, hx + 25, y + top + mhH + 15, 'PANEL');
         }
         if (shape & 4) {
           let h = top; [[110, 10], [60, 60], [100, 6], [90, 30]].forEach(([w, hh]) => { rect(x + ms - w / 2, y + h, x + ms + w / 2, y + h + hh, 'PANEL'); h += hh; });
@@ -5337,19 +5374,78 @@ canvas.drag{cursor:grabbing}
       minLeftNozX = Math.min(minLeftNozX, -235);
     }
 
-    // 치수는 풍선과 노즐이 없을 때 기준 100% 고정 (-75 - dimGap1, overallX)
-    const X0 = -75 - dimGap1;
-    const overallX = X0 - Math.round(8.0 * N);
+    // 지붕 플랜지 높이 및 맨홀 유무/개방 최상단 높이 계산
+    const roofFlgH = sts ? 70 : 100;
+    const roofTopY = nH + roofFlgH;
 
-    // 치수 (FrontDim / SideDim: 축척 비례 계산 - media_1790951915253.png 표준 정위치)
+    let hasMhInView = false;
+    const nGridCols = mmap.cols.length, nGridRows = mmap.rows.length;
+    const nViewDim = view === 'front' ? nGridCols : nGridRows;
+    for (let g = 0; g < nViewDim; g++) {
+      const sh = shapeOf(g);
+      if ((sh & 1) || (sh & 2) || sh === 5 || sh === 6) {
+        hasMhInView = true;
+        break;
+      }
+    }
+    if (!hasMhInView && Object.keys(marks).some(k => marks[k] === 1 || marks[k] === 3)) {
+      hasMhInView = true;
+    }
+
+    let mhOpenSpan = 700; // 표준 개방 맨홀 높이 (지붕 플랜지 상면 기준 ~700mm)
+    const customParts = opt?.partTemplates || opt?.customComponents || {};
+    const customMh = resolvePartEntities(customParts, 'manhole', view, roofFlgH, opt)
+                  || resolvePartEntities(customParts, 'manhole', view === 'side' ? 'right' : 'front', roofFlgH, opt);
+    if (customMh && customMh.length > 0) {
+      let minY = Infinity, maxY = -Infinity;
+      customMh.forEach(e => {
+        const p1 = (e.p && e.p[0]) || e.a; const p2 = (e.p && e.p[1]) || e.b;
+        if (p1 && p2) { minY = Math.min(minY, p1[1], p2[1]); maxY = Math.max(maxY, p1[1], p2[1]); }
+        const c = e.c || e.center; const r = e.r;
+        if (c && r != null) { minY = Math.min(minY, c[1] - r); maxY = Math.max(maxY, c[1] + r); }
+        const pts = e.p || e.pts;
+        if (pts && pts.length) { pts.forEach(pt => { minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]); }); }
+      });
+      if (isFinite(minY) && isFinite(maxY) && (maxY - minY) > 200) {
+        mhOpenSpan = Math.round(maxY - minY - roofFlgH);
+        if (mhOpenSpan < 200) mhOpenSpan = Math.round(maxY - minY);
+      }
+    }
+    const topMhY = roofTopY + mhOpenSpan;
+
+    // 좌측 치수선 열 배치 (1열 세부단/개방맨홀 -> 2열 탱크전고 -> 3열 맨홀개방시 최고높이)
+    const leftBound = Math.min(-75, minLeftNozX);
+    const segX = leftBound - dimGap1;
+    const dimStep = Math.max(Math.round(8.0 * N), Math.round(textH * 2.2));
+    const overallX = segX - dimStep;
+
+    // 1열 치수 (FrontDim / SideDim: 축척 비례 계산 - media_1790951915253.png 표준 정위치)
+    dimLinear(ents, [px0, slabTopY], [px0, -th], segX, true, String(padH), textH, 'DIM');
+    dimLinear(ents, [px0, -th], [px0, 0], segX, true, String(th), textH, 'DIM');
+
     let yy = 0;
-    hs.forEach(hh => { dimLinear(ents, [X0, yy], [X0, yy + hh], X0 - dimGap1, true, String(hh), textH, 'DIM'); yy += hh; });
-    dimLinear(ents, [X0, nH], [X0, nH + 100], X0 - dimGap1, true, '100', textH, 'DIM');
-    // 좌측 기초 패드 높이(padH) 및 프레임 높이(th: 50,75,125,150mm) 치수선 (media_1790953596700.png)
-    dimLinear(ents, [px0, slabTopY], [px0, -th], X0 - dimGap1, true, String(padH), textH, 'DIM');
-    dimLinear(ents, [px0, -th], [px0, 0], X0 - dimGap1, true, String(th), textH, 'DIM');
-    // 탱크 전체 높이 치수선 (슬래브 상면 ~ 탱크 최상단)
-    dimLinear(ents, [px0, slabTopY], [px0, nH + 100], overallX, true, String(nH + 100 - slabTopY), textH, 'DIM');
+    hs.forEach(hh => { dimLinear(ents, [px0, yy], [px0, yy + hh], segX, true, String(hh), textH, 'DIM'); yy += hh; });
+    dimLinear(ents, [px0, nH], [px0, roofTopY], segX, true, String(roofFlgH), textH, 'DIM');
+
+    if (hasMhInView) {
+      // 개방 맨홀 높이 치수선 (지붕 플랜지 상면 ~ 개방된 맨홀 덮개 상단)
+      dimLinear(ents, [px0, roofTopY], [px0, topMhY], segX, true, String(mhOpenSpan), textH, 'DIM');
+      ln([0, topMhY], [segX, topMhY], 'DIM');
+    }
+
+    // 2열 치수: 탱크 전체 높이 치수선 (슬래브 상면 ~ 탱크 지붕 플랜지 상면)
+    dimLinear(ents, [px0, slabTopY], [px0, roofTopY], overallX, true, String(roofTopY - slabTopY), textH, 'DIM');
+
+    if (hasMhInView) {
+      // 3열 치수: 맨홀 개방 시 바닥(슬래브)부터 최상단까지의 전고 치수선
+      const mhOverallX = overallX - dimStep;
+      const totalClearance = topMhY - slabTopY;
+      const lang = opt.drawingLang || opt.lang || 'ko';
+      const isKo = lang !== 'en';
+      const openLabel = isKo ? '(맨홀 개방 시)' : '(OPEN MH)';
+      dimLinear(ents, [px0, slabTopY], [px0, topMhY], mhOverallX, true, `${totalClearance} ${openLabel}`, textH, 'DIM');
+      ln([segX, topMhY], [mhOverallX, topMhY], 'DIM');
+    }
 
     lads.forEach(l => {
       let idx, px;
@@ -8028,8 +8124,8 @@ canvas.drag{cursor:grabbing}
     }
 
     // 4대 뷰 투영 정렬(Orthographic Alignment) 및 중심 여백 균형 배치
-    const TITLE_H = 16;
-    const dim_left_1 = 75 + Math.round(30.0 * N);   // 좌측 치수선 2열 및 치수 문자 가용 영역
+    const hasAnyMh = (opt.marks && Object.values(opt.marks).some(m => m === 1 || m === 3));
+    const dim_left_1 = 75 + Math.round((hasAnyMh ? 38.0 : 30.0) * N);   // 좌측 치수선(맨홀 개방 시 3열) 및 치수 문자 가용 영역
     const dim_right_1 = 75 + Math.round(20.0 * N);  // 우측 풍선 기호 및 배관 노즐 가용 영역
     const dim_bottom_1 = Math.round(18.0 * N);
     const EXTC = 400;
@@ -12329,7 +12425,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.6</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.7</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -14869,17 +14965,58 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             { k: 'line', p: [[360, 330], [640, 330]] },
             { k: 'line', p: [[360, 370], [640, 370]] }
           ];
-        } else {
+        } else if (view === 'right' || view === 'left') {
           const T = 20, cy = 100, ms = W >> 1;
           const DO = Math.round(W * 0.456), UO = Math.round(W * 0.1);
-          const mhW = 550, mhH = 65, coverH = 15;
+          const mhW = 550, mhH = 60, covH = 640;
+          const hx = ms - 180;
           return [
             { k: 'line', p: [[0, 0], [W, 0]] },
             { k: 'line', p: [[0, T], [W, T]] },
             { k: 'line', p: [[0, T / 2], [W, T / 2]] },
             { k: 'poly', p: [[ms - DO, T], [ms - UO, cy], [ms + UO, cy], [ms + DO, T]], c: true },
             { k: 'poly', p: [[ms - mhW/2, cy], [ms + mhW/2, cy], [ms + mhW/2, cy + mhH], [ms - mhW/2, cy + mhH]], c: true },
-            { k: 'poly', p: [[ms - mhW/2 - 20, cy + mhH], [ms + mhW/2 + 20, cy + mhH], [ms + mhW/2 + 20, cy + mhH + coverH], [ms - mhW/2 - 20, cy + mhH + coverH]], c: true },
+            { k: 'poly', p: [[hx - 15, cy + mhH], [hx + 15, cy + mhH], [hx + 15, cy + mhH + covH], [hx - 15, cy + mhH + covH]], c: true },
+            { k: 'line', p: [[hx + 15, cy + mhH + 60], [ms + 140, cy + mhH]] },
+            { k: 'poly', p: [[hx - 25, cy + mhH - 10], [hx + 25, cy + mhH - 10], [hx + 25, cy + mhH + 15], [hx - 25, cy + mhH + 15]], c: true },
+            { k: 'line', p: [[ms - 100, T], [ms - 25, cy]] },
+            { k: 'line', p: [[ms + 100, T], [ms + 25, cy]] },
+            { k: 'line', p: [[0, 0], [0, T]] },
+            { k: 'line', p: [[W, 0], [W, T]] }
+          ];
+        } else {
+          const T = 20, cy = 100, ms = W >> 1;
+          const DO = Math.round(W * 0.456), UO = Math.round(W * 0.1);
+          const mhW = 550, mhH = 60, covW = 580, covH = 640, ch = 120;
+          const cx0 = ms, cy0 = cy + mhH;
+          const ich = 90, iw = covW - 140, ih = covH - 140, icy0 = cy0 + 70;
+          const centerCoverY = cy0 + covH / 2;
+          return [
+            { k: 'line', p: [[0, 0], [W, 0]] },
+            { k: 'line', p: [[0, T], [W, T]] },
+            { k: 'line', p: [[0, T / 2], [W, T / 2]] },
+            { k: 'poly', p: [[ms - DO, T], [ms - UO, cy], [ms + UO, cy], [ms + DO, T]], c: true },
+            { k: 'poly', p: [[ms - mhW/2, cy], [ms + mhW/2, cy], [ms + mhW/2, cy + mhH], [ms - mhW/2, cy + mhH]], c: true },
+            { k: 'poly', p: [
+              [cx0 - covW/2 + ch, cy0], [cx0 + covW/2 - ch, cy0],
+              [cx0 + covW/2, cy0 + ch], [cx0 + covW/2, cy0 + covH - ch],
+              [cx0 + covW/2 - ch, cy0 + covH], [cx0 - covW/2 + ch, cy0 + covH],
+              [cx0 - covW/2, cy0 + covH - ch], [cx0 - covW/2, cy0 + ch]
+            ], c: true },
+            { k: 'poly', p: [
+              [cx0 - iw/2 + ich, icy0], [cx0 + iw/2 - ich, icy0],
+              [cx0 + iw/2, icy0 + ich], [cx0 + iw/2, icy0 + ih - ich],
+              [cx0 + iw/2 - ich, icy0 + ih], [cx0 - iw/2 + ich, icy0 + ih],
+              [cx0 - iw/2, icy0 + ih - ich], [cx0 - iw/2, icy0 + ich]
+            ], c: true },
+            { k: 'circle', c: [cx0, centerCoverY], r: 50 },
+            { k: 'circle', c: [cx0, centerCoverY], r: 25 },
+            { k: 'line', p: [[cx0 - 35, centerCoverY - 35], [cx0 - Math.round(iw/2 - ich*0.7), Math.round(icy0 + ich*0.7)]] },
+            { k: 'line', p: [[cx0 + 35, centerCoverY - 35], [cx0 + Math.round(iw/2 - ich*0.7), Math.round(icy0 + ich*0.7)]] },
+            { k: 'line', p: [[cx0 - 35, centerCoverY + 35], [cx0 - Math.round(iw/2 - ich*0.7), Math.round(icy0 + ih - ich*0.7)]] },
+            { k: 'line', p: [[cx0 + 35, centerCoverY + 35], [cx0 + Math.round(iw/2 - ich*0.7), Math.round(icy0 + ih - ich*0.7)]] },
+            { k: 'poly', p: [[cx0 - 25, cy0 + covH], [cx0 + 25, cy0 + covH], [cx0 + 25, cy0 + covH + 25], [cx0 - 25, cy0 + covH + 25]], c: true },
+            { k: 'poly', p: [[cx0 - 40, cy0 - 15], [cx0 + 40, cy0 - 15], [cx0 + 40, cy0 + 15], [cx0 - 40, cy0 + 15]], c: true },
             { k: 'line', p: [[ms - 100, T], [ms - 25, cy]] },
             { k: 'line', p: [[ms + 100, T], [ms + 25, cy]] },
             { k: 'line', p: [[0, 0], [0, T]] },
@@ -16849,7 +16986,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           vh = 100;
         } else if (panelPos === 'manhole') {
           vw = 1000;
-          vh = 180;
+          vh = 800;
         }
       }
       if (cat === curCat && v.id === cadCurrentView && currentCadEntities && currentCadEntities.length) {

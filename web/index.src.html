@@ -419,7 +419,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.6</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.7</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2109,7 +2109,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.6</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.7</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2119,7 +2119,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.6</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.7</span></div>
     </div>
   </main>
 </div>
@@ -5883,7 +5883,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.6</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.7</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -8423,17 +8423,58 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             { k: 'line', p: [[360, 330], [640, 330]] },
             { k: 'line', p: [[360, 370], [640, 370]] }
           ];
-        } else {
+        } else if (view === 'right' || view === 'left') {
           const T = 20, cy = 100, ms = W >> 1;
           const DO = Math.round(W * 0.456), UO = Math.round(W * 0.1);
-          const mhW = 550, mhH = 65, coverH = 15;
+          const mhW = 550, mhH = 60, covH = 640;
+          const hx = ms - 180;
           return [
             { k: 'line', p: [[0, 0], [W, 0]] },
             { k: 'line', p: [[0, T], [W, T]] },
             { k: 'line', p: [[0, T / 2], [W, T / 2]] },
             { k: 'poly', p: [[ms - DO, T], [ms - UO, cy], [ms + UO, cy], [ms + DO, T]], c: true },
             { k: 'poly', p: [[ms - mhW/2, cy], [ms + mhW/2, cy], [ms + mhW/2, cy + mhH], [ms - mhW/2, cy + mhH]], c: true },
-            { k: 'poly', p: [[ms - mhW/2 - 20, cy + mhH], [ms + mhW/2 + 20, cy + mhH], [ms + mhW/2 + 20, cy + mhH + coverH], [ms - mhW/2 - 20, cy + mhH + coverH]], c: true },
+            { k: 'poly', p: [[hx - 15, cy + mhH], [hx + 15, cy + mhH], [hx + 15, cy + mhH + covH], [hx - 15, cy + mhH + covH]], c: true },
+            { k: 'line', p: [[hx + 15, cy + mhH + 60], [ms + 140, cy + mhH]] },
+            { k: 'poly', p: [[hx - 25, cy + mhH - 10], [hx + 25, cy + mhH - 10], [hx + 25, cy + mhH + 15], [hx - 25, cy + mhH + 15]], c: true },
+            { k: 'line', p: [[ms - 100, T], [ms - 25, cy]] },
+            { k: 'line', p: [[ms + 100, T], [ms + 25, cy]] },
+            { k: 'line', p: [[0, 0], [0, T]] },
+            { k: 'line', p: [[W, 0], [W, T]] }
+          ];
+        } else {
+          const T = 20, cy = 100, ms = W >> 1;
+          const DO = Math.round(W * 0.456), UO = Math.round(W * 0.1);
+          const mhW = 550, mhH = 60, covW = 580, covH = 640, ch = 120;
+          const cx0 = ms, cy0 = cy + mhH;
+          const ich = 90, iw = covW - 140, ih = covH - 140, icy0 = cy0 + 70;
+          const centerCoverY = cy0 + covH / 2;
+          return [
+            { k: 'line', p: [[0, 0], [W, 0]] },
+            { k: 'line', p: [[0, T], [W, T]] },
+            { k: 'line', p: [[0, T / 2], [W, T / 2]] },
+            { k: 'poly', p: [[ms - DO, T], [ms - UO, cy], [ms + UO, cy], [ms + DO, T]], c: true },
+            { k: 'poly', p: [[ms - mhW/2, cy], [ms + mhW/2, cy], [ms + mhW/2, cy + mhH], [ms - mhW/2, cy + mhH]], c: true },
+            { k: 'poly', p: [
+              [cx0 - covW/2 + ch, cy0], [cx0 + covW/2 - ch, cy0],
+              [cx0 + covW/2, cy0 + ch], [cx0 + covW/2, cy0 + covH - ch],
+              [cx0 + covW/2 - ch, cy0 + covH], [cx0 - covW/2 + ch, cy0 + covH],
+              [cx0 - covW/2, cy0 + covH - ch], [cx0 - covW/2, cy0 + ch]
+            ], c: true },
+            { k: 'poly', p: [
+              [cx0 - iw/2 + ich, icy0], [cx0 + iw/2 - ich, icy0],
+              [cx0 + iw/2, icy0 + ich], [cx0 + iw/2, icy0 + ih - ich],
+              [cx0 + iw/2 - ich, icy0 + ih], [cx0 - iw/2 + ich, icy0 + ih],
+              [cx0 - iw/2, icy0 + ih - ich], [cx0 - iw/2, icy0 + ich]
+            ], c: true },
+            { k: 'circle', c: [cx0, centerCoverY], r: 50 },
+            { k: 'circle', c: [cx0, centerCoverY], r: 25 },
+            { k: 'line', p: [[cx0 - 35, centerCoverY - 35], [cx0 - Math.round(iw/2 - ich*0.7), Math.round(icy0 + ich*0.7)]] },
+            { k: 'line', p: [[cx0 + 35, centerCoverY - 35], [cx0 + Math.round(iw/2 - ich*0.7), Math.round(icy0 + ich*0.7)]] },
+            { k: 'line', p: [[cx0 - 35, centerCoverY + 35], [cx0 - Math.round(iw/2 - ich*0.7), Math.round(icy0 + ih - ich*0.7)]] },
+            { k: 'line', p: [[cx0 + 35, centerCoverY + 35], [cx0 + Math.round(iw/2 - ich*0.7), Math.round(icy0 + ih - ich*0.7)]] },
+            { k: 'poly', p: [[cx0 - 25, cy0 + covH], [cx0 + 25, cy0 + covH], [cx0 + 25, cy0 + covH + 25], [cx0 - 25, cy0 + covH + 25]], c: true },
+            { k: 'poly', p: [[cx0 - 40, cy0 - 15], [cx0 + 40, cy0 - 15], [cx0 + 40, cy0 + 15], [cx0 - 40, cy0 + 15]], c: true },
             { k: 'line', p: [[ms - 100, T], [ms - 25, cy]] },
             { k: 'line', p: [[ms + 100, T], [ms + 25, cy]] },
             { k: 'line', p: [[0, 0], [0, T]] },
@@ -10403,7 +10444,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           vh = 100;
         } else if (panelPos === 'manhole') {
           vw = 1000;
-          vh = 180;
+          vh = 800;
         }
       }
       if (cat === curCat && v.id === cadCurrentView && currentCadEntities && currentCadEntities.length) {
