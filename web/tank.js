@@ -2237,7 +2237,7 @@
   // 기초 패드 단면 및 입면도 (FOUNDATION PAD SECTION & ELEVATION - media_1790951915253.png 완벽 일치)
   function buildFoundationSection(opt) {
     const map = createMap(opt);
-    const secs = ((opt.length && opt.length.length) ? opt.length : [map.length]).filter(Boolean).slice(0, 5);
+    const secs = ((opt.length && opt.length.length) ? opt.length : [map.length]).filter(Boolean);
     const total = secs.reduce((a, b) => a + b, 0);
     const th = opt.frame || 75;
     const padH = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
@@ -4817,9 +4817,10 @@
   function pickScale(L, W, H, isAsm5 = false) {
     if (isAsm5) {
       const isoW = Math.round((L + W) * 0.55);
-      const w_model = (L + 300) + Math.max(W + 300, isoW);
-      // 3행 배치: Row 1(Plan W), Row 2(Elev H+700), Row 3(Pad W+800)
-      const h_model = W + 400 + H + 700 + W + 800;
+      const maxCol2W = Math.max(W + 300, L + 200, isoW);
+      const w_model = (L + 300) + maxCol2W;
+      // 3행 배치: Row 1(Plan W), Row 2(Elev H+800), Row 3(Pad W+600)
+      const h_model = W + 400 + H + 800 + W + 600;
       const avail_w = SHEET.w - SHEET.title - SHEET.margin * 2; // 621 mm
       const avail_h = SHEET.h - SHEET.margin * 2;              // 574 mm
       for (const n of SCALES) {
@@ -5032,6 +5033,7 @@
     // 2. 축척 비례 하위 뷰 생성
     const plan = buildPlan(opt, templates);
     const conc = buildConcrete(opt);
+    const frontSec = buildFoundationSection(opt);
     const hs = (opt.hseg && opt.hseg.length) ? opt.hseg : heightSegs(H, opt.b11);
     opt.hseg = hs;
     const front = sideT ? buildElevation(opt, sideT, 'front') : null;
@@ -5646,33 +5648,34 @@
     };
 
     const viewTitlePlan = lang === 'en' ? 'PLAN VIEW' : (lang === 'bilingual' ? '평 면 도 (PLAN VIEW)' : '평  면  도');
-    const viewTitlePad = lang === 'en' ? 'FOUNDATION PAD PLAN' : (lang === 'bilingual' ? '기 초 패 드 도 (FOUNDATION PLAN)' : '기  초  패  드  도');
+    const viewTitlePad = lang === 'en' ? 'FOUNDATION PAD PLAN' : (lang === 'bilingual' ? '기 초 패 드 평 면 도 (FOUNDATION PLAN)' : '기  초  패  드  평  면  도');
     const viewTitleFront = lang === 'en' ? 'FRONT ELEVATION' : (lang === 'bilingual' ? '정 면 도 (FRONT ELEVATION)' : '정  면  도');
     const viewTitleSide = lang === 'en' ? 'RIGHT SIDE ELEVATION' : (lang === 'bilingual' ? '우 측 면 도 (SIDE ELEVATION)' : '우  측  면  도');
     const viewTitleIso = lang === 'en' ? '3D ISOMETRIC VIEW' : (lang === 'bilingual' ? '등 각 조 감 도 (3D ISOMETRIC)' : '등  각  조  감  도');
+    const viewTitleSec = lang === 'en' ? 'FOUNDATION PAD SECTION & ELEVATION' : (lang === 'bilingual' ? '기 초 패 드 단 면 및 입 면 도 (SECTION & ELEV)' : '기  초  패  드  단  면  및  입  면  도');
 
     let elev = false;
     if (front && side) {
-      // 2열 폭 계산
+      // 2열 폭 계산 (Col 2 includes Pad Section which has width ~ totalL)
       const col1_w = (dim_left_1 + totalL + dim_right_1) / N;
-      const col2_w = (dim_left_1 + totalW + dim_right_1) / N;
+      const col2_w = (dim_left_1 + Math.max(totalW, totalL) + dim_right_1) / N;
       const total_2col_w = col1_w + col2_w;
       const rem_w = Math.max(0, areaW - total_2col_w);
-      const gap_x = Math.max(25, Math.min(50, rem_w * 0.35));
+      const gap_x = Math.max(20, Math.min(45, rem_w * 0.35));
       const left_margin = Math.max(12, (rem_w - gap_x) / 2);
 
       const col1_tank_cx = x0 + left_margin + (dim_left_1 + totalL / 2) / N;
-      const col2_tank_cx = col1_tank_cx + (totalL / 2 + dim_right_1) / N + gap_x + (dim_left_1 + totalW / 2) / N;
+      const col2_tank_cx = col1_tank_cx + (totalL / 2 + dim_right_1) / N + gap_x + (dim_left_1 + Math.max(totalW, totalL) / 2) / N;
 
       // 3행 높이 계산:
-      // Row 1: 평면도 (PLAN VIEW)
-      // Row 2: 정면도 및 우측면도 (FRONT & SIDE ELEVATION)
-      // Row 3: 기초 패드도 (FOUNDATION PAD PLAN)
+      // Row 1: 평면도 (PLAN VIEW) & 등각조감도 (3D ISOMETRIC VIEW)
+      // Row 2: 정면도 (FRONT ELEVATION) & 우측면도 (RIGHT SIDE ELEVATION)
+      // Row 3: 기초 패드 평면도 (FOUNDATION PAD PLAN) & 기초 패드 단면 및 입면도 (FOUNDATION PAD SECTION & ELEVATION)
       const row1_top_extent = (totalW / 2 + 500) / N;
       const row1_bottom_extent = (totalW / 2 + dim_bottom_1 + 300) / N + TITLE_H;
       const row1_total_h = row1_top_extent + row1_bottom_extent;
 
-      const row2_top_extent = (H + 200) / N;
+      const row2_top_extent = (H + 200 - GRD) / N;
       const row2_bottom_extent = (-GRD + dim_bottom_1) / N + TITLE_H;
       const row2_total_h = row2_top_extent + row2_bottom_extent;
 
@@ -5704,9 +5707,9 @@
       const row3_bottom_y = row3_pad_cy - row3_bottom_extent;
       const row3_title_y = row3_pad_cy - (totalW / 2 + PAD_OVERHANG + dim_bottom_1 + 300) / N - 14.0;
 
-      // 1열(TOP & FRONT) 수직 투영 100% 일치
+      // 1열(TOP & FRONT & PAD_PLAN) 수직 투영 100% 일치
       const dx1 = P(col1_tank_cx) - totalL / 2;
-      // 2열(SIDE)
+      // 2열(SIDE & ISO & PAD_SEC)
       const dx2_side = P(col2_tank_cx) - totalW / 2;
 
       // 1행(TOP)
@@ -5714,42 +5717,23 @@
       // 2행(FRONT & SIDE) 수평 그라운드 투영 100% 일치
       const dy2 = P(row2_ground_y) - GRD;
 
-      // 1. Row 1 Col 1: 평면도 배치
+      // 1. Row 1 Col 1: 평면도 배치 (View 1 / 1)
       translateEnts(plan.ents, dx1, dy1);
       drawViewTitleBubble(col1_tank_cx, row1_title_y, 1, 1, viewTitlePlan);
 
-      // 2. Row 2 Col 1: 정면도 배치
-      translateEnts(front.ents, dx1, dy2);
-      drawViewTitleBubble(col1_tank_cx, row2_title_y, 1, 3, viewTitleFront);
-
-      // 3. Row 2 Col 2: 우측면도 배치
-      translateEnts(side.ents, dx2_side, dy2);
-      drawViewTitleBubble(col2_tank_cx, row2_title_y, 1, 4, viewTitleSide);
-
-      // 4. Row 3 Center: 기초 패드도 배치 (하단 중앙)
-      let pad_cx = (col1_tank_cx + col2_tank_cx) / 2;
-      const pad_half_w = (totalL / 2 + PAD_OVERHANG + dim_left_1) / N;
-      if (pad_cx + pad_half_w > tx0 - 15) pad_cx = tx0 - 15 - pad_half_w;
-      if (pad_cx - pad_half_w < x0 + 15) pad_cx = x0 + 15 + pad_half_w;
-
-      const dx_pad = P(pad_cx) - totalL / 2;
-      const dy_pad = P(row3_pad_cy) - totalW / 2;
-      translateEnts(conc.ents, dx_pad, dy_pad);
-      drawViewTitleBubble(pad_cx, row3_title_y, 1, 2, viewTitlePad);
-
-      // 5. Row 1 Col 2: 등각 조감도 배치 (우측 상단)
+      // 2. Row 1 Col 2: 등각 조감도 배치 (View 1 / 5)
       if (isAsm5) {
         const iso = buildIsometric(opt, templates, sideT);
         const b_iso = bb(iso.ents);
         const isoW_mm = (b_iso[2] - b_iso[0]) / N;
         const isoH_mm = (b_iso[3] - b_iso[1]) / N;
 
-        const iso_avail_w = Math.max(100, (tx0 - 15) - (col1_tank_cx + totalL / (2 * N) + dim_right_1 / N + gap_x * 0.5));
-        const iso_avail_h = Math.max(100, row1_top_y - (row1_bottom_y + 16));
-        const isoFitScale = Math.min((iso_avail_w * 0.92) / isoW_mm, (iso_avail_h * 0.88) / isoH_mm);
+        const iso_avail_w = Math.max(100, (tx0 - 15) - (col2_tank_cx - (Math.max(totalW, totalL) / 2 + dim_left_1) / N));
+        const iso_avail_h = Math.max(80, row1_top_y - (row1_title_y + 14));
+        const isoFitScale = Math.min((iso_avail_w * 0.92) / isoW_mm, (iso_avail_h * 0.90) / isoH_mm);
 
         const iso_cx = col2_tank_cx;
-        const iso_cy = (row1_top_y + (row1_bottom_y + 18)) / 2;
+        const iso_cy = row1_top_y - iso_avail_h * 0.5;
         const isoDx = P(iso_cx) - ((b_iso[0] + b_iso[2]) / 2) * isoFitScale;
         const isoDy = P(iso_cy) - ((b_iso[1] + b_iso[3]) / 2) * isoFitScale;
 
@@ -5760,9 +5744,34 @@
           else ents.push({ ...e, p: [e.p[0] * isoFitScale + isoDx, e.p[1] * isoFitScale + isoDy], h: e.h * isoFitScale });
         });
 
-        const iso_bottom_y = (isoDy + b_iso[1] * isoFitScale) / N;
-        const row1_iso_title_y = Math.min(row1_title_y, iso_bottom_y - 14.0);
-        drawViewTitleBubble(iso_cx, row1_iso_title_y, 1, 5, viewTitleIso);
+        drawViewTitleBubble(iso_cx, row1_title_y, 1, 5, viewTitleIso);
+      }
+
+      // 3. Row 2 Col 1: 정면도 배치 (View 1 / 3)
+      translateEnts(front.ents, dx1, dy2);
+      drawViewTitleBubble(col1_tank_cx, row2_title_y, 1, 3, viewTitleFront);
+
+      // 4. Row 2 Col 2: 우측면도 배치 (View 1 / 4)
+      translateEnts(side.ents, dx2_side, dy2);
+      drawViewTitleBubble(col2_tank_cx, row2_title_y, 1, 4, viewTitleSide);
+
+      // 5. Row 3 Col 1: 기초 패드 평면도 배치 (View 1 / 2)
+      const dx_pad = P(col1_tank_cx) - totalL / 2;
+      const dy_pad = P(row3_pad_cy) - totalW / 2;
+      translateEnts(conc.ents, dx_pad, dy_pad);
+      drawViewTitleBubble(col1_tank_cx, row3_title_y, 1, 2, viewTitlePad);
+
+      // 6. Row 3 Col 2: 기초 패드 단면 및 입면도 배치 (View 1 / 6)
+      if (frontSec) {
+        const dx_sec = P(col2_tank_cx) - totalL / 2;
+        const th = opt.frame || 75;
+        const padH = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
+        const clearanceH = th + padH;
+        const slabTopY = -clearanceH;
+        const slabBotY = slabTopY - 150;
+        const dy_sec = P(row3_title_y + 14.0) - (slabBotY - Math.round(16.0 * N));
+        translateEnts(frontSec.ents, dx_sec, dy_sec);
+        drawViewTitleBubble(col2_tank_cx, row3_title_y, 1, 6, viewTitleSec);
       }
       elev = true;
     } else {
@@ -5799,7 +5808,7 @@
         }
       }
     });
-    const blocks = Object.assign({}, plan.blocks, (conc && conc.blocks), (front && front.blocks), (side && side.blocks));
+    const blocks = Object.assign({}, plan.blocks, (conc && conc.blocks), (front && front.blocks), (side && side.blocks), (frontSec && frontSec.blocks));
     ents.blocks = blocks;
     return { map: mmap, ents, blocks, scale: N, elev, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
   }
