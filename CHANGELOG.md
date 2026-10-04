@@ -5,7 +5,17 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.57] - 2026-10-03
+## [1.6.13] - 2026-10-04
+
+### Enhanced (기초 패드 단면도 상부 스키드 제거 및 평면도-단면도 간 중복 치수선 정리)
+- **📐 기초 패드 단면도(FOUNDATION PAD SECTION) 개선 (사용자 첨부 도면 media_1791120706510.png 100% 반영)**:
+  - **상부 베이스 스키드 빔(FRAME 레이어 주황색 빔) 제거**: 콘크리트 패드 상면(`y=0`)이 기준면으로 직접 노출되도록 정리.
+  - **좌측 높이 치수선 단일화**: 스키드 프레임 높이(`150` 등) 치수선을 삭제하고 콘크리트 패드 높이(`450`)만 명확하게 단일 표기.
+  - **단부 기둥 철근 배근(REINF) 대칭 정밀화**: 패드 끝단(`px0`, `pxEnd`) 기준 상대 좌표 계산으로 물탱크 크기나 구획에 관계없이 좌우 기둥 내부 정위치에 완전 대칭으로 배치.
+- **📏 기초 패드 평면도(PLAN)와 단면도(SECTION) 간 중복 치수선 제거**:
+  - 평면도와 단면도가 함께 배치되는 경우(`FOUNDATION PAD PLAN & SECTION`), 두 뷰 사이에 중복으로 표기되던 패드 간격 및 전체 폭 치수선을 평면도 하단에서 생략(`hideBottomDim: true`).
+  - 단면도 최하단에만 패드 C.T.C 간격 및 총 폭 치수를 배치하여 도면 가독성을 극대화하고 깔끔한 도면 공간 확보.
+
 
 ### Fixed & Enhanced (캔버스 도면 렌더링 무결성 강화, 상단 헤더 고정 및 버전 표시 다중화)
 - **🖥️ 도면 캔버스 렌더링 엔진 무결성 강화 및 블랭크 방지**:

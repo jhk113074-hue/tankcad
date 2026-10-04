@@ -2418,15 +2418,17 @@
       }
     }
 
-    // 하단 치수선: 패드 중심간 간격 (C.T.C Pitch) 및 패드 전체 외곽 치수
-    strips.forEach(([x, w], i) => {
-      if (i) {
-        const pa = strips[i - 1];
-        dimLinear(ents, [pa[0] + pa[1] / 2, botY], [x + w / 2, botY], botY - dimGap1, false, String(Math.round((x + w / 2) - (pa[0] + pa[1] / 2))), textH, 'DIM');
-      }
-    });
-    const lf = strips[0][0], rt = strips[strips.length - 1][0] + strips[strips.length - 1][1];
-    dimLinear(ents, [lf, botY], [rt, botY], botY - dimGap2, false, String(rt - lf), textH, 'DIM');
+    // 하단 치수선: 패드 중심간 간격 (C.T.C Pitch) 및 패드 전체 외곽 치수 (단면도 결합 시에는 단면도 하단에만 표기하여 중복 제거)
+    if (!opt.hideBottomDim) {
+      strips.forEach(([x, w], i) => {
+        if (i) {
+          const pa = strips[i - 1];
+          dimLinear(ents, [pa[0] + pa[1] / 2, botY], [x + w / 2, botY], botY - dimGap1, false, String(Math.round((x + w / 2) - (pa[0] + pa[1] / 2))), textH, 'DIM');
+        }
+      });
+      const lf = strips[0][0], rt = strips[strips.length - 1][0] + strips[strips.length - 1][1];
+      dimLinear(ents, [lf, botY], [rt, botY], botY - dimGap2, false, String(rt - lf), textH, 'DIM');
+    }
     return { ents, blocks, textH };
   }
 
@@ -2479,17 +2481,16 @@
     }
   }
 
-  // 기초 패드 단면 및 입면도 (FOUNDATION PAD SECTION & ELEVATION - media_1790951915253.png 완벽 일치)
+  // 기초 패드 단면 및 입면도 (FOUNDATION PAD SECTION & ELEVATION - media_1791120706510.png 완벽 일치)
   function buildFoundationSection(opt) {
     const map = createMap(opt);
     const secs = ((opt.length && opt.length.length) ? opt.length : [map.length]).filter(Boolean);
     const total = secs.reduce((a, b) => a + b, 0);
     const th = opt.frame || 75;
     const padH = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
-    const clearanceH = th + padH; // 600mm
-    const slabTopY = -clearanceH; // -600mm
+    const slabTopY = -padH; // 슬래브 상면 (패드 상면 y=0 기준)
     const slabT = 150;
-    const slabBotY = slabTopY - slabT; // -750mm
+    const slabBotY = slabTopY - slabT; // 슬래브 하면
     const strips = concStrips(map.cols, opt);
     const px0 = strips[0][0];
     const pxEnd = strips[strips.length - 1][0] + strips[strips.length - 1][1];
@@ -2506,58 +2507,51 @@
     const plinths = strips.map(s => [s[0], s[0] + s[1], s[0] + s[1] / 2]);
     const numPlinths = plinths.length;
 
-    // 2. 패드 기둥 및 하부 슬래브 외곽선 (Concrete outlines)
-    plinths.forEach(([lx, rx]) => ln([lx, -th], [rx, -th], 'PAD'));
+    // 2. 패드 기둥 및 하부 슬래브 외곽선 (Concrete outlines - 상부 베이스 스키드 없이 패드 상면 y=0 직접 형성)
+    plinths.forEach(([lx, rx]) => ln([lx, 0], [rx, 0], 'PAD'));
     for (let i = 0; i < plinths.length - 1; i++) {
       const curRx = plinths[i][1];
       const nextLx = plinths[i + 1][0];
-      ln([curRx, -th], [curRx, slabTopY], 'PAD');
+      ln([curRx, 0], [curRx, slabTopY], 'PAD');
       ln([curRx, slabTopY], [nextLx, slabTopY], 'PAD');
-      ln([nextLx, slabTopY], [nextLx, -th], 'PAD');
+      ln([nextLx, slabTopY], [nextLx, 0], 'PAD');
     }
-    ln([px0, -th], [px0, slabBotY], 'PAD');
-    ln([pxEnd, -th], [pxEnd, slabBotY], 'PAD');
+    ln([px0, 0], [px0, slabBotY], 'PAD');
+    ln([pxEnd, 0], [pxEnd, slabBotY], 'PAD');
     ln([px0, slabBotY], [pxEnd, slabBotY], 'PAD');
 
     // 4. 콘크리트 해치 (기둥 및 하부 슬래브에 걸쳐 단절 없이 연결되는 45도 사선 무늬)
     const hatchStep = 80;
     plinths.forEach(([lx, rx]) => {
-      hatchAlignedRect(ents, lx, slabTopY, rx, -th, hatchStep, 'PAD', 1);
+      hatchAlignedRect(ents, lx, slabTopY, rx, 0, hatchStep, 'PAD', 1);
     });
     hatchAlignedRect(ents, px0, slabBotY, pxEnd, slabTopY, hatchStep, 'PAD', 1);
 
-    // 5. 상부 베이스 스키드 프레임 (스틸 스키드 / 채널: 0 ~ -th) - 깨끗한 연속 빔
-    ln([-75, 0], [total + 75, 0], 'FRAME');
-    ln([-75, -th], [total + 75, -th], 'FRAME');
-    ln([-75, 0], [-75, -th], 'FRAME');
-    ln([total + 75, 0], [total + 75, -th], 'FRAME');
-    ln([0, 0], [0, -th], 'FRAME');
-    ln([total, 0], [total, -th], 'FRAME');
+    // 6. 단부 기둥 철근 배근 형상 (REINF 레이어 - media_1791120706510.png)
+    // 좌측 기둥 (px0 ~ px0 + padW1)
+    ln([px0 + 150, -80], [px0 + 330, -260], 'REINF');
+    circ(px0 + 190, -120, 12, 'REINF');
+    circ(px0 + 240, -170, 12, 'REINF');
+    circ(px0 + 290, -220, 12, 'REINF');
+    ln([px0 + 100, -180], [px0 + 140, -140], 'REINF');
+    ln([px0 + 85, -195], [px0 + 125, -155], 'REINF');
+    ln([px0 + 145, slabTopY + 80], [px0 + 205, slabTopY + 20], 'REINF');
+    circ(px0 + 175, slabTopY + 50, 12, 'REINF');
+    // 우측 기둥 (pxEnd - padWEnd ~ pxEnd) (좌우 완벽 대칭)
+    ln([pxEnd - 150, -80], [pxEnd - 330, -260], 'REINF');
+    circ(pxEnd - 190, -120, 12, 'REINF');
+    circ(pxEnd - 240, -170, 12, 'REINF');
+    circ(pxEnd - 290, -220, 12, 'REINF');
+    ln([pxEnd - 100, -180], [pxEnd - 140, -140], 'REINF');
+    ln([pxEnd - 85, -195], [pxEnd - 125, -155], 'REINF');
+    ln([pxEnd - 145, slabTopY + 80], [pxEnd - 205, slabTopY + 20], 'REINF');
+    circ(pxEnd - 175, slabTopY + 50, 12, 'REINF');
 
-    // 6. 단부 기둥 철근 배근 형상 (REINF 레이어 - media_1790951915253.png)
-    // 좌측 기둥 철근
-    ln([-50, -th - 80], [130, -th - 260], 'REINF');
-    circ(-10, -th - 120, 12, 'REINF');
-    circ(40, -th - 170, 12, 'REINF');
-    circ(90, -th - 220, 12, 'REINF');
-    ln([-100, -th - 180], [-60, -th - 140], 'REINF');
-    ln([-115, -th - 195], [-75, -th - 155], 'REINF');
-    ln([-55, slabTopY + 80], [5, slabTopY + 20], 'REINF');
-    circ(-25, slabTopY + 50, 12, 'REINF');
-    // 우측 기둥 철근 (대칭)
-    ln([pxEnd - 25, -th - 80], [total - 130, -th - 260], 'REINF');
-    circ(pxEnd - 65, -th - 120, 12, 'REINF');
-    circ(total - 40, -th - 170, 12, 'REINF');
-    circ(total - 90, -th - 220, 12, 'REINF');
-    ln([pxEnd - 20, slabTopY + 80], [total - 5, slabTopY + 20], 'REINF');
-    circ(pxEnd - 50, slabTopY + 50, 12, 'REINF');
-    ln([pxEnd, slabTopY], [pxEnd, slabBotY - 35], 'FRAME');
-
-    // 7. 좌측 지면 GL선 (media_1790952977248.png: 좌측 GL도 바닥 레벨 slabBotY = -750로 배치)
+    // 7. 좌측 지면 GL선 (media_1791120706510.png: 좌측 GL도 바닥 레벨 slabBotY로 배치)
     const glLen = Math.max(650, Math.round(18.0 * N));
     const soilH = Math.round(3.5 * N);
     const triW = Math.round(2.6 * N), triH = Math.round(2.4 * N);
-    // 좌측 GL선 (y = slabBotY = -750)
+    // 좌측 GL선 (y = slabBotY)
     ln([px0 - glLen, slabBotY], [px0, slabBotY], 'FRAME');
     const lSymX = px0 - Math.round(7.5 * N);
     poly([[lSymX - triW / 2, slabBotY + triH], [lSymX + triW / 2, slabBotY + triH], [lSymX, slabBotY]], 'DIM', true);
@@ -2565,12 +2559,11 @@
     for (let sx = px0 - glLen; sx < px0 - glLen * 0.1; sx += Math.round(1.8 * N)) {
       ln([sx, slabBotY], [sx - soilH, slabBotY - soilH], 'PANEL_DETAIL');
     }
-    // (A) 좌측 패드 높이(padH) 및 프레임 높이(th: 50,75,125,150mm) 치수선 (media_1790953596700.png)
+    // (A) 좌측 패드 높이(padH) 단일 치수선 (media_1791120706510.png: 상부 스키드 제거로 padH만 표기)
     const dimPadX = px0 - Math.round(5.5 * N);
-    dimLinear(ents, [px0, slabTopY], [px0, -th], dimPadX, true, String(padH), Math.round(2.8 * N), 'DIM');
-    dimLinear(ents, [px0, -th], [px0, 0], dimPadX, true, String(th), Math.round(2.8 * N), 'DIM');
+    dimLinear(ents, [px0, slabTopY], [px0, 0], dimPadX, true, String(padH), Math.round(2.8 * N), 'DIM');
 
-    // 8. 우측 150 단차 치수선 및 우측 지면 GL선 (media_1790951915253.png 우측)
+    // 8. 우측 150 단차 치수선 및 우측 지면 GL선 (media_1791120706510.png 우측)
     ln([pxEnd, slabBotY], [pxEnd + glLen, slabBotY], 'FRAME');
     const rSymX = pxEnd + Math.round(8.5 * N);
     poly([[rSymX - triW / 2, slabBotY + triH], [rSymX + triW / 2, slabBotY + triH], [rSymX, slabBotY]], 'DIM', true);
@@ -2591,7 +2584,7 @@
     const dimTotalY = slabBotY - Math.round(16.0 * N);
     dimLinear(ents, [px0, slabBotY], [pxEnd, slabBotY], dimTotalY, false, String(totalPadW), Math.round(2.8 * N), 'DIM');
 
-    return { ents, textH, totalL: totalPadW, H: clearanceH + slabT };
+    return { ents, textH, totalL: totalPadW, H: padH + slabT };
   }
 
   function buildElevation(opt, sideT, view) {
@@ -5437,8 +5430,8 @@
 
     // 2. 축척 비례 하위 뷰 생성
     const plan = buildPlan(opt, templates);
-    const conc = buildConcrete(opt);
     const frontSec = buildFoundationSection(opt);
+    const conc = buildConcrete({ ...opt, hideBottomDim: Boolean(frontSec) });
     const hs = (opt.hseg && opt.hseg.length) ? opt.hseg : heightSegs(H, opt.b11);
     opt.hseg = hs;
     const front = sideT ? buildElevation(opt, sideT, 'front') : null;
@@ -5939,8 +5932,8 @@
       return { map: mmap, ents, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
     }
     if (opt.sheetKind === 'pad') {
-      const concPlan = buildConcrete(opt);
       const frontSec = buildFoundationSection(opt);
+      const concPlan = buildConcrete({ ...opt, hideBottomDim: Boolean(frontSec) });
       const bPlan = bb(concPlan.ents);
       const areaW = tx0 - x0;
       const areaH = y1 - y0;
@@ -6091,10 +6084,10 @@
       const row2_total_h = row2_top_extent + row2_bottom_extent;
 
       const padHVal = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - (Number(opt.frame) || 75));
-      const secH_model = (padHVal + (Number(opt.frame) || 75) + 150 + Math.round(16.0 * N));
-      const gap_plan_sec_mm = Math.round(6.0 * N);
+      const secH_model = (padHVal + 150 + Math.round(16.0 * N));
+      const gap_plan_sec_mm = Math.round(14.0 * N);
       const row3_top_extent = (totalW / 2 + PAD_OVERHANG + 500) / N;
-      const row3_pad_to_title = (totalW / 2 + PAD_OVERHANG + Math.round(12.0 * N) + gap_plan_sec_mm + secH_model) / N + 14.0;
+      const row3_pad_to_title = (totalW / 2 + PAD_OVERHANG + gap_plan_sec_mm + secH_model) / N + 14.0;
       const row3_total_h = row3_top_extent + row3_pad_to_title + 6.0;
 
       const total_content_h = row1_total_h + row2_total_h + row3_total_h;
@@ -6130,7 +6123,7 @@
 
       const row3_top_y = row2_title_y - 6.0 - gap_23;
       let row3_pad_cy = row3_top_y - row3_top_extent;
-      let row3_bottom_y = row3_pad_cy - (totalW / 2 + PAD_OVERHANG + Math.round(12.0 * N) + gap_plan_sec_mm + secH_model) / N - TITLE_H;
+      let row3_bottom_y = row3_pad_cy - (totalW / 2 + PAD_OVERHANG + gap_plan_sec_mm + secH_model) / N - TITLE_H;
       let row3_title_y = row3_pad_cy - row3_pad_to_title;
 
       // 하단 뷰 타이틀(R=6)이 도면틀(y0) 밖으로 나가지 않도록 절대 보장
@@ -6196,8 +6189,8 @@
       translateEnts(conc.ents, dx_pad, dy_pad);
 
       if (frontSec) {
-        // 단면/입면도를 평면도 하단에 수직 투영 일치(동일 X축 중심 및 기둥 정렬)로 결합
-        const plan_bot_y = dy_pad - (PAD_OVERHANG + Math.round(12.0 * N));
+        // 단면/입면도를 평면도 하단에 수직 투영 일치(동일 X축 중심 및 기둥 정렬)로 결합 (평면도 하단 치수 중복 제거로 pad overhang 직하단에 배치)
+        const plan_bot_y = dy_pad - PAD_OVERHANG;
         const dy_sec = plan_bot_y - gap_plan_sec_mm;
         translateEnts(frontSec.ents, dx_pad, dy_sec);
       }
