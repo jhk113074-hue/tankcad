@@ -295,6 +295,13 @@
       if (customParts[`${cat}_${view}`] && customParts[`${cat}_${view}`].length) {
         return customParts[`${cat}_${view}`];
       }
+      if (customParts[`panel_${cat}_${view}`] && customParts[`panel_${cat}_${view}`].length) {
+        return customParts[`panel_${cat}_${view}`];
+      }
+      if ((view === 'right' || view === 'left') && (cat === 'top' || cat === 'roof')) {
+        const frontEnts = resolvePartEntities(customParts, cat, 'front', h, opt);
+        if (frontEnts && frontEnts.length) return frontEnts;
+      }
       if (view === 'left') {
         const rightEnts = resolvePartEntities(customParts, cat, 'right', h, opt);
         if (rightEnts && rightEnts.length) return mirrorEntitiesH(rightEnts);
@@ -310,7 +317,7 @@
     const defs = opt?.defaultPartEntities || (typeof DEFAULT_PART_ENTITIES !== 'undefined' ? DEFAULT_PART_ENTITIES : (typeof root !== 'undefined' ? root.DEFAULT_PART_ENTITIES : (typeof window !== 'undefined' ? window.DEFAULT_PART_ENTITIES : null)));
     if (defs && defs[cat] && typeof defs[cat].get === 'function') {
       const w = (cat === 'ladder') ? 400 : (cat === 'inladder' ? 300 : 1000);
-      return defs[cat].get(w, h || 2000, view);
+      return defs[cat].get(w, h || (cat === 'top' ? 100 : (cat === 'manhole' ? 180 : 2000)), view);
     }
     return null;
   }
@@ -2596,6 +2603,43 @@
     }
     // CManholeLT::Form (외부보강, 손잡이/환기구 없음) — pos: 0 단일 1 왼쪽 2 중간 3 오른쪽
     function manhole(x, y, cx, cy, pos, shape) {
+      const customParts = opt?.partTemplates || {};
+      if (shape & 1) {
+        const customMh = resolvePartEntities(customParts, 'manhole', view, cy, opt);
+        if (customMh && customMh.length > 0) {
+          let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+          customMh.forEach(e => {
+            const p1 = (e.p && e.p[0]) || e.a; const p2 = (e.p && e.p[1]) || e.b;
+            if (p1 && p2) { minX = Math.min(minX, p1[0], p2[0]); maxX = Math.max(maxX, p1[0], p2[0]); minY = Math.min(minY, p1[1], p2[1]); maxY = Math.max(maxY, p1[1], p2[1]); }
+            const c = e.c || e.center; const r = e.r;
+            if (c && r != null) { minX = Math.min(minX, c[0] - r); maxX = Math.max(maxX, c[0] + r); minY = Math.min(minY, c[1] - r); maxY = Math.max(maxY, c[1] + r); }
+            const pts = e.p || e.pts;
+            if (pts && pts.length) { pts.forEach(pt => { minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]); minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]); }); }
+          });
+          const mw = (maxX - minX) || 1000;
+          renderCustomEntitiesAt(ents, customMh, x - minX * (cx / mw), y - minY, cx / mw, 1, 'PANEL');
+          return;
+        }
+      }
+      const customTop = resolvePartEntities(customParts, 'top', view, cy, opt);
+      if (customTop && customTop.length > 0) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        customTop.forEach(e => {
+          const p1 = (e.p && e.p[0]) || e.a; const p2 = (e.p && e.p[1]) || e.b;
+          if (p1 && p2) { minX = Math.min(minX, p1[0], p2[0]); maxX = Math.max(maxX, p1[0], p2[0]); minY = Math.min(minY, p1[1], p2[1]); maxY = Math.max(maxY, p1[1], p2[1]); }
+          const c = e.c || e.center; const r = e.r;
+          if (c && r != null) { minX = Math.min(minX, c[0] - r); maxX = Math.max(maxX, c[0] + r); minY = Math.min(minY, c[1] - r); maxY = Math.max(maxY, c[1] + r); }
+          const pts = e.p || e.pts;
+          if (pts && pts.length) { pts.forEach(pt => { minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]); minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]); }); }
+        });
+        const tw = (maxX - minX) || 1000;
+        renderCustomEntitiesAt(ents, customTop, x - minX * (cx / tw), y - minY, cx / tw, 1, 'PANEL');
+        if (shape & 1) {
+          const top = (MH.STAY || 20) + cy, ms = cx >> 1, mh = 275;
+          poly([[x + ms - mh, y + 60], [x + ms - mh, y + top], [x + ms + mh, y + top], [x + ms + mh, y + 60]], 'PANEL');
+        }
+        return;
+      }
       const ms = cx >> 1, UI = MH.UP_IN[cx], DI = MH.DN_IN[cx], UO = MH.UP_OUT[cx], DO = MH.DN_OUT[cx];
       if (!UI) return;
       const two = cx === 1000 && shape > 0;                 // Form2: 손잡이/환기구가 있으면 띠를 한 겹 더 올림
