@@ -406,7 +406,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.89</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.90</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -475,11 +475,20 @@ canvas.drag{cursor:grabbing}
     <!-- Tab 2: Plan Edit (평면도 편집 모드) -->
     <div class="tab-content" id="tab-edit">
       <section class="box">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:6px">
           <h2 id="secTitlePlan" style="margin:0">📐 평면도 편집 모드</h2>
-          <button type="button" id="eReset" class="btn-preset danger" style="padding:3px 8px;font-size:11px">🔄 편집 초기화</button>
+          <div style="display:flex;align-items:center;gap:4px">
+            <button type="button" id="btnOpenPlanEditModeless" class="btn-preset pri" style="padding:3px 8px;font-size:11px;display:inline-flex;align-items:center;gap:4px;font-weight:700" title="대형 탱크를 넓은 모달리스 독립 창에서 시원하게 편집합니다">🗖 대형창 편집</button>
+            <button type="button" id="eReset" class="btn-preset danger" style="padding:3px 8px;font-size:11px">🔄 편집 초기화</button>
+          </div>
         </div>
         <p class="hint" id="hintPlan" style="margin-bottom:8px">도구를 선택하고 평면 격자를 클릭하여 <b>패널 삭제</b>, <b>맨홀</b>, <b>벤트</b>, <b>사다리</b>를 지정합니다. (위쪽: 탱크 배면)</p>
+
+        <!-- 대형 탱크 감지 안내 배너 (가로 10칸 이상 또는 세로 8칸 이상일 때 추천) -->
+        <div id="planLargeTankBanner" style="display:none;background:rgba(2,132,199,0.08);border:1px solid rgba(2,132,199,0.3);border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11px;display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <span id="lblLargeTankBanner" style="color:var(--fg);font-size:11px;line-height:1.3">💡 대형 탱크입니다. 모달리스 창을 띄워 넓고 쾌적하게 편집하세요.</span>
+          <button type="button" class="btn-sm pri" id="btnBannerOpenLarge" onclick="openPlanEditModal()" style="padding:3px 9px;font-size:11px;font-weight:700;white-space:nowrap">🗖 대형창 열기</button>
+        </div>
 
         <!-- 정돈된 평면도 도구 팔레트 카드 -->
         <div class="plan-tool-card">
@@ -1936,12 +1945,75 @@ canvas.drag{cursor:grabbing}
       <span style="font-size:10px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:10px">↖ 열기</span>
     </div>
 
+    <!-- Modeless Plan View Edit Dialog (대형 평면도 패널 편집기) -->
+    <div id="planEditModelessDialog" class="modeless-dialog" data-role="modeless" style="width:min(1240px, 96vw);height:min(820px, 92vh)">
+      <!-- Draggable Header -->
+      <div class="modeless-header" id="planEditDialogHeader">
+        <div class="modeless-title">
+          <span style="font-size:16px">📐</span>
+          <h3 id="planEditDialogTitle" style="margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">
+            평면도 대형 패널 편집기 (Plan View Editor) <span class="ver-badge" style="font-size:10px;padding:2px 6px">Modeless Plan Editor</span>
+          </h3>
+          <span class="modeless-drag-hint">✥ 상단바를 잡고 자유롭게 이동 가능</span>
+        </div>
+        <div class="modeless-actions">
+          <button type="button" id="btnPlanEditDialogReset" class="modeless-btn" style="width:auto;padding:0 8px;font-size:11px;color:#ef4444" title="평면도 편집 초기화">🔄 편집 초기화</button>
+          <button type="button" id="btnPlanEditDialogMinimize" class="modeless-btn" title="창 최소화 (바텀 플로팅 독으로 접기)" onclick="minimizePlanEditModal()">🗕</button>
+          <button type="button" id="btnPlanEditDialogMaximize" class="modeless-btn" title="창 최대화 / 복원" onclick="toggleMaximizePlanEditModal()">🗖</button>
+          <button type="button" id="btnPlanEditDialogClose" class="modeless-btn close" title="닫기 (ESC)" onclick="closePlanEditModal()">✖</button>
+        </div>
+      </div>
 
+      <!-- Modeless Toolbar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--surface-sub);border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap">
+        <!-- Tools selector -->
+        <div class="plan-tool-grid" style="margin:0;display:flex;gap:6px;flex-wrap:wrap">
+          <label class="plan-tool-chip"><input type="radio" name="emode_m" value="del" checked><span>❌ 패널 삭제</span></label>
+          <label class="plan-tool-chip"><input type="radio" name="emode_m" value="han"><span>🔘 맨홀 (손잡이)</span></label>
+          <label class="plan-tool-chip"><input type="radio" name="emode_m" value="vent"><span>💨 에어벤트</span></label>
+          <label class="plan-tool-chip"><input type="radio" name="emode_m" value="lad"><span>🪜 사다리</span></label>
+          <label class="plan-tool-chip"><input type="radio" name="emode_m" value="pil"><span>🏛️ 기둥 (삭제칸)</span></label>
+        </div>
+
+        <!-- Right: Cell zoom & stats -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);padding:3px 8px;border-radius:6px">
+            <span style="font-size:11px;font-weight:600;color:var(--muted)">🔍 셀 크기:</span>
+            <button type="button" class="btn-sm" id="btnPlanZoomOut" style="padding:2px 7px;font-size:11px;font-weight:700" title="셀 축소">－</button>
+            <span id="lblPlanCellSize" style="font-size:11px;font-weight:700;min-width:36px;text-align:center">36px</span>
+            <button type="button" class="btn-sm" id="btnPlanZoomIn" style="padding:2px 7px;font-size:11px;font-weight:700" title="셀 확대">＋</button>
+            <button type="button" class="btn-sm" id="btnPlanZoomFit" style="padding:2px 7px;font-size:10.5px" title="화면 맞춤">화면맞춤</button>
+          </div>
+          <span id="planModelessStatsBadge" style="font-size:11px;padding:4px 10px;border-radius:12px;background:var(--accent);color:#fff;font-weight:700">0×0</span>
+        </div>
+      </div>
+
+      <!-- Modeless Grid Body -->
+      <div class="modeless-body" style="padding:16px;flex:1;overflow:auto;display:flex;flex-direction:column">
+        <!-- Compartment Header Bar -->
+        <div id="planCompHeaderModeless" style="display:none;margin-bottom:10px;gap:6px"></div>
+        <!-- Grid Wrapper with Scroll -->
+        <div style="flex:1;overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:14px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.06);display:flex;justify-content:center;align-items:flex-start">
+          <div id="egridModeless" class="egrid" aria-label="대형 평면도 패널 격자" style="margin:0"></div>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center">
+          <span>* 셀을 클릭하면 선택된 도구에 따라 즉시 변경되며 도면에 실시간 반영됩니다. (위쪽: 탱크 배면 / 아래쪽: 정면)</span>
+          <span id="planModelessHintCounts"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modeless Plan Edit Minimized Pill -->
+    <div id="planEditMinPill" class="modeless-min-pill" style="bottom:168px" title="클릭하여 평면도 대형 편집창 복원" onclick="openPlanEditModal()">
+      <span>📐</span>
+      <span>평면도 편집기 [최소화됨]</span>
+      <span style="font-size:10px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:10px">↖ 열기</span>
+    </div>
 
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.89</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.90</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1951,7 +2023,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.89</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.90</span></div>
     </div>
   </main>
 </div>
@@ -5246,10 +5318,11 @@ canvas.drag{cursor:grabbing}
 
     const getDepth = (x, y, z) => y - x - z;
 
+    let inFoundation = false;
     const ln = (a, b, layer, depth = 0) => ents.push({ t: 'line', a, b, layer: layer || 'PANEL', depth });
     const poly = (pts, layer, close = true, fill = false, depth = 0) => {
       if (fill) {
-        ents.push({ t: 'poly', pts, fill: true, stroke: false, close: false, layer: layer || 'PANEL', depth });
+        ents.push({ t: 'poly', pts, fill: true, stroke: false, close: false, layer: layer || 'PANEL', depth, isFoundation: inFoundation });
         if (close !== false) {
           for (let i = 0; i < pts.length - 1; i++) ln(pts[i], pts[i + 1], layer, depth);
           if (pts.length > 2) ln(pts[pts.length - 1], pts[0], layer, depth);
@@ -5453,6 +5526,7 @@ canvas.drag{cursor:grabbing}
       }
     };
 
+    inFoundation = true;
     // 1. 콘크리트 패드 (Concrete Foundation & Plinths: 300mm 기둥, 150mm 연속 바닥 슬래브, GL -750)
     const th = opt.th || opt.frame || 75;
     const padH = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
@@ -5682,6 +5756,7 @@ canvas.drag{cursor:grabbing}
       }
     }
 
+    inFoundation = false;
     // 2. 전면 벽체 판넬 (Front-Facing Walls: normal -Y, 'D')
     for (let i = 0; i < map.rows.length; i++) {
       const y0 = map.ys[i];
@@ -6500,6 +6575,8 @@ canvas.drag{cursor:grabbing}
           const poly = opaquePolys[i];
           // Polygon must be strictly in FRONT of the line (lower depth by at least 15mm)
           if (poly.depth < eDepth - 15) {
+            // Foundation plinths/cavities and skid channels (z <= 0) can NEVER occlude tank panels, panel details, or nozzles (z >= 0)
+            if ((poly.isFoundation || poly.layer === 'FRAME') && (e.layer === 'PANEL' || e.layer === 'PANEL_DETAIL' || e.layer === 'NOZZLE')) continue;
             const bb = poly._bb;
             const nextSegs = [];
             for (let s = 0; s < segs.length; s++) {
@@ -6529,13 +6606,13 @@ canvas.drag{cursor:grabbing}
     });
 
     ents.length = 0;
-    ents.push(...newEnts);
+    for (let i = 0; i < newEnts.length; i++) ents.push(newEnts[i]);
     opaquePolys.forEach(p => { delete p._bb; });
 
     ents.forEach(e => { delete e._idx; delete e.depth; });
 
     // 11. 외부 사다리(Ladder)는 판넬/틀에 덮여 가려지지 않도록 맨 마지막에 최상단으로 렌더링
-    ents.push(...ladderEnts);
+    for (let i = 0; i < ladderEnts.length; i++) ents.push(ladderEnts[i]);
 
     return { ents, textH, totalL, totalW, H };
   }
@@ -8271,6 +8348,9 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       lblFrm: '하부 프레임',
       hintDims: '💡 길이는 여러 칸에 입력 시 구간별 분할(예: 3000 + 2000)됩니다. 폭은 단일 치수(mm)입니다.',
       secTitlePlan: '📐 평면도 편집 모드',
+      btnOpenPlanModeless: '🗖 대형창 편집',
+      lblLargeTankBanner: '💡 대형 탱크입니다. 모달리스 창을 띄워 넓고 쾌적하게 편집하세요.',
+      btnBannerOpenLarge: '🗖 대형창 열기',
       btnResetEdit: '🔄 편집 초기화',
       hintPlan: '도구를 선택하고 평면 격자를 클릭하여 <b>패널 삭제</b>, <b>맨홀</b>, <b>벤트</b>, <b>사다리</b>를 지정합니다. (위쪽: 탱크 배면)',
       toolDel: '❌ 패널 삭제',
@@ -8376,6 +8456,9 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       lblFrm: 'Base Frame',
       hintDims: '💡 Multi-entry length (e.g. 3000 + 2000) creates partitions. Width is single dimension (mm).',
       secTitlePlan: '📐 Plan View Edit Mode',
+      btnOpenPlanModeless: '🗖 Modeless Editor',
+      lblLargeTankBanner: '💡 Large tank detected. Open the modeless editor for comfortable editing.',
+      btnBannerOpenLarge: '🗖 Open Modeless',
       btnResetEdit: '🔄 Reset Edit',
       hintPlan: 'Select a tool and click the grid to <b>delete panels</b> or assign <b>manhole</b>, <b>vent</b>, <b>ladder</b>. (Top: Rear face)',
       toolDel: '❌ Delete Panel',
@@ -8581,6 +8664,9 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
     // Tab 2: Plan Edit
     if ($('secTitlePlan')) $('secTitlePlan').textContent = t.secTitlePlan;
+    if ($('btnOpenPlanEditModeless')) $('btnOpenPlanEditModeless').textContent = t.btnOpenPlanModeless;
+    if ($('lblLargeTankBanner')) $('lblLargeTankBanner').textContent = t.lblLargeTankBanner;
+    if ($('btnBannerOpenLarge')) $('btnBannerOpenLarge').textContent = t.btnBannerOpenLarge;
     if ($('eReset')) $('eReset').textContent = t.btnResetEdit;
     if ($('hintPlan')) $('hintPlan').innerHTML = t.hintPlan;
     if ($('lblToolDel')) $('lblToolDel').textContent = t.toolDel;
@@ -9720,6 +9806,80 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     }
   };
 
+  let planModelessCellSize = 36;
+  let lastPlanMap = null;
+
+  function openPlanEditModal() {
+    const dlg = $('planEditModelessDialog');
+    const pill = $('planEditMinPill');
+    if (!dlg) return;
+    if (pill) pill.style.display = 'none';
+
+    dlg.style.display = 'flex';
+    if (!dlg.dataset.moved) {
+      const w = Math.min(1240, Math.floor(window.innerWidth * 0.94));
+      const h = Math.min(820, Math.floor(window.innerHeight * 0.90));
+      dlg.style.width = w + 'px';
+      dlg.style.height = h + 'px';
+      const l = Math.max(20, Math.floor((window.innerWidth - w) / 2));
+      const t = Math.max(30, Math.floor((window.innerHeight - h) / 2));
+      dlg.style.left = l + 'px';
+      dlg.style.top = t + 'px';
+      dlg.style.right = 'auto';
+      dlg.style.bottom = 'auto';
+    }
+    bringModelessToFront(dlg);
+    const activeRadio = document.querySelector('input[name=emode]:checked');
+    if (activeRadio) {
+      const mr = document.querySelector(`input[name=emode_m][value="${activeRadio.value}"]`);
+      if (mr) mr.checked = true;
+    }
+    if (lastPlanMap) renderGrid(lastPlanMap);
+  }
+  window.openPlanEditModal = openPlanEditModal;
+
+  function closePlanEditModal() {
+    const dlg = $('planEditModelessDialog');
+    if (dlg) dlg.style.display = 'none';
+    const pill = $('planEditMinPill');
+    if (pill) pill.style.display = 'none';
+  }
+  window.closePlanEditModal = closePlanEditModal;
+
+  function minimizePlanEditModal() {
+    const dlg = $('planEditModelessDialog');
+    const pill = $('planEditMinPill');
+    if (dlg) dlg.style.display = 'none';
+    if (pill) pill.style.display = 'inline-flex';
+  }
+  window.minimizePlanEditModal = minimizePlanEditModal;
+
+  function toggleMaximizePlanEditModal() {
+    const dlg = $('planEditModelessDialog');
+    const maxBtn = $('btnPlanEditDialogMaximize');
+    if (!dlg) return;
+    if (dlg.dataset.isMaximized === 'true') {
+      dlg.dataset.isMaximized = 'false';
+      dlg.style.left = dlg.dataset.prevLeft || '30px';
+      dlg.style.top = dlg.dataset.prevTop || '30px';
+      dlg.style.width = dlg.dataset.prevWidth || '1200px';
+      dlg.style.height = dlg.dataset.prevHeight || '780px';
+      if (maxBtn) maxBtn.textContent = '🗖';
+    } else {
+      dlg.dataset.isMaximized = 'true';
+      dlg.dataset.prevLeft = dlg.style.left;
+      dlg.dataset.prevTop = dlg.style.top;
+      dlg.dataset.prevWidth = dlg.style.width;
+      dlg.dataset.prevHeight = dlg.style.height;
+      dlg.style.left = '10px';
+      dlg.style.top = '10px';
+      dlg.style.width = 'calc(100vw - 20px)';
+      dlg.style.height = 'calc(100vh - 20px)';
+      if (maxBtn) maxBtn.textContent = '🗗';
+    }
+  }
+  window.toggleMaximizePlanEditModal = toggleMaximizePlanEditModal;
+
   function updateTitleBlockSummary() {
     if ($('sideSummaryProject')) $('sideSummaryProject').textContent = $('tProject')?.value || '-';
     if ($('sideSummaryCompany')) $('sideSummaryCompany').textContent = $('tCustomer')?.value || 'YSACC CO.,LTD';
@@ -9783,6 +9943,59 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
   initDraggableDialog('bomModelessDialog', 'bomDialogHeader');
   initDraggableDialog('titleBlockModelessDialog', 'titleBlockDialogHeader');
+  initDraggableDialog('planEditModelessDialog', 'planEditDialogHeader');
+
+  if ($('btnOpenPlanEditModeless')) $('btnOpenPlanEditModeless').addEventListener('click', openPlanEditModal);
+
+  // Plan Edit Modeless Dialog Zoom & Controls
+  if ($('btnPlanZoomIn')) {
+    $('btnPlanZoomIn').addEventListener('click', () => {
+      planModelessCellSize = Math.min(80, planModelessCellSize + 6);
+      if ($('lblPlanCellSize')) $('lblPlanCellSize').textContent = planModelessCellSize + 'px';
+      if (lastPlanMap) renderGrid(lastPlanMap);
+    });
+  }
+  if ($('btnPlanZoomOut')) {
+    $('btnPlanZoomOut').addEventListener('click', () => {
+      planModelessCellSize = Math.max(16, planModelessCellSize - 6);
+      if ($('lblPlanCellSize')) $('lblPlanCellSize').textContent = planModelessCellSize + 'px';
+      if (lastPlanMap) renderGrid(lastPlanMap);
+    });
+  }
+  if ($('btnPlanZoomFit')) {
+    $('btnPlanZoomFit').addEventListener('click', () => {
+      if (!lastPlanMap) return;
+      const wrap = $('egridModeless')?.parentElement;
+      if (wrap) {
+        const availW = wrap.clientWidth - 40;
+        const availH = wrap.clientHeight - 40;
+        const fitW = availW / (lastPlanMap.length / 1000);
+        const fitH = availH / (lastPlanMap.width / 1000);
+        planModelessCellSize = Math.max(16, Math.min(60, Math.floor(Math.min(fitW, fitH))));
+        if ($('lblPlanCellSize')) $('lblPlanCellSize').textContent = planModelessCellSize + 'px';
+        renderGrid(lastPlanMap);
+      }
+    });
+  }
+  if ($('btnPlanEditDialogReset')) {
+    $('btnPlanEditDialogReset').addEventListener('click', () => {
+      if ($('eReset')) $('eReset').click();
+    });
+  }
+
+  // Sync mode radios between sidebar and modeless dialog
+  document.querySelectorAll('input[name=emode]').forEach(r => {
+    r.addEventListener('change', () => {
+      const mr = document.querySelector(`input[name=emode_m][value="${r.value}"]`);
+      if (mr) mr.checked = true;
+    });
+  });
+  document.querySelectorAll('input[name=emode_m]').forEach(r => {
+    r.addEventListener('change', () => {
+      const sr = document.querySelector(`input[name=emode][value="${r.value}"]`);
+      if (sr) sr.checked = true;
+    });
+  });
 
   const switchToBOMTab = () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -11092,45 +11305,24 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     return mk ? svg : (iconCache[key] = svg);
   }
 
-  function renderGrid(map) {
-    const g = $('egrid'), wPx = Math.max(200, g.clientWidth || 320), sc = Math.min(wPx / map.length, 260 / map.width);
-    g.style.gridTemplateColumns = map.cols.map(c => Math.round(c * sc) + 'px').join(' ');
-    g.style.gridTemplateRows = map.rows.slice().reverse().map(r => Math.max(14, Math.round(r * sc)) + 'px').join(' ');
-    g.style.justifyContent = 'start';
-    g.innerHTML = '';
-
+  function populateGridElement(container, map, isModeless = false) {
+    if (!container) return;
+    const isEn = currentLang === 'en';
     const L_secs = (vals('L') || []).filter(Boolean);
     const W_secs = (vals('W') || []).filter(Boolean);
-    const isEn = currentLang === 'en';
 
-    // 구획 헤더 바 (칸막이 구획 표시)
-    const compHeader = $('planCompHeader');
-    if (compHeader) {
-      const baffleTag = isEn
-        ? '<div style="display:flex;align-items:center;color:#ea580c;font-size:9px;font-weight:800;padding:0 3px">⚡Baffle</div>'
-        : '<div style="display:flex;align-items:center;color:#ea580c;font-size:9px;font-weight:800;padding:0 3px">⚡칸막이</div>';
-      if (L_secs.length > 1) {
-        compHeader.style.display = 'flex';
-        compHeader.innerHTML = L_secs.map((len, idx) => {
-          const compTitle = isEn ? `📦 Comp.${idx + 1} (${len.toLocaleString()}mm)` : `📦 ${idx + 1}구획 (${len.toLocaleString()}mm)`;
-          return `<div style="flex:${len};text-align:center;background:rgba(2,132,199,0.08);color:var(--fg);border:1px solid rgba(2,132,199,0.3);border-radius:6px;padding:4px 6px;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-            ${compTitle}
-          </div>`;
-        }).join(baffleTag);
-      } else if (W_secs.length > 1) {
-        compHeader.style.display = 'flex';
-        compHeader.innerHTML = W_secs.map((wid, idx) => {
-          const compTitle = isEn ? `📦 Comp.${idx + 1} (${wid.toLocaleString()}mm)` : `📦 ${idx + 1}구획 (${wid.toLocaleString()}mm)`;
-          return `<div style="flex:${wid};text-align:center;background:rgba(2,132,199,0.08);color:var(--fg);border:1px solid rgba(2,132,199,0.3);border-radius:6px;padding:4px 6px;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-            ${compTitle}
-          </div>`;
-        }).join(baffleTag);
-      } else {
-        compHeader.style.display = 'none';
-      }
+    if (isModeless) {
+      const cs = planModelessCellSize;
+      container.style.gridTemplateColumns = map.cols.map(c => Math.round(cs * (c / 1000)) + 'px').join(' ');
+      container.style.gridTemplateRows = map.rows.slice().reverse().map(r => Math.max(14, Math.round(cs * (r / 1000))) + 'px').join(' ');
+    } else {
+      const wPx = Math.max(200, container.clientWidth || 320), sc = Math.min(wPx / map.length, 260 / map.width);
+      container.style.gridTemplateColumns = map.cols.map(c => Math.round(c * sc) + 'px').join(' ');
+      container.style.gridTemplateRows = map.rows.slice().reverse().map(r => Math.max(14, Math.round(r * sc)) + 'px').join(' ');
     }
+    container.style.justifyContent = 'start';
+    container.innerHTML = '';
 
-    // 칸막이 위치 판별 함수 (L 또는 W 분할)
     const isPartitionCol = (j) => {
       if (L_secs.length <= 1) return false;
       let cum = 0;
@@ -11162,6 +11354,10 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       if (isPartRight) btnCls += ' cell-part-right';
       if (isPartBottom) btnCls += ' cell-part-bottom';
       b.className = btnCls.trim();
+      if (isModeless) {
+        b.style.width = Math.round(planModelessCellSize * (map.cols[j] / 1000)) + 'px';
+        b.style.height = Math.round(planModelessCellSize * (map.rows[i] / 1000)) + 'px';
+      }
       const pilText = isEn ? 'Pillar' : '기둥';
       b.innerHTML = off ? (pil ? `<svg viewBox="0 0 10 10" preserveAspectRatio="none" style="width:100%;height:100%" stroke="currentColor" fill="none" stroke-width="1" vector-effect="non-scaling-stroke"><rect x="2" y="2" width="6" height="6"/><path d="M2 2L8 8M2 8L8 2"/></svg><span class="badge-pillar">${pilText}</span>` : '') : panelIcon(map.cols[j], map.rows[i], mk);
 
@@ -11203,7 +11399,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       }
 
       b.addEventListener('click', () => {
-        const mode = document.querySelector('input[name=emode]:checked').value;
+        const activeRadio = document.querySelector('input[name=emode]:checked') || document.querySelector('input[name=emode_m]:checked');
+        const mode = (activeRadio ? activeRadio.value : 'del');
         if (mode === 'pil' && !removed.has(key)) return;
         if (mode === 'del') {
           if (removed.has(key)) { removed.delete(key); pillars.delete(key); }
@@ -11240,7 +11437,62 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         const borderProp = { U: 'borderTop', D: 'borderBottom', L: 'borderLeft', R: 'borderRight' }[sd];
         b.style[borderProp] = '3px solid #16a34a';
       }
-      g.appendChild(b);
+      container.appendChild(b);
+    }
+  }
+
+  function renderGrid(map) {
+    lastPlanMap = map;
+    const isEn = currentLang === 'en';
+    const isLarge = map.cols.length >= 10 || map.rows.length >= 8;
+    const banner = $('planLargeTankBanner');
+    if (banner) banner.style.display = isLarge ? 'flex' : 'none';
+
+    const L_secs = (vals('L') || []).filter(Boolean);
+    const W_secs = (vals('W') || []).filter(Boolean);
+    const baffleTag = isEn
+      ? '<div style="display:flex;align-items:center;color:#ea580c;font-size:9px;font-weight:800;padding:0 3px">⚡Baffle</div>'
+      : '<div style="display:flex;align-items:center;color:#ea580c;font-size:9px;font-weight:800;padding:0 3px">⚡칸막이</div>';
+
+    const renderCompHeaders = (headerEl) => {
+      if (!headerEl) return;
+      if (L_secs.length > 1) {
+        headerEl.style.display = 'flex';
+        headerEl.innerHTML = L_secs.map((len, idx) => {
+          const compTitle = isEn ? `📦 Comp.${idx + 1} (${len.toLocaleString()}mm)` : `📦 ${idx + 1}구획 (${len.toLocaleString()}mm)`;
+          return `<div style="flex:${len};text-align:center;background:rgba(2,132,199,0.08);color:var(--fg);border:1px solid rgba(2,132,199,0.3);border-radius:6px;padding:4px 6px;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${compTitle}</div>`;
+        }).join(baffleTag);
+      } else if (W_secs.length > 1) {
+        headerEl.style.display = 'flex';
+        headerEl.innerHTML = W_secs.map((wid, idx) => {
+          const compTitle = isEn ? `📦 Comp.${idx + 1} (${wid.toLocaleString()}mm)` : `📦 ${idx + 1}구획 (${wid.toLocaleString()}mm)`;
+          return `<div style="flex:${wid};text-align:center;background:rgba(2,132,199,0.08);color:var(--fg);border:1px solid rgba(2,132,199,0.3);border-radius:6px;padding:4px 6px;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${compTitle}</div>`;
+        }).join(baffleTag);
+      } else {
+        headerEl.style.display = 'none';
+      }
+    };
+
+    // 1. Sidebar Grid
+    renderCompHeaders($('planCompHeader'));
+    populateGridElement($('egrid'), map, false);
+
+    // 2. Modeless Dialog Grid (if open or present)
+    renderCompHeaders($('planCompHeaderModeless'));
+    populateGridElement($('egridModeless'), map, true);
+
+    // 3. Stats & Hint counts
+    if ($('planModelessStatsBadge')) {
+      const totPanels = map.cols.length * map.rows.length;
+      $('planModelessStatsBadge').textContent = `${map.cols.length} × ${map.rows.length} (${totPanels} panels)`;
+    }
+    if ($('planModelessHintCounts')) {
+      let mh = 0, vt = 0;
+      Object.values(marks).forEach(m => { if (m & 1) mh++; if (m & 2) vt++; });
+      const ld = Object.keys(ladders).length;
+      $('planModelessHintCounts').textContent = isEn
+        ? `Deleted: ${removed.size} | Manholes: ${mh} | Vents: ${vt} | Ladders: ${ld}`
+        : `삭제: ${removed.size}개 | 맨홀: ${mh}개 | 에어벤트: ${vt}개 | 사다리: ${ld}개`;
     }
   }
 
@@ -11639,7 +11891,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.89</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.90</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -16770,9 +17022,13 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     const wiz = $('cadBlockWizardView');
     if (wiz) wiz.style.display = 'none';
   });
-
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      const planDlg = $('planEditModelessDialog');
+      if (planDlg && planDlg.style.display !== 'none') {
+        closePlanEditModal();
+        return;
+      }
       const tbDlg = $('titleBlockModelessDialog');
       if (tbDlg && tbDlg.style.display !== 'none') {
         closeTitleBlockModal();

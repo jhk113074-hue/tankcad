@@ -3288,10 +3288,11 @@
 
     const getDepth = (x, y, z) => y - x - z;
 
+    let inFoundation = false;
     const ln = (a, b, layer, depth = 0) => ents.push({ t: 'line', a, b, layer: layer || 'PANEL', depth });
     const poly = (pts, layer, close = true, fill = false, depth = 0) => {
       if (fill) {
-        ents.push({ t: 'poly', pts, fill: true, stroke: false, close: false, layer: layer || 'PANEL', depth });
+        ents.push({ t: 'poly', pts, fill: true, stroke: false, close: false, layer: layer || 'PANEL', depth, isFoundation: inFoundation });
         if (close !== false) {
           for (let i = 0; i < pts.length - 1; i++) ln(pts[i], pts[i + 1], layer, depth);
           if (pts.length > 2) ln(pts[pts.length - 1], pts[0], layer, depth);
@@ -3495,6 +3496,7 @@
       }
     };
 
+    inFoundation = true;
     // 1. 콘크리트 패드 (Concrete Foundation & Plinths: 300mm 기둥, 150mm 연속 바닥 슬래브, GL -750)
     const th = opt.th || opt.frame || 75;
     const padH = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
@@ -3724,6 +3726,7 @@
       }
     }
 
+    inFoundation = false;
     // 2. 전면 벽체 판넬 (Front-Facing Walls: normal -Y, 'D')
     for (let i = 0; i < map.rows.length; i++) {
       const y0 = map.ys[i];
@@ -4542,6 +4545,8 @@
           const poly = opaquePolys[i];
           // Polygon must be strictly in FRONT of the line (lower depth by at least 15mm)
           if (poly.depth < eDepth - 15) {
+            // Foundation plinths/cavities and skid channels (z <= 0) can NEVER occlude tank panels, panel details, or nozzles (z >= 0)
+            if ((poly.isFoundation || poly.layer === 'FRAME') && (e.layer === 'PANEL' || e.layer === 'PANEL_DETAIL' || e.layer === 'NOZZLE')) continue;
             const bb = poly._bb;
             const nextSegs = [];
             for (let s = 0; s < segs.length; s++) {
@@ -4571,13 +4576,13 @@
     });
 
     ents.length = 0;
-    ents.push(...newEnts);
+    for (let i = 0; i < newEnts.length; i++) ents.push(newEnts[i]);
     opaquePolys.forEach(p => { delete p._bb; });
 
     ents.forEach(e => { delete e._idx; delete e.depth; });
 
     // 11. 외부 사다리(Ladder)는 판넬/틀에 덮여 가려지지 않도록 맨 마지막에 최상단으로 렌더링
-    ents.push(...ladderEnts);
+    for (let i = 0; i < ladderEnts.length; i++) ents.push(ladderEnts[i]);
 
     return { ents, textH, totalL, totalW, H };
   }
