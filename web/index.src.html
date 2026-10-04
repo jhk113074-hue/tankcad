@@ -406,7 +406,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.88</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.91</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -444,7 +444,7 @@ canvas.drag{cursor:grabbing}
           <label class="rf-pill"><input type="radio" name="rf" value="2"> <span id="lblRf2">내부 환봉</span></label>
         </div>
 
-        <h2 id="secTitleDims" style="margin-top:14px">탱크 치수 입력 (mm)</h2>
+        <h2 id="secTitleDims" style="margin-top:14px">탱크 치수 입력 (m)</h2>
         <div class="seg" id="segL"><label id="lblLen">길이(LENGTH)</label></div>
         <div class="seg" id="segW"><label id="lblWid">폭(WIDTH)</label></div>
         <div class="seg" id="segH">
@@ -452,8 +452,8 @@ canvas.drag{cursor:grabbing}
           <div class="dim-spin-wrap" style="flex:1">
             <select id="H" style="width:100%;border:none;background:transparent;padding:6px 20px 6px 8px;font-size:12px;color:var(--fg);font-weight:600;outline:none"></select>
             <div class="dim-spin-arrows">
-              <button type="button" class="dim-spin-btn dim-spin-up" id="btnHUp" title="+500mm (다음 높이)" tabindex="-1">▲</button>
-              <button type="button" class="dim-spin-btn dim-spin-down" id="btnHDown" title="-500mm (이전 높이)" tabindex="-1">▼</button>
+              <button type="button" class="dim-spin-btn dim-spin-up" id="btnHUp" title="+0.5m (다음 높이)" tabindex="-1">▲</button>
+              <button type="button" class="dim-spin-btn dim-spin-down" id="btnHDown" title="-0.5m (이전 높이)" tabindex="-1">▼</button>
             </div>
           </div>
           <label class="chk-b11-pill" title="1000/500 모듈 조합 토글"><input type="checkbox" id="b11" checked> <span id="lblB11">1×1 패널 모듈</span></label>
@@ -467,7 +467,7 @@ canvas.drag{cursor:grabbing}
             <option value="150">150 (채널)</option>
           </select>
         </div>
-        <p class="hint" id="hintDims">💡 길이는 여러 칸에 입력 시 구간별 분할(예: 3000 + 2000)됩니다. 폭은 단일 치수(mm)입니다.</p>
+        <p class="hint" id="hintDims">💡 길이는 여러 칸에 입력 시 구간별 분할(예: 3 + 2)됩니다. 폭은 단일 치수(m)입니다.</p>
         <div class="err" id="err" hidden></div>
       </section>
     </div>
@@ -2013,7 +2013,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.88</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.91</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2023,7 +2023,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.87</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.91</span></div>
     </div>
   </main>
 </div>
@@ -2038,7 +2038,17 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   const C = window.TankCore;
   const $ = id => document.getElementById(id);
   window.$ = $;
-  const LEN0 = [5000, 0, 0, 0, 0], WID0 = [4000];
+  const toMm = v => {
+    const n = Number(v) || 0;
+    if (n <= 0) return 0;
+    return n < 100 ? Math.round(n * 1000) : n;
+  };
+  const toM = v => {
+    const n = Number(v) || 0;
+    if (n <= 0) return 0;
+    return n >= 100 ? (Math.round(n / 100) / 10) : n;
+  };
+  const LEN0 = [5, 0, 0, 0, 0], WID0 = [4];
   let currentLang = 'ko';
   try {
     currentLang = localStorage.getItem('tank_lang') || 'ko';
@@ -2172,13 +2182,13 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       rf0: '외부 보강',
       rf1: '내부 앵글',
       rf2: '내부 환봉',
-      secTitleDims: '탱크 치수 입력 (mm)',
+      secTitleDims: '탱크 치수 입력 (m)',
       lblLen: '길이 (LENGTH)',
       lblWid: '폭 (WIDTH)',
       lblHei: '높이 (HEIGHT)',
       lblB11: '1×1 패널 모듈',
       lblFrm: '하부 프레임',
-      hintDims: '💡 길이는 여러 칸에 입력 시 구간별 분할(예: 3000 + 2000)됩니다. 폭은 단일 치수(mm)입니다.',
+      hintDims: '💡 길이는 여러 칸에 입력 시 구간별 분할(예: 3 + 2)됩니다. 폭은 단일 치수(m)입니다.',
       secTitlePlan: '📐 평면도 편집 모드',
       btnOpenPlanModeless: '🗖 대형창 편집',
       lblLargeTankBanner: '💡 대형 탱크입니다. 모달리스 창을 띄워 넓고 쾌적하게 편집하세요.',
@@ -2280,13 +2290,13 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       rf0: 'External Reinf.',
       rf1: 'Internal Angle',
       rf2: 'Internal Tie-rod',
-      secTitleDims: 'Tank Dimensions (mm)',
+      secTitleDims: 'Tank Dimensions (m)',
       lblLen: 'Length (LENGTH)',
       lblWid: 'Width (WIDTH)',
       lblHei: 'Height (HEIGHT)',
       lblB11: '1×1 Panel Module',
       lblFrm: 'Base Frame',
-      hintDims: '💡 Multi-entry length (e.g. 3000 + 2000) creates partitions. Width is single dimension (mm).',
+      hintDims: '💡 Multi-entry length (e.g. 3 + 2) creates partitions. Width is single dimension (m).',
       secTitlePlan: '📐 Plan View Edit Mode',
       btnOpenPlanModeless: '🗖 Modeless Editor',
       lblLargeTankBanner: '💡 Large tank detected. Open the modeless editor for comfortable editing.',
@@ -2824,7 +2834,9 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       wrap.className = 'dim-spin-wrap' + (i === 0 ? ' is-first' : '');
 
       const inp = document.createElement('input');
-      inp.type = 'number'; inp.id = key + i; inp.min = 0; inp.step = 500; inp.value = v || '';
+      inp.type = 'number'; inp.id = key + i; inp.min = 0; inp.step = 0.5;
+      const initialM = toM(v);
+      inp.value = initialM > 0 ? initialM : '';
       inp.setAttribute('aria-label', host.firstChild.textContent + ' ' + (i + 1));
       inp.addEventListener('input', schedule);
 
@@ -2835,31 +2847,29 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       btnUp.type = 'button';
       btnUp.className = 'dim-spin-btn dim-spin-up';
       btnUp.innerHTML = '▲';
-      btnUp.title = '+500mm';
+      btnUp.title = '+0.5m';
       btnUp.tabIndex = -1;
 
       const btnDown = document.createElement('button');
       btnDown.type = 'button';
       btnDown.className = 'dim-spin-btn dim-spin-down';
       btnDown.innerHTML = '▼';
-      btnDown.title = '-500mm';
+      btnDown.title = '-0.5m';
       btnDown.tabIndex = -1;
 
       const stepVal = (delta) => {
         let cur = Number(inp.value) || 0;
-        if (cur % 500 !== 0) {
-          cur = delta > 0 ? Math.floor(cur / 500) * 500 : Math.ceil(cur / 500) * 500;
-        }
-        let next = cur + delta;
+        if (cur >= 100) cur = cur / 1000;
+        let next = Math.round((cur + delta) * 10) / 10;
         if (next <= 0) {
-          next = (i === 0) ? 500 : 0;
+          next = (i === 0) ? 0.5 : 0;
         }
         inp.value = next > 0 ? next : '';
         inp.dispatchEvent(new Event('input', { bubbles: true }));
       };
 
-      btnUp.addEventListener('click', () => stepVal(500));
-      btnDown.addEventListener('click', () => stepVal(-500));
+      btnUp.addEventListener('click', () => stepVal(0.5));
+      btnDown.addEventListener('click', () => stepVal(-0.5));
 
       arrows.appendChild(btnUp);
       arrows.appendChild(btnDown);
@@ -2947,7 +2957,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if (!list || list.length === 0) {
       list = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000];
     }
-    $('H').innerHTML = list.map(v => '<option value="' + v + '">' + v + '</option>').join('');
+    $('H').innerHTML = list.map(v => '<option value="' + v + '">' + (v / 1000) + 'm</option>').join('');
     $('H').value = list.includes(cur) ? cur : (list.includes(3000) ? 3000 : list[0]);
   }
   fillHeights();
@@ -4404,7 +4414,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   let currentNozTool = 'panel-std';
   let selectedNozzleId = null;
   const iconCache = {};
-  const vals = k => [0, 1, 2, 3, 4].map(i => $(k + i) ? (Number($(k + i).value) || 0) : 0).filter(Boolean);
+  const vals = k => [0, 1, 2, 3, 4].map(i => $(k + i) ? toMm($(k + i).value) : 0).filter(Boolean);
   const pk = (i, j) => i + ',' + j;
 
   function getSingleCompNozzles(map, H) {
@@ -5723,7 +5733,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.87</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.91</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -5800,8 +5810,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
   function getAppState() {
     return {
-      L: [0, 1, 2, 3, 4].map(i => $('L' + i) ? (Number($('L' + i).value) || 0) : 0),
-      W: [0, 1, 2, 3, 4].map(i => $('W' + i) ? (Number($('W' + i).value) || 0) : 0),
+      L: [0, 1, 2, 3, 4].map(i => $('L' + i) ? toMm($('L' + i).value) : 0),
+      W: [0, 1, 2, 3, 4].map(i => $('W' + i) ? toMm($('W' + i).value) : 0),
       H: Number($('H').value) || 3000,
       b11: $('b11').checked,
       mat: document.querySelector('input[name=mat]:checked') ? document.querySelector('input[name=mat]:checked').value : 'GRP',
@@ -5864,13 +5874,19 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       if (Array.isArray(st.L)) {
         for (let i = 0; i < 5; i++) {
           const el = $('L' + i);
-          if (el) el.value = (st.L[i] && Number(st.L[i]) > 0) ? String(st.L[i]) : '';
+          if (el) {
+            const m = toM(st.L[i]);
+            el.value = (m > 0) ? String(m) : '';
+          }
         }
       }
       if (Array.isArray(st.W)) {
         for (let i = 0; i < 5; i++) {
           const el = $('W' + i);
-          if (el) el.value = (st.W[i] && Number(st.W[i]) > 0) ? String(st.W[i]) : '';
+          if (el) {
+            const m = toM(st.W[i]);
+            el.value = (m > 0) ? String(m) : '';
+          }
         }
       }
       if (typeof st.b11 === 'boolean') {

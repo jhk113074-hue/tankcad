@@ -3647,23 +3647,22 @@
           const curRx = p.rx;
           const nextLx = nextP.lx;
 
-          // 기둥 우측 측벽 (Inner vertical cavity wall: x = curRx, z = slabTopY ~ -th, y = yStart ~ y1)
-          const sideDepth = getDepth(curRx, (yStart + y1) / 2, (-th + slabTopY) / 2);
+          // 기둥 우측 측벽 (전면 오버행 구간: x = curRx, z = slabTopY ~ -th, y = yStart ~ y0)
+          const sideDepth = getDepth(curRx, (yStart + y0) / 2, (-th + slabTopY) / 2);
           poly([
             toIso(curRx, yStart, -th),
-            toIso(curRx, y1, -th),
-            toIso(curRx, y1, slabTopY),
+            toIso(curRx, y0, -th),
+            toIso(curRx, y0, slabTopY),
             toIso(curRx, yStart, slabTopY)
           ], 'PANEL', true, true, sideDepth);
-          ln(toIso(curRx, yStart, -th), toIso(curRx, y1, -th), 'PANEL', sideDepth);
 
-          // 캐비티 바닥면 (Cavity floor on top of 150mm slab: z = slabTopY, x = curRx ~ nextLx, y = yStart ~ y1)
-          const floorDepth = getDepth((curRx + nextLx) / 2, (yStart + y1) / 2, slabTopY);
+          // 캐비티 바닥면 (전면 오버행 구간: z = slabTopY, x = curRx ~ nextLx, y = yStart ~ y0)
+          const floorDepth = getDepth((curRx + nextLx) / 2, (yStart + y0) / 2, slabTopY);
           poly([
             toIso(curRx, yStart, slabTopY),
             toIso(nextLx, yStart, slabTopY),
-            toIso(nextLx, y1, slabTopY),
-            toIso(curRx, y1, slabTopY)
+            toIso(nextLx, y0, slabTopY),
+            toIso(curRx, y0, slabTopY)
           ], 'PANEL', true, true, floorDepth);
         }
 
