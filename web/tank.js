@@ -4806,16 +4806,16 @@
   function pickScale(L, W, H, isAsm5 = false) {
     if (isAsm5) {
       const isoW = Math.round((L + W) * 0.55);
-      const maxCol2W = Math.max(W + 300, isoW);
-      const w_model = (L + 300) + maxCol2W;
-      // 3행 배치: Row 1(Plan W), Row 2(Elev H+800), Row 3(Pad Plan W + Section)
-      const h_model = W + 400 + H + 800 + W + 1200;
+      const maxCol2W = Math.max(W + 500, isoW);
+      const w_model = (L + 600) + maxCol2W;
+      // 3행 배치: Row 1(Plan W + dims), Row 2(Elev H + ground), Row 3(Pad Plan W + Pad Sec + dims + titles)
+      const h_model = 2 * W + H + 7600;
       const avail_w = SHEET.w - SHEET.title - SHEET.margin * 2; // 621 mm
       const avail_h = SHEET.h - SHEET.margin * 2;              // 574 mm
       for (const n of SCALES) {
-        const w_paper = w_model / n + 100;
-        const h_paper = h_model / n + 110;
-        if (w_paper <= avail_w - 20 && h_paper <= avail_h - 20) return n;
+        const w_paper = w_model / n + 60;
+        const h_paper = h_model / n + 75;
+        if (w_paper <= avail_w && h_paper <= avail_h) return n;
       }
       return SCALES[SCALES.length - 1];
     }
@@ -5468,8 +5468,12 @@
       const R = 6.0;
       const lineW = 75;
       const gap = 1.0;
-      const bx = tank_cx - lineW / 2;
-      const by = title_y;
+      let bx = tank_cx - lineW / 2;
+      let by = title_y;
+      if (bx - R < x0 + 4) bx = x0 + 4 + R;
+      if (bx + R + lineW > tx0 - 4) bx = tx0 - 4 - R - lineW;
+      if (by - R < y0 + 3) by = y0 + 3 + R;
+      if (by + R + 10 > y1 - 3) by = y1 - 3 - R - 10;
 
       // 1. 원형 기호
       circle([bx, by], R);
@@ -5672,32 +5676,53 @@
       const secH_model = (padHVal + (Number(opt.frame) || 75) + 150 + Math.round(16.0 * N));
       const gap_plan_sec_mm = Math.round(6.0 * N);
       const row3_top_extent = (totalW / 2 + PAD_OVERHANG + 500) / N;
-      const row3_bottom_extent = (totalW / 2 + PAD_OVERHANG + Math.round(12.0 * N) + gap_plan_sec_mm + secH_model) / N + TITLE_H;
-      const row3_total_h = row3_top_extent + row3_bottom_extent;
+      const row3_pad_to_title = (totalW / 2 + PAD_OVERHANG + Math.round(12.0 * N) + gap_plan_sec_mm + secH_model) / N + 14.0;
+      const row3_total_h = row3_top_extent + row3_pad_to_title + 6.0;
 
       const total_content_h = row1_total_h + row2_total_h + row3_total_h;
       const free_h = Math.max(0, areaH - total_content_h);
 
-      const gap_12 = Math.max(10, Math.min(25, free_h * 0.28));
-      const gap_23 = Math.max(10, Math.min(25, free_h * 0.28));
-      const rem_margin = Math.max(20, free_h - gap_12 - gap_23);
-      const m_top = Math.max(10, rem_margin * 0.45);
-      const m_bottom = Math.max(10, rem_margin * 0.55);
+      let m_top, m_bottom, gap_12, gap_23;
+      if (free_h >= 60) {
+        m_top = 16 + (free_h - 60) * 0.15;
+        m_bottom = 18 + (free_h - 60) * 0.20;
+        gap_12 = 13 + (free_h - 60) * 0.325;
+        gap_23 = 13 + (free_h - 60) * 0.325;
+      } else if (free_h >= 24) {
+        m_top = 8 + (free_h - 24) * 0.20;
+        m_bottom = 10 + (free_h - 24) * 0.25;
+        gap_12 = 3 + (free_h - 24) * 0.275;
+        gap_23 = 3 + (free_h - 24) * 0.275;
+      } else {
+        m_top = Math.max(5, free_h * 0.25);
+        m_bottom = Math.max(6, free_h * 0.30);
+        gap_12 = Math.max(4, free_h * 0.225);
+        gap_23 = Math.max(4, free_h * 0.225);
+      }
 
       const row1_top_y = y1 - m_top;
       const row1_tank_cy = row1_top_y - row1_top_extent;
       const row1_bottom_y = row1_tank_cy - row1_bottom_extent;
       const row1_title_y = row1_tank_cy - (totalW / 2 + dim_bottom_1 + 300) / N - 14.0;
 
-      const row2_top_y = row1_bottom_y - gap_12;
+      const row2_top_y = row1_title_y - 6.0 - gap_12;
       const row2_ground_y = row2_top_y - row2_top_extent;
       const row2_bottom_y = row2_ground_y - row2_bottom_extent;
       const row2_title_y = (row2_ground_y * N + GRD - dim_bottom_1) / N - 14.0;
 
-      const row3_top_y = row2_bottom_y - gap_23;
-      const row3_pad_cy = row3_top_y - row3_top_extent;
-      const row3_bottom_y = row3_pad_cy - row3_bottom_extent;
-      const row3_title_y = row3_pad_cy - (totalW / 2 + PAD_OVERHANG + Math.round(12.0 * N) + gap_plan_sec_mm + secH_model) / N - 14.0;
+      const row3_top_y = row2_title_y - 6.0 - gap_23;
+      let row3_pad_cy = row3_top_y - row3_top_extent;
+      let row3_bottom_y = row3_pad_cy - (totalW / 2 + PAD_OVERHANG + Math.round(12.0 * N) + gap_plan_sec_mm + secH_model) / N - TITLE_H;
+      let row3_title_y = row3_pad_cy - row3_pad_to_title;
+
+      // 하단 뷰 타이틀(R=6)이 도면틀(y0) 밖으로 나가지 않도록 절대 보장
+      const min_title_y = y0 + 8.0;
+      if (row3_title_y < min_title_y) {
+        const shift_up = min_title_y - row3_title_y;
+        row3_pad_cy += shift_up;
+        row3_title_y += shift_up;
+        row3_bottom_y += shift_up;
+      }
 
       // 1열(TOP & FRONT & PAD_PLAN) 수직 투영 100% 일치
       const dx1 = P(col1_tank_cx) - totalL / 2;
@@ -5762,8 +5787,12 @@
 
       // 6. Row 3 Col 2: 기초 콘크리트 설계 사양표 (FOUNDATION SPECIFICATION TABLE)
       const tbw = 125, tbh = 72;
-      const tbx = col2_tank_cx - tbw / 2;
-      const tby = row3_title_y + 4.0;
+      let tbx = col2_tank_cx - tbw / 2;
+      if (tbx + tbw > tx0 - 6) tbx = tx0 - 6 - tbw;
+      if (tbx < x0 + 10) tbx = x0 + 10;
+      let tby = row3_title_y + 4.0;
+      if (tby + tbh > row2_title_y - 6.0 - 4.0) tby = row2_title_y - 6.0 - 4.0 - tbh;
+      if (tby < y0 + 6) tby = y0 + 6;
       rect(tbx, tby, tbx + tbw, tby + tbh);
       line([tbx, tby + tbh - 13], [tbx + tbw, tby + tbh - 13]);
       text(tbx + tbw / 2, tby + tbh - 6.5, 3.8, lang === 'en' ? 'FOUNDATION SPECIFICATION' : '기초 콘크리트 설계 사양', 'center', 0, 'middle');
