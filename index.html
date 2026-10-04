@@ -416,7 +416,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.2</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.3</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2037,7 +2037,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.2</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.3</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2047,7 +2047,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.2</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.3</span></div>
     </div>
   </main>
 </div>
@@ -12033,7 +12033,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.2</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.3</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -16125,53 +16125,34 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       { id: 'left',  nameKo: '좌측면도', nameEn: 'LEFT ELEVATION',  prefix: '4' }
     ];
 
-    const modelEnts = [];
-    const blocks = {};
-
-    let offsetX = 0;
-    let maxViewH = 0;
-    let totalEntsCount = 0;
-
     function getBBox(ents) {
       let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
       if (!ents || !ents.length) return { minX: 0, maxX: w, minY: 0, maxY: h, w: w, h: h };
       ents.forEach(e => {
         if (e.t === 'line' && e.a && e.b) {
-          minX = Math.min(minX, e.a[0], e.b[0]);
-          maxX = Math.max(maxX, e.a[0], e.b[0]);
-          minY = Math.min(minY, e.a[1], e.b[1]);
-          maxY = Math.max(maxY, e.a[1], e.b[1]);
+          minX = Math.min(minX, e.a[0], e.b[0]); maxX = Math.max(maxX, e.a[0], e.b[0]);
+          minY = Math.min(minY, e.a[1], e.b[1]); maxY = Math.max(maxY, e.a[1], e.b[1]);
         } else if ((e.t === 'circle' || e.t === 'arc') && e.c && e.r != null) {
-          minX = Math.min(minX, e.c[0] - e.r);
-          maxX = Math.max(maxX, e.c[0] + e.r);
-          minY = Math.min(minY, e.c[1] - e.r);
-          maxY = Math.max(maxY, e.c[1] + e.r);
+          minX = Math.min(minX, e.c[0] - e.r); maxX = Math.max(maxX, e.c[0] + e.r);
+          minY = Math.min(minY, e.c[1] - e.r); maxY = Math.max(maxY, e.c[1] + e.r);
         } else if (e.t === 'poly' && e.pts && e.pts.length) {
           e.pts.forEach(p => {
-            minX = Math.min(minX, p[0]);
-            maxX = Math.max(maxX, p[0]);
-            minY = Math.min(minY, p[1]);
-            maxY = Math.max(maxY, p[1]);
+            minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]);
+            minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]);
           });
         } else if (e.t === 'solid' && e.p && e.p.length) {
           e.p.forEach(p => {
-            minX = Math.min(minX, p[0]);
-            maxX = Math.max(maxX, p[0]);
-            minY = Math.min(minY, p[1]);
-            maxY = Math.max(maxY, p[1]);
+            minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]);
+            minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]);
           });
         } else if (e.t === 'text' && e.p) {
-          minX = Math.min(minX, e.p[0]);
-          maxX = Math.max(maxX, e.p[0]);
-          minY = Math.min(minY, e.p[1]);
-          maxY = Math.max(maxY, e.p[1]);
+          minX = Math.min(minX, e.p[0]); maxX = Math.max(maxX, e.p[0]);
+          minY = Math.min(minY, e.p[1]); maxY = Math.max(maxY, e.p[1]);
         }
       });
       if (!isFinite(minX) || !isFinite(maxX)) { minX = 0; maxX = w; }
       if (!isFinite(minY) || !isFinite(maxY)) { minY = 0; maxY = h; }
-      const bw = Math.max(maxX - minX, 1);
-      const bh = Math.max(maxY - minY, 1);
-      return { minX, maxX, minY, maxY, w: bw, h: bh };
+      return { minX, maxX, minY, maxY, w: Math.max(maxX - minX, 1), h: Math.max(maxY - minY, 1) };
     }
 
     function translate(ents, dx, dy) {
@@ -16193,18 +16174,17 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       });
     }
 
-    viewDefs.forEach(v => {
+    // 1. First pass: load, normalize, and measure each view
+    const viewsData = viewDefs.map(v => {
       let rawEnts = null;
       if (cat === curCat && v.id === cadCurrentView && currentCadEntities && currentCadEntities.length) {
         rawEnts = JSON.parse(JSON.stringify(currentCadEntities));
       } else {
         rawEnts = getCurrentActivePartEntities(cat, subKey, w, h, v.id);
       }
-
       if (!rawEnts || !rawEnts.length) {
         rawEnts = getPartDefaultEntities(cat, subKey, w, h, v.id);
       }
-
       if (!rawEnts || !rawEnts.length) {
         rawEnts = [
           { t: 'line', a: [0, 0], b: [w, 0], layer: 'FRAME' },
@@ -16213,77 +16193,124 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           { t: 'line', a: [0, h], b: [0, 0], layer: 'FRAME' }
         ];
       }
+      const norm = normalizeCadEntities(rawEnts, 'FRAME');
+      const bbox = getBBox(norm);
+      return { v, norm, bbox };
+    });
 
-      totalEntsCount += rawEnts.length;
-      const bbox = getBBox(rawEnts);
-      const curW = Math.max(bbox.w, 50);
-      const curH = Math.max(bbox.h, 50);
-      if (curH > maxViewH) maxViewH = curH;
+    const maxViewH = Math.max(...viewsData.map(d => d.bbox.h));
+    const maxViewW = Math.max(...viewsData.map(d => d.bbox.w));
+
+    const titleTextH = Math.max(45, Math.min(80, Math.round(maxViewH * 0.026)));
+    const subTextH = Math.round(titleTextH * 0.75);
+    const headerTextH = Math.max(70, Math.min(110, Math.round(maxViewH * 0.035)));
+
+    const colW = Math.max(maxViewW + 600, 1600);
+    const colGap = Math.max(400, Math.round(colW * 0.3));
+
+    const modelEnts = [];
+    const blocks = {};
+    let curX = 0;
+
+    viewsData.forEach((d, idx) => {
+      const { v, norm, bbox } = d;
+      const colCenterX = curX + colW / 2;
 
       // 1. Block definition (normalized to 0,0)
       const blkName = `${cat.toUpperCase()}_${v.id.toUpperCase()}`;
-      blocks[blkName] = translate(rawEnts, -bbox.minX, -bbox.minY);
+      blocks[blkName] = translate(norm, -bbox.minX, -bbox.minY);
 
-      // 2. Position view entities in Model Space (baseline Y = 0)
-      const dx = offsetX - bbox.minX;
-      const dy = 0 - bbox.minY;
-      const shifted = translate(rawEnts, dx, dy);
+      // 2. Position view entities in Model Space (centered horizontally in column, bottom at Y = 0)
+      const viewLeftX = colCenterX - bbox.w / 2;
+      const dx = viewLeftX - bbox.minX;
+      const dy = 0 - bbox.minY; // baseline Y = 0
+      const shifted = translate(norm, dx, dy);
       shifted.forEach(e => modelEnts.push(e));
 
-      // 3. View Title and Annotations below each view
-      const textH = Math.max(35, Math.min(80, Math.round(curW * 0.05)));
-      const titleKo = `${v.prefix}. ${v.nameKo} (${v.nameEn})`;
-      const sizeStr = `SIZE: ${Math.round(curW)} x ${Math.round(curH)} mm`;
-
-      // Title Text
+      // 3. View Title & Annotations below the view (2 clean lines for title)
       modelEnts.push({
         t: 'text',
-        p: [offsetX, -textH * 1.5],
-        s: titleKo,
-        h: textH,
+        p: [colCenterX, -titleTextH * 1.5],
+        align: 'center',
+        s: `${v.prefix}. ${v.nameKo}`,
+        h: titleTextH,
         layer: 'DIM'
       });
 
-      // Underline
+      modelEnts.push({
+        t: 'text',
+        p: [colCenterX, -titleTextH * 2.7],
+        align: 'center',
+        s: `[ ${v.nameEn} ]`,
+        h: subTextH,
+        layer: 'DIM'
+      });
+
+      const lineHalfW = Math.max(bbox.w / 2 + 150, titleTextH * 4.5);
       modelEnts.push({
         t: 'line',
-        a: [offsetX, -textH * 1.8],
-        b: [offsetX + Math.max(curW, textH * 8), -textH * 1.8],
+        a: [colCenterX - lineHalfW, -titleTextH * 3.3],
+        b: [colCenterX + lineHalfW, -titleTextH * 3.3],
         layer: 'DIM'
       });
 
-      // Size Annotation
       modelEnts.push({
         t: 'text',
-        p: [offsetX, -textH * 2.8],
-        s: sizeStr,
-        h: Math.round(textH * 0.75),
+        p: [colCenterX, -titleTextH * 4.3],
+        align: 'center',
+        s: `SIZE: ${Math.round(bbox.w)} x ${Math.round(bbox.h)} mm`,
+        h: Math.round(subTextH * 0.9),
         layer: 'DIM'
       });
 
-      // Block insertion name tag
       modelEnts.push({
         t: 'text',
-        p: [offsetX, -textH * 3.8],
+        p: [colCenterX, -titleTextH * 5.4],
+        align: 'center',
         s: `BLOCK: ${blkName}`,
-        h: Math.round(textH * 0.65),
+        h: Math.round(subTextH * 0.85),
         layer: 'FRAME'
       });
 
-      // Advance offsetX
-      const gap = Math.max(300, Math.round(curW * 0.45));
-      offsetX += curW + gap;
+      // Column separator line between views
+      if (idx > 0) {
+        modelEnts.push({
+          t: 'line',
+          a: [curX - colGap / 2, -titleTextH * 6.5],
+          b: [curX - colGap / 2, maxViewH + 150],
+          layer: 'DIM'
+        });
+      }
+
+      curX += colW + colGap;
     });
 
-    // 4. Overall Drawing Title Header
-    const headerTextH = Math.max(50, Math.min(100, Math.round(maxViewH * 0.06)));
-    const headerY = maxViewH + headerTextH * 3.5;
+    const totalWidth = curX - colGap;
+
+    // Ground Baseline line (G.L.) across all views at Y = 0
+    modelEnts.push({
+      t: 'line',
+      a: [-300, 0],
+      b: [totalWidth + 300, 0],
+      layer: 'DIM'
+    });
+    modelEnts.push({
+      t: 'text',
+      p: [-350, -subTextH * 0.5],
+      align: 'right',
+      s: 'G.L. (EL. 0)',
+      h: subTextH,
+      layer: 'DIM'
+    });
+
+    // Top Sheet Title Header (above all views)
+    const headerY = maxViewH + headerTextH * 3.2;
     const nowIso = new Date().toISOString().slice(0, 10);
 
     modelEnts.push({
       t: 'text',
       p: [0, headerY],
-      s: `[${catLabel}] 4-VIEW PROJECTION DRAWING (평면도·정면도·우측면도·좌측면도)`,
+      s: `[${catLabel}] 4-VIEW PROJECTION DRAWING (평면도 / 정면도 / 우측면도 / 좌측면도)`,
       h: headerTextH * 1.3,
       layer: 'SHEET'
     });
@@ -16299,11 +16326,11 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     modelEnts.push({
       t: 'line',
       a: [0, headerY - headerTextH * 1.9],
-      b: [Math.max(offsetX - 200, 1200), headerY - headerTextH * 1.9],
+      b: [totalWidth, headerY - headerTextH * 1.9],
       layer: 'SHEET'
     });
 
-    return { modelEnts, blocks, totalEntsCount };
+    return { modelEnts, blocks, totalEntsCount: modelEnts.length };
   }
 
   function downloadAll4ViewsDxf(targetCat) {
