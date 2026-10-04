@@ -758,18 +758,18 @@
     return items.map(it => formatNozzleLabel(it.n)).join(', ');
   }
   let calloutSeq = 0;
-  function drawLeader(ents, startPt, elbowPt, endPt, lines, textH, align, layer, calloutId = null) {
+  function drawLeader(ents, startPt, elbowPt, endPt, lines, textH, align, layer, calloutId = null, meta = null) {
     layer = layer || 'DIM';
     const cId = calloutId || ('CALLOUT_' + (++calloutSeq));
-    ents.push({ t: 'line', a: [...startPt], b: [...elbowPt], layer, calloutId: cId, leaderRole: 'slant' });
-    ents.push({ t: 'line', a: [...elbowPt], b: [...endPt], layer, calloutId: cId, leaderRole: 'shelf' });
-    ents.push({ t: 'circle', c: [...startPt], r: Math.max(3, Math.round(textH * 0.15)), layer, calloutId: cId, leaderRole: 'dot' });
+    ents.push({ t: 'line', a: [...startPt], b: [...elbowPt], layer, calloutId: cId, leaderRole: 'slant', leaderMeta: meta });
+    ents.push({ t: 'line', a: [...elbowPt], b: [...endPt], layer, calloutId: cId, leaderRole: 'shelf', leaderMeta: meta });
+    ents.push({ t: 'circle', c: [...startPt], r: Math.max(3, Math.round(textH * 0.15)), layer, calloutId: cId, leaderRole: 'dot', leaderMeta: meta });
     const isRight = align === 'left';
     const textX = endPt[0] + (isRight ? textH * 0.35 : -textH * 0.35);
     const lineSpacing = textH * 1.35;
     lines.forEach((l, idx) => {
       const textY = endPt[1] + (lines.length - 1 - idx) * lineSpacing + textH * 0.35;
-      ents.push({ t: 'text', p: [textX, textY], h: textH, s: l, align, valign: 'baseline', layer, calloutId: cId, leaderRole: 'text', textIdx: idx });
+      ents.push({ t: 'text', p: [textX, textY], h: textH, s: l, align, valign: 'baseline', layer, calloutId: cId, leaderRole: 'text', textIdx: idx, leaderMeta: meta });
     });
     return cId;
   }
@@ -818,7 +818,7 @@
     // 원형 풍선 (Circular balloon)
     ents.push({ t: 'circle', c: [...balloonCenter], r: balloonR, layer, balloonNo: str, balloonId: bId, balloonRole: 'bubble' });
 
-    // 풍선 내부 번호 (Center text)
+    // 풍선 내부 번호 (Center text) - 원형 기호와 항상 100% 동일 중심
     ents.push({ t: 'text', p: [...balloonCenter], h: textH, s: str, rot: 0, align: 'center', valign: 'middle', layer, balloonNo: str, balloonId: bId, balloonRole: 'text' });
     return bId;
   }
@@ -836,6 +836,7 @@
 
   function shiftBalloon(ents, bId, dx, dy) {
     let bubble = null;
+    let text = null;
     let shelfLine = null;
     let slantLine = null;
     let radius = 100;
@@ -848,6 +849,7 @@
         e.c[1] += dy;
         radius = e.r;
       } else if (e.balloonRole === 'text') {
+        text = e;
         e.p[0] += dx;
         e.p[1] += dy;
       } else if (e.balloonRole === 'shelf') {
@@ -856,6 +858,12 @@
         slantLine = e;
       }
     });
+
+    // 풍선 원형 기호와 숫자 텍스트 완벽 일체화 (절대 분리 불가)
+    if (bubble && text) {
+      text.p[0] = bubble.c[0];
+      text.p[1] = bubble.c[1];
+    }
 
     if (bubble && shelfLine) {
       if (slantLine) {
@@ -895,7 +903,8 @@
   function recheckAndResolveCollisions(ents, opt) {
     if (!ents || !ents.length) return ents;
     const N = (opt && opt._N) || 25;
-    const maxIterations = 8;
+    const maxIterations = 3;
+    const calloutShifts = new Map();
 
     for (let iter = 0; iter < maxIterations; iter++) {
       let movedAny = false;
@@ -914,7 +923,7 @@
           }
           const b = balloonMap.get(e.balloonId);
           if (e.balloonRole === 'bubble') {
-            b.center = e.c;
+            b.center = [e.c[0], e.c[1]];
             b.radius = e.r;
           }
         }
@@ -954,7 +963,8 @@
               minX, maxX,
               minY: e.p[1] - h * 0.3, maxY: e.p[1] + h * 0.9,
               calloutId: e.calloutId,
-              p: e.p
+              p: e.p,
+              meta: e.leaderMeta
             });
           } else if (e.t === 'circle' && e.c && e.r) {
             nozBodies.push({ c: e.c, r: e.r });
@@ -1087,10 +1097,19 @@
           const pad = Math.round(2.0 * N);
           if (nt2.maxX > nt1.minX - pad && nt2.minX < nt1.maxX + pad &&
               nt2.maxY > nt1.minY - pad && nt2.minY < nt1.maxY + pad) {
-            const shiftY = Math.round((nt1.maxY - nt2.minY + pad) * 1.2);
-            shiftCallout(ents, nt2.calloutId, 0, shiftY);
-            nt2.minY += shiftY; nt2.maxY += shiftY; nt2.p[1] += shiftY;
-            movedAny = true;
+            let shiftY = Math.round((nt1.maxY - nt2.minY + pad) * 1.1);
+            shiftY = Math.min(Math.round(2.5 * N), Math.max(-Math.round(2.5 * N), shiftY));
+            const isBottom = (nt2.meta && nt2.meta.face === 'front') || nt2.p[1] < 0;
+            if (isBottom) {
+              shiftY = -Math.abs(shiftY);
+            }
+            const curShift = calloutShifts.get(nt2.calloutId) || 0;
+            if (Math.abs(curShift + shiftY) <= Math.round(5.0 * N)) {
+              shiftCallout(ents, nt2.calloutId, 0, shiftY);
+              calloutShifts.set(nt2.calloutId, curShift + shiftY);
+              nt2.minY += shiftY; nt2.maxY += shiftY; nt2.p[1] += shiftY;
+              movedAny = true;
+            }
           }
         }
       }
@@ -1101,16 +1120,43 @@
           const pad = Math.round(2.5 * N);
           if (nt.maxX > dt.minX - pad && nt.minX < dt.maxX + pad &&
               nt.maxY > dt.minY - pad && nt.minY < dt.maxY + pad) {
-            const shiftY = (nt.p[1] >= dt.p[1] ? 1 : -1) * Math.round(dt.maxY - nt.minY + pad);
-            shiftCallout(ents, nt.calloutId, 0, shiftY);
-            nt.minY += shiftY; nt.maxY += shiftY; nt.p[1] += shiftY;
-            movedAny = true;
+            let shiftY = (nt.p[1] >= dt.p[1] ? 1 : -1) * Math.round(dt.maxY - nt.minY + pad);
+            shiftY = Math.min(Math.round(2.5 * N), Math.max(-Math.round(2.5 * N), shiftY));
+            const isBottom = (nt.meta && nt.meta.face === 'front') || nt.p[1] < 0;
+            if (isBottom) {
+              shiftY = -Math.abs(shiftY);
+            }
+            const curShift = calloutShifts.get(nt.calloutId) || 0;
+            if (Math.abs(curShift + shiftY) <= Math.round(5.0 * N)) {
+              shiftCallout(ents, nt.calloutId, 0, shiftY);
+              calloutShifts.set(nt.calloutId, curShift + shiftY);
+              nt.minY += shiftY; nt.maxY += shiftY; nt.p[1] += shiftY;
+              movedAny = true;
+            }
           }
         });
       });
 
       if (!movedAny) break;
     }
+
+    // 최종 안전 보장: 모든 풍선 기호의 원형 중심과 텍스트 위치 완전 일치 동기화
+    const bubbles = new Map();
+    ents.forEach(e => {
+      if (e.layer === 'BALLOON' && e.balloonId && e.balloonRole === 'bubble') {
+        bubbles.set(e.balloonId, [e.c[0], e.c[1]]);
+      }
+    });
+    ents.forEach(e => {
+      if (e.layer === 'BALLOON' && e.balloonId && e.balloonRole === 'text') {
+        const c = bubbles.get(e.balloonId);
+        if (c) {
+          e.p[0] = c[0];
+          e.p[1] = c[1];
+        }
+      }
+    });
+
     return ents;
   }
 
@@ -1415,18 +1461,18 @@
           ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'NOZZLE');
           ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'NOZZLE');
           chain([[cx - spec.rf, yPlate1], [cx + spec.rf, yPlate1], [cx + spec.rf, yPlate0], [cx - spec.rf, yPlate0]], 'NOZZLE', true);
-          const ey = yPlate1 + Math.round(1.0 * N) + stagger;
+          const ey = yPlate1 - Math.round(1.5 * N) - stagger;
           const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
           const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
-          drawLeader(ents, [cx, yPlate1], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE');
+          drawLeader(ents, [cx, yPlate1], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE', null, { face: 'front', view: 'plan' });
         } else {
           const yEnd = yBase - spec.sockLen;
           chain([[cx - spec.sockR, yEnd], [cx + spec.sockR, yEnd], [cx + spec.sockR, yBase], [cx - spec.sockR, yBase]], 'NOZZLE', true);
           ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'NOZZLE');
-          const ey = yEnd + Math.round(1.0 * N) + stagger;
+          const ey = yEnd - Math.round(1.5 * N) - stagger;
           const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
           const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
-          drawLeader(ents, [cx, yEnd], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE');
+          drawLeader(ents, [cx, yEnd], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE', null, { face: 'front', view: 'plan' });
         }
       } else if (n.face === 'rear') {
         const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
@@ -1448,18 +1494,18 @@
           ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'NOZZLE');
           ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'NOZZLE');
           chain([[cx - spec.rf, yPlate0], [cx + spec.rf, yPlate0], [cx + spec.rf, yPlate1], [cx - spec.rf, yPlate1]], 'NOZZLE', true);
-          const ey = yPlate1 - Math.round(1.0 * N) - stagger;
+          const ey = yPlate1 + Math.round(1.5 * N) + stagger;
           const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
           const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
-          drawLeader(ents, [cx, yPlate1], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE');
+          drawLeader(ents, [cx, yPlate1], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE', null, { face: 'rear', view: 'plan' });
         } else {
           const yEnd = yBase + spec.sockLen;
           chain([[cx - spec.sockR, yBase], [cx + spec.sockR, yBase], [cx + spec.sockR, yEnd], [cx - spec.sockR, yEnd]], 'NOZZLE', true);
           ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'NOZZLE');
-          const ey = yEnd - Math.round(1.0 * N) - stagger;
+          const ey = yEnd + Math.round(1.5 * N) + stagger;
           const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
           const ex = toRight ? (cx + dx + Math.round(2.5 * N)) : (cx + dx - Math.round(2.5 * N));
-          drawLeader(ents, [cx, yEnd], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE');
+          drawLeader(ents, [cx, yEnd], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE', null, { face: 'rear', view: 'plan' });
         }
       } else if (n.face === 'left') {
         const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
@@ -1482,17 +1528,17 @@
           ln([xBase, cy + spec.r], [xPlate0, cy + spec.r], 'NOZZLE');
           chain([[xPlate1, cy - spec.rf], [xPlate0, cy - spec.rf], [xPlate0, cy + spec.rf], [xPlate1, cy + spec.rf]], 'NOZZLE', true);
           const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
-          const elbowX = (xBase - Math.round(18.0 * N)) - Math.round(3.0 * N);
+          const elbowX = xPlate1 - Math.round(2.0 * N);
           const shelfEndX = elbowX - Math.round(2.5 * N);
-          drawLeader(ents, [xPlate1, cy], [elbowX, ey], [shelfEndX, ey], [label], nozTextH, 'right', 'NOZZLE');
+          drawLeader(ents, [xPlate1, cy], [elbowX, ey], [shelfEndX, ey], [label], nozTextH, 'right', 'NOZZLE', null, { face: 'left', view: 'plan' });
         } else {
           const xEnd = xBase - spec.sockLen;
           chain([[xEnd, cy - spec.sockR], [xBase, cy - spec.sockR], [xBase, cy + spec.sockR], [xEnd, cy + spec.sockR]], 'NOZZLE', true);
           ln([xEnd, cy - spec.r], [xEnd, cy + spec.r], 'NOZZLE');
           const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
-          const elbowX = (xBase - Math.round(18.0 * N)) - Math.round(3.0 * N);
+          const elbowX = xEnd - Math.round(2.0 * N);
           const shelfEndX = elbowX - Math.round(2.5 * N);
-          drawLeader(ents, [xEnd, cy], [elbowX, ey], [shelfEndX, ey], [label], nozTextH, 'right', 'NOZZLE');
+          drawLeader(ents, [xEnd, cy], [elbowX, ey], [shelfEndX, ey], [label], nozTextH, 'right', 'NOZZLE', null, { face: 'left', view: 'plan' });
         }
       } else if (n.face === 'right') {
         const rowIdx = Math.max(0, Math.min(n.seg - 1, map.rows.length - 1));
@@ -1515,13 +1561,17 @@
           ln([xBase, cy + spec.r], [xPlate0, cy + spec.r], 'NOZZLE');
           chain([[xPlate0, cy - spec.rf], [xPlate1, cy - spec.rf], [xPlate1, cy + spec.rf], [xPlate0, cy + spec.rf]], 'NOZZLE', true);
           const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
-          drawLeader(ents, [xPlate1, cy], [xPlate1 + Math.round(2.0 * N), ey], [xPlate1 + Math.round(4.5 * N), ey], [label], nozTextH, 'left', 'NOZZLE');
+          const elbowX = xPlate1 + Math.round(1.5 * N);
+          const shelfEndX = elbowX + Math.round(2.0 * N);
+          drawLeader(ents, [xPlate1, cy], [elbowX, ey], [shelfEndX, ey], [label], nozTextH, 'left', 'NOZZLE', null, { face: 'right', view: 'plan' });
         } else {
           const xEnd = xBase + spec.sockLen;
           chain([[xBase, cy - spec.sockR], [xEnd, cy - spec.sockR], [xEnd, cy + spec.sockR], [xBase, cy + spec.sockR]], 'NOZZLE', true);
           ln([xEnd, cy - spec.r], [xEnd, cy + spec.r], 'NOZZLE');
           const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
-          drawLeader(ents, [xEnd, cy], [xEnd + Math.round(2.0 * N), ey], [xEnd + Math.round(4.5 * N), ey], [label], nozTextH, 'left', 'NOZZLE');
+          const elbowX = xEnd + Math.round(1.5 * N);
+          const shelfEndX = elbowX + Math.round(2.0 * N);
+          drawLeader(ents, [xEnd, cy], [elbowX, ey], [shelfEndX, ey], [label], nozTextH, 'left', 'NOZZLE', null, { face: 'right', view: 'plan' });
         }
       }
     });
@@ -1673,7 +1723,8 @@
             if (usedSet) usedSet.add(no8);
           } else if (l.sd === 'R') {
             const ladSep = Math.max(120, Math.round(5.0 * N));
-            drawBalloonCallout(ents, [l.x + F + 20, l.y], [l.x + F + Math.round(8 * N), l.y - ladSep], [rightBaseX, l.y - ladSep], no8, N, 'BALLOON', usedSet);
+            const ladBalloonX = L + F + Math.round(8 * N);
+            drawBalloonCallout(ents, [l.x + F + 20, l.y], [l.x + F + Math.round(4 * N), l.y - ladSep], [ladBalloonX, l.y - ladSep], no8, N, 'BALLOON', usedSet);
           } else if (l.sd === 'U') {
             drawBalloonCallout(ents, [l.x, l.y + F + 20], [l.x + Math.round(8 * N), topStaggerY], [l.x + Math.round(14 * N), topStaggerY], no8, N, 'BALLOON', usedSet);
           } else {
@@ -1707,7 +1758,8 @@
         if (hasRightLadder) {
           calloutPcy = (calloutPcy + Math.round(12 * N) < W) ? (calloutPcy + Math.round(12 * N)) : (calloutPcy - Math.round(12 * N));
         }
-        drawBalloonCallout(ents, [pcx, panelPcy], [L + F + Math.round(6 * N), calloutPcy], [rightBaseX, calloutPcy], getItemNo('panel') || 3, N, 'BALLOON');
+        const panelBalloonX = L + F + Math.round(8 * N);
+        drawBalloonCallout(ents, [pcx, panelPcy], [L + F + Math.round(4 * N), calloutPcy], [panelBalloonX, calloutPcy], getItemNo('panel') || 3, N, 'BALLOON');
         panelPcy = calloutPcy;
       }
 
@@ -1754,7 +1806,7 @@
         drawBalloonCallout(ents, seamPt, [fbx, topStaggerY - Math.round(5 * N)], [fbx, topStaggerY], getItemNo('flangebar') || 9, N, 'BALLOON');
       }
 
-      // 7. 내부 스테이 / 보강재 (Internal Stay - NO. 10): 존재하는 내부 스테이 교차점 또는 판넬 탐색
+      // 7. 내부 스테이 / 보강재 (Internal Stay - NO. 10): 상단 외곽(topStaggerY)으로 인출하여 우측 기초패드도와 완전 비간섭
       let stayPt = null;
       for (let i = Math.floor(map.rows.length / 2); i < map.rows.length; i++) {
         for (let j = Math.floor(map.cols.length / 2); j < map.cols.length; j++) {
@@ -1788,11 +1840,11 @@
         }
       }
       if (stayPt) {
-        let stayY = Math.max(stayPt[1], W * 0.75);
-        if (typeof panelPcy === 'number' && Math.abs(stayY - panelPcy) < Math.round(10 * N)) {
-          stayY = (panelPcy < W * 0.5) ? (panelPcy + Math.round(12 * N)) : (panelPcy - Math.round(12 * N));
-        }
-        drawBalloonCallout(ents, stayPt, [L + F + Math.round(6 * N), stayY], [rightBaseX, stayY], getItemNo('stay') || 10, N, 'BALLOON');
+        let stayX = stayPt[0];
+        if (mPos && Math.abs(stayX - mPos[0]) < Math.round(10 * N)) stayX += Math.round(10 * N);
+        if (vPos && Math.abs(stayX - vPos[0]) < Math.round(10 * N)) stayX += Math.round(10 * N);
+        if (seamPt && Math.abs(stayX - seamPt[0]) < Math.round(10 * N)) stayX += Math.round(10 * N);
+        drawBalloonCallout(ents, stayPt, [stayX, topStaggerY - Math.round(5 * N)], [stayX, topStaggerY], getItemNo('stay') || 10, N, 'BALLOON');
       }
     }
 
@@ -5586,7 +5638,7 @@
     // 4대 뷰 투영 정렬(Orthographic Alignment) 및 중심 여백 균형 배치
     const TITLE_H = 16;
     const dim_left_1 = 75 + Math.round(30.0 * N);   // 좌측 치수선 2열 및 치수 문자 가용 영역
-    const dim_right_1 = 75 + Math.round(16.0 * N);  // 우측 풍선 기호(리드선+반경) 가용 영역
+    const dim_right_1 = 75 + Math.round(20.0 * N);  // 우측 풍선 기호 및 배관 노즐 가용 영역
     const dim_bottom_1 = Math.round(18.0 * N);
     const EXTC = 400;
     const GRD = -600;
@@ -5611,7 +5663,7 @@
       const col3_target_w = Math.max(120, Math.min(180, areaW - col1_w - col2_w - 30));
       const total_3col_w = col1_w + col2_w + col3_target_w;
       const rem_w = Math.max(0, areaW - total_3col_w);
-      const gap_x = Math.max(14, Math.min(25, rem_w / 4));
+      const gap_x = Math.max(18, Math.min(30, rem_w / 4));
       const left_margin = Math.max(10, (areaW - total_3col_w - gap_x * 2) / 2);
 
       col1_tank_cx = x0 + left_margin + (dim_left_1 + totalL / 2) / N;
@@ -5723,7 +5775,23 @@
       }
       elev = true;
     }
-    recheckAndResolveCollisions(ents, opt);
+
+    // 모든 뷰 통합 후 풍선 기호(bubble)와 번호(text)의 좌표 100% 일치 동기화 (치수 및 개별 뷰 불변 유지)
+    const sheetBubbles = new Map();
+    ents.forEach(e => {
+      if (e.layer === 'BALLOON' && e.balloonId && e.balloonRole === 'bubble') {
+        sheetBubbles.set(e.balloonId, [e.c[0], e.c[1]]);
+      }
+    });
+    ents.forEach(e => {
+      if (e.layer === 'BALLOON' && e.balloonId && e.balloonRole === 'text') {
+        const c = sheetBubbles.get(e.balloonId);
+        if (c) {
+          e.p[0] = c[0];
+          e.p[1] = c[1];
+        }
+      }
+    });
     const blocks = Object.assign({}, plan.blocks, (conc && conc.blocks), (front && front.blocks), (side && side.blocks));
     ents.blocks = blocks;
     return { map: mmap, ents, blocks, scale: N, elev, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
