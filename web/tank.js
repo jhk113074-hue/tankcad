@@ -1400,28 +1400,48 @@
       chain([[cx - h, cy - h], [cx + h, cy - h], [cx + h, cy + h], [cx - h, cy + h]], 'REINF', true);
       ln([cx - h, cy - h], [cx + h, cy + h], 'REINF'); ln([cx - h, cy + h], [cx + h, cy - h], 'REINF');
     });
-    // 구간 경계 벽 (CWallLT: 반지름 20 원을 100mm 간격, 경계선에서 -30 떨어져 배치; 원본은 분할 시 baseX=0 사용)
+    // 구간 경계 벽 (CWallLT: 70mm폭 사각형 박스 + 솔리드 채움, 원 표시 대체)
     const cellAtXY = (x, y) => { const j = map.xs.findIndex((v, k) => x >= v && x < map.xs[k + 1]), i = map.ys.findIndex((v, k) => y >= v && y < map.ys[k + 1]); return j >= 0 && i >= 0 && map.has(i, j); };
-    const WALL_R = 20, WALL_OFF = -30, WALL_INT = 100;
-    const circ = (x, y, first) => ents.push({ t: 'circle', c: [x, y], r: WALL_R, layer: 'WALL', first });
+    const WALL_TH = 70;
+    const halfW = WALL_TH / 2; // 35mm
+    const drawWallBox = (x0, y0, x1, y1) => {
+      // 70mm 폭 사각형 박스 외곽선
+      ln([x0, y0], [x1, y0], 'WALL');
+      ln([x1, y0], [x1, y1], 'WALL');
+      ln([x1, y1], [x0, y1], 'WALL');
+      ln([x0, y1], [x0, y0], 'WALL');
+      // 솔리드 채움 (AutoCAD DXF SOLID 순서: [bottom-left, bottom-right, top-left, top-right])
+      ents.push({
+        t: 'solid',
+        p: [[x0, y0], [x1, y0], [x0, y1], [x1, y1]],
+        layer: 'WALL'
+      });
+    };
+
     const L5 = (opt.length || []).slice(0, 5), W5 = (opt.width || []).slice(0, 5);
     for (let i = 1, nLen = W5[0]; i < 5 && W5[i]; nLen += W5[i++]) {
       let x = 0;
-      L5.forEach(len => { if (!len) return; frontSplit(len, 0).forEach(cx => {
-        const dx = cx >> 1; if (!cellAtXY(x + dx, nLen - 1) && !cellAtXY(x + dx, nLen + 1)) { x += cx; return; }
-        ln([x, nLen], [x + cx, nLen], 'WALL');
-        circ(x + dx, nLen + WALL_OFF);
-        for (let k = 1; cx > dx + k * WALL_INT; k++) { circ(x + dx + k * WALL_INT, nLen + WALL_OFF); circ(x + dx - k * WALL_INT, nLen + WALL_OFF); }
-        x += cx; }); });
+      L5.forEach(len => {
+        if (!len) return;
+        frontSplit(len, 0).forEach(cx => {
+          const dx = cx >> 1;
+          if (!cellAtXY(x + dx, nLen - 1) && !cellAtXY(x + dx, nLen + 1)) { x += cx; return; }
+          drawWallBox(x, nLen - halfW, x + cx, nLen + halfW);
+          x += cx;
+        });
+      });
     }
     for (let i = 1, nLen = L5[0]; i < 5 && L5[i]; nLen += L5[i++]) {
       let y = 0;
-      W5.forEach(wid => { if (!wid) return; sideSplit(wid, 0).forEach(cy => {
-        const dy = cy >> 1; if (!cellAtXY(nLen - 1, y + dy) && !cellAtXY(nLen + 1, y + dy)) { y += cy; return; }
-        ln([nLen, y], [nLen, y + cy], 'WALL');
-        circ(nLen + WALL_OFF, y + dy, true);
-        for (let k = 1; cy > dy + k * WALL_INT; k++) { circ(nLen + WALL_OFF, y + dy + k * WALL_INT); circ(nLen + WALL_OFF, y + dy - k * WALL_INT); }
-        y += cy; }); });
+      W5.forEach(wid => {
+        if (!wid) return;
+        sideSplit(wid, 0).forEach(cy => {
+          const dy = cy >> 1;
+          if (!cellAtXY(nLen - 1, y + dy) && !cellAtXY(nLen + 1, y + dy)) { y += cy; return; }
+          drawWallBox(nLen - halfW, y, nLen + halfW, y + cy);
+          y += cy;
+        });
+      });
     }
 
     const N = opt._N || 25;
@@ -2762,12 +2782,25 @@
     ln([0, 0], [0, -th], 'FRAME');
     ln([total, 0], [total, -th], 'FRAME');
 
-    // 구간 경계 수직벽 (CWallLT::VertWall)
+    // 구간 경계 수직벽 (CWallLT::VertWall - 70mm폭 사각형 박스 + 솔리드 채움, 원 표시 대체)
+    const WALL_TH = 70;
+    const halfW = WALL_TH / 2; // 35mm
     for (let i = 1, bx = secs[0]; i < secs.length; bx += secs[i++]) {
       let py = 0;
       hs.forEach(hh => sideSplit(hh, 0).forEach(cy => {
-        const dy = cy >> 1; circ(bx - 30, py + dy, 20, 'WALL', true);
-        for (let k = 1; cy > dy + k * 100; k++) { circ(bx - 30, py + dy + k * 100, 20, 'WALL'); circ(bx - 30, py + dy - k * 100, 20, 'WALL'); }
+        const x0 = bx - halfW, x1 = bx + halfW;
+        const y0 = py, y1 = py + cy;
+        // 70mm 사각형 박스 외곽선
+        ln([x0, y0], [x1, y0], 'WALL');
+        ln([x1, y0], [x1, y1], 'WALL');
+        ln([x1, y1], [x0, y1], 'WALL');
+        ln([x0, y1], [x0, y0], 'WALL');
+        // 솔리드 채움
+        ents.push({
+          t: 'solid',
+          p: [[x0, y0], [x1, y0], [x0, y1], [x1, y1]],
+          layer: 'WALL'
+        });
         py += cy;
       }));
     }
