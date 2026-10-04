@@ -933,8 +933,8 @@
       // 2. Gather Dimension Texts & Dimension Lines
       const dimTexts = [];
       const dimLines = [];
-      // 3. Gather Nozzle Texts & Nozzle Bodies
-      const nozTexts = [];
+      // 3. Gather Nozzle Callouts & Nozzle Bodies
+      const calloutMap = new Map();
       const nozBodies = [];
 
       ents.forEach(e => {
@@ -952,20 +952,37 @@
             dimLines.push({ a: e.a, b: e.b, role: e.dimRole });
           }
         } else if (e.layer === 'NOZZLE') {
-          if (e.t === 'text' && e.s) {
-            const s = String(e.s);
-            const w = Math.max(e.h * 1.5, s.length * e.h * 0.65);
-            const h = e.h * 1.2;
-            const isRight = e.align === 'left';
-            const minX = isRight ? e.p[0] : (e.p[0] - w);
-            const maxX = isRight ? (e.p[0] + w) : e.p[0];
-            nozTexts.push({
-              minX, maxX,
-              minY: e.p[1] - h * 0.3, maxY: e.p[1] + h * 0.9,
-              calloutId: e.calloutId,
-              p: e.p,
-              meta: e.leaderMeta
-            });
+          if (e.calloutId) {
+            if (!calloutMap.has(e.calloutId)) {
+              calloutMap.set(e.calloutId, {
+                id: e.calloutId,
+                minX: Infinity, maxX: -Infinity,
+                minY: Infinity, maxY: -Infinity,
+                p: null,
+                meta: e.leaderMeta,
+                texts: [],
+                lines: []
+              });
+            }
+            const grp = calloutMap.get(e.calloutId);
+            if (e.t === 'text' && e.s) {
+              const s = String(e.s);
+              const w = Math.max(e.h * 1.5, s.length * e.h * 0.65);
+              const h = e.h * 1.2;
+              const isRight = e.align === 'left';
+              const minX = isRight ? e.p[0] : (e.p[0] - w);
+              const maxX = isRight ? (e.p[0] + w) : e.p[0];
+              const minY = e.p[1] - h * 0.3;
+              const maxY = e.p[1] + h * 0.9;
+              grp.minX = Math.min(grp.minX, minX);
+              grp.maxX = Math.max(grp.maxX, maxX);
+              grp.minY = Math.min(grp.minY, minY);
+              grp.maxY = Math.max(grp.maxY, maxY);
+              if (!grp.p) grp.p = [e.p[0], e.p[1]];
+              grp.texts.push(e);
+            } else if (e.t === 'line') {
+              grp.lines.push(e);
+            }
           } else if (e.t === 'circle' && e.c && e.r) {
             nozBodies.push({ c: e.c, r: e.r });
           } else if (e.t === 'line' && e.a && e.b && !e.calloutId) {
@@ -973,6 +990,7 @@
           }
         }
       });
+      const calloutList = Array.from(calloutMap.values()).filter(c => isFinite(c.minX));
 
       // (A) Resolve Balloon vs Balloon Collisions
       for (let i = 0; i < bList.length; i++) {
@@ -1049,22 +1067,22 @@
         });
       });
 
-      // (C) Resolve Balloon vs Nozzle Texts & Bodies
+      // (C) Resolve Balloon vs Nozzle Callouts & Bodies
       bList.forEach(b => {
         const bx = b.center[0], by = b.center[1], br = b.radius;
         const pad = Math.round(3.0 * N);
 
-        nozTexts.forEach(nt => {
-          if (bx + br > nt.minX - pad && bx - br < nt.maxX + pad &&
-              by + br > nt.minY - pad && by - br < nt.maxY + pad) {
-            const ntCx = (nt.minX + nt.maxX) / 2, ntCy = (nt.minY + nt.maxY) / 2;
+        calloutList.forEach(cGrp => {
+          if (bx + br > cGrp.minX - pad && bx - br < cGrp.maxX + pad &&
+              by + br > cGrp.minY - pad && by - br < cGrp.maxY + pad) {
+            const ntCx = (cGrp.minX + cGrp.maxX) / 2, ntCy = (cGrp.minY + cGrp.maxY) / 2;
             const odx = bx - ntCx, ody = by - ntCy;
             let sx = 0, sy = 0;
             if (Math.abs(ody) >= Math.abs(odx)) {
-              const reqY = br + (nt.maxY - nt.minY) / 2 + pad;
+              const reqY = br + (cGrp.maxY - cGrp.minY) / 2 + pad;
               sy = Math.round((ody >= 0 ? 1 : -1) * reqY - ody);
             } else {
-              const reqX = br + (nt.maxX - nt.minX) / 2 + pad;
+              const reqX = br + (cGrp.maxX - cGrp.minX) / 2 + pad;
               sx = Math.round((odx >= 0 ? 1 : -1) * reqX - odx);
             }
             shiftBalloon(ents, b.id, sx, sy);
@@ -1089,48 +1107,51 @@
         });
       });
 
-      // (D) Resolve Nozzle Text vs Nozzle Text Collisions
-      for (let i = 0; i < nozTexts.length; i++) {
-        for (let j = i + 1; j < nozTexts.length; j++) {
-          const nt1 = nozTexts[i], nt2 = nozTexts[j];
-          if (nt1.calloutId && nt2.calloutId && nt1.calloutId === nt2.calloutId) continue;
-          const pad = Math.round(2.0 * N);
-          if (nt2.maxX > nt1.minX - pad && nt2.minX < nt1.maxX + pad &&
-              nt2.maxY > nt1.minY - pad && nt2.minY < nt1.maxY + pad) {
-            let shiftY = Math.round((nt1.maxY - nt2.minY + pad) * 1.1);
-            shiftY = Math.min(Math.round(2.5 * N), Math.max(-Math.round(2.5 * N), shiftY));
-            const isBottom = (nt2.meta && nt2.meta.face === 'front') || nt2.p[1] < 0;
+      // (D) Resolve Nozzle Callout vs Nozzle Callout Collisions (Grouped atomic shift preserves line spacing)
+      for (let i = 0; i < calloutList.length; i++) {
+        for (let j = i + 1; j < calloutList.length; j++) {
+          const c1 = calloutList[i], c2 = calloutList[j];
+          const padX = Math.round(1.5 * N);
+          const padY = Math.round(2.0 * N);
+          if (c2.maxX > c1.minX - padX && c2.minX < c1.maxX + padX &&
+              c2.maxY > c1.minY - padY && c2.minY < c1.maxY + padY) {
+            let shiftY = (c2.p[1] >= c1.p[1] ? 1 : -1) * Math.round(c1.maxY - c2.minY + padY);
+            shiftY = Math.min(Math.round(4.0 * N), Math.max(-Math.round(4.0 * N), shiftY));
+            const isBottom = (c2.meta && c2.meta.face === 'front') || c2.p[1] < 0;
             if (isBottom) {
               shiftY = -Math.abs(shiftY);
             }
-            const curShift = calloutShifts.get(nt2.calloutId) || 0;
-            if (Math.abs(curShift + shiftY) <= Math.round(5.0 * N)) {
-              shiftCallout(ents, nt2.calloutId, 0, shiftY);
-              calloutShifts.set(nt2.calloutId, curShift + shiftY);
-              nt2.minY += shiftY; nt2.maxY += shiftY; nt2.p[1] += shiftY;
+            const curShift = calloutShifts.get(c2.id) || 0;
+            if (Math.abs(curShift + shiftY) <= Math.round(8.0 * N)) {
+              shiftCallout(ents, c2.id, 0, shiftY);
+              calloutShifts.set(c2.id, curShift + shiftY);
+              c2.minY += shiftY; c2.maxY += shiftY; c2.p[1] += shiftY;
+              c2.texts.forEach(te => { te.p[1] += shiftY; });
               movedAny = true;
             }
           }
         }
       }
 
-      // (E) Resolve Nozzle Text vs Dimension Texts
-      nozTexts.forEach(nt => {
+      // (E) Resolve Nozzle Callout vs Dimension Texts
+      calloutList.forEach(cGrp => {
         dimTexts.forEach(dt => {
-          const pad = Math.round(2.5 * N);
-          if (nt.maxX > dt.minX - pad && nt.minX < dt.maxX + pad &&
-              nt.maxY > dt.minY - pad && nt.minY < dt.maxY + pad) {
-            let shiftY = (nt.p[1] >= dt.p[1] ? 1 : -1) * Math.round(dt.maxY - nt.minY + pad);
-            shiftY = Math.min(Math.round(2.5 * N), Math.max(-Math.round(2.5 * N), shiftY));
-            const isBottom = (nt.meta && nt.meta.face === 'front') || nt.p[1] < 0;
+          const padX = Math.round(1.0 * N);
+          const padY = Math.round(2.0 * N);
+          if (cGrp.maxX > dt.minX - padX && cGrp.minX < dt.maxX + padX &&
+              cGrp.maxY > dt.minY - padY && cGrp.minY < dt.maxY + padY) {
+            let shiftY = (cGrp.p[1] >= dt.p[1] ? 1 : -1) * Math.round(dt.maxY - cGrp.minY + padY);
+            shiftY = Math.min(Math.round(3.0 * N), Math.max(-Math.round(3.0 * N), shiftY));
+            const isBottom = (cGrp.meta && cGrp.meta.face === 'front') || cGrp.p[1] < 0;
             if (isBottom) {
               shiftY = -Math.abs(shiftY);
             }
-            const curShift = calloutShifts.get(nt.calloutId) || 0;
-            if (Math.abs(curShift + shiftY) <= Math.round(5.0 * N)) {
-              shiftCallout(ents, nt.calloutId, 0, shiftY);
-              calloutShifts.set(nt.calloutId, curShift + shiftY);
-              nt.minY += shiftY; nt.maxY += shiftY; nt.p[1] += shiftY;
+            const curShift = calloutShifts.get(cGrp.id) || 0;
+            if (Math.abs(curShift + shiftY) <= Math.round(8.0 * N)) {
+              shiftCallout(ents, cGrp.id, 0, shiftY);
+              calloutShifts.set(cGrp.id, curShift + shiftY);
+              cGrp.minY += shiftY; cGrp.maxY += shiftY; cGrp.p[1] += shiftY;
+              cGrp.texts.forEach(te => { te.p[1] += shiftY; });
               movedAny = true;
             }
           }
@@ -1599,8 +1620,8 @@
         return it ? it.no : '';
       };
 
-      const topBaseY = W + F + Math.round(18 * N);
-      const topStaggerY = topBaseY + Math.round(10 * N);
+      const topBaseY = W + F + Math.round(6.0 * N);
+      const topStaggerY = topBaseY + Math.round(5.0 * N);
       const rightBaseX = L + F + Math.round(8 * N);
       const botClearY = overallY - Math.round(14 * N);
       const leftClearX = overallX - Math.round(14 * N);
@@ -2948,7 +2969,7 @@
       }
     });
 
-    const minVertGap = Math.round(5.0 * N);
+    const minVertGap = Math.max(Math.round(8.0 * N), Math.round(nozTextH * 2.8));
 
     // 2. 좌측 스터브 (Left Stubs) - 동일 높이 그룹화 및 수직 충돌 방지
     const groupLeft = [];
@@ -3193,7 +3214,14 @@
       const line1 = formatNozzleGroupLabel(items);
       const line2 = `EL.+${elev.toLocaleString()}`;
 
-      const toRight = cx >= total / 2;
+      let toRight;
+      if (cx < 1500) {
+        toRight = true;
+      } else if (cx > total - 1500) {
+        toRight = false;
+      } else {
+        toRight = (gIdx % 2 === 0);
+      }
       const dx = toRight ? Math.round(3.0 * N) : -Math.round(3.0 * N);
       const ex = toRight ? cx + dx + Math.round(3.0 * N) : cx + dx - Math.round(3.0 * N);
       const dy = (cy >= nH * 0.5 ? 1 : -1) * (Math.round(2.5 * N) + (gIdx % 2) * Math.round(1.5 * N));
@@ -5671,7 +5699,7 @@
       // Row 1: 평면도 (PLAN VIEW) & 등각조감도 (3D ISOMETRIC VIEW)
       // Row 2: 정면도 (FRONT ELEVATION) & 우측면도 (RIGHT SIDE ELEVATION)
       // Row 3: 기초 패드 평면도 (FOUNDATION PAD PLAN) & 기초 패드 단면 및 입면도 (FOUNDATION PAD SECTION & ELEVATION)
-      const row1_top_extent = (totalW / 2 + 500) / N;
+      const row1_top_extent = (totalW / 2 + 75 + Math.round(18.0 * N)) / N;
       const row1_bottom_extent = (totalW / 2 + dim_bottom_1 + 300) / N + TITLE_H;
       const row1_total_h = row1_top_extent + row1_bottom_extent;
 
@@ -5791,6 +5819,36 @@
       const title_c_y = (dy_c - PAD_OVERHANG - dim_bottom_1) / N - 14.0;
       drawViewTitleBubble(center_cx, title_c_y, 1, 2, viewTitlePad);
     }
+
+    // 도면 테두리(y1, x1, y0, x0) 밖으로 풍선 기호가 나가지 않도록 최종 클램핑
+    const maxBubbleTop = P(y1 - 4);
+    const minBubbleBot = P(y0 + 4);
+    const maxBubbleRight = P(x1 - S.title - 4);
+    const minBubbleLeft = P(x0 + 4);
+
+    const balloonCenters = new Map();
+    ents.forEach(e => {
+      if (e.layer === 'BALLOON' && e.balloonId && e.balloonRole === 'bubble' && e.c && e.r) {
+        balloonCenters.set(e.balloonId, { c: e.c, r: e.r });
+      }
+    });
+
+    balloonCenters.forEach((bInfo, bId) => {
+      let dx = 0, dy = 0;
+      if (bInfo.c[1] + bInfo.r > maxBubbleTop) {
+        dy = maxBubbleTop - (bInfo.c[1] + bInfo.r);
+      } else if (bInfo.c[1] - bInfo.r < minBubbleBot) {
+        dy = minBubbleBot - (bInfo.c[1] - bInfo.r);
+      }
+      if (bInfo.c[0] + bInfo.r > maxBubbleRight) {
+        dx = maxBubbleRight - (bInfo.c[0] + bInfo.r);
+      } else if (bInfo.c[0] - bInfo.r < minBubbleLeft) {
+        dx = minBubbleLeft - (bInfo.c[0] - bInfo.r);
+      }
+      if (dx !== 0 || dy !== 0) {
+        shiftBalloon(ents, bId, dx, dy);
+      }
+    });
 
     // 모든 뷰 통합 후 풍선 기호(bubble)와 번호(text)의 좌표 100% 일치 동기화 (치수 및 개별 뷰 불변 유지)
     const sheetBubbles = new Map();
