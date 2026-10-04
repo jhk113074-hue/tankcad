@@ -406,7 +406,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.80</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.5.81</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1941,7 +1941,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.80</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.5.81</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -1951,7 +1951,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.80</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.5.81</span></div>
     </div>
   </main>
 </div>
@@ -2715,21 +2715,25 @@ canvas.drag{cursor:grabbing}
     }
     return items.map(it => formatNozzleLabel(it.n)).join(', ');
   }
-  function drawLeader(ents, startPt, elbowPt, endPt, lines, textH, align, layer) {
+  let calloutSeq = 0;
+  function drawLeader(ents, startPt, elbowPt, endPt, lines, textH, align, layer, calloutId = null) {
     layer = layer || 'DIM';
-    ents.push({ t: 'line', a: startPt, b: elbowPt, layer });
-    ents.push({ t: 'line', a: elbowPt, b: endPt, layer });
-    ents.push({ t: 'circle', c: startPt, r: Math.max(3, Math.round(textH * 0.15)), layer });
+    const cId = calloutId || ('CALLOUT_' + (++calloutSeq));
+    ents.push({ t: 'line', a: [...startPt], b: [...elbowPt], layer, calloutId: cId, leaderRole: 'slant' });
+    ents.push({ t: 'line', a: [...elbowPt], b: [...endPt], layer, calloutId: cId, leaderRole: 'shelf' });
+    ents.push({ t: 'circle', c: [...startPt], r: Math.max(3, Math.round(textH * 0.15)), layer, calloutId: cId, leaderRole: 'dot' });
     const isRight = align === 'left';
     const textX = endPt[0] + (isRight ? textH * 0.35 : -textH * 0.35);
     const lineSpacing = textH * 1.35;
     lines.forEach((l, idx) => {
       const textY = endPt[1] + (lines.length - 1 - idx) * lineSpacing + textH * 0.35;
-      ents.push({ t: 'text', p: [textX, textY], h: textH, s: l, align, valign: 'baseline', layer });
+      ents.push({ t: 'text', p: [textX, textY], h: textH, s: l, align, valign: 'baseline', layer, calloutId: cId, leaderRole: 'text', textIdx: idx });
     });
+    return cId;
   }
 
   /* ---------- 부품 풍선 기호 (Circular Balloon Callout with Leader) ---------- */
+  let balloonSeq = 0;
   function drawBalloonCallout(ents, startPt, elbowPt, balloonCenter, numStr, scaleN = 25, layer = 'BALLOON', usedSet = null) {
     if (numStr === undefined || numStr === null || numStr === '') return false;
     const str = String(numStr).trim();
@@ -2750,30 +2754,322 @@ canvas.drag{cursor:grabbing}
     const sLen = String(str).length;
     const balloonR = Math.round(4.2 * scaleN);
     const textH = Math.round((sLen >= 3 ? 2.2 : (sLen === 2 ? 2.7 : 3.4)) * scaleN);
+    const bId = 'BALLOON_' + (++balloonSeq);
 
     // 단부 점 (Terminal dot)
-    ents.push({ t: 'circle', c: startPt, r: Math.max(3, Math.round(scaleN * 0.2)), layer, balloonNo: str });
+    ents.push({ t: 'circle', c: [...startPt], r: Math.max(3, Math.round(scaleN * 0.2)), layer, balloonNo: str, balloonId: bId, balloonRole: 'dot' });
 
     // 지시선 (Leader line)
     if (elbowPt && (elbowPt[0] !== startPt[0] || elbowPt[1] !== startPt[1])) {
       const dx = balloonCenter[0] - elbowPt[0], dy = balloonCenter[1] - elbowPt[1];
       const dist = Math.hypot(dx, dy) || 1;
       const endPt = [balloonCenter[0] - (dx / dist) * balloonR, balloonCenter[1] - (dy / dist) * balloonR];
-      ents.push({ t: 'line', a: startPt, b: elbowPt, layer, balloonNo: str });
-      ents.push({ t: 'line', a: elbowPt, b: endPt, layer, balloonNo: str });
+      ents.push({ t: 'line', a: [...startPt], b: [...elbowPt], layer, balloonNo: str, balloonId: bId, balloonRole: 'slant' });
+      ents.push({ t: 'line', a: [...elbowPt], b: endPt, layer, balloonNo: str, balloonId: bId, balloonRole: 'shelf' });
     } else {
       const dx = balloonCenter[0] - startPt[0], dy = balloonCenter[1] - startPt[1];
       const dist = Math.hypot(dx, dy) || 1;
       const endPt = [balloonCenter[0] - (dx / dist) * balloonR, balloonCenter[1] - (dy / dist) * balloonR];
-      ents.push({ t: 'line', a: startPt, b: endPt, layer, balloonNo: str });
+      ents.push({ t: 'line', a: [...startPt], b: endPt, layer, balloonNo: str, balloonId: bId, balloonRole: 'shelf' });
     }
 
     // 원형 풍선 (Circular balloon)
-    ents.push({ t: 'circle', c: balloonCenter, r: balloonR, layer, balloonNo: str });
+    ents.push({ t: 'circle', c: [...balloonCenter], r: balloonR, layer, balloonNo: str, balloonId: bId, balloonRole: 'bubble' });
 
     // 풍선 내부 번호 (Center text)
-    ents.push({ t: 'text', p: balloonCenter, h: textH, s: str, rot: 0, align: 'center', valign: 'middle', layer, balloonNo: str });
-    return true;
+    ents.push({ t: 'text', p: [...balloonCenter], h: textH, s: str, rot: 0, align: 'center', valign: 'middle', layer, balloonNo: str, balloonId: bId, balloonRole: 'text' });
+    return bId;
+  }
+
+  /* ---------- 도면 간섭 검사 및 자동 위치 재조정 엔진 (Collision Recheck & Relocation Engine) ---------- */
+  function distToSegment(p, a, b) {
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const l2 = dx * dx + dy * dy;
+    if (l2 === 0) return Math.hypot(p[0] - a[0], p[1] - a[1]);
+    let t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2;
+    t = Math.max(0, Math.min(1, t));
+    const projX = a[0] + t * dx, projY = a[1] + t * dy;
+    return Math.hypot(p[0] - projX, p[1] - projY);
+  }
+
+  function shiftBalloon(ents, bId, dx, dy) {
+    let bubble = null;
+    let shelfLine = null;
+    let slantLine = null;
+    let radius = 100;
+
+    ents.forEach(e => {
+      if (e.balloonId !== bId) return;
+      if (e.balloonRole === 'bubble') {
+        bubble = e;
+        e.c[0] += dx;
+        e.c[1] += dy;
+        radius = e.r;
+      } else if (e.balloonRole === 'text') {
+        e.p[0] += dx;
+        e.p[1] += dy;
+      } else if (e.balloonRole === 'shelf') {
+        shelfLine = e;
+      } else if (e.balloonRole === 'slant') {
+        slantLine = e;
+      }
+    });
+
+    if (bubble && shelfLine) {
+      if (slantLine) {
+        const origDx = Math.abs(shelfLine.b[0] - shelfLine.a[0]);
+        const origDy = Math.abs(shelfLine.b[1] - shelfLine.a[1]);
+        if (origDx >= origDy) {
+          shelfLine.a[1] += dy;
+          slantLine.b[1] += dy;
+        } else {
+          shelfLine.a[0] += dx;
+          slantLine.b[0] += dx;
+        }
+      }
+      const origin = shelfLine.a;
+      const bc = bubble.c;
+      const odx = bc[0] - origin[0], ody = bc[1] - origin[1];
+      const dist = Math.hypot(odx, ody) || 1;
+      shelfLine.b[0] = bc[0] - (odx / dist) * radius;
+      shelfLine.b[1] = bc[1] - (ody / dist) * radius;
+    }
+  }
+
+  function shiftCallout(ents, cId, dx, dy) {
+    ents.forEach(e => {
+      if (e.calloutId !== cId) return;
+      if (e.leaderRole === 'shelf') {
+        e.a[0] += dx; e.a[1] += dy;
+        e.b[0] += dx; e.b[1] += dy;
+      } else if (e.leaderRole === 'slant') {
+        e.b[0] += dx; e.b[1] += dy;
+      } else if (e.leaderRole === 'text') {
+        e.p[0] += dx; e.p[1] += dy;
+      }
+    });
+  }
+
+  function recheckAndResolveCollisions(ents, opt) {
+    if (!ents || !ents.length) return ents;
+    const N = (opt && opt._N) || 25;
+    const maxIterations = 8;
+
+    for (let iter = 0; iter < maxIterations; iter++) {
+      let movedAny = false;
+
+      // 1. Gather all Balloons
+      const balloonMap = new Map();
+      ents.forEach(e => {
+        if (e.layer === 'BALLOON' && e.balloonId) {
+          if (!balloonMap.has(e.balloonId)) {
+            balloonMap.set(e.balloonId, {
+              id: e.balloonId,
+              no: e.balloonNo,
+              center: null,
+              radius: Math.round(4.2 * N)
+            });
+          }
+          const b = balloonMap.get(e.balloonId);
+          if (e.balloonRole === 'bubble') {
+            b.center = e.c;
+            b.radius = e.r;
+          }
+        }
+      });
+      const bList = Array.from(balloonMap.values()).filter(b => b.center);
+
+      // 2. Gather Dimension Texts & Dimension Lines
+      const dimTexts = [];
+      const dimLines = [];
+      // 3. Gather Nozzle Texts & Nozzle Bodies
+      const nozTexts = [];
+      const nozBodies = [];
+
+      ents.forEach(e => {
+        if (e.layer === 'DIM') {
+          if (e.t === 'text' && e.s) {
+            const s = String(e.s);
+            const w = Math.max(e.h * 1.2, s.length * e.h * 0.65);
+            const h = e.h * 1.2;
+            dimTexts.push({
+              minX: e.p[0] - w / 2, maxX: e.p[0] + w / 2,
+              minY: e.p[1] - h / 2, maxY: e.p[1] + h / 2,
+              p: e.p
+            });
+          } else if (e.t === 'line' && e.a && e.b) {
+            dimLines.push({ a: e.a, b: e.b, role: e.dimRole });
+          }
+        } else if (e.layer === 'NOZZLE') {
+          if (e.t === 'text' && e.s) {
+            const s = String(e.s);
+            const w = Math.max(e.h * 1.5, s.length * e.h * 0.65);
+            const h = e.h * 1.2;
+            const isRight = e.align === 'left';
+            const minX = isRight ? e.p[0] : (e.p[0] - w);
+            const maxX = isRight ? (e.p[0] + w) : e.p[0];
+            nozTexts.push({
+              minX, maxX,
+              minY: e.p[1] - h * 0.3, maxY: e.p[1] + h * 0.9,
+              calloutId: e.calloutId,
+              p: e.p
+            });
+          } else if (e.t === 'circle' && e.c && e.r) {
+            nozBodies.push({ c: e.c, r: e.r });
+          } else if (e.t === 'line' && e.a && e.b && !e.calloutId) {
+            nozBodies.push({ a: e.a, b: e.b });
+          }
+        }
+      });
+
+      // (A) Resolve Balloon vs Balloon Collisions
+      for (let i = 0; i < bList.length; i++) {
+        for (let j = i + 1; j < bList.length; j++) {
+          const b1 = bList[i], b2 = bList[j];
+          const dx = b2.center[0] - b1.center[0];
+          const dy = b2.center[1] - b1.center[1];
+          const dist = Math.hypot(dx, dy) || 0.001;
+          const minDist = b1.radius + b2.radius + Math.round(3.0 * N);
+
+          if (dist < minDist) {
+            const overlap = minDist - dist + 2;
+            let nx = dx / dist, ny = dy / dist;
+            if (dist < 1) { nx = 1; ny = 0; }
+            let sx = 0, sy = 0;
+            if (Math.abs(dy) < Math.round(5.0 * N)) {
+              sx = Math.round(overlap * (nx >= 0 ? 1 : -1));
+              sy = (j % 2 === 0 ? 1 : -1) * Math.round(2.5 * N);
+            } else if (Math.abs(dx) < Math.round(5.0 * N)) {
+              sy = Math.round(overlap * (ny >= 0 ? 1 : -1));
+              sx = (j % 2 === 0 ? 1 : -1) * Math.round(2.5 * N);
+            } else {
+              sx = Math.round(nx * overlap);
+              sy = Math.round(ny * overlap);
+            }
+            shiftBalloon(ents, b2.id, sx, sy);
+            b2.center[0] += sx; b2.center[1] += sy;
+            movedAny = true;
+          }
+        }
+      }
+
+      // (B) Resolve Balloon vs Dimension Texts & Dimension Lines
+      bList.forEach(b => {
+        const bx = b.center[0], by = b.center[1], br = b.radius;
+        const pad = Math.round(3.0 * N);
+
+        dimTexts.forEach(dt => {
+          if (bx + br > dt.minX - pad && bx - br < dt.maxX + pad &&
+              by + br > dt.minY - pad && by - br < dt.maxY + pad) {
+            const dtCx = (dt.minX + dt.maxX) / 2, dtCy = (dt.minY + dt.maxY) / 2;
+            const odx = bx - dtCx, ody = by - dtCy;
+            let sx = 0, sy = 0;
+            if (Math.abs(ody) >= Math.abs(odx)) {
+              const reqY = br + (dt.maxY - dt.minY) / 2 + pad;
+              sy = Math.round((ody >= 0 ? 1 : -1) * reqY - ody);
+            } else {
+              const reqX = br + (dt.maxX - dt.minX) / 2 + pad;
+              sx = Math.round((odx >= 0 ? 1 : -1) * reqX - odx);
+            }
+            shiftBalloon(ents, b.id, sx, sy);
+            b.center[0] += sx; b.center[1] += sy;
+            movedAny = true;
+          }
+        });
+
+        dimLines.forEach(dl => {
+          const d = distToSegment(b.center, dl.a, dl.b);
+          const reqDist = br + Math.round(2.5 * N);
+          if (d < reqDist) {
+            const segDx = dl.b[0] - dl.a[0], segDy = dl.b[1] - dl.a[1];
+            const segLen = Math.hypot(segDx, segDy) || 1;
+            let normX = -segDy / segLen, normY = segDx / segLen;
+            const midX = (dl.a[0] + dl.b[0]) / 2, midY = (dl.a[1] + dl.b[1]) / 2;
+            if ((bx - midX) * normX + (by - midY) * normY < 0) {
+              normX = -normX; normY = -normY;
+            }
+            const push = Math.round(reqDist - d + 3);
+            const sx = Math.round(normX * push), sy = Math.round(normY * push);
+            shiftBalloon(ents, b.id, sx, sy);
+            b.center[0] += sx; b.center[1] += sy;
+            movedAny = true;
+          }
+        });
+      });
+
+      // (C) Resolve Balloon vs Nozzle Texts & Bodies
+      bList.forEach(b => {
+        const bx = b.center[0], by = b.center[1], br = b.radius;
+        const pad = Math.round(3.0 * N);
+
+        nozTexts.forEach(nt => {
+          if (bx + br > nt.minX - pad && bx - br < nt.maxX + pad &&
+              by + br > nt.minY - pad && by - br < nt.maxY + pad) {
+            const ntCx = (nt.minX + nt.maxX) / 2, ntCy = (nt.minY + nt.maxY) / 2;
+            const odx = bx - ntCx, ody = by - ntCy;
+            let sx = 0, sy = 0;
+            if (Math.abs(ody) >= Math.abs(odx)) {
+              const reqY = br + (nt.maxY - nt.minY) / 2 + pad;
+              sy = Math.round((ody >= 0 ? 1 : -1) * reqY - ody);
+            } else {
+              const reqX = br + (nt.maxX - nt.minX) / 2 + pad;
+              sx = Math.round((odx >= 0 ? 1 : -1) * reqX - odx);
+            }
+            shiftBalloon(ents, b.id, sx, sy);
+            b.center[0] += sx; b.center[1] += sy;
+            movedAny = true;
+          }
+        });
+
+        nozBodies.forEach(nb => {
+          if (nb.c && nb.r) {
+            const d = Math.hypot(bx - nb.c[0], by - nb.c[1]);
+            const reqD = br + nb.r + Math.round(2.5 * N);
+            if (d < reqD) {
+              const push = Math.round(reqD - d + 3);
+              const nx = (bx - nb.c[0]) / (d || 1), ny = (by - nb.c[1]) / (d || 1);
+              const sx = Math.round(nx * push), sy = Math.round(ny * push);
+              shiftBalloon(ents, b.id, sx, sy);
+              b.center[0] += sx; b.center[1] += sy;
+              movedAny = true;
+            }
+          }
+        });
+      });
+
+      // (D) Resolve Nozzle Text vs Nozzle Text Collisions
+      for (let i = 0; i < nozTexts.length; i++) {
+        for (let j = i + 1; j < nozTexts.length; j++) {
+          const nt1 = nozTexts[i], nt2 = nozTexts[j];
+          if (nt1.calloutId && nt2.calloutId && nt1.calloutId === nt2.calloutId) continue;
+          const pad = Math.round(2.0 * N);
+          if (nt2.maxX > nt1.minX - pad && nt2.minX < nt1.maxX + pad &&
+              nt2.maxY > nt1.minY - pad && nt2.minY < nt1.maxY + pad) {
+            const shiftY = Math.round((nt1.maxY - nt2.minY + pad) * 1.2);
+            shiftCallout(ents, nt2.calloutId, 0, shiftY);
+            nt2.minY += shiftY; nt2.maxY += shiftY; nt2.p[1] += shiftY;
+            movedAny = true;
+          }
+        }
+      }
+
+      // (E) Resolve Nozzle Text vs Dimension Texts
+      nozTexts.forEach(nt => {
+        dimTexts.forEach(dt => {
+          const pad = Math.round(2.5 * N);
+          if (nt.maxX > dt.minX - pad && nt.minX < dt.maxX + pad &&
+              nt.maxY > dt.minY - pad && nt.minY < dt.maxY + pad) {
+            const shiftY = (nt.p[1] >= dt.p[1] ? 1 : -1) * Math.round(dt.maxY - nt.minY + pad);
+            shiftCallout(ents, nt.calloutId, 0, shiftY);
+            nt.minY += shiftY; nt.maxY += shiftY; nt.p[1] += shiftY;
+            movedAny = true;
+          }
+        });
+      });
+
+      if (!movedAny) break;
+    }
+    return ents;
   }
 
   /* ---------- 기본 부품 사양 명세표 생성 (Default Item List / BOM) ---------- */
@@ -3188,14 +3484,35 @@ canvas.drag{cursor:grabbing}
       }
     });
 
-    // 치수선 (축척 비례 계산 - 표준 정위치 고정)
+    // 치수선 (축척 비례 계산 및 배관/풍선/외곽 간섭 방지 동적 여백 계산)
     const textH = Math.round(3.0 * N);
     const dimGap1 = Math.round(10.0 * N);
     const dimGap2 = Math.round(18.0 * N);
-    const baseX = -F - dimGap1;
-    const baseY = -F - dimGap1;
-    const overallX = -F - dimGap2;
-    const overallY = -F - dimGap2;
+
+    let maxFrontNozExt = 0;
+    let maxLeftNozExt = 0;
+    let maxRearNozExt = 0;
+
+    nozList.forEach(n => {
+      const spec = getNozzleSpec(n.size);
+      const protrude = (n.type === 'FLANGE') ? (spec.neckLen + 20) : (spec.sockLen + 20);
+      if (n.face === 'front') {
+        if (protrude > maxFrontNozExt) maxFrontNozExt = protrude;
+      } else if (n.face === 'left') {
+        if (protrude > maxLeftNozExt) maxLeftNozExt = protrude;
+      } else if (n.face === 'rear') {
+        if (protrude > maxRearNozExt) maxRearNozExt = protrude;
+      }
+    });
+
+    const frontClearance = maxFrontNozExt > 0 ? (maxFrontNozExt + Math.round(6.0 * N)) : 0;
+    const leftClearance = maxLeftNozExt > 0 ? (maxLeftNozExt + Math.round(6.0 * N)) : 0;
+    const rearClearance = maxRearNozExt > 0 ? (maxRearNozExt + Math.round(6.0 * N)) : 0;
+
+    const baseX = -F - Math.max(dimGap1, leftClearance);
+    const baseY = -F - Math.max(dimGap1, frontClearance);
+    const overallX = baseX - Math.round(8.0 * N);
+    const overallY = baseY - Math.round(8.0 * N);
 
     dimLinear(ents, [-F, 0], [0, 0], baseY, false, String(F), textH, 'DIM');
     map.cols.forEach((c, j) => dimLinear(ents, [map.xs[j], 0], [map.xs[j + 1], 0], baseY, false, String(c), textH, 'DIM'));
@@ -3214,8 +3531,8 @@ canvas.drag{cursor:grabbing}
         return it ? it.no : '';
       };
 
-      const topBaseY = W + F + Math.round(18 * N);
-      const topStaggerY = W + F + Math.round(28 * N);
+      const topBaseY = W + F + Math.max(Math.round(18 * N), rearClearance + Math.round(8 * N));
+      const topStaggerY = topBaseY + Math.round(10 * N);
       const rightBaseX = L + F + Math.round(18 * N);
       const botClearY = overallY - Math.round(14 * N);
       const leftClearX = overallX - Math.round(14 * N);
@@ -3450,6 +3767,7 @@ canvas.drag{cursor:grabbing}
         }
       });
     });
+    recheckAndResolveCollisions(ents, opt);
     const ton = (activeAreaMm2 * H / 1e9).toFixed(1);
     return { map, ents, textH, blocks, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
   }
@@ -4605,8 +4923,9 @@ canvas.drag{cursor:grabbing}
       minLeftNozX = Math.min(minLeftNozX, -235);
     }
 
-    const X0 = -75 - dimGap1;
-    const overallX = -75 - dimGap2;
+    const leftNozMargin = (groupLeft.length > 0) ? Math.abs(minLeftNozX - (-75)) + Math.round(5.0 * N) : 0;
+    const X0 = -75 - Math.max(dimGap1, leftNozMargin);
+    const overallX = X0 - Math.round(8.0 * N);
 
     // 치수 (FrontDim / SideDim: 축척 비례 계산 - media_1790951915253.png 표준 정위치)
     let yy = 0;
@@ -4826,9 +5145,27 @@ canvas.drag{cursor:grabbing}
       const padH = (typeof opt.padH === 'number' && !isNaN(opt.padH)) ? opt.padH : (600 - (opt.frame || 75));
       const clearanceH = th + padH;
       const slabTopY = -clearanceH;
-      const elevTopY = nH + Math.round(18 * N);
+      let maxTopNozExt = nH;
+      groupTop.forEach(grp => {
+        grp.items.forEach(it => {
+          const spec = it.spec;
+          const ext = it.isFlg ? (nH + spec.neckLen) : (nH + spec.sockLen);
+          if (ext > maxTopNozExt) maxTopNozExt = ext;
+        });
+      });
+      const elevTopY = Math.max(nH + Math.round(18 * N), maxTopNozExt + Math.round(10 * N));
+
       const pxEndElev = total + 75;
-      const elevRightX = pxEndElev + Math.round(10.0 * N);
+      let maxRightExt = pxEndElev;
+      groupRight.forEach(grp => {
+        grp.items.forEach(it => {
+          const spec = it.spec;
+          const ext = it.isFlg ? (pxEndElev + spec.neckLen) : (pxEndElev + spec.sockLen);
+          const textW = Math.round(12.0 * N);
+          if (ext + textW > maxRightExt) maxRightExt = ext + textW;
+        });
+      });
+      const elevRightX = Math.max(pxEndElev + Math.round(10.0 * N), maxRightExt + Math.round(8.0 * N));
       const elevBotY = slabTopY - 150 - dimGap2 - Math.round(14 * N);
 
       // 1. 기초 콘크리트 (Concrete Foundation - NO. 1): 리드선(Leader line)을 아래쪽으로 꺾어 인출하여 NO. 2 및 600 치수선 간섭 원천 차단
@@ -4845,7 +5182,8 @@ canvas.drag{cursor:grabbing}
       drawBalloonCallout(ents, [total, nH * 0.65], [total + 75 + Math.round(3.5 * N), nH * 0.65], [elevRightX, nH * 0.65], getItemNo('panel') || 3, N, 'BALLOON');
 
       // 4. 코너 프레임 (Corner Frame - NO. 4): 좌상단 바깥 외곽
-      drawBalloonCallout(ents, [0, nH], [-75 - Math.round(6 * N), nH + Math.round(10 * N)], [-75 - Math.round(16 * N), nH + Math.round(16 * N)], getItemNo('corner') || 4, N, 'BALLOON');
+      const b4X = Math.min(-75 - Math.round(16 * N), overallX - Math.round(6.0 * N));
+      drawBalloonCallout(ents, [0, nH], [-75 - Math.round(6 * N), nH + Math.round(10 * N)], [b4X, nH + Math.round(16 * N)], getItemNo('corner') || 4, N, 'BALLOON');
 
       // 8. 외부 사다리 (External Ladder - NO. 8) & 10. 내부 스테이 (Internal Stay - NO. 10): 상단 바깥 외곽 (상호 크로스 방지 방향 제어)
       const lads = ladderList(opt, mmap);
@@ -4874,6 +5212,7 @@ canvas.drag{cursor:grabbing}
       drawBalloonCallout(ents, [total + 75, nH * 0.3], [total + 75 + Math.round(3.5 * N), nH * 0.3], [elevRightX, nH * 0.3], getItemNo('nozzle') || 11, N, 'BALLOON');
     }
 
+    recheckAndResolveCollisions(ents, opt);
     ents.blocks = blocks;
     return { ents, textH, blocks };
   }
@@ -7342,6 +7681,7 @@ canvas.drag{cursor:grabbing}
       }
       elev = true;
     }
+    recheckAndResolveCollisions(ents, opt);
     const blocks = Object.assign({}, plan.blocks, (conc && conc.blocks), (front && front.blocks), (side && side.blocks));
     ents.blocks = blocks;
     return { map: mmap, ents, blocks, scale: N, elev, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
@@ -7618,7 +7958,7 @@ canvas.drag{cursor:grabbing}
     return o.join('\r\n') + '\r\n';
   }
 
-  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, drawBalloonCallout, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable };
+  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TankCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -11141,7 +11481,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.80</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.5.81</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
