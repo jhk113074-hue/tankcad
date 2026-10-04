@@ -416,7 +416,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.0</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.1</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1614,7 +1614,7 @@ canvas.drag{cursor:grabbing}
                 </div>
                 <div style="display:flex;gap:4px">
                   <button type="button" id="btnCopyFromRight" class="btn-sm" style="font-size:11px;padding:4px 8px;color:#f59e0b;font-weight:700" title="우측면도 CAD 형상을 그대로 가져와 좌우 반전 복사">↔️ 우측면도 복사</button>
-                  <button type="button" id="btnDownloadSampleDxf" class="btn-sm" style="font-size:11px;padding:4px 8px;color:var(--accent);font-weight:700" title="현재 뷰 CAD를 .dxf 파일로 다운로드하여 캐드에서 편집">⬇️ DXF받기</button>
+                  <button type="button" id="btnDownloadSampleDxf" class="btn-sm" onclick="downloadCurrentPartDxf()" style="font-size:11px;padding:4px 8px;color:var(--accent);font-weight:700" title="현재 뷰 CAD를 .dxf 파일로 다운로드하여 캐드에서 편집">⬇️ DXF받기</button>
                 </div>
               </div>
             </div>
@@ -2033,7 +2033,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.0</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.1</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2043,7 +2043,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.0</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.1</span></div>
     </div>
   </main>
 </div>
@@ -12029,7 +12029,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.0</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.1</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -15979,44 +15979,114 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     return entities;
   }
 
-  function entitiesToDxf(entities, partName = 'PART') {
-    let s = '0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1015\n0\nENDSEC\n';
-    s += '0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n70\n1\n0\nLAYER\n2\nFRAME\n70\n0\n62\n7\n6\nCONTINUOUS\n0\nENDTAB\n0\nENDSEC\n';
-    s += '0\nSECTION\n2\nBLOCKS\n0\nENDSEC\n';
-    s += '0\nSECTION\n2\nENTITIES\n';
+  function normalizeCadEntities(entities, defLayer = 'FRAME') {
+    const out = [];
     (entities || []).forEach(e => {
-      if (e.k === 'line') {
-        s += `0\nLINE\n8\nFRAME\n10\n${e.p[0][0]}\n20\n${e.p[0][1]}\n30\n0.0\n11\n${e.p[1][0]}\n21\n${e.p[1][1]}\n31\n0.0\n`;
-      } else if (e.k === 'circle') {
-        s += `0\nCIRCLE\n8\nFRAME\n10\n${e.c[0]}\n20\n${e.c[1]}\n30\n0.0\n40\n${e.r}\n`;
-      } else if (e.k === 'arc') {
-        s += `0\nARC\n8\nFRAME\n10\n${e.c[0]}\n20\n${e.c[1]}\n30\n0.0\n40\n${e.r}\n50\n${e.a0 || 0}\n51\n${e.a1 || 360}\n`;
-      } else if (e.k === 'poly' && e.p && e.p.length >= 2) {
-        s += `0\nLWPOLYLINE\n8\nFRAME\n90\n${e.p.length}\n70\n${e.c ? 1 : 0}\n`;
-        e.p.forEach(pt => {
-          s += `10\n${pt[0]}\n20\n${pt[1]}\n`;
-        });
+      if (!e) return;
+      const k = e.k || e.t || e.type;
+      const layer = e.layer || defLayer;
+      if (k === 'line') {
+        const p1 = (e.p && e.p[0]) || e.a;
+        const p2 = (e.p && e.p[1]) || e.b;
+        if (p1 && p2 && p1.length >= 2 && p2.length >= 2 && !isNaN(p1[0]) && !isNaN(p2[0])) {
+          out.push({ t: 'line', a: [Number(p1[0]), Number(p1[1])], b: [Number(p2[0]), Number(p2[1])], layer });
+        }
+      } else if (k === 'circle') {
+        const c = e.c || e.center;
+        const r = Number(e.r || 10);
+        if (c && c.length >= 2 && !isNaN(c[0]) && !isNaN(r)) {
+          out.push({ t: 'circle', c: [Number(c[0]), Number(c[1])], r, layer });
+        }
+      } else if (k === 'arc') {
+        const c = e.c || e.center;
+        const r = Number(e.r || 10);
+        if (c && c.length >= 2 && !isNaN(c[0]) && !isNaN(r)) {
+          out.push({ t: 'arc', c: [Number(c[0]), Number(c[1])], r, a0: Number(e.a0 || 0), a1: Number(e.a1 || 360), layer });
+        }
+      } else if (k === 'poly') {
+        const pts = (e.p || e.pts || []).filter(p => p && p.length >= 2 && !isNaN(p[0]) && !isNaN(p[1])).map(p => [Number(p[0]), Number(p[1])]);
+        if (pts.length >= 2) {
+          const isClosed = e.c !== false && e.close !== false;
+          out.push({ t: 'poly', pts, close: isClosed, layer });
+        }
+      } else if (k === 'solid') {
+        if (e.p && e.p.length >= 4) {
+          out.push({ t: 'solid', p: e.p.map(p => [Number(p[0]), Number(p[1])]), layer });
+        }
+      } else if (k === 'text') {
+        if (e.p && e.p.length >= 2) {
+          out.push({ t: 'text', p: [Number(e.p[0]), Number(e.p[1])], s: String(e.s || ''), h: Number(e.h || 20), rot: Number(e.rot || 0), layer });
+        }
       }
     });
-    s += '0\nENDSEC\n0\nEOF\n';
+    return out;
+  }
+
+  function entitiesToDxf(entities, partName = 'PART') {
+    const norm = normalizeCadEntities(entities, 'FRAME');
+    if (typeof TankCore !== 'undefined' && TankCore && typeof TankCore.toDxf === 'function') {
+      return TankCore.toDxf(norm);
+    }
+    // Fallback AutoCAD R12 DXF generator with CRLF (\r\n) line endings
+    let s = '0\r\nSECTION\r\n2\r\nHEADER\r\n9\r\n$ACADVER\r\n1\r\nAC1009\r\n0\r\nENDSEC\r\n';
+    s += '0\r\nSECTION\r\n2\r\nTABLES\r\n0\r\nTABLE\r\n2\r\nLAYER\r\n70\r\n1\r\n0\r\nLAYER\r\n2\r\nFRAME\r\n70\r\n0\r\n62\r\n7\r\n6\r\nCONTINUOUS\r\n0\r\nENDTAB\r\n0\r\nENDSEC\r\n';
+    s += '0\r\nSECTION\r\n2\r\nBLOCKS\r\n0\r\nENDSEC\r\n';
+    s += '0\r\nSECTION\r\n2\r\nENTITIES\r\n';
+    norm.forEach(e => {
+      if (e.t === 'line') {
+        s += `0\r\nLINE\r\n8\r\n${e.layer || 'FRAME'}\r\n10\r\n${e.a[0]}\r\n20\r\n${e.a[1]}\r\n30\r\n0.0\r\n11\r\n${e.b[0]}\r\n21\r\n${e.b[1]}\r\n31\r\n0.0\r\n`;
+      } else if (e.t === 'circle') {
+        s += `0\r\nCIRCLE\r\n8\r\n${e.layer || 'FRAME'}\r\n10\r\n${e.c[0]}\r\n20\r\n${e.c[1]}\r\n30\r\n0.0\r\n40\r\n${e.r}\r\n`;
+      } else if (e.t === 'arc') {
+        s += `0\r\nARC\r\n8\r\n${e.layer || 'FRAME'}\r\n10\r\n${e.c[0]}\r\n20\r\n${e.c[1]}\r\n30\r\n0.0\r\n40\r\n${e.r}\r\n50\r\n${e.a0 || 0}\r\n51\r\n${e.a1 || 360}\r\n`;
+      } else if (e.t === 'poly' && e.pts && e.pts.length >= 2) {
+        for (let i = 0; i < e.pts.length - 1; i++) {
+          s += `0\r\nLINE\r\n8\r\n${e.layer || 'FRAME'}\r\n10\r\n${e.pts[i][0]}\r\n20\r\n${e.pts[i][1]}\r\n30\r\n0.0\r\n11\r\n${e.pts[i + 1][0]}\r\n21\r\n${e.pts[i + 1][1]}\r\n31\r\n0.0\r\n`;
+        }
+        if (e.close && e.pts.length > 2) {
+          s += `0\r\nLINE\r\n8\r\n${e.layer || 'FRAME'}\r\n10\r\n${e.pts[e.pts.length - 1][0]}\r\n20\r\n${e.pts[e.pts.length - 1][1]}\r\n30\r\n0.0\r\n11\r\n${e.pts[0][0]}\r\n21\r\n${e.pts[0][1]}\r\n31\r\n0.0\r\n`;
+        }
+      }
+    });
+    s += '0\r\nENDSEC\r\n0\r\nEOF\r\n';
     return s;
   }
 
   function downloadCurrentPartDxf() {
-    const cat = getSelectedCadCategory();
-    const sub = $('cadPartSubSel')?.value || cat;
-    const ents = (currentCadEntities && currentCadEntities.length) ? currentCadEntities : getPartDefaultEntities(cat, sub, Number($('cadPartW')?.value) || 1000, Number($('cadPartH')?.value) || 1000, cadCurrentView);
-    const dxfStr = entitiesToDxf(ents, `${cat}_${cadCurrentView}_${cadCurrentHeight}`);
-    const blob = new Blob([dxfStr], { type: 'application/dxf' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `tankcad_${cat}_${cadCurrentView}_${cadCurrentHeight}.dxf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const cat = getSelectedCadCategory();
+      const sub = $('cadPartSubSel')?.value || cat;
+      const w = Number($('cadPartW')?.value) || 1000;
+      const h = Number($('cadPartH')?.value) || 1000;
+      const ents = (currentCadEntities && currentCadEntities.length)
+        ? currentCadEntities
+        : getPartDefaultEntities(cat, sub, w, h, cadCurrentView);
+
+      if (!ents || !ents.length) {
+        alert('다운로드할 CAD 도면 형상이 없습니다.');
+        return;
+      }
+
+      const filename = `tankcad_${cat}_${cadCurrentView}_${cadCurrentHeight || '2000'}.dxf`;
+      const dxfStr = entitiesToDxf(ents, `${cat}_${cadCurrentView}_${cadCurrentHeight}`);
+      const blob = new Blob([dxfStr], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+      const st = $('status');
+      if (st) st.textContent = `${filename} 다운로드 완료`;
+    } catch (err) {
+      console.error('DXF download error:', err);
+      alert('DXF 다운로드 중 오류가 발생했습니다: ' + err.message);
+    }
   }
+  window.downloadCurrentPartDxf = downloadCurrentPartDxf;
 
   function saveCurrentCadPart() {
     const cat = getSelectedCadCategory();
