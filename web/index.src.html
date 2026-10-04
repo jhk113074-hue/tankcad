@@ -94,6 +94,9 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:1
 .cad-view-btn, .cad-pos-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 2px;background:var(--surface);border:1px solid var(--line);border-radius:6px;cursor:pointer;transition:all .15s}
 .cad-view-btn:hover, .cad-pos-btn:hover{border-color:var(--accent);background:rgba(2,132,199,0.04)}
 .cad-view-btn.active, .cad-pos-btn.active{background:rgba(2,132,199,0.12);border-color:var(--accent);color:var(--accent);font-weight:700}
+.cad-dir-btn{border:1px solid var(--line);background:var(--surface);cursor:pointer;transition:all .15s}
+.cad-dir-btn:hover{border-color:var(--accent);background:rgba(2,132,199,0.06)}
+.cad-dir-btn.active{background:rgba(2,132,199,0.18) !important;border-color:var(--accent) !important;color:var(--accent) !important;font-weight:700 !important;box-shadow:0 0 0 1px var(--accent)}
 .cad-view-btn .v-icon, .cad-pos-btn .v-icon{font-size:13px;margin-bottom:2px}
 .cad-view-btn .v-name, .cad-pos-btn .v-name{font-size:10.5px}
 .cad-view-btn .v-stat, .cad-pos-btn .v-stat{font-size:9px;color:var(--muted);margin-top:2px}
@@ -8846,7 +8849,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     const curPanelBadge = $('curPanelPlanDirBadge');
     if (curPanelBadge) curPanelBadge.textContent = labels[dir] || dir;
 
-    const isPanel = $('cadModeBtnPanels')?.classList.contains('active');
+    const isPanel = $('cadPanelControlSection') && $('cadPanelControlSection').style.display !== 'none';
     if (isPanel) {
       loadActivePanelToPreview();
     } else {
