@@ -1403,7 +1403,6 @@
     // 구간 경계 벽 (CWallLT: 70mm폭 사각형 박스 + 솔리드 채움, 원 표시 대체)
     const cellAtXY = (x, y) => { const j = map.xs.findIndex((v, k) => x >= v && x < map.xs[k + 1]), i = map.ys.findIndex((v, k) => y >= v && y < map.ys[k + 1]); return j >= 0 && i >= 0 && map.has(i, j); };
     const WALL_TH = 70;
-    const halfW = WALL_TH / 2; // 35mm
     const drawWallBox = (x0, y0, x1, y1) => {
       // 70mm 폭 사각형 박스 외곽선
       ln([x0, y0], [x1, y0], 'WALL');
@@ -1426,7 +1425,7 @@
         frontSplit(len, 0).forEach(cx => {
           const dx = cx >> 1;
           if (!cellAtXY(x + dx, nLen - 1) && !cellAtXY(x + dx, nLen + 1)) { x += cx; return; }
-          drawWallBox(x, nLen - halfW, x + cx, nLen + halfW);
+          drawWallBox(x, nLen, x + cx, nLen + WALL_TH);
           x += cx;
         });
       });
@@ -1438,7 +1437,7 @@
         sideSplit(wid, 0).forEach(cy => {
           const dy = cy >> 1;
           if (!cellAtXY(nLen - 1, y + dy) && !cellAtXY(nLen + 1, y + dy)) { y += cy; return; }
-          drawWallBox(nLen - halfW, y, nLen + halfW, y + cy);
+          drawWallBox(nLen, y, nLen + WALL_TH, y + cy);
           y += cy;
         });
       });
@@ -2784,11 +2783,10 @@
 
     // 구간 경계 수직벽 (CWallLT::VertWall - 70mm폭 사각형 박스 + 솔리드 채움, 원 표시 대체)
     const WALL_TH = 70;
-    const halfW = WALL_TH / 2; // 35mm
     for (let i = 1, bx = secs[0]; i < secs.length; bx += secs[i++]) {
       let py = 0;
       hs.forEach(hh => sideSplit(hh, 0).forEach(cy => {
-        const x0 = bx - halfW, x1 = bx + halfW;
+        const x0 = bx, x1 = bx + WALL_TH;
         const y0 = py, y1 = py + cy;
         // 70mm 사각형 박스 외곽선
         ln([x0, y0], [x1, y0], 'WALL');
@@ -5715,6 +5713,7 @@
         if (e.t === 'poly') ents.push({ ...e, pts: e.pts.map(p => [p[0] + dx, p[1] + dy]) });
         else if (e.t === 'line') ents.push({ ...e, a: [e.a[0] + dx, e.a[1] + dy], b: [e.b[0] + dx, e.b[1] + dy] });
         else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] + dx, e.c[1] + dy] });
+        else if (e.t === 'solid') ents.push({ ...e, p: e.p.map(p => [p[0] + dx, p[1] + dy]) });
         else ents.push({ ...e, p: [e.p[0] + dx, e.p[1] + dy] });
       });
     };
