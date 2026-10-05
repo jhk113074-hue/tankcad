@@ -420,7 +420,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.16</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.17</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2139,7 +2139,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.16</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.17</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2149,7 +2149,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.16</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.17</span></div>
     </div>
   </main>
 </div>
@@ -2576,31 +2576,54 @@ canvas.drag{cursor:grabbing}
     });
   }
 
-  /* ---------- 평면도 맨홀 손잡이 / 환기구 (CCeilLT::_1000BY1000 의 CLT_HANDLE=1, CLT_AIRVENT=2) : 1000x1000 패널만 ---------- */
-  function markShapes(x, y, mark, opt, rowIdx, colIdx, map) {
-    const customParts = opt?.partTemplates || {};
-    const out = [];
-
-    // 맨홀/내부사다리 방향 결정 (D: 남/하, U: 북/상, R: 동/우, L: 서/좌)
-    let dir = 'D'; // 기본 남측(하단)
+  /* ---------- 맨홀 설치 방향 및 투영 뷰타입 계산 헬퍼 ---------- */
+  function getManholeDir(opt, map, rowIdx, colIdx) {
     const cellKey = (rowIdx != null && colIdx != null) ? `${rowIdx},${colIdx}` : null;
     if (cellKey && opt?.manholeDirs && opt.manholeDirs[cellKey]) {
-      dir = opt.manholeDirs[cellKey];
-    } else if (cellKey && opt?.ladders && opt.ladders[cellKey]) {
-      dir = opt.ladders[cellKey];
-    } else if (map && rowIdx != null && colIdx != null) {
-      // 가장 가까운 탱크 외벽을 감지하여 외벽 쪽(탱크 밖)을 향하도록 자동 방향 설정
+      return opt.manholeDirs[cellKey];
+    }
+    if (cellKey && opt?.ladders && opt.ladders[cellKey]) {
+      return opt.ladders[cellKey];
+    }
+    if (map && rowIdx != null && colIdx != null && map.rows && map.cols) {
       const nRows = map.rows.length, nCols = map.cols.length;
       const dSouth = rowIdx;
       const dNorth = nRows - 1 - rowIdx;
       const dWest = colIdx;
       const dEast = nCols - 1 - colIdx;
       const minD = Math.min(dSouth, dNorth, dWest, dEast);
-      if (minD === dSouth) dir = 'D';
-      else if (minD === dNorth) dir = 'U';
-      else if (minD === dWest) dir = 'L';
-      else dir = 'R';
+      if (minD === dSouth) return 'D';
+      if (minD === dNorth) return 'U';
+      if (minD === dWest) return 'L';
+      return 'R';
     }
+    return 'D';
+  }
+
+  function getManholeViewType(dir, view) {
+    const d = (dir || 'D').toUpperCase();
+    if (view === 'front') {
+      if (d === 'D' || d === 'SOUTH') return 'front';
+      if (d === 'U' || d === 'NORTH') return 'rear';
+      if (d === 'R' || d === 'EAST') return 'side_right';
+      if (d === 'L' || d === 'WEST') return 'side_left';
+      return 'front';
+    } else { // side view (right elevation: 동측에서 서측을 봄, 도면 좌측=남, 우측=북)
+      if (d === 'R' || d === 'EAST') return 'front';
+      if (d === 'L' || d === 'WEST') return 'rear';
+      if (d === 'D' || d === 'SOUTH') return 'side_left';
+      if (d === 'U' || d === 'NORTH') return 'side_right';
+      return 'side_left';
+    }
+  }
+
+  /* ---------- 평면도 맨홀 손잡이 / 환기구 (CCeilLT::_1000BY1000 의 CLT_HANDLE=1, CLT_AIRVENT=2) : 1000x1000 패널만 ---------- */
+  function markShapes(x, y, mark, opt, rowIdx, colIdx, map) {
+    const customParts = opt?.partTemplates || {};
+    const out = [];
+
+    // 맨홀/내부사다리 방향 결정 (D: 남/하, U: 북/상, R: 동/우, L: 서/좌)
+    const dir = getManholeDir(opt, map, rowIdx, colIdx);
 
     // 표준 형상(D 기준: 내부사다리가 하단 y~210-380에 위치)을 중심(500, 500) 기준으로 회전
     const angleMap = {
@@ -4894,12 +4917,41 @@ canvas.drag{cursor:grabbing}
       }
     }
     // CManholeLT::Form (개방형 이중덮개 맨홀 형상) — pos: 0 단일 1 왼쪽 2 중간 3 오른쪽
-    function manhole(x, y, cx, cy, pos, shape) {
+    function manhole(x, y, cx, cy, pos, shapeInfo) {
+      const shape = (shapeInfo && typeof shapeInfo === 'object') ? shapeInfo.sh : (shapeInfo || 0);
+      const hasMh = (shapeInfo && typeof shapeInfo === 'object')
+        ? shapeInfo.hasMh
+        : Boolean((shape & 1) || (shape & 2) || (shape & 8) || (shape & 16) || shape === 5 || shape === 6);
+      const mhViewType = (shapeInfo && typeof shapeInfo === 'object')
+        ? shapeInfo.mhViewType
+        : (view === 'front' ? 'front' : 'side_right');
       const customParts = opt?.partTemplates || opt?.customComponents || {};
-      const hasMhShape = (shape & 1) || (shape & 2) || (shape === 5) || (shape === 6);
-      if (hasMhShape) {
-        const customMh = resolvePartEntities(customParts, 'manhole', view, cy, opt)
-                      || resolvePartEntities(customParts, 'manhole', view === 'side' ? 'right' : 'front', cy, opt);
+
+      if (hasMh) {
+        let customMh = null;
+        if (mhViewType === 'front') {
+          customMh = resolvePartEntities(customParts, 'manhole', 'front', cy, opt)
+                  || resolvePartEntities(customParts, 'manhole', view, cy, opt);
+        } else if (mhViewType === 'rear') {
+          customMh = resolvePartEntities(customParts, 'manhole', 'rear', cy, opt)
+                  || resolvePartEntities(customParts, 'manhole', 'front', cy, opt)
+                  || resolvePartEntities(customParts, 'manhole', view, cy, opt);
+        } else if (mhViewType === 'side_right') {
+          customMh = resolvePartEntities(customParts, 'manhole', 'right', cy, opt)
+                  || resolvePartEntities(customParts, 'manhole', 'side', cy, opt)
+                  || resolvePartEntities(customParts, 'manhole', view, cy, opt);
+        } else if (mhViewType === 'side_left') {
+          customMh = resolvePartEntities(customParts, 'manhole', 'left', cy, opt);
+          if (!customMh || !customMh.length) {
+            const rEnts = resolvePartEntities(customParts, 'manhole', 'right', cy, opt)
+                       || resolvePartEntities(customParts, 'manhole', 'side', cy, opt);
+            if (rEnts && rEnts.length) customMh = mirrorEntitiesH(rEnts);
+          }
+          if (!customMh || !customMh.length) {
+            customMh = resolvePartEntities(customParts, 'manhole', view, cy, opt);
+          }
+        }
+
         if (customMh && customMh.length > 0) {
           let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
           customMh.forEach(e => {
@@ -4915,6 +4967,7 @@ canvas.drag{cursor:grabbing}
           return;
         }
       }
+
       const customTop = resolvePartEntities(customParts, 'top', view, cy, opt);
       if (customTop && customTop.length > 0) {
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -4928,66 +4981,102 @@ canvas.drag{cursor:grabbing}
         });
         const tw = (maxX - minX) || 1000;
         renderCustomEntitiesAt(ents, customTop, x - minX * (cx / tw), y - minY, cx / tw, 1, 'PANEL');
-        if (hasMhShape) {
+        if (hasMh) {
           const top = (MH.STAY || 20) + cy, ms = cx >> 1, mh = 275;
           poly([[x + ms - mh, y + 60], [x + ms - mh, y + top], [x + ms + mh, y + top], [x + ms + mh, y + 60]], 'PANEL');
         }
         return;
       }
+
       const ms = cx >> 1, UI = MH.UP_IN[cx], DI = MH.DN_IN[cx], UO = MH.UP_OUT[cx], DO = MH.DN_OUT[cx];
       if (!UI) return;
-      const two = cx === 1000 && shape > 0;                 // Form2: 손잡이/환기구가 있으면 띠를 한 겹 더 올림
+      const two = cx === 1000 && (hasMh || (shape & 4));                 // Form2: 맨홀/환기구가 있으면 띠를 한 겹 더 올림
       const xl = (!internal && (pos === 2 || pos === 3)) ? OFF : 0, xr = (!internal && (pos === 1 || pos === 2)) ? cx - OFF : cx, T = MH.STAY, base = two ? 2 * T : T;
       rect(x + xl, y, x + xr, y + T, 'PANEL');
       if (two) rect(x + xl, y + T, x + xr, y + 2 * T, 'PANEL');
       ln([x + xl, y + T / 2], [x + xr, y + T / 2], 'PANEL');
       poly([[x + ms - DO, y + base], [x + ms - UO, y + T + cy], [x + ms + UO, y + T + cy], [x + ms + DO, y + base]], 'PANEL');
       ln([x + ms - DI, y + base], [x + ms - UI, y + T + cy], 'PANEL'); ln([x + ms + DI, y + base], [x + ms + UI, y + T + cy], 'PANEL');
-      const solY = (a, b, xx) => gRound((b[1] - a[1]) * (xx - a[0]) / (b[0] - a[0]) + a[1]);
+
       if (two) {
         const top = T + cy;
-        if ((shape & 1) || (shape === 5)) {
-          // 개방형 맨홀 기본 형상 (정면도: 넥 프레임 + 기립된 팔각 덮개 + X자 리브, 상단 높이 top + 700)
-          const mhW = 550, mhH = 60, covW = 580, covH = 640;
-          rect(x + ms - mhW / 2, y + top, x + ms + mhW / 2, y + top + mhH, 'PANEL');
-          const ch = 120;
-          const cx0 = x + ms, cy0 = y + top + mhH;
-          const octOuter = [
-            [cx0 - covW / 2 + ch, cy0], [cx0 + covW / 2 - ch, cy0],
-            [cx0 + covW / 2, cy0 + ch], [cx0 + covW / 2, cy0 + covH - ch],
-            [cx0 + covW / 2 - ch, cy0 + covH], [cx0 - covW / 2 + ch, cy0 + covH],
-            [cx0 - covW / 2, cy0 + covH - ch], [cx0 - covW / 2, cy0 + ch]
-          ];
-          poly(octOuter, 'PANEL', true);
-          const ich = 90, iw = covW - 140, ih = covH - 140, icy0 = cy0 + 70;
-          const octInner = [
-            [cx0 - iw / 2 + ich, icy0], [cx0 + iw / 2 - ich, icy0],
-            [cx0 + iw / 2, icy0 + ich], [cx0 + iw / 2, icy0 + ih - ich],
-            [cx0 + iw / 2 - ich, icy0 + ih], [cx0 - iw / 2 + ich, icy0 + ih],
-            [cx0 - iw / 2, icy0 + ih - ich], [cx0 - iw / 2, icy0 + ich]
-          ];
-          poly(octInner, 'PANEL', true);
-          const centerCoverY = cy0 + covH / 2;
-          circ(cx0, centerCoverY, 50, 'PANEL');
-          circ(cx0, centerCoverY, 25, 'PANEL');
-          ln([cx0 - 35, centerCoverY - 35], [cx0 - iw / 2 + ich * 0.7, icy0 + ich * 0.7], 'PANEL');
-          ln([cx0 + 35, centerCoverY - 35], [cx0 + iw / 2 - ich * 0.7, icy0 + ich * 0.7], 'PANEL');
-          ln([cx0 - 35, centerCoverY + 35], [cx0 - iw / 2 + ich * 0.7, icy0 + ih - ich * 0.7], 'PANEL');
-          ln([cx0 + 35, centerCoverY + 35], [cx0 + iw / 2 - ich * 0.7, icy0 + ih - ich * 0.7], 'PANEL');
-          rect(cx0 - 25, cy0 + covH, cx0 + 25, cy0 + covH + 25, 'PANEL');
-          rect(cx0 - 40, cy0 - 15, cx0 + 40, cy0 + 15, 'PANEL');
-        }
-        if ((shape & 2) || (shape === 6)) {
-          // 개방형 맨홀 기본 형상 (측면도: 넥 프레임 + 기립된 덮개 측면 프로파일, 상단 높이 top + 700)
-          const mhW = 550, mhH = 60, covH = 640;
-          rect(x + ms - mhW / 2, y + top, x + ms + mhW / 2, y + top + mhH, 'PANEL');
-          const hx = x + ms - 180;
-          rect(hx - 15, y + top + mhH, hx + 15, y + top + mhH + covH, 'PANEL');
-          ln([hx + 15, y + top + mhH + 60], [x + ms + 140, y + top + mhH], 'PANEL');
-          rect(hx - 25, y + top + mhH - 10, hx + 25, y + top + mhH + 15, 'PANEL');
+        if (hasMh) {
+          if (mhViewType === 'front') {
+            // 정면도 기본 형상: 넥 프레임 + 기립된 팔각 덮개 정면 + X자 리브 + 중앙 동심원 + 손잡이/힌지
+            const mhW = 550, mhH = 60, covW = 580, covH = 640;
+            rect(x + ms - mhW / 2, y + top, x + ms + mhW / 2, y + top + mhH, 'PANEL');
+            const ch = 120;
+            const cx0 = x + ms, cy0 = y + top + mhH;
+            const octOuter = [
+              [cx0 - covW / 2 + ch, cy0], [cx0 + covW / 2 - ch, cy0],
+              [cx0 + covW / 2, cy0 + ch], [cx0 + covW / 2, cy0 + covH - ch],
+              [cx0 + covW / 2 - ch, cy0 + covH], [cx0 - covW / 2 + ch, cy0 + covH],
+              [cx0 - covW / 2, cy0 + covH - ch], [cx0 - covW / 2, cy0 + ch]
+            ];
+            poly(octOuter, 'PANEL', true);
+            const ich = 90, iw = covW - 140, ih = covH - 140, icy0 = cy0 + 70;
+            const octInner = [
+              [cx0 - iw / 2 + ich, icy0], [cx0 + iw / 2 - ich, icy0],
+              [cx0 + iw / 2, icy0 + ich], [cx0 + iw / 2, icy0 + ih - ich],
+              [cx0 + iw / 2 - ich, icy0 + ih], [cx0 - iw / 2 + ich, icy0 + ih],
+              [cx0 - iw / 2, icy0 + ih - ich], [cx0 - iw / 2, icy0 + ich]
+            ];
+            poly(octInner, 'PANEL', true);
+            const centerCoverY = cy0 + covH / 2;
+            circ(cx0, centerCoverY, 50, 'PANEL');
+            circ(cx0, centerCoverY, 25, 'PANEL');
+            ln([cx0 - 35, centerCoverY - 35], [cx0 - iw / 2 + ich * 0.7, icy0 + ich * 0.7], 'PANEL');
+            ln([cx0 + 35, centerCoverY - 35], [cx0 + iw / 2 - ich * 0.7, icy0 + ich * 0.7], 'PANEL');
+            ln([cx0 - 35, centerCoverY + 35], [cx0 - iw / 2 + ich * 0.7, icy0 + ih - ich * 0.7], 'PANEL');
+            ln([cx0 + 35, centerCoverY + 35], [cx0 + iw / 2 - ich * 0.7, icy0 + ih - ich * 0.7], 'PANEL');
+            rect(cx0 - 25, cy0 + covH, cx0 + 25, cy0 + covH + 25, 'PANEL');
+            rect(cx0 - 40, cy0 - 15, cx0 + 40, cy0 + 15, 'PANEL');
+          } else if (mhViewType === 'rear') {
+            // 배면도 기본 형상: 넥 프레임 + 기립된 팔각 덮개 배면 외곽 + 배면 보강 세로바 + 지지 브래킷 + 힌지/걸쇠
+            const mhW = 550, mhH = 60, covW = 580, covH = 640;
+            rect(x + ms - mhW / 2, y + top, x + ms + mhW / 2, y + top + mhH, 'PANEL');
+            const ch = 120;
+            const cx0 = x + ms, cy0 = y + top + mhH;
+            const octOuter = [
+              [cx0 - covW / 2 + ch, cy0], [cx0 + covW / 2 - ch, cy0],
+              [cx0 + covW / 2, cy0 + ch], [cx0 + covW / 2, cy0 + covH - ch],
+              [cx0 + covW / 2 - ch, cy0 + covH], [cx0 - covW / 2 + ch, cy0 + covH],
+              [cx0 - covW / 2, cy0 + covH - ch], [cx0 - covW / 2, cy0 + ch]
+            ];
+            poly(octOuter, 'PANEL', true);
+            // 배면 보강 세로 리브 2줄
+            ln([cx0 - 110, cy0], [cx0 - 110, cy0 + covH], 'PANEL');
+            ln([cx0 + 110, cy0], [cx0 + 110, cy0 + covH], 'PANEL');
+            // 가로 지지 브래킷
+            rect(cx0 - 30, cy0 + 200, cx0 + 30, cy0 + 260, 'PANEL');
+            rect(cx0 - 25, cy0 + covH, cx0 + 25, cy0 + covH + 25, 'PANEL');
+            rect(cx0 - 40, cy0 - 15, cx0 + 40, cy0 + 15, 'PANEL');
+          } else if (mhViewType === 'side_right') {
+            // 측면도 (입구 우측/동측 또는 북측): 넥 프레임 + 좌측 기립 덮개 + 우측 지지대 및 입구 턱
+            const mhW = 550, mhH = 60, covH = 640;
+            rect(x + ms - mhW / 2, y + top, x + ms + mhW / 2, y + top + mhH, 'PANEL');
+            const hx = x + ms - 180;
+            rect(hx - 15, y + top + mhH, hx + 15, y + top + mhH + covH, 'PANEL');
+            ln([hx + 15, y + top + mhH + 60], [x + ms + 140, y + top + mhH], 'PANEL');
+            rect(hx - 25, y + top + mhH - 10, hx + 25, y + top + mhH + 15, 'PANEL');
+            // 우측 입구 걸쇠 턱 (입구 강조)
+            rect(x + ms + mhW / 2 - 35, y + top + mhH - 8, x + ms + mhW / 2 + 5, y + top + mhH + 12, 'PANEL');
+          } else if (mhViewType === 'side_left') {
+            // 측면도 (입구 좌측/서측 또는 남측): 넥 프레임 + 우측 기립 덮개 + 좌측 지지대 및 입구 턱 (좌우 대칭 반전)
+            const mhW = 550, mhH = 60, covH = 640;
+            rect(x + ms - mhW / 2, y + top, x + ms + mhW / 2, y + top + mhH, 'PANEL');
+            const hx = x + ms + 180;
+            rect(hx - 15, y + top + mhH, hx + 15, y + top + mhH + covH, 'PANEL');
+            ln([hx - 15, y + top + mhH + 60], [x + ms - 140, y + top + mhH], 'PANEL');
+            rect(hx - 25, y + top + mhH - 10, hx + 25, y + top + mhH + 15, 'PANEL');
+            // 좌측 입구 걸쇠 턱 (입구 강조)
+            rect(x + ms - mhW / 2 - 5, y + top + mhH - 8, x + ms - mhW / 2 + 35, y + top + mhH + 12, 'PANEL');
+          }
         }
         if (shape & 4) {
-          let h = top; [[110, 10], [60, 60], [100, 6], [90, 30]].forEach(([w, hh]) => { rect(x + ms - w / 2, y + h, x + ms + w / 2, y + h + hh, 'PANEL'); h += hh; });
+          // 환기구 (에어벤트)
+          const vx = hasMh ? (x + ms + 280) : (x + ms);
+          let h = top; [[110, 10], [60, 60], [100, 6], [90, 30]].forEach(([w, hh]) => { rect(vx - w / 2, y + h, vx + w / 2, y + h + hh, 'PANEL'); h += hh; });
         }
         return;
       }
@@ -5002,10 +5091,57 @@ canvas.drag{cursor:grabbing}
 
     // 맨홀 모양 (IndexFrontManhole / IndexSideManhole): 열(정면) 또는 행(측면)에 걸친 표식을 합산
     const mmap = createMap(opt), marks = opt.marks || {};
-    const shapeOf = g => { let sh = 0; const n = view === 'front' ? mmap.rows.length : mmap.cols.length;
-      for (let k = 0; k < n; k++) { const i = view === 'front' ? k : g, j = view === 'front' ? g : k; if (!mmap.has(i, j)) continue;
-        const m = marks[i + ',' + j] || 0; if (m === 3) return view === 'front' ? 5 : 6; if (m === 1) sh |= view === 'front' ? 1 : 2; if (m === 2) sh |= 4; }
-      return sh; };
+    const shapeOf = g => {
+      let sh = 0;
+      let mhFound = false;
+      let targetMhViewType = null;
+      let targetMhDir = null;
+
+      if (view === 'front') {
+        // Front View: 정면(남측)에서 배면(북측) 방향으로 스캔 (앞쪽 행부터 우선)
+        for (let k = 0; k < mmap.rows.length; k++) {
+          const i = k, j = g;
+          if (!mmap.has(i, j)) continue;
+          const m = marks[i + ',' + j] || 0;
+          if (m & 2) sh |= 4; // airvent
+          if ((m & 1) && !mhFound) {
+            mhFound = true;
+            targetMhDir = getManholeDir(opt, mmap, i, j);
+            targetMhViewType = getManholeViewType(targetMhDir, 'front');
+            if (targetMhViewType === 'front') sh |= 1;
+            else if (targetMhViewType === 'side_right') sh |= 2;
+            else if (targetMhViewType === 'side_left') sh |= 8;
+            else if (targetMhViewType === 'rear') sh |= 16;
+          }
+        }
+      } else {
+        // Side View (우측면도): 동측에서 서측 방향으로 스캔 (동측 열부터 우선)
+        for (let k = mmap.cols.length - 1; k >= 0; k--) {
+          const i = g, j = k;
+          if (!mmap.has(i, j)) continue;
+          const m = marks[i + ',' + j] || 0;
+          if (m & 2) sh |= 4; // airvent
+          if ((m & 1) && !mhFound) {
+            mhFound = true;
+            targetMhDir = getManholeDir(opt, mmap, i, j);
+            targetMhViewType = getManholeViewType(targetMhDir, 'side');
+            if (targetMhViewType === 'front') sh |= 1;
+            else if (targetMhViewType === 'side_right') sh |= 2;
+            else if (targetMhViewType === 'side_left') sh |= 8;
+            else if (targetMhViewType === 'rear') sh |= 16;
+          }
+        }
+      }
+
+      return {
+        sh,
+        hasMh: mhFound,
+        hasVent: Boolean(sh & 4),
+        mhViewType: targetMhViewType || (view === 'front' ? 'front' : 'side_right'),
+        mhDir: targetMhDir,
+        valueOf() { return this.sh; }
+      };
+    };
     let gIdx = 0;
     let baseX = 0;
     secs.forEach(nLen => {
@@ -5441,8 +5577,8 @@ canvas.drag{cursor:grabbing}
     const nGridCols = mmap.cols.length, nGridRows = mmap.rows.length;
     const nViewDim = view === 'front' ? nGridCols : nGridRows;
     for (let g = 0; g < nViewDim; g++) {
-      const sh = shapeOf(g);
-      if ((sh & 1) || (sh & 2) || sh === 5 || sh === 6) {
+      const shInfo = shapeOf(g);
+      if (shInfo.hasMh || (shInfo.sh & 1) || (shInfo.sh & 2) || (shInfo.sh & 8) || (shInfo.sh & 16) || shInfo.sh === 5 || shInfo.sh === 6) {
         hasMhInView = true;
         break;
       }
@@ -6562,6 +6698,15 @@ canvas.drag{cursor:grabbing}
       const accDepth = getDepth(cx, cy, H + 50);
 
       if (mk & 1) { // 맨홀 (평면도 markShapes 및 정면도 CManholeLT 저상형 림 형상)
+        const mhDir = getManholeDir(opt, map, i, j);
+        const angleMap = { 'D': 0, 'south': 0, 'U': Math.PI, 'north': Math.PI, 'R': Math.PI / 2, 'east': Math.PI / 2, 'L': -Math.PI / 2, 'west': -Math.PI / 2 };
+        const angle = angleMap[mhDir] || 0;
+        const cosA = Math.cos(angle), sinA = Math.sin(angle);
+        const rotMh = (px, py) => {
+          const dx = px - 500, dy = py - 500;
+          return [x0 + 500 + (dx * cosA - dy * sinA), y0 + 500 + (dx * sinA + dy * cosA)];
+        };
+
         // 1) 외곽 원형 림 Ø600
         isoCircle(cx, cy, H, 300, 'XY', 'FRAME', accDepth);
         isoCircle(cx, cy, H, 270, 'XY', 'PANEL_DETAIL', accDepth);
@@ -6569,16 +6714,16 @@ canvas.drag{cursor:grabbing}
         // 2) 평면도 내부 팔각 리브 형상
         const oct1 = [[260, 105], [735, 105], [888, 260], [888, 735], [735, 888], [262, 888], [105, 735], [105, 260]];
         const oct2 = [[150, 280], [290, 150], [710, 150], [850, 280], [850, 720], [710, 850], [290, 850], [150, 720]];
-        poly(oct1.map(p => toIso(x0 + p[0], y0 + p[1], H)), 'FRAME', true, false, accDepth);
-        poly(oct2.map(p => toIso(x0 + p[0], y0 + p[1], H)), 'FRAME', true, false, accDepth);
+        poly(oct1.map(p => { const [rx, ry] = rotMh(...p); return toIso(rx, ry, H); }), 'FRAME', true, false, accDepth);
+        poly(oct2.map(p => { const [rx, ry] = rotMh(...p); return toIso(rx, ry, H); }), 'FRAME', true, false, accDepth);
 
         // 3) 손잡이/힌지 디테일 박스
         const tab1 = [[310, 110], [390, 110], [390, 67], [310, 67]];
         const tab2 = [[610, 110], [690, 110], [690, 67], [610, 67]];
         const tab3 = [[462, 945], [538, 945], [538, 898], [462, 898]];
-        poly(tab1.map(p => toIso(x0 + p[0], y0 + p[1], H)), 'FRAME', true, false, accDepth);
-        poly(tab2.map(p => toIso(x0 + p[0], y0 + p[1], H)), 'FRAME', true, false, accDepth);
-        poly(tab3.map(p => toIso(x0 + p[0], y0 + p[1], H)), 'FRAME', true, false, accDepth);
+        poly(tab1.map(p => { const [rx, ry] = rotMh(...p); return toIso(rx, ry, H); }), 'FRAME', true, false, accDepth);
+        poly(tab2.map(p => { const [rx, ry] = rotMh(...p); return toIso(rx, ry, H); }), 'FRAME', true, false, accDepth);
+        poly(tab3.map(p => { const [rx, ry] = rotMh(...p); return toIso(rx, ry, H); }), 'FRAME', true, false, accDepth);
 
         // 4) 정면도 CManholeLT 40mm 저상형 림
         const rimH = 40;
@@ -6587,10 +6732,13 @@ canvas.drag{cursor:grabbing}
         ln(toIso(cx + 300, cy, H), toIso(cx + 300, cy, H + rimH), 'FRAME', accDepth);
         ln(toIso(cx, cy - 300, H), toIso(cx, cy - 300, H + rimH), 'FRAME', accDepth);
         ln(toIso(cx, cy + 300, H), toIso(cx, cy + 300, H + rimH), 'FRAME', accDepth);
-        // 중앙 손잡이
-        ln(toIso(cx - 70, cy, H + rimH + 25), toIso(cx + 70, cy, H + rimH + 25), 'FRAME', accDepth);
-        ln(toIso(cx - 70, cy, H + rimH), toIso(cx - 70, cy, H + rimH + 25), 'FRAME', accDepth);
-        ln(toIso(cx + 70, cy, H + rimH), toIso(cx + 70, cy, H + rimH + 25), 'FRAME', accDepth);
+        // 중앙 손잡이 (방향 연동)
+        const hCos = Math.cos(angle), hSin = Math.sin(angle);
+        const hx1 = -70 * hCos, hy1 = -70 * hSin;
+        const hx2 = 70 * hCos, hy2 = 70 * hSin;
+        ln(toIso(cx + hx1, cy + hy1, H + rimH + 25), toIso(cx + hx2, cy + hy2, H + rimH + 25), 'FRAME', accDepth);
+        ln(toIso(cx + hx1, cy + hy1, H + rimH), toIso(cx + hx1, cy + hy1, H + rimH + 25), 'FRAME', accDepth);
+        ln(toIso(cx + hx2, cy + hy2, H + rimH), toIso(cx + hx2, cy + hy2, H + rimH + 25), 'FRAME', accDepth);
       }
 
       if (mk & 2) { // 에어벤트 (평면도 동심원 십자선 및 정면도 버섯형 캡)
@@ -8723,7 +8871,7 @@ canvas.drag{cursor:grabbing}
     return o.join('\r\n') + '\r\n';
   }
 
-  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable };
+  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TankCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -12569,7 +12717,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.16</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.17</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
