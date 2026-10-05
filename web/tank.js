@@ -5220,6 +5220,13 @@
     // 10. 화가 알고리즘 (Painter's Algorithm) 정렬: 원거리(높은 depth) -> 근거리(낮은 depth)
     ents.forEach((e, idx) => { e._idx = idx; });
     ents.sort((a, b) => {
+      // 기초 콘크리트 패드(PAD / isFoundation)는 항상 탱크 본체(z >= 0) 하부에 위치하므로
+      // 화가 알고리즘에서 가장 먼저(원거리/배경) 그려져야 하며, 상부 판넬/프레임을 덮어 지우지 않아야 함
+      const isFoundA = a.isFoundation || a.layer === 'PAD';
+      const isFoundB = b.isFoundation || b.layer === 'PAD';
+      if (isFoundA !== isFoundB) {
+        return isFoundA ? -1 : 1;
+      }
       const dDiff = (b.depth !== undefined ? b.depth : 0) - (a.depth !== undefined ? a.depth : 0);
       if (Math.abs(dDiff) > 1e-4) return dDiff;
       return a._idx - b._idx;
