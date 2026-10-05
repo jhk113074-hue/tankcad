@@ -5123,121 +5123,126 @@
       }
     });
 
-    // 7. 벽체 보강재 (Internal Reinforcement Plates: media_1791203608783.png 표준 보강 격자판 형상)
-    const HX = 90, hq = 45, sr = 9;
+    // 7. 벽체 보강재 (Internal Reinforcement Plates: media_1791203608783.png 표준 보강 격자판 형상 - 플랜지 외측 전면 배치)
+    const flangeD = 75; // 외부 플랜지 돌출 폭 (75mm)
+    const HX = 110, hq = 55, sr = 12;
 
-    // (1) 전면 벽체 보강재 (Front-Facing Walls: plane 'XZ')
+    // (1) 전면 벽체 보강재 (Front-Facing Walls: plane 'XZ', Y = y0 - flangeD)
     for (let i = 0; i < map.rows.length; i++) {
       const y0 = map.ys[i];
       for (let j = 0; j < map.cols.length; j++) {
         if (!map.has(i, j) || map.has(i - 1, j)) continue;
         const x0 = map.xs[j], x1 = map.xs[j + 1];
+        const py = y0 - flangeD;
 
         // 수평 단간 접합부 격자판 (Tier Seams: z = zs[k])
         for (let k = 1; k < hs.length; k++) {
           const z = zs[k];
           // 좌측 모서리 또는 접합부
           if (!map.has(i, j - 1)) {
-            // 외곽 좌측 끝: halfPlate (우향 90x180, 2볼트)
-            const pDepth = getDepth(x0 + HX / 2, y0, z) - 15;
-            poly([toIso(x0, y0, z - HX), toIso(x0 + HX, y0, z - HX), toIso(x0 + HX, y0, z + HX), toIso(x0, y0, z + HX)], 'REINF', true, false, pDepth);
-            isoCircle(x0 + hq, y0, z + hq, sr, 'XZ', 'REINF', pDepth, 8);
-            isoCircle(x0 + hq, y0, z - hq, sr, 'XZ', 'REINF', pDepth, 8);
+            // 외곽 좌측 끝: halfPlate (우향 110x220, 2볼트)
+            const pDepth = getDepth(x0 + HX / 2, py, z) - 30;
+            poly([toIso(x0, py, z - HX), toIso(x0 + HX, py, z - HX), toIso(x0 + HX, py, z + HX), toIso(x0, py, z + HX)], 'REINF', true, true, pDepth);
+            isoCircle(x0 + hq, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
+            isoCircle(x0 + hq, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
           } else {
-            // 내부 기둥 접합부: fullPlate (180x180, 4볼트)
-            const pDepth = getDepth(x0, y0, z) - 15;
-            poly([toIso(x0 - HX, y0, z - HX), toIso(x0 + HX, y0, z - HX), toIso(x0 + HX, y0, z + HX), toIso(x0 - HX, y0, z + HX)], 'REINF', true, false, pDepth);
-            isoCircle(x0 - hq, y0, z + hq, sr, 'XZ', 'REINF', pDepth, 8);
-            isoCircle(x0 - hq, y0, z - hq, sr, 'XZ', 'REINF', pDepth, 8);
-            isoCircle(x0 + hq, y0, z + hq, sr, 'XZ', 'REINF', pDepth, 8);
-            isoCircle(x0 + hq, y0, z - hq, sr, 'XZ', 'REINF', pDepth, 8);
+            // 내부 기둥 접합부: fullPlate (220x220, 4볼트 + 중앙 원형 보스)
+            const pDepth = getDepth(x0, py, z) - 30;
+            poly([toIso(x0 - HX, py, z - HX), toIso(x0 + HX, py, z - HX), toIso(x0 + HX, py, z + HX), toIso(x0 - HX, py, z + HX)], 'REINF', true, true, pDepth);
+            isoCircle(x0 - hq, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
+            isoCircle(x0 - hq, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
+            isoCircle(x0 + hq, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
+            isoCircle(x0 + hq, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
+            isoCircle(x0, py, z, 18, 'XZ', 'REINF', pDepth, 12);
           }
 
-          // 우측 모서리 끝단 (마지막 열인 경우): halfPlate (좌향 90x180, 2볼트)
+          // 우측 모서리 끝단 (마지막 열인 경우): halfPlate (좌향 110x220, 2볼트)
           if (!map.has(i, j + 1)) {
-            const pDepth = getDepth(x1 - HX / 2, y0, z) - 15;
-            poly([toIso(x1 - HX, y0, z - HX), toIso(x1, y0, z - HX), toIso(x1, y0, z + HX), toIso(x1 - HX, y0, z + HX)], 'REINF', true, false, pDepth);
-            isoCircle(x1 - hq, y0, z + hq, sr, 'XZ', 'REINF', pDepth, 8);
-            isoCircle(x1 - hq, y0, z - hq, sr, 'XZ', 'REINF', pDepth, 8);
+            const pDepth = getDepth(x1 - HX / 2, py, z) - 30;
+            poly([toIso(x1 - HX, py, z - HX), toIso(x1, py, z - HX), toIso(x1, py, z + HX), toIso(x1 - HX, py, z + HX)], 'REINF', true, true, pDepth);
+            isoCircle(x1 - hq, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
+            isoCircle(x1 - hq, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
           }
         }
 
-        // 최상단 판넬 중앙 보강판 (midRect: 180x90, 2볼트)
+        // 최상단 판넬 중앙 보강판 (midRect: 220x110, 2볼트)
         if (hs.length >= 1) {
           const topK = hs.length - 1;
           const topZMid = zs[topK] + Math.round(hs[topK] / 2);
           if (map.has(i, j - 1)) {
-            const pDepth = getDepth(x0, y0, topZMid) - 15;
-            poly([toIso(x0 - HX, y0, topZMid - hq), toIso(x0 + HX, y0, topZMid - hq), toIso(x0 + HX, y0, topZMid + hq), toIso(x0 - HX, y0, topZMid + hq)], 'REINF', true, false, pDepth);
-            isoCircle(x0 - hq, y0, topZMid, sr, 'XZ', 'REINF', pDepth, 8);
-            isoCircle(x0 + hq, y0, topZMid, sr, 'XZ', 'REINF', pDepth, 8);
+            const pDepth = getDepth(x0, py, topZMid) - 30;
+            poly([toIso(x0 - HX, py, topZMid - hq), toIso(x0 + HX, py, topZMid - hq), toIso(x0 + HX, py, topZMid + hq), toIso(x0 - HX, py, topZMid + hq)], 'REINF', true, true, pDepth);
+            isoCircle(x0 - hq, py, topZMid, sr, 'XZ', 'REINF', pDepth, 12);
+            isoCircle(x0 + hq, py, topZMid, sr, 'XZ', 'REINF', pDepth, 12);
           }
         }
 
-        // H > 3000 바닥 보강판 (lowPlate: 180x90, 2볼트)
+        // H > 3000 바닥 보강판 (lowPlate: 220x110, 2볼트)
         if (H > 3000 && map.has(i, j - 1)) {
-          const pDepth = getDepth(x0, y0, hq) - 15;
-          poly([toIso(x0 - HX, y0, 0), toIso(x0 + HX, y0, 0), toIso(x0 + HX, y0, HX), toIso(x0 - HX, y0, HX)], 'REINF', true, false, pDepth);
-          isoCircle(x0 - hq, y0, hq, sr, 'XZ', 'REINF', pDepth, 8);
-          isoCircle(x0 + hq, y0, hq, sr, 'XZ', 'REINF', pDepth, 8);
+          const pDepth = getDepth(x0, py, hq) - 30;
+          poly([toIso(x0 - HX, py, 0), toIso(x0 + HX, py, 0), toIso(x0 + HX, py, HX), toIso(x0 - HX, py, HX)], 'REINF', true, true, pDepth);
+          isoCircle(x0 - hq, py, hq, sr, 'XZ', 'REINF', pDepth, 12);
+          isoCircle(x0 + hq, py, hq, sr, 'XZ', 'REINF', pDepth, 12);
         }
       }
     }
 
-    // (2) 우측 벽체 보강재 (Right-Facing Walls: plane 'YZ')
+    // (2) 우측 벽체 보강재 (Right-Facing Walls: plane 'YZ', X = xWall + flangeD)
     for (let i = 0; i < map.rows.length; i++) {
       const y0 = map.ys[i], y1 = map.ys[i + 1];
       for (let j = 0; j < map.cols.length; j++) {
         if (!map.has(i, j) || map.has(i, j + 1)) continue;
         const xWall = map.xs[j + 1];
+        const px = xWall + flangeD;
 
         // 수평 단간 접합부 격자판
         for (let k = 1; k < hs.length; k++) {
           const z = zs[k];
           // 전면 모서리 또는 접합부
           if (!map.has(i - 1, j)) {
-            // 외곽 전면 끝: halfPlate (후향 90x180, 2볼트)
-            const pDepth = getDepth(xWall, y0 + HX / 2, z) - 15;
-            poly([toIso(xWall, y0, z - HX), toIso(xWall, y0 + HX, z - HX), toIso(xWall, y0 + HX, z + HX), toIso(xWall, y0, z + HX)], 'REINF', true, false, pDepth);
-            isoCircle(xWall, y0 + hq, z + hq, sr, 'YZ', 'REINF', pDepth, 8);
-            isoCircle(xWall, y0 + hq, z - hq, sr, 'YZ', 'REINF', pDepth, 8);
+            // 외곽 전면 끝: halfPlate (후향 110x220, 2볼트)
+            const pDepth = getDepth(px, y0 + HX / 2, z) - 30;
+            poly([toIso(px, y0, z - HX), toIso(px, y0 + HX, z - HX), toIso(px, y0 + HX, z + HX), toIso(px, y0, z + HX)], 'REINF', true, true, pDepth);
+            isoCircle(px, y0 + hq, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
+            isoCircle(px, y0 + hq, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
           } else {
-            // 내부 기둥 접합부: fullPlate (180x180, 4볼트)
-            const pDepth = getDepth(xWall, y0, z) - 15;
-            poly([toIso(xWall, y0 - HX, z - HX), toIso(xWall, y0 + HX, z - HX), toIso(xWall, y0 + HX, z + HX), toIso(xWall, y0 - HX, z + HX)], 'REINF', true, false, pDepth);
-            isoCircle(xWall, y0 - hq, z + hq, sr, 'YZ', 'REINF', pDepth, 8);
-            isoCircle(xWall, y0 - hq, z - hq, sr, 'YZ', 'REINF', pDepth, 8);
-            isoCircle(xWall, y0 + hq, z + hq, sr, 'YZ', 'REINF', pDepth, 8);
-            isoCircle(xWall, y0 + hq, z - hq, sr, 'YZ', 'REINF', pDepth, 8);
+            // 내부 기둥 접합부: fullPlate (220x220, 4볼트 + 중앙 원형 보스)
+            const pDepth = getDepth(px, y0, z) - 30;
+            poly([toIso(px, y0 - HX, z - HX), toIso(px, y0 + HX, z - HX), toIso(px, y0 + HX, z + HX), toIso(px, y0 - HX, z + HX)], 'REINF', true, true, pDepth);
+            isoCircle(px, y0 - hq, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
+            isoCircle(px, y0 - hq, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
+            isoCircle(px, y0 + hq, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
+            isoCircle(px, y0 + hq, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
+            isoCircle(px, y0, z, 18, 'YZ', 'REINF', pDepth, 12);
           }
 
-          // 후면 모서리 끝단 (마지막 행인 경우): halfPlate (전향 90x180, 2볼트)
+          // 후면 모서리 끝단 (마지막 행인 경우): halfPlate (전향 110x220, 2볼트)
           if (!map.has(i + 1, j)) {
-            const pDepth = getDepth(xWall, y1 - HX / 2, z) - 15;
-            poly([toIso(xWall, y1 - HX, z - HX), toIso(xWall, y1, z - HX), toIso(xWall, y1, z + HX), toIso(xWall, y1 - HX, z + HX)], 'REINF', true, false, pDepth);
-            isoCircle(xWall, y1 - hq, z + hq, sr, 'YZ', 'REINF', pDepth, 8);
-            isoCircle(xWall, y1 - hq, z - hq, sr, 'YZ', 'REINF', pDepth, 8);
+            const pDepth = getDepth(px, y1 - HX / 2, z) - 30;
+            poly([toIso(px, y1 - HX, z - HX), toIso(px, y1, z - HX), toIso(px, y1, z + HX), toIso(px, y1 - HX, z + HX)], 'REINF', true, true, pDepth);
+            isoCircle(px, y1 - hq, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
+            isoCircle(px, y1 - hq, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
           }
         }
 
-        // 최상단 판넬 중앙 보강판 (midRect: 180x90, 2볼트)
+        // 최상단 판넬 중앙 보강판 (midRect: 220x110, 2볼트)
         if (hs.length >= 1) {
           const topK = hs.length - 1;
           const topZMid = zs[topK] + Math.round(hs[topK] / 2);
           if (map.has(i - 1, j)) {
-            const pDepth = getDepth(xWall, y0, topZMid) - 15;
-            poly([toIso(xWall, y0 - HX, topZMid - hq), toIso(xWall, y0 + HX, topZMid - hq), toIso(xWall, y0 + HX, topZMid + hq), toIso(xWall, y0 - HX, topZMid + hq)], 'REINF', true, false, pDepth);
-            isoCircle(xWall, y0 - hq, topZMid, sr, 'YZ', 'REINF', pDepth, 8);
-            isoCircle(xWall, y0 + hq, topZMid, sr, 'YZ', 'REINF', pDepth, 8);
+            const pDepth = getDepth(px, y0, topZMid) - 30;
+            poly([toIso(px, y0 - HX, topZMid - hq), toIso(px, y0 + HX, topZMid - hq), toIso(px, y0 + HX, topZMid + hq), toIso(px, y0 - HX, topZMid + hq)], 'REINF', true, true, pDepth);
+            isoCircle(px, y0 - hq, topZMid, sr, 'YZ', 'REINF', pDepth, 12);
+            isoCircle(px, y0 + hq, topZMid, sr, 'YZ', 'REINF', pDepth, 12);
           }
         }
 
-        // H > 3000 바닥 보강판 (lowPlate: 180x90, 2볼트)
+        // H > 3000 바닥 보강판 (lowPlate: 220x110, 2볼트)
         if (H > 3000 && map.has(i - 1, j)) {
-          const pDepth = getDepth(xWall, y0, hq) - 15;
-          poly([toIso(xWall, y0 - HX, 0), toIso(xWall, y0 + HX, 0), toIso(xWall, y0 + HX, HX), toIso(xWall, y0 - HX, HX)], 'REINF', true, false, pDepth);
-          isoCircle(xWall, y0 - hq, hq, sr, 'YZ', 'REINF', pDepth, 8);
-          isoCircle(xWall, y0 + hq, hq, sr, 'YZ', 'REINF', pDepth, 8);
+          const pDepth = getDepth(px, y0, hq) - 30;
+          poly([toIso(px, y0 - HX, 0), toIso(px, y0 + HX, 0), toIso(px, y0 + HX, HX), toIso(px, y0 - HX, HX)], 'REINF', true, true, pDepth);
+          isoCircle(px, y0 - hq, hq, sr, 'YZ', 'REINF', pDepth, 12);
+          isoCircle(px, y0 + hq, hq, sr, 'YZ', 'REINF', pDepth, 12);
         }
       }
     }
