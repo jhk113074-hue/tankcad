@@ -6459,245 +6459,182 @@ canvas.drag{cursor:grabbing}
     };
 
     inFoundation = true;
-    // 1. 콘크리트 패드 (Concrete Foundation & Plinths: 300mm 기둥, 150mm 연속 바닥 슬래브, GL -750)
+    // 1. 기초 콘크리트 패드 (Concrete Foundation & Plinths: 2D concStrips 및 기초단면과 100% 일치하는 정밀 캐슬 솔리드 모델)
+    const fDesign = getFoundationDesign(opt);
     const th = opt.th || opt.frame || 75;
     const padH = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
-    const clearanceH = th + padH; // 600mm
-    const slabTopY = -clearanceH; // -600mm
-    const slabT = 150;
-    const slabBotY = slabTopY - slabT; // -750mm
-    const GRD = slabBotY; // -750mm
-    const firstW = Number(opt && opt.padFirstW) || 400;
-    const midW = Number(opt && opt.padMidW) || 300;
-    const lastW = Number(opt && (opt.padLastW !== undefined ? opt.padLastW : opt.padFirstW)) || firstW;
-    const px0 = -firstW / 2;
-    const pxEnd = totalL + lastW / 2;
-    const PAD_OV = (opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : 200;
-    const padPitch = (opt.pitch === 'custom' && opt.customPitch) ? opt.customPitch : ((opt.padPitch || opt.pitch) === 500 ? 500 : 1000);
+    const clearanceH = th + padH;
+    const slabTopY = -clearanceH;
+    const slabT = fDesign.slabT || 150;
+    const slabBotY = slabTopY - slabT;
 
-    const nR = map.rows.length;
-    const hasTankAtRow = (idx, r) => {
-      if (Number.isInteger(idx)) {
-        return (idx > 0 && map.has(r, idx - 1)) || (idx < map.cols.length && map.has(r, idx));
-      }
-      const c = Math.floor(idx);
-      return map.has(r, c);
-    };
+    // 2D concStrips와 100% 동일한 패드 보 목록 및 외곽 산출
+    const strips = concStrips(map.cols, opt);
+    const firstW = Number(opt && opt.padFirstW) || (strips[0] ? strips[0][1] : 400);
+    const padOv = (opt && opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : Math.round(firstW / 2);
+    const px0 = strips[0][0];
+    const pxEnd = strips[strips.length - 1][0] + strips[strips.length - 1][1];
+    const minY = -padOv;
+    const maxY = totalW + padOv;
 
-    const runsForStrip = (idx) => {
-      const out = [];
-      let inR = false, sY = 0;
-      for (let r = 0; r < nR; r++) {
-        const has = hasTankAtRow(idx, r);
-        if (has && !inR) { inR = true; sY = map.ys[r]; }
-        else if (!has && inR) { inR = false; out.push([sY, map.ys[r]]); }
-      }
-      if (inR) out.push([sY, totalW]);
-      if (out.length === 0) {
-        for (let r = 0; r < nR; r++) {
-          if (map.has(r, 0)) { out.push([map.ys[r], map.ys[r + 1]]); break; }
+    // (A) 하부 150mm 연속 바닥 매트 슬래브 (Continuous Mat Slab)
+    const slabFrontDepth = getDepth((px0 + pxEnd) / 2, minY, (slabBotY + slabTopY) / 2);
+    const slabRightDepth = getDepth(pxEnd, (minY + maxY) / 2, (slabBotY + slabTopY) / 2);
+
+    // 슬래브 솔리드 면 (음영/은선용: stroke=false, fill=true)
+    poly([
+      toIso(px0, minY, slabTopY),
+      toIso(pxEnd, minY, slabTopY),
+      toIso(pxEnd, minY, slabBotY),
+      toIso(px0, minY, slabBotY)
+    ], 'PAD', false, true, slabFrontDepth);
+
+    poly([
+      toIso(pxEnd, minY, slabTopY),
+      toIso(pxEnd, maxY, slabTopY),
+      toIso(pxEnd, maxY, slabBotY),
+      toIso(pxEnd, minY, slabBotY)
+    ], 'PAD', false, true, slabRightDepth);
+
+    // 슬래브 전면 외곽 테두리선
+    ln(toIso(px0, minY, slabTopY), toIso(pxEnd, minY, slabTopY), 'PAD', slabFrontDepth);
+    ln(toIso(pxEnd, minY, slabTopY), toIso(pxEnd, minY, slabBotY), 'PAD', slabFrontDepth);
+    ln(toIso(pxEnd, minY, slabBotY), toIso(px0, minY, slabBotY), 'PAD', slabFrontDepth);
+    ln(toIso(px0, minY, slabBotY), toIso(px0, minY, slabTopY), 'PAD', slabFrontDepth);
+
+    // 슬래브 전면 45도 콘크리트 사선 해치 (2D 단면도와 100% 일치)
+    const hatchStep = 80;
+    for (let c = -15000; c <= 30000; c += hatchStep) {
+      const z1 = slabBotY, x1 = c;
+      const z2 = slabTopY, x2 = c + slabT;
+      if (x2 >= px0 && x1 <= pxEnd) {
+        const ax = Math.max(px0, x1);
+        const az = slabBotY + (ax - c);
+        const bx = Math.min(pxEnd, x2);
+        const bz = slabBotY + (bx - c);
+        if (bx - ax >= 5 && az >= slabBotY && bz <= slabTopY) {
+          ln(toIso(ax, minY, az), toIso(bx, minY, bz), 'PAD', slabFrontDepth);
         }
       }
-      return out;
-    };
-
-    // 패드 기둥 목록 생성 (Centerlines, bounds [lx, rx], map col idx)
-    const cxs = [{ x: 0, idx: 0 }];
-    let curX = 0;
-    map.cols.forEach((colW, cIdx) => {
-      if (padPitch === 500 && colW >= 1000) {
-        cxs.push({ x: curX + colW / 2, idx: cIdx + 0.5 });
-      }
-      curX += colW;
-      cxs.push({ x: curX, idx: cIdx + 1 });
-    });
-
-    const numPlinths = cxs.length;
-    const plinths = [];
-    for (let i = 0; i < numPlinths; i++) {
-      const { x: cx, idx } = cxs[i];
-      let lx, rx;
-      if (i === 0) {
-        lx = px0;
-        rx = px0 + firstW;
-      } else if (i === numPlinths - 1) {
-        rx = pxEnd;
-        lx = pxEnd - lastW;
-      } else {
-        lx = cx - midW / 2;
-        rx = cx + midW / 2;
-      }
-      plinths.push({ lx, rx, cx, idx });
     }
 
-    // 지반 기준선 (GL Line at z = slabBotY = -750)
-    const glDepth = getDepth(px0 - 150, -PAD_OV, slabBotY);
-    ln(toIso(px0 - 150, -PAD_OV, slabBotY), toIso(pxEnd + 150, -PAD_OV, slabBotY), 'PAD', glDepth);
-    ln(toIso(pxEnd, -PAD_OV, slabBotY), toIso(pxEnd, totalW + PAD_OV + 150, slabBotY), 'PAD', glDepth);
+    // 슬래브 우측면 외곽 실루엣선 (X = pxEnd)
+    ln(toIso(pxEnd, minY, slabTopY), toIso(pxEnd, maxY, slabTopY), 'PAD', slabRightDepth);
+    ln(toIso(pxEnd, minY, slabBotY), toIso(pxEnd, maxY, slabBotY), 'PAD', slabRightDepth);
 
-    // 하부 150mm 연속 바닥 슬래브 (Continuous 150mm Bottom Slab: z = slabBotY ~ slabTopY)
-    // 기둥 및 기둥 간 개구부 구간별 면 분할 렌더링 (화가 알고리즘 정확도 유지, 내부 수직선 없는 단일 슬래브)
-    const frontY = -PAD_OV;
-    plinths.forEach((p, pIdx) => {
-      const sDepth = getDepth((p.lx + p.rx) / 2, frontY, (slabTopY + slabBotY) / 2);
+    // 슬래브 좌측 바닥 GL 실루엣선 (X = px0, West)
+    ln(toIso(px0, minY, slabBotY), toIso(px0, maxY, slabBotY), 'PAD', slabFrontDepth);
+
+    // (B) 콘크리트 패드 기둥 (Plinth Beams: 2D 규격 및 위치 100% 일치, 완전 폐합 캐슬 솔리드)
+    strips.forEach(([lx, w, sIdx], idx) => {
+      const rx = lx + w, cx = lx + w / 2;
+      const midY = (minY + maxY) / 2;
+      const frontDepth = getDepth(cx, minY, (slabTopY - th) / 2);
+      const topDepth = getDepth(cx, midY, -th);
+      const rightDepth = getDepth(rx, midY, (slabTopY - th) / 2);
+
+      // 1) 기둥 솔리드 면 (음영/은선용: stroke=false, fill=true)
       poly([
-        toIso(p.lx, frontY, slabTopY),
-        toIso(p.rx, frontY, slabTopY),
-        toIso(p.rx, frontY, slabBotY),
-        toIso(p.lx, frontY, slabBotY)
-      ], 'PAD', false, true, sDepth);
+        toIso(lx, minY, -th),
+        toIso(rx, minY, -th),
+        toIso(rx, minY, slabTopY),
+        toIso(lx, minY, slabTopY)
+      ], 'PAD', false, true, frontDepth);
 
-      if (pIdx < numPlinths - 1) {
-        const curRx = p.rx;
-        const nextLx = plinths[pIdx + 1].lx;
-        const cDepth = getDepth((curRx + nextLx) / 2, frontY, (slabTopY + slabBotY) / 2);
-        poly([
-          toIso(curRx, frontY, slabTopY),
-          toIso(nextLx, frontY, slabTopY),
-          toIso(nextLx, frontY, slabBotY),
-          toIso(curRx, frontY, slabBotY)
-        ], 'PAD', false, true, cDepth);
-        // 기둥 사이 개구부 바닥 상단 전면 모서리선
-        ln(toIso(curRx, frontY, slabTopY), toIso(nextLx, frontY, slabTopY), 'PAD', cDepth);
+      poly([
+        toIso(lx, minY, -th),
+        toIso(rx, minY, -th),
+        toIso(rx, maxY, -th),
+        toIso(lx, maxY, -th)
+      ], 'PAD', false, true, topDepth);
+
+      poly([
+        toIso(rx, minY, -th),
+        toIso(rx, maxY, -th),
+        toIso(rx, maxY, slabTopY),
+        toIso(rx, minY, slabTopY)
+      ], 'PAD', false, true, rightDepth);
+
+      // 2) 기둥 전면 외곽선 (Front Face at Y = minY)
+      ln(toIso(lx, minY, -th), toIso(rx, minY, -th), 'PAD', frontDepth);
+      ln(toIso(rx, minY, -th), toIso(rx, minY, slabTopY), 'PAD', frontDepth);
+      ln(toIso(rx, minY, slabTopY), toIso(lx, minY, slabTopY), 'PAD', frontDepth);
+      ln(toIso(lx, minY, slabTopY), toIso(lx, minY, -th), 'PAD', frontDepth);
+
+      // 기둥 전면 45도 콘크리트 사선 해치 (2D 단면도와 100% 일치)
+      for (let c = -15000; c <= 30000; c += hatchStep) {
+        const z1 = slabTopY, x1 = c;
+        const z2 = -th, x2 = c + padH;
+        if (x2 >= lx && x1 <= rx) {
+          const ax = Math.max(lx, x1);
+          const az = slabTopY + (ax - c);
+          const bx = Math.min(rx, x2);
+          const bz = slabTopY + (bx - c);
+          if (bx - ax >= 5 && az >= slabTopY && bz <= -th) {
+            ln(toIso(ax, minY, az), toIso(bx, minY, bz), 'PAD', frontDepth);
+          }
+        }
       }
-    });
-    // 슬래브 전면 외곽 테두리선 (하단 GL선 및 양측 단부 수직선)
-    ln(toIso(px0, frontY, slabBotY), toIso(pxEnd, frontY, slabBotY), 'PAD', glDepth);
-    ln(toIso(px0, frontY, slabTopY), toIso(px0, frontY, slabBotY), 'PAD', getDepth(px0, frontY, (slabTopY + slabBotY) / 2));
-    ln(toIso(pxEnd, frontY, slabTopY), toIso(pxEnd, frontY, slabBotY), 'PAD', getDepth(pxEnd, frontY, (slabTopY + slabBotY) / 2));
 
-    // 각 기둥 (Plinth) 및 기둥 사이 캐비티 바닥/측벽 렌더링
-    plinths.forEach((p, sIdx) => {
-      const runs = runsForStrip(p.idx);
+      // 3) 기둥 상면 및 측면 종방향 모서리선 (Y = minY ~ maxY)
+      ln(toIso(lx, minY, -th), toIso(lx, maxY, -th), 'PAD', topDepth);
+      ln(toIso(rx, minY, -th), toIso(rx, maxY, -th), 'PAD', topDepth);
+      ln(toIso(rx, minY, slabTopY), toIso(rx, maxY, slabTopY), 'PAD', rightDepth);
 
-      runs.forEach(([y0, y1]) => {
-        const yStart = y0 - PAD_OV;
-        const yEnd = y1 + PAD_OV;
-
-        // Y축 구간 분할 (패널 행 경계별로 분할하여 화가 알고리즘 정밀도 보장)
-        const yBreaks = [yStart, y0];
-        for (let r = 0; r < nR; r++) {
-          const y = map.ys[r];
-          if (y > y0 && y < y1 && !yBreaks.includes(y)) yBreaks.push(y);
-        }
-        if (!yBreaks.includes(y1)) yBreaks.push(y1);
-        if (!yBreaks.includes(yEnd)) yBreaks.push(yEnd);
-        yBreaks.sort((a, b) => a - b);
-
-        // 1) 기둥 전면 직사각형 (Front Face: Y = yStart, Z = slabTopY ~ -th)
-        const frontPadDepth = getDepth((p.lx + p.rx) / 2, yStart, (slabTopY + -th) / 2);
+      // 4) 기둥 간 캐비티 바닥 (Slab Top Cavity Floor: rx ~ nextLx)
+      if (idx < strips.length - 1) {
+        const nextLx = strips[idx + 1][0];
+        const fDepth = getDepth((rx + nextLx) / 2, midY, slabTopY);
         poly([
-          toIso(p.lx, yStart, -th),
-          toIso(p.rx, yStart, -th),
-          toIso(p.rx, yStart, slabTopY),
-          toIso(p.lx, yStart, slabTopY)
-        ], 'PAD', true, true, frontPadDepth);
+          toIso(rx, minY, slabTopY),
+          toIso(nextLx, minY, slabTopY),
+          toIso(nextLx, maxY, slabTopY),
+          toIso(rx, maxY, slabTopY)
+        ], 'PAD', false, true, fDepth);
+        // 캐비티 바닥과 다음 기둥 좌측면 접합 종방향선
+        ln(toIso(nextLx, minY, slabTopY), toIso(nextLx, maxY, slabTopY), 'PAD', fDepth);
+      }
 
-        // 2) 앵커 플레이트 & 볼트 (기둥 중심선 cx에 정렬 - 전면 및 후면 오버행)
-        const acW = Math.min(45, (p.rx - p.lx) / 4);
+      // 5) 기초 앵커 베이스 플레이트 & 앵커 볼트 (전면 및 후면)
+      const acW = Math.min(45, w / 4);
+      [minY + 110, maxY - 110].forEach(ay => {
         poly([
-          toIso(p.cx - acW, yStart + 70, -th),
-          toIso(p.cx + acW, yStart + 70, -th),
-          toIso(p.cx + acW, yStart + 150, -th),
-          toIso(p.cx - acW, yStart + 150, -th)
-        ], 'FRAME', true, false, frontPadDepth);
-        isoCircle(p.cx, yStart + 110, -th, 12, 'XY', 'FRAME', frontPadDepth);
-        ln(toIso(p.cx, yStart + 110, -th), toIso(p.cx, yStart + 110, -th + 30), 'FRAME', frontPadDepth);
-
-        // 3) 기둥 전 구간(yStart ~ yEnd) 단별 렌더링: 상판면, 우측 측벽, 기둥 간 바닥면
-        for (let k = 0; k < yBreaks.length - 1; k++) {
-          const yA = yBreaks[k], yB = yBreaks[k + 1];
-          const midY = (yA + yB) / 2;
-          const topDepth = getDepth((p.lx + p.rx) / 2, midY, -th);
-          const sideDepth = getDepth(p.rx, midY, (-th + slabTopY) / 2);
-
-          // (A) 기둥 상판면 (Top Face at Z = -th)
-          poly([
-            toIso(p.lx, yB, -th),
-            toIso(p.rx, yB, -th),
-            toIso(p.rx, yA, -th),
-            toIso(p.lx, yA, -th)
-          ], 'PAD', false, true, topDepth);
-          ln(toIso(p.lx, yA, -th), toIso(p.lx, yB, -th), 'PAD', topDepth);
-          ln(toIso(p.rx, yA, -th), toIso(p.rx, yB, -th), 'PAD', topDepth);
-
-          // (B) 기둥 우측 측벽 (Right-facing Wall at X = p.rx, Z = slabTopY ~ -th)
-          poly([
-            toIso(p.rx, yA, -th),
-            toIso(p.rx, yB, -th),
-            toIso(p.rx, yB, slabTopY),
-            toIso(p.rx, yA, slabTopY)
-          ], 'PAD', false, true, sideDepth);
-          ln(toIso(p.rx, yA, slabTopY), toIso(p.rx, yB, slabTopY), 'PAD', sideDepth);
-
-          // (C) 기둥 간 캐비티 바닥 (Slab Top Floor between plinths at Z = slabTopY)
-          if (sIdx < numPlinths - 1) {
-            const nextP = plinths[sIdx + 1];
-            const curRx = p.rx, nextLx = nextP.lx;
-            const floorDepth = getDepth((curRx + nextLx) / 2, midY, slabTopY);
-            poly([
-              toIso(curRx, yA, slabTopY),
-              toIso(nextLx, yA, slabTopY),
-              toIso(nextLx, yB, slabTopY),
-              toIso(curRx, yB, slabTopY)
-            ], 'PAD', false, true, floorDepth);
-            // 캐비티 바닥과 다음 기둥 좌측면이 만나는 하단 모서리선
-            ln(toIso(nextLx, yA, slabTopY), toIso(nextLx, yB, slabTopY), 'PAD', floorDepth);
-          }
-        }
-
-        // 4) 기둥 후면 마감 (Rear Face: Y = yEnd - 배면이므로 filled polygon 제외, 외곽 실루엣 선분만 렌더링)
-        const rearPadDepth = getDepth((p.lx + p.rx) / 2, yEnd, (slabTopY + -th) / 2);
-        // 기둥 후면 상단 모서리선 (X: p.lx ~ p.rx, Z = -th)
-        ln(toIso(p.lx, yEnd, -th), toIso(p.rx, yEnd, -th), 'PAD', rearPadDepth);
-        // 기둥 후면 우측 수직 모서리선 (X = p.rx, Z: slabTopY ~ -th)
-        ln(toIso(p.rx, yEnd, -th), toIso(p.rx, yEnd, slabTopY), 'PAD', rearPadDepth);
-
-        // 후면 앵커 플레이트 & 볼트
-        poly([
-          toIso(p.cx - acW, yEnd - 150, -th),
-          toIso(p.cx + acW, yEnd - 150, -th),
-          toIso(p.cx + acW, yEnd - 70, -th),
-          toIso(p.cx - acW, yEnd - 70, -th)
-        ], 'FRAME', true, false, rearPadDepth);
-        isoCircle(p.cx, yEnd - 110, -th, 12, 'XY', 'FRAME', rearPadDepth);
-        ln(toIso(p.cx, yEnd - 110, -th), toIso(p.cx, yEnd - 110, -th + 30), 'FRAME', rearPadDepth);
-
-        // 기둥 간 개구부 전면 및 후면 바닥 가로선
-        if (sIdx < numPlinths - 1) {
-          const nextP = plinths[sIdx + 1];
-          const curRx = p.rx, nextLx = nextP.lx;
-          ln(toIso(curRx, yStart, slabTopY), toIso(nextLx, yStart, slabTopY), 'PAD', frontPadDepth);
-          ln(toIso(curRx, yEnd, slabTopY), toIso(nextLx, yEnd, slabTopY), 'PAD', rearPadDepth);
-        }
-
-        // 5) 우측 최외곽 150mm 슬래브 측면 (x = pxEnd, z = slabBotY ~ slabTopY, y = yStart ~ yEnd)
-        if (sIdx === numPlinths - 1) {
-          for (let k = 0; k < yBreaks.length - 1; k++) {
-            const yA = yBreaks[k], yB = yBreaks[k + 1];
-            const midY = (yA + yB) / 2;
-            const slabRightDepth = getDepth(pxEnd, midY, (slabBotY + slabTopY) / 2);
-            poly([
-              toIso(pxEnd, yA, slabTopY),
-              toIso(pxEnd, yB, slabTopY),
-              toIso(pxEnd, yB, slabBotY),
-              toIso(pxEnd, yA, slabBotY)
-            ], 'PAD', false, true, slabRightDepth);
-            ln(toIso(pxEnd, yA, slabTopY), toIso(pxEnd, yB, slabTopY), 'PAD', slabRightDepth);
-            ln(toIso(pxEnd, yA, slabBotY), toIso(pxEnd, yB, slabBotY), 'PAD', slabRightDepth);
-          }
-          ln(toIso(pxEnd, yEnd, slabTopY), toIso(pxEnd, yEnd, slabBotY), 'PAD', rearPadDepth);
-        }
+          toIso(cx - acW, ay - 40, -th),
+          toIso(cx + acW, ay - 40, -th),
+          toIso(cx + acW, ay + 40, -th),
+          toIso(cx - acW, ay + 40, -th)
+        ], 'PAD', true, false, topDepth);
+        ln(toIso(cx - 10, ay, -th), toIso(cx + 10, ay, -th), 'PAD', topDepth);
+        ln(toIso(cx, ay - 10, -th), toIso(cx, ay + 10, -th), 'PAD', topDepth);
+        ln(toIso(cx, ay, -th), toIso(cx, ay, -th + 30), 'PAD', topDepth);
       });
     });
 
-    // 6) 좌측 실루엣 외곽선 (Left Silhouette Boundaries)
-    const rearSlabY = totalW + PAD_OV;
-    const rearSlabDepth = getDepth((px0 + pxEnd) / 2, rearSlabY, (slabBotY + slabTopY) / 2);
-    // 좌측면 하단 GL 기준선 (x = px0, z = slabBotY, y: -PAD_OV ~ totalW + PAD_OV)
-    ln(toIso(px0, -PAD_OV, slabBotY), toIso(px0, rearSlabY, slabBotY), 'PAD', rearSlabDepth);
-    // 좌측면 후면 수직선 (x = px0, y = rearSlabY, z: slabBotY ~ -th)
-    ln(toIso(px0, rearSlabY, slabBotY), toIso(px0, rearSlabY, -th), 'PAD', rearSlabDepth);
+    // (C) 후면 연속 캐슬 실루엣 (Continuous Rear Silhouette at Y = maxY)
+    // 1. 최좌측 수직선: (px0, maxY, slabBotY) -> (px0, maxY, -th) - 일체형 수직선
+    const rearDepth = getDepth((px0 + pxEnd) / 2, maxY, (slabBotY + -th) / 2);
+    ln(toIso(px0, maxY, slabBotY), toIso(px0, maxY, -th), 'PAD', rearDepth);
+
+    // 2. 패드 기둥 및 캐비티 연속 요철 실루엣
+    strips.forEach(([lx, w, sIdx], idx) => {
+      const rx = lx + w;
+      // 기둥 상단 후면 수평선
+      ln(toIso(lx, maxY, -th), toIso(rx, maxY, -th), 'PAD', rearDepth);
+      // 기둥 우측 후면 수직 하강선
+      ln(toIso(rx, maxY, -th), toIso(rx, maxY, slabTopY), 'PAD', rearDepth);
+
+      if (idx < strips.length - 1) {
+        const nextLx = strips[idx + 1][0];
+        // 캐비티 바닥 후면 수평선
+        ln(toIso(rx, maxY, slabTopY), toIso(nextLx, maxY, slabTopY), 'PAD', rearDepth);
+        // 다음 기둥 좌측 후면 수직 상승선
+        ln(toIso(nextLx, maxY, slabTopY), toIso(nextLx, maxY, -th), 'PAD', rearDepth);
+      } else {
+        // 최우측 슬래브 후면 수직 하강선
+        ln(toIso(rx, maxY, slabTopY), toIso(rx, maxY, slabBotY), 'PAD', rearDepth);
+      }
+    });
+
     inFoundation = false;
 
     // 베이스 찬넬 림 (Skid Channel 100mm)
