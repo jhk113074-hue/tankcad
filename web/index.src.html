@@ -908,8 +908,8 @@ canvas.drag{cursor:grabbing}
             </div>
           </div>
 
-          <!-- 패드 규격 설정 (최외각 패드 폭, 일반 패드 폭, 패드 높이) -->
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+          <!-- 패드 규격 설정 (최외각 패드 폭, 일반 패드 폭, 패드 높이, 슬래브 두께) -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
             <div>
               <label for="padFirstW" id="lblPadFirstW" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">최외각 패드 폭</label>
               <input type="number" id="padFirstW" value="400" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="400">
@@ -920,15 +920,22 @@ canvas.drag{cursor:grabbing}
               <input type="number" id="padMidW" value="300" min="150" max="1000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="300">
               <div id="hintPadMidW" style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">내부 패드 폭</div>
             </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
             <div>
               <label for="padH" id="lblPadH" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">패드 높이 (H)</label>
               <input type="number" id="padH" value="525" min="100" max="3000" step="25" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="525">
               <div id="hintPadH" style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">기본: 600 - 스키드</div>
             </div>
+            <div>
+              <label for="slabT" id="lblSlabT" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">기초 슬래브 두께</label>
+              <input type="number" id="slabT" value="" min="150" max="1500" step="50" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="자동 (수위연동)">
+              <div id="hintSlabT" style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">10mH: 500mm 매트</div>
+            </div>
           </div>
 
           <!-- 자동 계산 정보 표시 -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;padding:8px 10px;background:var(--surface);border:1px dashed var(--line);border-radius:6px;font-size:11px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;padding:8px 10px;background:var(--surface);border:1px dashed var(--line);border-radius:6px;font-size:11px">
             <div>
               <div id="lblPadOverhang" style="color:var(--muted);margin-bottom:2px">전·후면 돌출 (자동)</div>
               <div style="font-size:13px;font-weight:700;color:var(--accent)"><span id="calcPadOverhang">200</span> mm</div>
@@ -945,11 +952,32 @@ canvas.drag{cursor:grabbing}
           </div>
 
           <!-- 원클릭 프리셋 버튼들 -->
-          <div style="display:flex;gap:4px">
-            <button type="button" class="btn-sm" id="btnPadPresetStd" style="flex:1;padding:4px 2px;font-size:10px" title="최외각 400 / 일반 300">표준 400/300</button>
-            <button type="button" class="btn-sm" id="btnPadPresetWide" style="flex:1;padding:4px 2px;font-size:10px" title="최외각 450 / 일반 350">광폭 450/350</button>
-            <button type="button" class="btn-sm" id="btnPadPresetEqual3" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 300">동일 300</button>
-            <button type="button" class="btn-sm" id="btnPadPresetEqual4" style="flex:1;padding:4px 2px;font-size:10px" title="모든 패드 동일 400">동일 400</button>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px">
+            <button type="button" class="btn-sm" id="btnPadPresetStd" style="padding:4px 2px;font-size:10.5px" title="최외각 400 / 일반 300">표준 400/300</button>
+            <button type="button" class="btn-sm" id="btnPadPresetWide" style="padding:4px 2px;font-size:10.5px" title="최외각 450 / 일반 350">광폭 450/350</button>
+            <button type="button" class="btn-sm" id="btnPadPresetEqual3" style="padding:4px 2px;font-size:10.5px" title="모든 패드 동일 300">동일 300</button>
+            <button type="button" class="btn-sm" id="btnPadPresetEqual4" style="padding:4px 2px;font-size:10.5px" title="모든 패드 동일 400">동일 400</button>
+            <button type="button" class="btn-sm" id="btnPadPresetSeismic10" style="grid-column:span 2;padding:4px 2px;font-size:10.5px;background:rgba(234,88,12,0.1);color:#ea580c;border-color:rgba(234,88,12,0.3);font-weight:700" title="10mH 초고수위 및 내진설계 규격 자동 적용">🛡️ 내진·10mH (500/400/t500)</button>
+          </div>
+
+          <!-- 구조·내진 설계 실시간 연동 정보 카드 -->
+          <div id="padStructuralCard" style="background:var(--surface);border:1px solid var(--accent);border-radius:6px;padding:8px 10px;font-size:11px;display:flex;flex-direction:column;gap:5px">
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line-sub);padding-bottom:4px">
+              <span style="font-weight:700;color:var(--accent);display:flex;align-items:center;gap:4px">🛡️ 구조·내진 설계 기준 (ACI 350 / KDS)</span>
+              <span id="badgePadSeismicStatus" style="font-size:10px;background:rgba(2,132,199,0.15);color:var(--accent);padding:1px 5px;border-radius:3px;font-weight:700">연동 활성</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;line-height:1.4">
+              <div><span style="color:var(--muted)">콘크리트 강도:</span> <b id="infoPadFck">24 MPa</b></div>
+              <div><span style="color:var(--muted)">기초 슬래브:</span> <b id="infoPadSlabT">150 mm</b></div>
+              <div><span style="color:var(--muted)">패드 배근:</span> <b id="infoPadRebar">HD13 / HD10</b></div>
+              <div><span style="color:var(--muted)">슬래브 복배근:</span> <b id="infoSlabRebar">HD10 @ 200</b></div>
+              <div><span style="color:var(--muted)">기초 앙카:</span> <b id="infoPadAnchor">M16 (L=260)</b></div>
+              <div><span style="color:var(--muted)">요구 지내력:</span> <b id="infoPadBearing">≥ 10 t/m²</b></div>
+            </div>
+            <div style="font-size:10px;color:var(--muted);border-top:1px dashed var(--line);padding-top:3px;display:flex;justify-content:space-between">
+              <span>내진 안전율: 전도 ≥ 1.5 (지진 1.2)</span>
+              <span>활동 ≥ 1.5</span>
+            </div>
           </div>
         </section>
       </div>
@@ -3093,21 +3121,41 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         localStorage.setItem('tankcad_height_table', JSON.stringify(activeHeightTable));
       } catch (e) {}
     }
+    const defTbl = (C.getDefaultHeightTable ? C.getDefaultHeightTable() : null) || {
+      std: {
+        1000: [1000], 1500: [1500], 2000: [2000],
+        2500: [1000, 1500], 3000: [1000, 2000],
+        3500: [1000, 1000, 1500],
+        4000: [1000, 1000, 2000], 4500: [1000, 1000, 1000, 1500],
+        5000: [1000, 1000, 1000, 2000], 5500: [1000, 1000, 1000, 1000, 1500],
+        6000: [1000, 1000, 1000, 1000, 2000], 6500: [1000, 1000, 1000, 1000, 1000, 1500],
+        7000: [1000, 1000, 1000, 1000, 1000, 2000], 7500: [1000, 1000, 1000, 1000, 1000, 1000, 1500],
+        8000: [1000, 1000, 1000, 1000, 1000, 1000, 2000], 8500: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1500],
+        9000: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 2000], 9500: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1500],
+        10000: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 2000]
+      },
+      b11: {
+        1000: [1000], 1500: [1000, 500], 2000: [1000, 1000], 2500: [1000, 500, 1000],
+        3000: [1000, 1000, 1000], 3500: [1000, 1000, 500, 1000], 4000: [1000, 1000, 1000, 1000],
+        4500: [1000, 500, 1000, 1000, 1000], 5000: [1000, 1000, 1000, 1000, 1000],
+        5500: [1000, 1000, 500, 1000, 1000, 1000], 6000: [1000, 1000, 1000, 1000, 1000, 1000],
+        6500: [1000, 1000, 1000, 500, 1000, 1000, 1000], 7000: [1000, 1000, 1000, 1000, 1000, 1000, 1000],
+        7500: [1000, 1000, 1000, 1000, 500, 1000, 1000, 1000], 8000: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000],
+        8500: [1000, 1000, 1000, 1000, 1000, 500, 1000, 1000, 1000], 9000: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000],
+        9500: [1000, 1000, 1000, 1000, 1000, 1000, 500, 1000, 1000, 1000], 10000: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000]
+      }
+    };
     if (!activeHeightTable || !activeHeightTable.std || !activeHeightTable.b11 || !Object.keys(activeHeightTable.std).length) {
-      activeHeightTable = (C.getDefaultHeightTable ? C.getDefaultHeightTable() : null) || {
-        std: {
-          1000: [1000], 1500: [1500], 2000: [2000],
-          2500: [1000, 1500], 3000: [1000, 2000],
-          3500: [1000, 1000, 1500],
-          4000: [1000, 1000, 2000], 4500: [1000, 1000, 1000, 1500],
-          5000: [1000, 1000, 1000, 2000]
-        },
-        b11: {
-          1000: [1000], 1500: [1000, 500], 2000: [1000, 1000], 2500: [1000, 500, 1000],
-          3000: [1000, 1000, 1000], 3500: [1000, 1000, 500, 1000], 4000: [1000, 1000, 1000, 1000],
-          4500: [1000, 500, 1000, 1000, 1000], 5000: [1000, 1000, 1000, 1000, 1000]
+      activeHeightTable = defTbl;
+    } else {
+      // 기존 저장된 테이블에 5500~10000 신규 기본 높이 자동 병합
+      ['std', 'b11'].forEach(mk => {
+        if (defTbl[mk]) {
+          Object.keys(defTbl[mk]).forEach(h => {
+            if (!activeHeightTable[mk][h]) activeHeightTable[mk][h] = defTbl[mk][h].slice();
+          });
         }
-      };
+      });
     }
     if (C.setCustomHeightTable) C.setCustomHeightTable(activeHeightTable);
   }
@@ -3121,7 +3169,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       list = Object.keys(activeHeightTable[modeKey]).map(Number).filter(v => ![1300, 1800, 2300, 2800, 3300, 3800, 4300, 4800].includes(v)).sort((a, b) => a - b);
     }
     if (!list || list.length === 0) {
-      list = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000];
+      list = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000];
     }
     $('H').innerHTML = list.map(v => '<option value="' + v + '">' + (v / 1000) + 'm</option>').join('');
     $('H').value = list.includes(cur) ? cur : (list.includes(3000) ? 3000 : list[0]);
@@ -5642,6 +5690,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     const frm = $('frm') ? (Number($('frm').value) || 75) : 75;
     const defPh = 600 - frm;
     const ov = Math.round(pf / 2);
+    const H = Number($('H') ? $('H').value : 3000) || 3000;
+    const userSlabT = ($('slabT') && $('slabT').value !== '') ? Number($('slabT').value) : null;
 
     if ($('badgePadFirst')) $('badgePadFirst').textContent = pf + 'mm';
     if ($('badgePadMid')) $('badgePadMid').textContent = pm + 'mm';
@@ -5653,6 +5703,21 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if ($('padH') && !isPadHCustom && ($('padH').value === '' || Number($('padH').dataset.lastDef || 0) === Number($('padH').value))) {
       $('padH').value = defPh;
       $('padH').dataset.lastDef = defPh;
+    }
+
+    // 구조·내진 설계 실시간 연동 정보 업데이트
+    if (C.getFoundationDesign) {
+      const fd = C.getFoundationDesign({ height: [H], slabT: userSlabT, padFirstW: pf, padMidW: pm });
+      if ($('infoPadFck')) $('infoPadFck').textContent = fd.fckStr.split(' ')[0] + ' MPa';
+      if ($('infoPadSlabT')) $('infoPadSlabT').textContent = fd.slabT + ' mm';
+      if ($('infoPadRebar')) $('infoPadRebar').textContent = fd.rebarPadStr.split(' ')[0];
+      if ($('infoSlabRebar')) $('infoSlabRebar').textContent = fd.rebarSlabStr.split(' ')[0] + ' @ ' + fd.slabRebarPitch;
+      if ($('infoPadAnchor')) $('infoPadAnchor').textContent = fd.anchorStr.split(' ')[0] + ' (L=' + fd.anchorEmbed + ')';
+      if ($('infoPadBearing')) $('infoPadBearing').textContent = fd.bearingStr.split('(')[0].trim();
+      if ($('badgePadSeismicStatus')) $('badgePadSeismicStatus').textContent = (H / 1000) + 'mH 연동';
+      if ($('slabT') && !$('slabT').value) {
+        $('slabT').placeholder = `자동: ${fd.slabT}mm`;
+      }
     }
   }
 
@@ -5672,6 +5737,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     const el = $(id);
     if (el) el.addEventListener('input', () => { updatePadBadges(); schedule(); });
   });
+
+  if ($('slabT')) $('slabT').addEventListener('input', () => { updatePadBadges(); schedule(); });
 
   if ($('padH')) {
     $('padH').addEventListener('input', () => {
@@ -5709,6 +5776,15 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   if ($('btnPadPresetEqual4')) $('btnPadPresetEqual4').addEventListener('click', () => {
     $('padFirstW').value = 400; $('padMidW').value = 400;
     updatePadBadges(); schedule();
+  });
+  if ($('btnPadPresetSeismic10')) $('btnPadPresetSeismic10').addEventListener('click', () => {
+    $('padFirstW').value = 500;
+    $('padMidW').value = 400;
+    $('padH').value = 600;
+    if ($('slabT')) $('slabT').value = 500;
+    isPadHCustom = true;
+    updatePadBadges();
+    schedule();
   });
 
   // Visual Nozzle Editor Listeners
@@ -5970,6 +6046,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         padLastW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
         padH: ($('padH') && $('padH').value !== '' && !isNaN($('padH').value)) ? Number($('padH').value) : (600 - (Number($('frm').value) || 75)),
         padOverhang: Math.round(($('padFirstW') ? (Number($('padFirstW').value) || 400) : 400) / 2),
+        slabT: ($('slabT') && $('slabT').value !== '' && !isNaN($('slabT').value)) ? Number($('slabT').value) : null,
         rf: Number(document.querySelector('input[name=rf]:checked').value),
         userScale: $('scaleSel').value === 'auto' ? null : Number($('scaleSel').value),
         sidePanels: Object.assign({}, sidePanelTypes),
@@ -6101,6 +6178,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       padMidW: $('padMidW') ? (Number($('padMidW').value) || 300) : 300,
       padLastW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
       padH: ($('padH') && $('padH').value !== '' && !isNaN($('padH').value)) ? Number($('padH').value) : (600 - (Number($('frm').value) || 75)),
+      slabT: ($('slabT') && $('slabT').value !== '') ? $('slabT').value : '',
       isPadHCustom: isPadHCustom,
       padOverhang: Math.round(($('padFirstW') ? (Number($('padFirstW').value) || 400) : 400) / 2),
       scale: $('scaleSel').value,
@@ -6205,6 +6283,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         $('padH').value = defH;
         isPadHCustom = false;
       }
+      if (st.slabT !== undefined && $('slabT')) $('slabT').value = st.slabT;
       updatePadBadges();
 
       if (typeof st.useNozzles === 'boolean') {

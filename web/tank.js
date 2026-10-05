@@ -2109,6 +2109,7 @@
   }
 
   /* ---------- 높이 구성 (MagicProperty::SetHeight: 콤보 → m_nHeight[0..4], [0]=아래) ---------- */
+  /* ---------- 높이 구성 (MagicProperty::SetHeight: 콤보 → m_nHeight[0..4], [0]=아래) ---------- */
   const DEFAULT_HEIGHT_TABLE = {
     std: {
       1000: [1000],
@@ -2119,7 +2120,17 @@
       3500: [1000, 1000, 1500],
       4000: [1000, 1000, 2000],
       4500: [1000, 1000, 1000, 1500],
-      5000: [1000, 1000, 1000, 2000]
+      5000: [1000, 1000, 1000, 2000],
+      5500: [1000, 1000, 1000, 1000, 1500],
+      6000: [1000, 1000, 1000, 1000, 2000],
+      6500: [1000, 1000, 1000, 1000, 1000, 1500],
+      7000: [1000, 1000, 1000, 1000, 1000, 2000],
+      7500: [1000, 1000, 1000, 1000, 1000, 1000, 1500],
+      8000: [1000, 1000, 1000, 1000, 1000, 1000, 2000],
+      8500: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1500],
+      9000: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 2000],
+      9500: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1500],
+      10000: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 2000]
     },
     b11: {
       1000: [1000],
@@ -2130,17 +2141,22 @@
       3500: [1000, 1000, 500, 1000],
       4000: [1000, 1000, 1000, 1000],
       4500: [1000, 500, 1000, 1000, 1000],
-      5000: [1000, 1000, 1000, 1000, 1000]
+      5000: [1000, 1000, 1000, 1000, 1000],
+      5500: [1000, 1000, 500, 1000, 1000, 1000],
+      6000: [1000, 1000, 1000, 1000, 1000, 1000],
+      6500: [1000, 1000, 1000, 500, 1000, 1000, 1000],
+      7000: [1000, 1000, 1000, 1000, 1000, 1000, 1000],
+      7500: [1000, 1000, 1000, 1000, 500, 1000, 1000, 1000],
+      8000: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000],
+      8500: [1000, 1000, 1000, 1000, 1000, 500, 1000, 1000, 1000],
+      9000: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000],
+      9500: [1000, 1000, 1000, 1000, 1000, 1000, 500, 1000, 1000, 1000],
+      10000: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000]
     }
   };
 
-  const H_LIST = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000];
-  const H_MAP = [[1000], [1500], [2000], [1000, 1500], [1000, 2000],
-    [1000, 1000, 1500], [1000, 1000, 2000],
-    [1000, 1000, 1000, 1500], [1000, 1000, 1000, 2000]];
-  const H1_LIST = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000];
-  const H1_MAP = [[1000], [1000, 500], [1000, 1000], [1000, 500, 1000], [1000, 1000, 1000], [1000, 1000, 500, 1000],
-    [1000, 1000, 1000, 1000], [1000, 500, 1000, 1000, 1000], [1000, 1000, 1000, 1000, 1000]];
+  const H_LIST = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000];
+  const H1_LIST = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000];
 
   let activeCustomHeightTable = null;
 
@@ -2160,6 +2176,30 @@
     return JSON.parse(JSON.stringify(DEFAULT_HEIGHT_TABLE));
   }
 
+  function autoGenerateHeightSegs(total, one) {
+    if (total <= 0) return [1000];
+    const segs = [];
+    let rem = total;
+    if (one) {
+      while (rem >= 1000) {
+        segs.push(1000);
+        rem -= 1000;
+      }
+      if (rem >= 500) {
+        segs.splice(Math.floor(segs.length / 2), 0, 500);
+        rem -= 500;
+      }
+      if (rem > 0) segs.push(rem);
+    } else {
+      while (rem > 2000) {
+        segs.push(1000);
+        rem -= 1000;
+      }
+      if (rem > 0) segs.push(rem);
+    }
+    return segs.length ? segs : [total];
+  }
+
   function heightSegs(total, one, customTable) {
     const table = customTable || activeCustomHeightTable;
     const modeKey = one ? 'b11' : 'std';
@@ -2170,8 +2210,119 @@
     if (defMap && defMap[total]) {
       return defMap[total].slice();
     }
-    const i = (one ? H1_LIST : H_LIST).indexOf(total);
-    return i < 0 ? null : (one ? H1_MAP : H_MAP)[i].slice();
+    return autoGenerateHeightSegs(total, one);
+  }
+
+  /* ---------- 글로벌 토목·건축·플랜트 수조 표준 (ACI 350.3 / KDS 내진 및 10mH 고수위 연동) 기초 설계 ---------- */
+  function getFoundationDesign(opt = {}) {
+    const totalH = (Array.isArray(opt.height) ? opt.height.reduce((a, b) => a + (b || 0), 0) : Number(opt.height)) || 3000;
+    const isEn = opt.lang === 'en';
+
+    // 1. 기초 슬래브 두께 (Slab Thickness: mm)
+    // 10mH: ACI 350.3 / KDS 전도모멘트 및 펀칭전단 저항 500mm 매트 기초
+    let slabT = Number(opt.slabT) || 0;
+    if (!slabT) {
+      if (totalH >= 8000) slabT = 500;
+      else if (totalH >= 5000) slabT = 350;
+      else if (totalH >= 3500) slabT = 250;
+      else slabT = 150;
+    }
+
+    // 2. 콘크리트 설계기준강도 (fck)
+    // 10mH: 30 MPa (수두압 100kPa, 내진 및 수밀 설계)
+    let fck = 24;
+    let fckStr = '24 MPa (240 kgf/cm²)';
+    if (totalH >= 8000) {
+      fck = 30;
+      fckStr = '30 MPa (300 kgf/cm²)';
+    } else if (totalH >= 5000) {
+      fck = 27;
+      fckStr = '27 MPa (270 kgf/cm²)';
+    }
+
+    // 3. 패드 기둥 배근 (주근 / 늑근)
+    let rebarPadStr = 'HD13 / HD10 (SD400)';
+    let padCallout = isEn ? 'PAD REBAR: 2-HD13 / TIE HD10 @ 200' : '패드 배근: 주근 2-HD13 / 늑근 HD10 @ 200';
+    let padTiePitch = 200;
+    if (totalH >= 8000) {
+      rebarPadStr = 'HD22 / HD13 (SD500/SD400)';
+      padCallout = isEn ? 'PAD REBAR: 2-HD22 / TIE HD13 @ 100' : '패드 배근: 주근 2-HD22 / 늑근 HD13 @ 100';
+      padTiePitch = 100;
+    } else if (totalH >= 5000) {
+      rebarPadStr = 'HD19 / HD13 (SD400)';
+      padCallout = isEn ? 'PAD REBAR: 2-HD19 / TIE HD13 @ 150' : '패드 배근: 주근 2-HD19 / 늑근 HD13 @ 150';
+      padTiePitch = 150;
+    } else if (totalH >= 3500) {
+      rebarPadStr = 'HD16 / HD10 (SD400)';
+      padCallout = isEn ? 'PAD REBAR: 2-HD16 / TIE HD10 @ 150' : '패드 배근: 주근 2-HD16 / 늑근 HD10 @ 150';
+      padTiePitch = 150;
+    }
+
+    // 4. 기초 슬래브 배근 (상·하부 복배근)
+    let rebarSlabStr = 'HD10 @ 200 (SD400, Double)';
+    let slabCallout = isEn ? 'SLAB REBAR: HD10 @ 200 (TOP & BOT)' : '슬래브 배근: HD10 @ 200 (상·하부 복배근)';
+    let slabRebarPitch = 200;
+    if (totalH >= 8000) {
+      rebarSlabStr = 'HD19 @ 150 (SD400, Double)';
+      slabCallout = isEn ? 'SLAB REBAR: HD19 @ 150 (TOP & BOT)' : '슬래브 배근: HD19 @ 150 (상·하부 복배근)';
+      slabRebarPitch = 150;
+    } else if (totalH >= 5000) {
+      rebarSlabStr = 'HD16 @ 150 (SD400, Double)';
+      slabCallout = isEn ? 'SLAB REBAR: HD16 @ 150 (TOP & BOT)' : '슬래브 배근: HD16 @ 150 (상·하부 복배근)';
+      slabRebarPitch = 150;
+    } else if (totalH >= 3500) {
+      rebarSlabStr = 'HD13 @ 200 (SD400, Double)';
+      slabCallout = isEn ? 'SLAB REBAR: HD13 @ 200 (TOP & BOT)' : '슬래브 배근: HD13 @ 200 (상·하부 복배근)';
+      slabRebarPitch = 200;
+    }
+
+    // 5. 기초 앙카볼트 (Anchor Bolt: 규격 및 매립깊이)
+    let anchorStr = 'M16 (SUS304, L=260)';
+    let anchorEmbed = 260;
+    let anchorHasPlate = false;
+    if (totalH >= 8000) {
+      anchorStr = 'M30 (High-Tension, L=550)';
+      anchorEmbed = 550;
+      anchorHasPlate = true;
+    } else if (totalH >= 5000) {
+      anchorStr = 'M24 (STS304 / SS275, L=450)';
+      anchorEmbed = 450;
+      anchorHasPlate = true;
+    } else if (totalH >= 3500) {
+      anchorStr = 'M20 (SUS304 / SS275, L=350)';
+      anchorEmbed = 350;
+    }
+
+    // 6. 요구 지내력 (Soil Bearing Capacity: qa)
+    let bearingStr = '≥ 100 kN/m² (10 t/m²)';
+    if (totalH >= 8000) {
+      bearingStr = '≥ 250 kN/m² (Seismic: 35 t/m²)';
+    } else if (totalH >= 5000) {
+      bearingStr = '≥ 200 kN/m² (Seismic: 27 t/m²)';
+    } else if (totalH >= 3500) {
+      bearingStr = '≥ 150 kN/m² (Seismic: 20 t/m²)';
+    }
+
+    // 7. 설계 안전율 (Safety Factor)
+    const fsStr = isEn ? 'OT ≥ 1.5 (Seismic 1.2)' : '전도 ≥ 1.5 (지진 1.2)';
+
+    return {
+      totalH,
+      slabT,
+      fck,
+      fckStr,
+      rebarPadStr,
+      padCallout,
+      padTiePitch,
+      rebarSlabStr,
+      slabCallout,
+      slabRebarPitch,
+      anchorStr,
+      anchorEmbed,
+      anchorHasPlate,
+      bearingStr,
+      fsStr
+    };
   }
 
   /* ---------- gRound / gSolX (glFunc.cpp) ---------- */
@@ -2226,6 +2377,7 @@
   const PAD_OVERHANG = 200; // 상하 대칭 각 200mm 돌출 (총 EXTC = 400mm)
   const EXTC = PAD_OVERHANG * 2;
   function buildConcrete(opt) {
+    const fDesign = getFoundationDesign(opt);
     const firstW = Number(opt && opt.padFirstW) || 400;
     const padOv = (opt && opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : Math.round(firstW / 2);
     const map = createMap(opt), W = map.width, L = map.length, ents = [], strips = concStrips(map.cols, opt);
@@ -2265,7 +2417,7 @@
     const blocks = {};
     pieces.forEach(({ x, w, y0, y1 }) => {
       const len = y1 - y0;
-      const blkName = `PAD_STRIP_${w}x${len}`;
+      const blkName = `PAD_STRIP_${w}x${len}_T${fDesign.padTiePitch}`;
       if (!blocks[blkName]) {
         const bEnts = [
           { t: 'line', a: [0, 0], b: [w, 0], layer: 'PAD' },
@@ -2275,7 +2427,7 @@
         ];
 
         // 글로벌 건축/토목/설비 표준 기초 평면 철근 배근 (REINF 레이어)
-        // 1) 종방향 주철근 (Longitudinal Main Rebar HD13)
+        // 1) 종방향 주철근 (Longitudinal Main Rebar)
         const cover = 45;
         bEnts.push({ t: 'line', a: [cover, 50], b: [cover, len - 50], layer: 'REINF' });
         bEnts.push({ t: 'line', a: [w - cover, 50], b: [w - cover, len - 50], layer: 'REINF' });
@@ -2287,12 +2439,12 @@
         bEnts.push({ t: 'line', a: [w - cover, len - 50], b: [w - cover - hookLen, len - 50], layer: 'REINF' });
 
         if (w >= 380) {
-          // 외측 400mm 패드는 중앙 주근 1가닥 추가 (3-HD13)
+          // 외측 400mm 패드는 중앙 주근 1가닥 추가 (3-Bar cage)
           bEnts.push({ t: 'line', a: [w / 2, 50], b: [w / 2, len - 50], layer: 'REINF' });
         }
 
-        // 2) 횡방향 늑근 / 스트럽 (Transverse Stirrups / Ties HD10 @200mm)
-        for (let py = 100; py <= len - 80; py += 200) {
+        // 2) 횡방향 늑근 / 스트럽 (Transverse Stirrups / Ties)
+        for (let py = 100; py <= len - 80; py += fDesign.padTiePitch) {
           bEnts.push({ t: 'line', a: [cover, py], b: [w - cover, py], layer: 'REINF' });
         }
 
@@ -2315,17 +2467,17 @@
     // 1-1. 기초 평면도 철근 배근 지시선 (Standard Callout Leader)
     if (pieces.length > 0) {
       const p0 = pieces[0];
-      const midY = (p0.y0 + p0.y1) / 2;
+      const targetY = p0.y1 - 350;
       const lx0 = p0.x + 45;
-      const tx = p0.x - 120;
-      const ty = midY - 60;
-      ln([lx0, midY], [tx + 180, ty], 'DIM');
-      ln([tx + 180, ty], [tx, ty], 'DIM');
+      const tx = p0.x - 550;
+      const ty = targetY + 60;
+      ln([lx0, targetY], [p0.x - 120, ty], 'DIM');
+      ln([p0.x - 120, ty], [tx, ty], 'DIM');
       ents.push({
         t: 'text',
-        p: [tx, ty + 12],
+        p: [tx + 10, ty + 12],
         h: Math.round(2.6 * (opt._N || 25)),
-        s: (opt.lang === 'en' ? 'PAD REBAR: 2-HD13 / TIE HD10 @ 200' : '패드 배근: 주근 2-HD13 / 늑근 HD10 @ 200'),
+        s: fDesign.padCallout,
         align: 'left',
         layer: 'DIM'
       });
@@ -2554,9 +2706,10 @@
     const secs = ((opt.length && opt.length.length) ? opt.length : [map.length]).filter(Boolean);
     const total = secs.reduce((a, b) => a + b, 0);
     const th = opt.frame || 75;
+    const fDesign = getFoundationDesign(opt);
     const padH = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
     const slabTopY = -padH; // 슬래브 상면 (패드 상면 y=0 기준)
-    const slabT = 150;
+    const slabT = fDesign.slabT;
     const slabBotY = slabTopY - slabT; // 슬래브 하면
     const strips = concStrips(map.cols, opt);
     const px0 = strips[0][0];
@@ -2606,8 +2759,8 @@
     ln([px0 + 50, slabTopY - 35], [px0 + 50, slabTopY - 105], 'REINF');
     ln([pxEnd - 50, slabTopY - 35], [pxEnd - 50, slabTopY - 105], 'REINF');
 
-    // 슬래브 횡방향 배력근 점근 (@200mm 피치)
-    for (let bx = px0 + 80; bx <= pxEnd - 60; bx += 200) {
+    // 슬래브 횡방향 배력근 점근
+    for (let bx = px0 + 80; bx <= pxEnd - 60; bx += fDesign.slabRebarPitch) {
       circ(bx, slabBotY + 45 + 10, 4.5, 'REINF');
       circ(bx, slabTopY - 35 - 10, 4.5, 'REINF');
     }
@@ -2625,29 +2778,37 @@
       ln([lx + 45, -35], [lx + 45 + 60, -35], 'REINF');
       ln([rx - 45, -35], [rx - 45 - 60, -35], 'REINF');
 
-      // 늑근 / 대근 (Stirrups / Ties @130mm)
-      for (let ty = -75; ty >= slabTopY + 20; ty -= 130) {
+      // 늑근 / 대근 (Stirrups / Ties)
+      for (let ty = -75; ty >= slabTopY + 20; ty -= Math.min(130, fDesign.padTiePitch)) {
         ln([lx + 45, ty], [rx - 45, ty], 'REINF');
       }
 
-      // 기초 앵커볼트 (Anchor Bolt M16: 볼트 몸체, L형 갈고리, 상부 너트/와셔 플레이트)
+      // 기초 앵커볼트 (Anchor Bolt: 볼트 몸체, L형 갈고리, 내진 엔드플레이트, 상부 너트/와셔 플레이트)
       const cx = (lx + rx) / 2;
-      ln([cx, 35], [cx, -260], 'FRAME');
-      ln([cx, -260], [cx + 45, -260], 'FRAME');
+      const bDepth = Math.min(slabT + padH - 60, fDesign.anchorEmbed);
+      ln([cx, 35], [cx, -bDepth], 'FRAME');
+      ln([cx, -bDepth], [cx + 45, -bDepth], 'FRAME');
+      if (fDesign.anchorHasPlate) {
+        ln([cx - 28, -bDepth], [cx + 28, -bDepth], 'FRAME');
+        poly([[cx - 20, -bDepth], [cx + 20, -bDepth], [cx + 20, -bDepth - 10], [cx - 20, -bDepth - 10]], 'FRAME', true);
+      }
       ln([cx - 25, 0], [cx + 25, 0], 'FRAME');
       poly([[cx - 15, 0], [cx + 15, 0], [cx + 15, 18], [cx - 15, 18]], 'FRAME', true);
     });
 
     // (3) 철근 배근 지시선 (Callout Leader)
-    const calloutX = px0 + 150;
-    const calloutY = slabTopY - 70;
-    ln([calloutX, slabTopY - 35], [calloutX + 60, calloutY], 'DIM');
-    ln([calloutX + 60, calloutY], [calloutX + 280, calloutY], 'DIM');
+    const calloutTargetX = px0 + 100;
+    const calloutTargetY = slabTopY - 35;
+    const calloutKneeX = px0 - 150;
+    const calloutKneeY = slabTopY + 120;
+    const calloutEndX = px0 - 720;
+    ln([calloutTargetX, calloutTargetY], [calloutKneeX, calloutKneeY], 'DIM');
+    ln([calloutKneeX, calloutKneeY], [calloutEndX, calloutKneeY], 'DIM');
     ents.push({
       t: 'text',
-      p: [calloutX + 70, calloutY + 12],
+      p: [calloutEndX + 10, calloutKneeY + 12],
       h: Math.round(2.6 * N),
-      s: (opt.lang === 'en' ? 'SLAB REBAR: HD10 @ 200 (TOP & BOT)' : '슬래브 배근: HD10 @ 200 (상·하부 복배근)'),
+      s: fDesign.slabCallout,
       align: 'left',
       layer: 'DIM'
     });
@@ -2668,7 +2829,7 @@
     const dimPadX = px0 - Math.round(5.5 * N);
     dimLinear(ents, [px0, slabTopY], [px0, 0], dimPadX, true, String(padH), Math.round(2.8 * N), 'DIM');
 
-    // 8. 우측 150 단차 치수선 및 우측 지면 GL선 (media_1791120706510.png 우측)
+    // 8. 우측 기초 슬래브 두께(slabT) 치수선 및 우측 지면 GL선
     ln([pxEnd, slabBotY], [pxEnd + glLen, slabBotY], 'FRAME');
     const rSymX = pxEnd + Math.round(8.5 * N);
     poly([[rSymX - triW / 2, slabBotY + triH], [rSymX + triW / 2, slabBotY + triH], [rSymX, slabBotY]], 'DIM', true);
@@ -2676,7 +2837,7 @@
     for (let sx = pxEnd + glLen * 0.1; sx < pxEnd + glLen; sx += Math.round(1.8 * N)) {
       ln([sx, slabBotY], [sx - soilH, slabBotY - soilH], 'PANEL_DETAIL');
     }
-    // 우측 150 치수선
+    // 우측 slabT 치수선
     const dim150X = pxEnd + Math.round(3.0 * N);
     dimLinear(ents, [pxEnd, slabBotY], [pxEnd, slabTopY], dim150X, true, String(slabT), Math.round(2.4 * N), 'DIM');
 
@@ -3295,12 +3456,13 @@
     }
 
     // 기초 콘크리트 패드 및 지면 (media_1790951915253.png 완벽 일치)
+    const fDesign = getFoundationDesign(opt);
     const padH = (opt && opt.padH !== undefined && opt.padH !== '') ? Number(opt.padH) : (600 - th);
     const clearanceH = th + padH; // 탱크 하부(y=0) ~ 슬래브 상면(slabTopY) = 600mm
     const slabTopY = -clearanceH; // -600mm
     const GRD = slabTopY; // 기준 바닥 레벨
-    const slabT = 150;
-    const slabBotY = slabTopY - slabT; // -750mm
+    const slabT = fDesign.slabT;
+    const slabBotY = slabTopY - slabT; // 슬래브 하면
     const cols = (view === 'front' ? mmap.cols : mmap.rows);
     const strips = concStrips(cols, opt);
     const px0 = strips[0][0];
@@ -3347,8 +3509,8 @@
     ln([px0 + 50, slabTopY - 35], [px0 + 50, slabTopY - 105], 'REINF');
     ln([pxEnd - 50, slabTopY - 35], [pxEnd - 50, slabTopY - 105], 'REINF');
 
-    // 슬래브 횡방향 배력근 점근 (@200mm 피치)
-    for (let bx = px0 + 80; bx <= pxEnd - 60; bx += 200) {
+    // 슬래브 횡방향 배력근 점근
+    for (let bx = px0 + 80; bx <= pxEnd - 60; bx += fDesign.slabRebarPitch) {
       circ(bx, slabBotY + 45 + 10, 4.5, 'REINF');
       circ(bx, slabTopY - 35 - 10, 4.5, 'REINF');
     }
@@ -3364,16 +3526,21 @@
       ln([lx + 45, -th - 35], [lx + 45 + 60, -th - 35], 'REINF');
       ln([rx - 45, -th - 35], [rx - 45 - 60, -th - 35], 'REINF');
 
-      for (let ty = -th - 75; ty >= slabTopY + 20; ty -= 130) {
+      for (let ty = -th - 75; ty >= slabTopY + 20; ty -= Math.min(130, fDesign.padTiePitch)) {
         ln([lx + 45, ty], [rx - 45, ty], 'REINF');
       }
 
       const cx = (lx + rx) / 2;
-      ln([cx, -th + 35], [cx, -th - 260], 'FRAME');
-      ln([cx, -th - 260], [cx + 45, -th - 260], 'FRAME');
+      const bDepth = Math.min(slabT + padH - 60, fDesign.anchorEmbed);
+      ln([cx, -th + 35], [cx, -th - bDepth], 'FRAME');
+      ln([cx, -th - bDepth], [cx + 45, -th - bDepth], 'FRAME');
+      if (fDesign.anchorHasPlate) {
+        ln([cx - 28, -th - bDepth], [cx + 28, -th - bDepth], 'FRAME');
+        poly([[cx - 20, -th - bDepth], [cx + 20, -th - bDepth], [cx + 20, -th - bDepth - 10], [cx - 20, -th - bDepth - 10]], 'FRAME', true);
+      }
     });
 
-    // 7. 좌측 지면 GL선 (media_1790952977248.png: 좌측 GL도 바닥 레벨 slabBotY = -750로 배치)
+    // 7. 좌측 지면 GL선 (media_1790952977248.png: 좌측 GL도 바닥 레벨 slabBotY로 배치)
     const glLen = Math.max(650, Math.round(18.0 * N));
     const soilH = Math.round(3.5 * N);
     const triW = Math.round(2.6 * N), triH = Math.round(2.4 * N);
@@ -3385,7 +3552,7 @@
       ln([sx, slabBotY], [sx - soilH, slabBotY - soilH], 'PANEL_DETAIL');
     }
 
-    // 8. 우측 150 단차 치수선 및 우측 지면 GL선 (media_1790951915253.png 우측)
+    // 8. 우측 기초 슬래브 두께(slabT) 치수선 및 우측 지면 GL선
     ln([pxEnd, slabBotY], [pxEnd + glLen, slabBotY], 'FRAME');
     const rSymX = pxEnd + Math.round(8.5 * N);
     poly([[rSymX - triW / 2, slabBotY + triH], [rSymX + triW / 2, slabBotY + triH], [rSymX, slabBotY]], 'DIM', true);
@@ -6219,32 +6386,36 @@
       }
 
       // 3. 우측 하단: 기초 콘크리트 설계 사양표 (FOUNDATION SPECIFICATION TABLE)
-      const tbx = tx0 - 135, tby = y0 + 35;
-      const tbw = 125, tbh = 78;
+      const tbx = tx0 - 138, tby = y0 + 35;
+      const tbw = 128, tbh = 80;
       rect(tbx, tby, tbx + tbw, tby + tbh);
-      line([tbx, tby + tbh - 13], [tbx + tbw, tby + tbh - 13]);
-      text(tbx + tbw / 2, tby + tbh - 6.5, 3.8, lang === 'en' ? 'FOUNDATION SPECIFICATION' : '기초 콘크리트 설계 사양', 'center', 0, 'middle');
+      line([tbx, tby + tbh - 11], [tbx + tbw, tby + tbh - 11]);
+      text(tbx + tbw / 2, tby + tbh - 5.5, 3.4, lang === 'en' ? 'FOUNDATION SPECIFICATION' : '기초 콘크리트 설계 사양 (내진·안전율)', 'center', 0, 'middle');
 
+      const fDesign = getFoundationDesign(opt);
       const padFirstW = Number(opt.padFirstW) || 400;
       const padMidW = Number(opt.padMidW) || 300;
       const padHVal = Number(opt.padH) || (600 - (Number(opt.frame) || 75));
       const padOv = (opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : Math.round(padFirstW / 2);
       const specs = [
-        [lang === 'en' ? 'First/Last Pad Width' : '외측 패드 폭 (W1)', `${padFirstW} mm`],
-        [lang === 'en' ? 'Middle Pad Width' : '중간 패드 폭 (W2)', `${padMidW} mm`],
-        [lang === 'en' ? 'Pad Height' : '패드 높이 (H)', `${padHVal} mm`],
-        [lang === 'en' ? 'Pad Overhang' : '패드 돌출 (Ov)', `${padOv} mm`],
-        [lang === 'en' ? 'Concrete Strength' : '콘크리트 강도', '21 MPa (210 kgf/cm²)'],
-        [lang === 'en' ? 'Rebar (Main/Tie)' : '철근 규격 (주근/늑근)', 'HD13 / HD10 (SD400)'],
-        [lang === 'en' ? 'Anchor Bolt' : '기초 앙카볼트', 'M16 (SUS304)']
+        [lang === 'en' ? 'Edge Pad Width (W1)' : '외측 패드 폭 (W1)', `${padFirstW} mm`],
+        [lang === 'en' ? 'Middle Pad Width (W2)' : '중간 패드 폭 (W2)', `${padMidW} mm`],
+        [lang === 'en' ? 'Pad Height (H)' : '패드 높이 (H)', `${padHVal} mm`],
+        [lang === 'en' ? 'Foundation Slab (t)' : '기초 슬래브 두께 (t)', `${fDesign.slabT} mm`],
+        [lang === 'en' ? 'Concrete Strength' : '콘크리트 강도 (fck)', fDesign.fckStr],
+        [lang === 'en' ? 'Rebar (Main/Tie)' : '철근 규격 (주근/늑근)', fDesign.rebarPadStr],
+        [lang === 'en' ? 'Slab Rebar (Top/Bot)' : '슬래브 배근 (상·하부)', fDesign.rebarSlabStr],
+        [lang === 'en' ? 'Anchor Bolt' : '기초 앙카볼트', fDesign.anchorStr],
+        [lang === 'en' ? 'Soil Bearing (qa)' : '요구 지내력 (qa)', fDesign.bearingStr],
+        [lang === 'en' ? 'Safety Factor (F.S)' : '내진/안전율 기준', fDesign.fsStr]
       ];
-      const rH = (tbh - 13) / specs.length;
+      const rH = (tbh - 11) / specs.length;
       specs.forEach(([k, v], sIdx) => {
-        const ry = tby + tbh - 13 - (sIdx + 1) * rH;
+        const ry = tby + tbh - 11 - (sIdx + 1) * rH;
         if (sIdx > 0) line([tbx, ry + rH], [tbx + tbw, ry + rH]);
-        line([tbx + 68, ry], [tbx + 68, ry + rH]);
-        text(tbx + 4, ry + rH / 2, 2.6, k, 'left', 0, 'middle');
-        text(tbx + 72, ry + rH / 2, 2.6, v, 'left', 0, 'middle');
+        line([tbx + 65, ry], [tbx + 65, ry + rH]);
+        text(tbx + 3, ry + rH / 2, 2.3, k, 'left', 0, 'middle');
+        text(tbx + 68, ry + rH / 2, 2.3, v, 'left', 0, 'middle');
       });
 
       const blocks = concPlan.blocks || {};
@@ -6446,7 +6617,7 @@
       drawViewTitleBubble(col1_tank_cx, row3_title_y, 1, 2, viewTitlePad);
 
       // 6. Row 3 Col 2: 기초 콘크리트 설계 사양표 (FOUNDATION SPECIFICATION TABLE)
-      const tbw = 125, tbh = 78;
+      const tbw = 128, tbh = 80;
       let tbx = col2_tank_cx - tbw / 2;
       if (tbx + tbw > tx0 - 6) tbx = tx0 - 6 - tbw;
       if (tbx < x0 + 10) tbx = x0 + 10;
@@ -6454,29 +6625,33 @@
       if (tby + tbh > row2_title_y - 6.0 - 4.0) tby = row2_title_y - 6.0 - 4.0 - tbh;
       if (tby < y0 + 6) tby = y0 + 6;
       rect(tbx, tby, tbx + tbw, tby + tbh);
-      line([tbx, tby + tbh - 13], [tbx + tbw, tby + tbh - 13]);
-      text(tbx + tbw / 2, tby + tbh - 6.5, 3.8, lang === 'en' ? 'FOUNDATION SPECIFICATION' : '기초 콘크리트 설계 사양', 'center', 0, 'middle');
+      line([tbx, tby + tbh - 11], [tbx + tbw, tby + tbh - 11]);
+      text(tbx + tbw / 2, tby + tbh - 5.5, 3.4, lang === 'en' ? 'FOUNDATION SPECIFICATION' : '기초 콘크리트 설계 사양 (내진·안전율)', 'center', 0, 'middle');
 
+      const fDesign = getFoundationDesign(opt);
       const padFirstW = Number(opt.padFirstW) || 400;
       const padMidW = Number(opt.padMidW) || 300;
       const padH = padHVal;
       const padOv = (opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : Math.round(padFirstW / 2);
       const specs = [
-        [lang === 'en' ? 'First/Last Pad Width' : '외측 패드 폭 (W1)', `${padFirstW} mm`],
-        [lang === 'en' ? 'Middle Pad Width' : '중간 패드 폭 (W2)', `${padMidW} mm`],
-        [lang === 'en' ? 'Pad Height' : '패드 높이 (H)', `${padH} mm`],
-        [lang === 'en' ? 'Pad Overhang' : '패드 돌출 (Ov)', `${padOv} mm`],
-        [lang === 'en' ? 'Concrete Strength' : '콘크리트 강도', '21 MPa (210 kgf/cm²)'],
-        [lang === 'en' ? 'Rebar (Main/Tie)' : '철근 규격 (주근/늑근)', 'HD13 / HD10 (SD400)'],
-        [lang === 'en' ? 'Anchor Bolt' : '기초 앙카볼트', 'M16 (SUS304)']
+        [lang === 'en' ? 'Edge Pad Width (W1)' : '외측 패드 폭 (W1)', `${padFirstW} mm`],
+        [lang === 'en' ? 'Middle Pad Width (W2)' : '중간 패드 폭 (W2)', `${padMidW} mm`],
+        [lang === 'en' ? 'Pad Height (H)' : '패드 높이 (H)', `${padH} mm`],
+        [lang === 'en' ? 'Foundation Slab (t)' : '기초 슬래브 두께 (t)', `${fDesign.slabT} mm`],
+        [lang === 'en' ? 'Concrete Strength' : '콘크리트 강도 (fck)', fDesign.fckStr],
+        [lang === 'en' ? 'Rebar (Main/Tie)' : '철근 규격 (주근/늑근)', fDesign.rebarPadStr],
+        [lang === 'en' ? 'Slab Rebar (Top/Bot)' : '슬래브 배근 (상·하부)', fDesign.rebarSlabStr],
+        [lang === 'en' ? 'Anchor Bolt' : '기초 앙카볼트', fDesign.anchorStr],
+        [lang === 'en' ? 'Soil Bearing (qa)' : '요구 지내력 (qa)', fDesign.bearingStr],
+        [lang === 'en' ? 'Safety Factor (F.S)' : '내진/안전율 기준', fDesign.fsStr]
       ];
-      const rH = (tbh - 13) / specs.length;
+      const rH = (tbh - 11) / specs.length;
       specs.forEach(([k, v], sIdx) => {
-        const ry = tby + tbh - 13 - (sIdx + 1) * rH;
+        const ry = tby + tbh - 11 - (sIdx + 1) * rH;
         if (sIdx > 0) line([tbx, ry + rH], [tbx + tbw, ry + rH]);
-        line([tbx + 68, ry], [tbx + 68, ry + rH]);
-        text(tbx + 4, ry + rH / 2, 2.6, k, 'left', 0, 'middle');
-        text(tbx + 72, ry + rH / 2, 2.6, v, 'left', 0, 'middle');
+        line([tbx + 65, ry], [tbx + 65, ry + rH]);
+        text(tbx + 3, ry + rH / 2, 2.3, k, 'left', 0, 'middle');
+        text(tbx + 68, ry + rH / 2, 2.3, v, 'left', 0, 'middle');
       });
       elev = true;
     } else {
@@ -6819,6 +6994,6 @@
     return o.join('\r\n') + '\r\n';
   }
 
-  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType };
+  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, getFoundationDesign, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TankCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
