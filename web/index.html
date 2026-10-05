@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.6.26</title>
+<title>YSACC TANK CAD v1.6.27</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -420,7 +420,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.26</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.27</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2183,7 +2183,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.26</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.27</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2193,7 +2193,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.26</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.27</span></div>
     </div>
   </main>
 </div>
@@ -7535,6 +7535,14 @@ canvas.drag{cursor:grabbing}
       if (isFoundA !== isFoundB) {
         return isFoundA ? -1 : 1;
       }
+      const isReinfA = a.layer === 'REINF';
+      const isReinfB = b.layer === 'REINF';
+      if (isReinfA !== isReinfB) {
+        const isWallA = a.layer === 'PANEL' || a.layer === 'PANEL_DETAIL' || a.layer === 'FRAME';
+        const isWallB = b.layer === 'PANEL' || b.layer === 'PANEL_DETAIL' || b.layer === 'FRAME';
+        if (isReinfA && isWallB) return 1;
+        if (isReinfB && isWallA) return -1;
+      }
       const dDiff = (b.depth !== undefined ? b.depth : 0) - (a.depth !== undefined ? a.depth : 0);
       if (Math.abs(dDiff) > 1e-4) return dDiff;
       return a._idx - b._idx;
@@ -7607,7 +7615,7 @@ canvas.drag{cursor:grabbing}
         for (let i = 0; i < opaquePolys.length; i++) {
           const poly = opaquePolys[i];
           // Polygon must be strictly in FRONT of the line (lower depth by at least 15mm)
-          if (poly.depth < eDepth - 15) {
+          if ((poly.layer === 'REINF' && (e.layer === 'FRAME' || e.layer === 'PANEL' || e.layer === 'PANEL_DETAIL')) || poly.depth < eDepth - 15) {
             // Foundation elements (PAD / isFoundation) must NEVER be clipped by any polygon, and foundation polygons never clip lines
             if (e.isFoundation || e.layer === 'PAD') continue;
             if (poly.isFoundation || poly.layer === 'PAD') continue;
@@ -13136,7 +13144,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.26</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.27</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -13741,7 +13749,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         });
         images.forEach(renderImageEnt);
       } else {
-        ['PAD', 'PANEL_DETAIL', 'PANEL', 'WALL', 'REINF', 'FRAME', 'DIM', 'SHEET', 'BALLOON', 'NOZZLE'].forEach(layer => {
+        ['PAD', 'PANEL_DETAIL', 'PANEL', 'WALL', 'FRAME', 'REINF', 'DIM', 'SHEET', 'BALLOON', 'NOZZLE'].forEach(layer => {
           ctx.strokeStyle = col[layer]; ctx.fillStyle = col[layer]; ctx.lineWidth = lw[layer]; ctx.beginPath();
           const texts = [];
           const images = [];

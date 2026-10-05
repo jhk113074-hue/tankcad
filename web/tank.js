@@ -5335,6 +5335,14 @@
       if (isFoundA !== isFoundB) {
         return isFoundA ? -1 : 1;
       }
+      const isReinfA = a.layer === 'REINF';
+      const isReinfB = b.layer === 'REINF';
+      if (isReinfA !== isReinfB) {
+        const isWallA = a.layer === 'PANEL' || a.layer === 'PANEL_DETAIL' || a.layer === 'FRAME';
+        const isWallB = b.layer === 'PANEL' || b.layer === 'PANEL_DETAIL' || b.layer === 'FRAME';
+        if (isReinfA && isWallB) return 1;
+        if (isReinfB && isWallA) return -1;
+      }
       const dDiff = (b.depth !== undefined ? b.depth : 0) - (a.depth !== undefined ? a.depth : 0);
       if (Math.abs(dDiff) > 1e-4) return dDiff;
       return a._idx - b._idx;
@@ -5407,7 +5415,7 @@
         for (let i = 0; i < opaquePolys.length; i++) {
           const poly = opaquePolys[i];
           // Polygon must be strictly in FRONT of the line (lower depth by at least 15mm)
-          if (poly.depth < eDepth - 15) {
+          if ((poly.layer === 'REINF' && (e.layer === 'FRAME' || e.layer === 'PANEL' || e.layer === 'PANEL_DETAIL')) || poly.depth < eDepth - 15) {
             // Foundation elements (PAD / isFoundation) must NEVER be clipped by any polygon, and foundation polygons never clip lines
             if (e.isFoundation || e.layer === 'PAD') continue;
             if (poly.isFoundation || poly.layer === 'PAD') continue;
