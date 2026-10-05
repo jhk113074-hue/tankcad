@@ -5123,7 +5123,7 @@
       }
     });
 
-    // 7. 벽체 보강재 (Internal Reinforcement Plates: media_1791203608783.png 표준 보강 격자판 형상 - 플랜지 외측 전면 배치)
+    // 7. 벽체 보강재 (Internal Reinforcement Plates - 외각 코너 브라켓 외부 돌출)
     const flangeD = 75; // 외부 플랜지 돌출 폭 (75mm)
     const HX = 110, hq = 55, sr = 12;
 
@@ -5138,13 +5138,16 @@
         // 수평 단간 접합부 격자판 (Tier Seams: z = zs[k])
         for (let k = 1; k < hs.length; k++) {
           const z = zs[k];
-          // 좌측 모서리 또는 접합부
+          // 좌측 모서리 외각 브라켓 (좌측 밖으로 돌출)
           if (!map.has(i, j - 1)) {
-            // 외곽 좌측 끝: halfPlate (우향 110x220, 2볼트)
-            const pDepth = getDepth(x0 + HX / 2, py, z) - 30;
-            poly([toIso(x0, py, z - HX), toIso(x0 + HX, py, z - HX), toIso(x0 + HX, py, z + HX), toIso(x0, py, z + HX)], 'REINF', true, true, pDepth);
-            isoCircle(x0 + hq, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
-            isoCircle(x0 + hq, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
+            const pDepth = getDepth(x0 - flangeD / 2, py, z) - 35;
+            // 전면 날개: x0 - flangeD ~ x0 + 40
+            poly([toIso(x0 - flangeD, py, z - HX), toIso(x0 + 40, py, z - HX), toIso(x0 + 40, py, z + HX), toIso(x0 - flangeD, py, z + HX)], 'REINF', true, true, pDepth);
+            isoCircle(x0 - flangeD / 2, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
+            isoCircle(x0 - flangeD / 2, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
+            // 좌측면 날개 (L-앵글 코너 마감): y0 - flangeD ~ y0
+            poly([toIso(x0 - flangeD, py, z - HX), toIso(x0 - flangeD, y0, z - HX), toIso(x0 - flangeD, y0, z + HX), toIso(x0 - flangeD, py, z + HX)], 'REINF', true, true, pDepth);
+            isoCircle(x0 - flangeD, y0 - flangeD / 2, z, sr, 'YZ', 'REINF', pDepth, 12);
           } else {
             // 내부 기둥 접합부: fullPlate (220x220, 4볼트 + 중앙 원형 보스)
             const pDepth = getDepth(x0, py, z) - 30;
@@ -5156,12 +5159,12 @@
             isoCircle(x0, py, z, 18, 'XZ', 'REINF', pDepth, 12);
           }
 
-          // 우측 모서리 끝단 (마지막 열인 경우): halfPlate (좌향 110x220, 2볼트)
+          // 우측 모서리 끝단 (외각 코너 브라켓 전면 날개: x1 - 40 ~ x1 + flangeD, 우측 밖으로 돌출)
           if (!map.has(i, j + 1)) {
-            const pDepth = getDepth(x1 - HX / 2, py, z) - 30;
-            poly([toIso(x1 - HX, py, z - HX), toIso(x1, py, z - HX), toIso(x1, py, z + HX), toIso(x1 - HX, py, z + HX)], 'REINF', true, true, pDepth);
-            isoCircle(x1 - hq, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
-            isoCircle(x1 - hq, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
+            const pDepth = getDepth(x1 + flangeD / 2, py, z) - 35;
+            poly([toIso(x1 - 40, py, z - HX), toIso(x1 + flangeD, py, z - HX), toIso(x1 + flangeD, py, z + HX), toIso(x1 - 40, py, z + HX)], 'REINF', true, true, pDepth);
+            isoCircle(x1 + flangeD / 2, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
+            isoCircle(x1 + flangeD / 2, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
           }
         }
 
@@ -5198,13 +5201,12 @@
         // 수평 단간 접합부 격자판
         for (let k = 1; k < hs.length; k++) {
           const z = zs[k];
-          // 전면 모서리 또는 접합부
+          // 전면 모서리 외각 브라켓 우측 날개 (y0 - flangeD ~ y0 + 40, 전면 코너와 연결되어 완벽한 L-Angle 완성)
           if (!map.has(i - 1, j)) {
-            // 외곽 전면 끝: halfPlate (후향 110x220, 2볼트)
-            const pDepth = getDepth(px, y0 + HX / 2, z) - 30;
-            poly([toIso(px, y0, z - HX), toIso(px, y0 + HX, z - HX), toIso(px, y0 + HX, z + HX), toIso(px, y0, z + HX)], 'REINF', true, true, pDepth);
-            isoCircle(px, y0 + hq, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
-            isoCircle(px, y0 + hq, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
+            const pDepth = getDepth(px, y0 - flangeD / 2, z) - 35;
+            poly([toIso(px, y0 - flangeD, z - HX), toIso(px, y0 + 40, z - HX), toIso(px, y0 + 40, z + HX), toIso(px, y0 - flangeD, z + HX)], 'REINF', true, true, pDepth);
+            isoCircle(px, y0 - flangeD / 2, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
+            isoCircle(px, y0 - flangeD / 2, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
           } else {
             // 내부 기둥 접합부: fullPlate (220x220, 4볼트 + 중앙 원형 보스)
             const pDepth = getDepth(px, y0, z) - 30;
@@ -5216,12 +5218,15 @@
             isoCircle(px, y0, z, 18, 'YZ', 'REINF', pDepth, 12);
           }
 
-          // 후면 모서리 끝단 (마지막 행인 경우): halfPlate (전향 110x220, 2볼트)
+          // 후면 모서리 끝단 (외각 코너 브라켓 우측 날개: y1 - 40 ~ y1 + flangeD, 후면 밖으로 돌출)
           if (!map.has(i + 1, j)) {
-            const pDepth = getDepth(px, y1 - HX / 2, z) - 30;
-            poly([toIso(px, y1 - HX, z - HX), toIso(px, y1, z - HX), toIso(px, y1, z + HX), toIso(px, y1 - HX, z + HX)], 'REINF', true, true, pDepth);
-            isoCircle(px, y1 - hq, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
-            isoCircle(px, y1 - hq, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
+            const pDepth = getDepth(px, y1 + flangeD / 2, z) - 35;
+            poly([toIso(px, y1 - 40, z - HX), toIso(px, y1 + flangeD, z - HX), toIso(px, y1 + flangeD, z + HX), toIso(px, y1 - 40, z + HX)], 'REINF', true, true, pDepth);
+            isoCircle(px, y1 + flangeD / 2, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
+            isoCircle(px, y1 + flangeD / 2, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
+            // 후면 날개 (L-앵글 코너 마감)
+            poly([toIso(px, y1 + flangeD, z - HX), toIso(xWall, y1 + flangeD, z - HX), toIso(xWall, y1 + flangeD, z + HX), toIso(px, y1 + flangeD, z + HX)], 'REINF', true, true, pDepth);
+            isoCircle(xWall + flangeD / 2, y1 + flangeD, z, sr, 'XZ', 'REINF', pDepth, 12);
           }
         }
 
