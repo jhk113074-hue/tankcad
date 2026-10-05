@@ -2866,6 +2866,10 @@
     const poly = (p, layer, closed) => { for (let k = 0; k + 1 < p.length; k++) ln(p[k], p[k + 1], layer); if (closed) ln(p[p.length - 1], p[0], layer); };
     const rect = (x0, y0, x1, y1, layer) => poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]], layer, true);
     const circ = (x, y, r, layer, first) => ents.push({ t: 'circle', c: [x, y], r, layer, first });
+    // 보강재는 최외각에 설치되므로 브라켓 뒤부분 패널/접합선은 가려져야 함 (Background Fill)
+    const plateBacking = (x0, y0, x1, y1) => {
+      ents.push({ t: 'poly', pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], fill: true, stroke: false, close: true, layer: 'REINF' });
+    };
     const MX = OB.CX >> 1, MY = OB.CY >> 1, OFF = OB.OFFSET;
     const internal = (opt.rf || 0) !== 0, sts = opt.material === 'STS';
     const mat = sts ? 'STS' : 'SMC';
@@ -2993,13 +2997,16 @@
     function plate(x, y, kind) {
       const ms = OB.SPACE >> 1, R = OB.R;
       if (kind === 'top') {
+        plateBacking(x - MX + OB.SPACE, y - OB.MOVE, x + MX - OB.SPACE, y + OB.CY - OB.MOVE);
         rect(x - MX + OB.SPACE, y - OB.MOVE, x + MX - OB.SPACE, y + OB.CY - OB.MOVE, 'REINF');
         circ(x - MX + OB.SPACE + ms, y - OB.MOVE + ms, R, 'REINF'); circ(x + MX - OB.SPACE - ms, y - OB.MOVE + ms, R, 'REINF');
       } else if (kind === 'mid') {
+        plateBacking(x - MX, y - MY, x + MX, y + MY);
         rect(x - MX, y - MY, x + MX, y + MY, 'REINF');
         ln([x - MX + OB.SPACE, y - MY], [x - MX + OB.SPACE, y + MY], 'REINF'); ln([x + MX - OB.SPACE, y - MY], [x + MX - OB.SPACE, y + MY], 'REINF');
         [[x - MX + ms, y - MY + ms], [x - MX + ms, y + MY - ms], [x + MX - ms, y - MY + ms], [x + MX - ms, y + MY - ms]].forEach(c => circ(c[0], c[1], R, 'REINF'));
       } else {
+        plateBacking(x - MX, y, x + MX, y + OB.STAY + OB.CY);
         rect(x - MX, y, x + MX, y + OB.STAY, 'REINF');
         rect(x - MX + OB.SPACE, y + OB.STAY, x + MX - OB.SPACE, y + OB.STAY + OB.CY, 'REINF');
         circ(x - MX + OB.SPACE + ms, y + OB.STAY + OB.CY - ms, R, 'REINF'); circ(x + MX - OB.SPACE - ms, y + OB.STAY + OB.CY - ms, R, 'REINF');
@@ -3232,6 +3239,7 @@
       const pLen = split(nLen, baseX), cnt = pLen.length;
       const xj = [baseX]; pLen.forEach(w => xj.push(xj[xj.length - 1] + w));
       const sp = baseX === 0 ? 0 : cnt - 1;             // 1300 패널 위치 (왼쪽 구간은 처음, 나머지는 마지막)
+      const pendingPlates = [];
       if (internal && sts) {
         // STS_AngleLeft / STS_AngleRight: 외곽선 + STS 패널 + 단 사이 가로선/세로선 + 접합 격자판(180x180, 나사 4 + 절곡선)
         const HX = 90, hq = 45, so = 20;
@@ -3248,6 +3256,7 @@
           y0 += hh;
         });
         const stsPlate = (x, y) => {
+          plateBacking(x - HX, y - HX, x + HX, y + HX);
           rect(x - HX, y - HX, x + HX, y + HX, 'REINF');
           [[-1, 1], [-1, -1], [1, 1], [1, -1]].forEach(([a, b]) => {
             circ(x + a * hq, y + b * hq, 10, 'REINF');
@@ -3257,10 +3266,12 @@
         let yb = 0;
         for (let i = 0; i < n - 1; i++) {
           yb += hs[i];
+          const curYb = yb;
           for (let j = 0; j < cnt - 1; j++) {
             ln([xj[j] + (j === 0 ? 0 : HX), yb], [xj[j + 1] - HX, yb]);
             ln([xj[j + 1], yb - HX], [xj[j + 1], yb - hs[i] + (i === 0 ? 0 : HX)]);
-            stsPlate(xj[j + 1], yb);
+            const curX = xj[j + 1];
+            pendingPlates.push(() => stsPlate(curX, curYb));
           }
           ln([xj[cnt - 1] + (cnt > 1 ? HX : 0), yb], [baseX + nLen, yb]);
         }
@@ -3272,10 +3283,11 @@
         ln([baseX, 0], [baseX, nH]); ln([baseX + nLen, 0], [baseX + nLen, nH]);
         const spans = xj.map(() => []);            // 접합부 x 별 격자판이 차지하는 y 구간
         const scr = (cx0, cy0, dx, dy) => [[-1, 1], [-1, -1], [1, 1], [1, -1]].forEach(([a1, b1]) => circ(cx0 + a1 * dx, cy0 + b1 * dy, sr, 'REINF'));
-        const fullPlate = (x, y) => { rect(x - HX, y - HX, x + HX, y + HX, 'REINF'); scr(x, y, HX / 2, HX / 2); };
-        const halfPlate = (x, y, sgn) => { rect(x, y - HX, x + sgn * HX, y + HX, 'REINF'); circ(x + sgn * HX / 2, y + HX / 2, sr, 'REINF'); circ(x + sgn * HX / 2, y - HX / 2, sr, 'REINF'); };
-        const lowPlate = (x, y) => { rect(x - HX, y, x + HX, y + HX, 'REINF'); circ(x - HX / 2, y + HX / 2, sr, 'REINF'); circ(x + HX / 2, y + HX / 2, sr, 'REINF'); };
-        const midRect = (x, y) => { rect(x - HX, y - HX / 2, x + HX, y + HX / 2, 'REINF'); circ(x - HX / 2, y, sr, 'REINF'); circ(x + HX / 2, y, sr, 'REINF'); };
+        const fullPlate = (x, y) => { plateBacking(x - HX, y - HX, x + HX, y + HX); rect(x - HX, y - HX, x + HX, y + HX, 'REINF'); scr(x, y, HX / 2, HX / 2); };
+        const halfPlate = (x, y, sgn) => { const xA = Math.min(x, x + sgn * HX), xB = Math.max(x, x + sgn * HX); plateBacking(xA, y - HX, xB, y + HX); rect(x, y - HX, x + sgn * HX, y + HX, 'REINF'); circ(x + sgn * HX / 2, y + HX / 2, sr, 'REINF'); circ(x + sgn * HX / 2, y - HX / 2, sr, 'REINF'); };
+        const lowPlate = (x, y) => { plateBacking(x - HX, y, x + HX, y + HX); rect(x - HX, y, x + HX, y + HX, 'REINF'); circ(x - HX / 2, y + HX / 2, sr, 'REINF'); circ(x + HX / 2, y + HX / 2, sr, 'REINF'); };
+        const midRect = (x, y) => { plateBacking(x - HX, y - HX / 2, x + HX, y + HX / 2); rect(x - HX, y - HX / 2, x + HX, y + HX / 2, 'REINF'); circ(x - HX / 2, y, sr, 'REINF'); circ(x + HX / 2, y, sr, 'REINF'); };
+        
         let y = 0;
         hs.forEach((hh, i) => {
           const tall = !(hh === 500 || hh === 1000 || hh === 1300), last = i === hsN - 1;
@@ -3286,14 +3298,16 @@
           }
           if (i > 0) {                               // 단 사이 가로 이음선 + 격자판
             for (let j = 0; j < cnt; j++) ln([xj[j] + (j > 0 ? HX : (baseX > 0 ? WALL_TH : 0)) , y], [xj[j + 1] - (j < cnt - 1 ? HX : 0), y]);
-            for (let j = 1; j < cnt; j++) { fullPlate(xj[j], y); spans[j].push([y - HX, y + HX]); }
-            if (baseX === 0) halfPlate(baseX, y, 1);
-            halfPlate(baseX + nLen, y, -1);
+            const plateY = y;
+            for (let j = 1; j < cnt; j++) { pendingPlates.push(() => fullPlate(xj[j], plateY)); spans[j].push([plateY - HX, plateY + HX]); }
+            if (baseX === 0) pendingPlates.push(() => halfPlate(baseX, plateY, 1));
+            pendingPlates.push(() => halfPlate(baseX + nLen, plateY, -1));
           } else if (nH > 3000) {
-            for (let j = 1; j < cnt; j++) { lowPlate(xj[j], 0); spans[j].push([0, HX]); }
+            for (let j = 1; j < cnt; j++) { pendingPlates.push(() => lowPlate(xj[j], 0)); spans[j].push([0, HX]); }
           }
           if (last && hsN >= 1 && !(tall && false)) {   // 마지막 단 중앙 직사각형 격자판
-            for (let j = 1; j < cnt; j++) { const my2 = y + (hh >> 1); midRect(xj[j], my2); spans[j].push([my2 - HX / 2, my2 + HX / 2]); }
+            const my2 = y + (hh >> 1);
+            for (let j = 1; j < cnt; j++) { pendingPlates.push(() => midRect(xj[j], my2)); spans[j].push([my2 - HX / 2, my2 + HX / 2]); }
           }
           y += hh;
         });
@@ -3330,7 +3344,8 @@
                 renderCustomEntitiesAt(ents, customPost, x - cx, -minY * sy, 1, sy, 'REINF');
               }
             } else {
-              plate(x, y, i === 0 ? 'bot' : 'mid');
+              const curX = x, curY = y, curKind = i === 0 ? 'bot' : 'mid';
+              pendingPlates.push(() => plate(curX, curY, curKind));
               if (i > 0) {
                 ln([x + MX, y], [x + (j === cnt - 2 ? pLen[j + 1] : pLen[j + 1] - MX), y]);
                 const h = i === 1 ? OB.STAY + OB.CY : MY;
@@ -3347,12 +3362,15 @@
       for (let j = 0; j < cnt - 1; j++) {
         const x = xj[j + 1];
         if (!customPost || !customPost.length) {
-          plate(x, nH, 'top');
+          const curX = x;
+          pendingPlates.push(() => plate(curX, nH, 'top'));
           ln([x + OFF, nH], [x + (j === cnt - 2 ? pLen[j + 1] : pLen[j + 1] - OFF), nH]);
           [-OFF, 0, OFF].forEach(o => ln([x + o, nH - OB.MOVE], [x + o, nH - hs[n - 1] + hT]));
         }
       }
       }
+      // 최외각 보강재를 패널 및 접합선 최상단에 렌더링 (뒤 배경 차폐)
+      pendingPlates.forEach(fn => fn());
       // 맨홀 띠 (CManholeLT, 높이 100)
       for (let j = 0; j < cnt; j++) manhole(xj[j], nH, pLen[j], sts ? 70 : 100, cnt === 1 ? 0 : j === 0 ? 1 : j === cnt - 1 ? 3 : 2, shapeOf(gIdx + j));
       gIdx += cnt;
