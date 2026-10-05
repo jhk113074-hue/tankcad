@@ -237,8 +237,9 @@ tr:last-child td{border-bottom:0}
 .plan-tool-chip:has(input[value="han"]:checked){background:#ea580c !important;border-color:#ea580c !important}
 .plan-tool-chip:has(input[value="vent"]:checked){background:#0284c7 !important;border-color:#0284c7 !important}
 .plan-tool-chip:has(input[value="lad"]:checked){background:#16a34a !important;border-color:#16a34a !important}
-.plan-tool-chip:has(input[value="inlet"]:checked){background:#2563eb !important;border-color:#2563eb !important}
 .plan-tool-chip:has(input[value="pil"]:checked){background:#475569 !important;border-color:#475569 !important}
+.plan-dir-chip{padding:4px 8px;font-size:11px;border-radius:5px}
+.plan-dir-chip:has(input:checked){background:#ea580c !important;border-color:#ea580c !important;color:#ffffff !important;font-weight:700;box-shadow:0 1px 4px rgba(234,88,12,0.3)}
 
 /* Legacy fallback support */
 .emode-bar{display:none}
@@ -520,6 +521,17 @@ canvas.drag{cursor:grabbing}
             <label class="plan-tool-chip"><input type="radio" name="emode" value="vent"><span id="lblToolVent">💨 에어벤트</span></label>
             <label class="plan-tool-chip"><input type="radio" name="emode" value="lad"><span id="lblToolLad">🪜 사다리</span></label>
             <label class="plan-tool-chip"><input type="radio" name="emode" value="pil"><span id="lblToolPil">🏛️ 기둥 (삭제칸)</span></label>
+          </div>
+          <!-- 맨홀 설치 방향 선택 바 (동·서·남·북 / 자동) -->
+          <div id="planMhDirBox" style="display:none;margin-top:8px;padding:6px 10px;background:rgba(234,88,12,0.08);border:1px solid rgba(234,88,12,0.3);border-radius:6px;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap">
+            <span style="font-size:11px;font-weight:700;color:#ea580c;display:flex;align-items:center;gap:4px">🧭 맨홀 설치 방향:</span>
+            <div style="display:flex;gap:4px;flex-wrap:wrap">
+              <label class="plan-tool-chip plan-dir-chip"><input type="radio" name="planMhDir" value="auto" checked><span>⚡ 자동(외벽감지)</span></label>
+              <label class="plan-tool-chip plan-dir-chip"><input type="radio" name="planMhDir" value="D"><span>▼ 남(South)</span></label>
+              <label class="plan-tool-chip plan-dir-chip"><input type="radio" name="planMhDir" value="R"><span>▶ 동(East)</span></label>
+              <label class="plan-tool-chip plan-dir-chip"><input type="radio" name="planMhDir" value="U"><span>▲ 북(North)</span></label>
+              <label class="plan-tool-chip plan-dir-chip"><input type="radio" name="planMhDir" value="L"><span>◀ 서(West)</span></label>
+            </div>
           </div>
         </div>
 
@@ -2068,12 +2080,25 @@ canvas.drag{cursor:grabbing}
       <!-- Modeless Toolbar -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--surface-sub);border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap">
         <!-- Tools selector -->
-        <div class="plan-tool-grid" style="margin:0;display:flex;gap:6px;flex-wrap:wrap">
-          <label class="plan-tool-chip"><input type="radio" name="emode_m" value="del" checked><span>❌ 패널 삭제</span></label>
-          <label class="plan-tool-chip"><input type="radio" name="emode_m" value="han"><span>🔘 맨홀 (방향회전)</span></label>
-          <label class="plan-tool-chip"><input type="radio" name="emode_m" value="vent"><span>💨 에어벤트</span></label>
-          <label class="plan-tool-chip"><input type="radio" name="emode_m" value="lad"><span>🪜 사다리</span></label>
-          <label class="plan-tool-chip"><input type="radio" name="emode_m" value="pil"><span>🏛️ 기둥 (삭제칸)</span></label>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="plan-tool-grid" style="margin:0;display:flex;gap:6px;flex-wrap:wrap">
+            <label class="plan-tool-chip"><input type="radio" name="emode_m" value="del" checked><span>❌ 패널 삭제</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode_m" value="han"><span>🔘 맨홀 (방향회전)</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode_m" value="vent"><span>💨 에어벤트</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode_m" value="lad"><span>🪜 사다리</span></label>
+            <label class="plan-tool-chip"><input type="radio" name="emode_m" value="pil"><span>🏛️ 기둥 (삭제칸)</span></label>
+          </div>
+          <!-- 맨홀 설치 방향 선택 바 (모달리스 창) -->
+          <div id="planMhDirBoxModeless" style="display:none;padding:4px 8px;background:rgba(234,88,12,0.08);border:1px solid rgba(234,88,12,0.3);border-radius:6px;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:11px;font-weight:700;color:#ea580c">🧭 맨홀 방향:</span>
+            <div style="display:flex;gap:4px;flex-wrap:wrap">
+              <label class="plan-tool-chip plan-dir-chip"><input type="radio" name="planMhDir_m" value="auto" checked><span>⚡ 자동</span></label>
+              <label class="plan-tool-chip plan-dir-chip"><input type="radio" name="planMhDir_m" value="D"><span>▼ 남</span></label>
+              <label class="plan-tool-chip plan-dir-chip"><input type="radio" name="planMhDir_m" value="R"><span>▶ 동</span></label>
+              <label class="plan-tool-chip plan-dir-chip"><input type="radio" name="planMhDir_m" value="U"><span>▲ 북</span></label>
+              <label class="plan-tool-chip plan-dir-chip"><input type="radio" name="planMhDir_m" value="L"><span>◀ 서</span></label>
+            </div>
+          </div>
         </div>
 
         <!-- Right: Cell zoom & stats -->
@@ -3801,6 +3826,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const mr = document.querySelector(`input[name=emode_m][value="${activeRadio.value}"]`);
       if (mr) mr.checked = true;
     }
+    updatePlanMhDirUi();
     if (lastPlanMap) renderGrid(lastPlanMap);
   }
   window.openPlanEditModal = openPlanEditModal;
@@ -3950,19 +3976,56 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     });
   }
 
-  // Sync mode radios between sidebar and modeless dialog
+  // Sync mode radios and direction radios between sidebar and modeless dialog
+  function updatePlanMhDirUi() {
+    const activeRadio = document.querySelector('input[name=emode]:checked') || document.querySelector('input[name=emode_m]:checked');
+    const mode = activeRadio ? activeRadio.value : 'del';
+    const show = (mode === 'han');
+    const b1 = $('planMhDirBox'); if (b1) b1.style.display = show ? 'flex' : 'none';
+    const b2 = $('planMhDirBoxModeless'); if (b2) b2.style.display = show ? 'flex' : 'none';
+  }
+  window.updatePlanMhDirUi = updatePlanMhDirUi;
+
   document.querySelectorAll('input[name=emode]').forEach(r => {
     r.addEventListener('change', () => {
       const mr = document.querySelector(`input[name=emode_m][value="${r.value}"]`);
       if (mr) mr.checked = true;
+      updatePlanMhDirUi();
     });
   });
   document.querySelectorAll('input[name=emode_m]').forEach(r => {
     r.addEventListener('change', () => {
       const sr = document.querySelector(`input[name=emode][value="${r.value}"]`);
       if (sr) sr.checked = true;
+      updatePlanMhDirUi();
     });
   });
+
+  document.querySelectorAll('input[name=planMhDir]').forEach(r => {
+    r.addEventListener('change', () => {
+      const mr = document.querySelector(`input[name=planMhDir_m][value="${r.value}"]`);
+      if (mr) mr.checked = true;
+    });
+  });
+  document.querySelectorAll('input[name=planMhDir_m]').forEach(r => {
+    r.addEventListener('change', () => {
+      const sr = document.querySelector(`input[name=planMhDir][value="${r.value}"]`);
+      if (sr) sr.checked = true;
+    });
+  });
+
+  function getSelectedManholeDir() {
+    const rad = document.querySelector('input[name=planMhDir]:checked') || document.querySelector('input[name=planMhDir_m]:checked');
+    return rad ? rad.value : 'auto';
+  }
+  function setSelectedManholeDir(dir) {
+    const val = dir || 'auto';
+    const r1 = document.querySelector(`input[name=planMhDir][value="${val}"]`);
+    const r2 = document.querySelector(`input[name=planMhDir_m][value="${val}"]`);
+    if (r1) r1.checked = true;
+    if (r2) r2.checked = true;
+  }
+  updatePlanMhDirUi();
 
   const switchToBOMTab = () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -5376,22 +5439,35 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           if (nx) ladders[key] = nx; else delete ladders[key];
         } else if (mode === 'han') {
           if (!removed.has(key) && map.cols[j] === 1000 && map.rows[i] === 1000) {
+            const chosenDir = getSelectedManholeDir();
             if (!(marks[key] & 1)) {
+              // 신규 맨홀 설치: 현재 선택된 방향 적용
               marks[key] = (marks[key] || 0) | 1;
-              delete manholeDirs[key];
+              if (chosenDir === 'auto') delete manholeDirs[key]; else manholeDirs[key] = chosenDir;
             } else {
-              // 이미 맨홀이 있으면 클릭할 때마다 방향 순환 (자동 -> 남 -> 북 -> 동 -> 서 -> 삭제)
+              // 이미 맨홀이 설치된 셀 클릭 시:
               const curDir = manholeDirs[key] || 'auto';
-              const seq = ['auto', 'D', 'U', 'R', 'L', 'off'];
-              const nx = seq[(seq.indexOf(curDir) + 1) % seq.length];
-              if (nx === 'off') {
+              if (chosenDir !== 'auto' && curDir !== chosenDir) {
+                // 선택된 방향이 현재 방향과 다르면 해당 방향으로 즉시 전환
+                manholeDirs[key] = chosenDir;
+              } else if (chosenDir === 'auto') {
+                // '자동' 모드에서 이미 설치된 맨홀 클릭 시 방향 순환
+                const seq = ['auto', 'D', 'R', 'U', 'L', 'off'];
+                const nx = seq[(seq.indexOf(curDir) + 1) % seq.length];
+                if (nx === 'off') {
+                  marks[key] &= ~1;
+                  delete manholeDirs[key];
+                  if (!marks[key]) delete marks[key];
+                } else if (nx === 'auto') {
+                  delete manholeDirs[key];
+                } else {
+                  manholeDirs[key] = nx;
+                }
+              } else {
+                // 동일 방향 상태에서 다시 클릭 시 맨홀 삭제 (토글 오프)
                 marks[key] &= ~1;
                 delete manholeDirs[key];
                 if (!marks[key]) delete marks[key];
-              } else if (nx === 'auto') {
-                delete manholeDirs[key];
-              } else {
-                manholeDirs[key] = nx;
               }
             }
           }
@@ -5407,20 +5483,35 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         if (!off && (marks[key] & 1)) {
           e.preventDefault();
           const curDir = manholeDirs[key] || 'auto';
-          const seq = ['auto', 'D', 'U', 'R', 'L'];
+          const seq = ['auto', 'D', 'R', 'U', 'L'];
           const nextDir = seq[(seq.indexOf(curDir) + 1) % seq.length];
           if (nextDir === 'auto') delete manholeDirs[key]; else manholeDirs[key] = nextDir;
+          setSelectedManholeDir(nextDir);
           rebuild(false);
         }
       });
       if (!off && mk) {
         if (mk & 1) {
           const tag = document.createElement('span'); tag.className = 'badge-tag badge-manhole';
-          const dirIndicator = { U: ' (▲북)', D: ' (▼남)', L: ' (◀서)', R: ' (▶동)' }[manholeDirs[key]] || ' (자동)';
+          const dirCode = manholeDirs[key];
+          const dirIndicator = { U: ' (▲북)', D: ' (▼남)', L: ' (◀서)', R: ' (▶동)' }[dirCode] || ' (⚡자동)';
           tag.textContent = (currentLang === 'en' ? 'MANHOLE' : '맨홀') + dirIndicator;
-          tag.title = isEn ? 'Click to rotate direction (Auto/S/N/E/W/Delete) | Right-click to rotate only' : '클릭: 방향 전환 (자동/남/북/동/서/삭제) | 우클릭: 방향만 전환';
+          tag.title = isEn
+            ? 'Click to apply selected direction or toggle off | Right-click to rotate direction (Auto/S/E/N/W)'
+            : '클릭: 상단 선택 방향 적용 또는 토글 삭제 | 우클릭: 방향 순환 (자동/남/동/북/서)';
           tag.style.cssText = ((mk & 2) ? 'top:2px;left:50%;transform:translateX(-50%);' : 'top:50%;left:50%;transform:translate(-50%,-50%);') + (currentLang === 'en' ? 'font-size:8px;letter-spacing:-0.3px;' : '');
           b.appendChild(tag);
+
+          // 맨홀 방향 시각화 (해당 방향 테두리를 주황색 #ea580c 3px로 강조)
+          let effectiveMhDir = dirCode;
+          if (!effectiveMhDir && map) {
+            const nRows = map.rows.length, nCols = map.cols.length;
+            const dS = i, dN = nRows - 1 - i, dW = j, dE = nCols - 1 - j;
+            const minD = Math.min(dS, dN, dW, dE);
+            effectiveMhDir = (minD === dS) ? 'D' : ((minD === dN) ? 'U' : ((minD === dW) ? 'L' : 'R'));
+          }
+          const mhBorderProp = { U: 'borderTop', D: 'borderBottom', L: 'borderLeft', R: 'borderRight' }[effectiveMhDir];
+          if (mhBorderProp) b.style[mhBorderProp] = '3px solid #ea580c';
         }
         if (mk & 2) {
           const tag = document.createElement('span'); tag.className = 'badge-tag badge-vent';

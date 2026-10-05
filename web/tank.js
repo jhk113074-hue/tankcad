@@ -507,47 +507,55 @@
         const Pdirect = (a, b) => [x + a, y + b];
         dirCustom.forEach(e => {
           const k = e.k || e.t;
+          const lyr = e.layer || e.l || 'FRAME';
           if (k === 'line') {
             const p1 = (e.p && e.p[0]) || e.a; const p2 = (e.p && e.p[1]) || e.b;
-            if (p1 && p2) out.push({ t: 'line', a: Pdirect(p1[0], p1[1]), b: Pdirect(p2[0], p2[1]), layer: 'FRAME' });
+            if (p1 && p2) out.push({ t: 'line', a: Pdirect(p1[0], p1[1]), b: Pdirect(p2[0], p2[1]), layer: lyr });
           } else if (k === 'circle') {
             const c = e.c || e.center;
-            if (c) out.push({ t: 'circle', c: Pdirect(c[0], c[1]), r: e.r, layer: 'FRAME' });
+            if (c) out.push({ t: 'circle', c: Pdirect(c[0], c[1]), r: e.r, layer: lyr });
           } else if (k === 'arc') {
             const c = e.c || e.center;
-            if (c) out.push({ t: 'arc', c: Pdirect(c[0], c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: 'FRAME' });
+            if (c) out.push({ t: 'arc', c: Pdirect(c[0], c[1]), r: e.r, a0: e.a0, a1: e.a1, layer: lyr });
           } else if (k === 'ellipse') {
             const c = e.c || e.center;
-            if (c) out.push({ t: 'ellipse', c: Pdirect(c[0], c[1]), rx: e.rx, ry: e.ry, rot: e.rot || 0, layer: 'FRAME' });
+            if (c) out.push({ t: 'ellipse', c: Pdirect(c[0], c[1]), rx: e.rx, ry: e.ry, rot: e.rot || 0, layer: lyr });
           } else if (k === 'poly') {
             const pts = e.p || e.pts || [];
-            for (let s = 0; s + 1 < pts.length; s++) out.push({ t: 'line', a: Pdirect(pts[s][0], pts[s][1]), b: Pdirect(pts[s + 1][0], pts[s + 1][1]), layer: 'FRAME' });
-            if (e.c || e.close) out.push({ t: 'line', a: Pdirect(pts[pts.length - 1][0], pts[pts.length - 1][1]), b: Pdirect(pts[0][0], pts[0][1]), layer: 'FRAME' });
+            for (let s = 0; s + 1 < pts.length; s++) out.push({ t: 'line', a: Pdirect(pts[s][0], pts[s][1]), b: Pdirect(pts[s + 1][0], pts[s + 1][1]), layer: lyr });
+            if (e.c || e.close) out.push({ t: 'line', a: Pdirect(pts[pts.length - 1][0], pts[pts.length - 1][1]), b: Pdirect(pts[0][0], pts[0][1]), layer: lyr });
+          } else if (k === 'text') {
+            const pt = e.p || e.c || [500, 500];
+            out.push({ t: 'text', p: Pdirect(pt[0], pt[1]), s: e.s || e.text || '', h: e.h || 50, rot: e.rot || 0, align: e.align || 'center', layer: lyr });
           }
         });
-        out.push({ t: 'text', p: [x + 500, y + ((mark & 2) ? 610 : 500)], s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
+        // 사용자가 직접 등록한 CAD 블록에는 하드코딩된 'MANHOLE 600' 문자를 임의로 추가하지 않음 (등록 도면 원형 보존)
       } else if (mhPlan && mhPlan.length > 0) {
           mhPlan.forEach(e => {
             const k = e.k || e.t;
+            const lyr = e.layer || e.l || 'FRAME';
             if (k === 'line') {
               const p1 = (e.p && e.p[0]) || e.a; const p2 = (e.p && e.p[1]) || e.b;
-              if (p1 && p2) out.push({ t: 'line', a: P(p1[0], p1[1]), b: P(p2[0], p2[1]), layer: 'FRAME' });
+              if (p1 && p2) out.push({ t: 'line', a: P(p1[0], p1[1]), b: P(p2[0], p2[1]), layer: lyr });
             } else if (k === 'circle') {
               const c = e.c || e.center;
-              if (c) out.push({ t: 'circle', c: P(c[0], c[1]), r: e.r, layer: 'FRAME' });
+              if (c) out.push({ t: 'circle', c: P(c[0], c[1]), r: e.r, layer: lyr });
             } else if (k === 'arc') {
               const c = e.c || e.center;
-              if (c) out.push({ t: 'arc', c: P(c[0], c[1]), r: e.r, a0: (e.a0 || 0) + angle * 180 / Math.PI, a1: (e.a1 || 0) + angle * 180 / Math.PI, layer: 'FRAME' });
+              if (c) out.push({ t: 'arc', c: P(c[0], c[1]), r: e.r, a0: (e.a0 || 0) + angle * 180 / Math.PI, a1: (e.a1 || 0) + angle * 180 / Math.PI, layer: lyr });
             } else if (k === 'ellipse') {
               const c = e.c || e.center;
-              if (c) out.push({ t: 'ellipse', c: P(c[0], c[1]), rx: e.rx, ry: e.ry, rot: (e.rot || 0) + angle * 180 / Math.PI, layer: 'FRAME' });
+              if (c) out.push({ t: 'ellipse', c: P(c[0], c[1]), rx: e.rx, ry: e.ry, rot: (e.rot || 0) + angle * 180 / Math.PI, layer: lyr });
             } else if (k === 'poly') {
               const pts = e.p || e.pts || [];
-              for (let s = 0; s + 1 < pts.length; s++) out.push({ t: 'line', a: P(pts[s][0], pts[s][1]), b: P(pts[s + 1][0], pts[s + 1][1]), layer: 'FRAME' });
-              if (e.c || e.close) out.push({ t: 'line', a: P(pts[pts.length - 1][0], pts[pts.length - 1][1]), b: P(pts[0][0], pts[0][1]), layer: 'FRAME' });
+              for (let s = 0; s + 1 < pts.length; s++) out.push({ t: 'line', a: P(pts[s][0], pts[s][1]), b: P(pts[s + 1][0], pts[s + 1][1]), layer: lyr });
+              if (e.c || e.close) out.push({ t: 'line', a: P(pts[pts.length - 1][0], pts[pts.length - 1][1]), b: P(pts[0][0], pts[0][1]), layer: lyr });
+            } else if (k === 'text') {
+              const pt = e.p || e.c || [500, 500];
+              out.push({ t: 'text', p: P(pt[0], pt[1]), s: e.s || e.text || '', h: e.h || 50, rot: (e.rot || 0) + angle * 180 / Math.PI, align: e.align || 'center', layer: lyr });
             }
           });
-          out.push({ t: 'text', p: [x + 500, y + ((mark & 2) ? 610 : 500)], s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
+          // 사용자가 직접 등록한 CAD 블록에는 하드코딩된 'MANHOLE 600' 문자를 임의로 추가하지 않음
         } else {
           poly([[260, 105], [735, 105], [888, 260], [888, 735], [735, 888], [262, 888], [105, 735], [105, 260]], 'FRAME');
           poly([[150, 280], [290, 150], [710, 150], [850, 280], [850, 720], [710, 850], [290, 850], [150, 720]], 'FRAME');
@@ -557,28 +565,34 @@
           out.push({ t: 'text', p: [x + 500, y + ((mark & 2) ? 610 : 500)], s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
         }
 
-      // 내부사다리 (IN-LADDER) 기호 (맨홀 직하부 탱크 내부 설치 위치 - 외벽 쪽으로 회전)
+      // 내부사다리 (IN-LADDER) 기호: 사다리가 전체 삭제되었거나 없는 경우(ladderCount === 0), 또는 커스텀 맨홀 등록 시 사다리 겹침 방지
+      const ladderCount = (opt && opt.ladders !== undefined && opt.ladders !== null)
+        ? Object.keys(opt.ladders).length
+        : 1;
+
       const inladPlan = resolvePartEntities(customParts, 'inladder', 'plan', 0, opt);
-      if (inladPlan && inladPlan.length > 0) {
+      if (inladPlan && inladPlan.length > 0 && ladderCount > 0) {
         inladPlan.forEach(e => {
           const k = e.k || e.t;
+          const lyr = e.layer || e.l || 'FRAME';
           if (k === 'line') {
             const p1 = (e.p && e.p[0]) || e.a; const p2 = (e.p && e.p[1]) || e.b;
-            if (p1 && p2) out.push({ t: 'line', a: P(p1[0], p1[1]), b: P(p2[0], p2[1]), layer: 'FRAME' });
+            if (p1 && p2) out.push({ t: 'line', a: P(p1[0], p1[1]), b: P(p2[0], p2[1]), layer: lyr });
           } else if (k === 'circle') {
             const c = e.c || e.center;
-            if (c) out.push({ t: 'circle', c: P(c[0], c[1]), r: e.r, layer: 'FRAME' });
+            if (c) out.push({ t: 'circle', c: P(c[0], c[1]), r: e.r, layer: lyr });
           } else if (k === 'arc') {
             const c = e.c || e.center;
-            if (c) out.push({ t: 'arc', c: P(c[0], c[1]), r: e.r, a0: (e.a0 || 0) + angle * 180 / Math.PI, a1: (e.a1 || 0) + angle * 180 / Math.PI, layer: 'FRAME' });
+            if (c) out.push({ t: 'arc', c: P(c[0], c[1]), r: e.r, a0: (e.a0 || 0) + angle * 180 / Math.PI, a1: (e.a1 || 0) + angle * 180 / Math.PI, layer: lyr });
           } else if (k === 'poly') {
             const pts = e.p || e.pts || [];
-            for (let s = 0; s + 1 < pts.length; s++) out.push({ t: 'line', a: P(pts[s][0], pts[s][1]), b: P(pts[s + 1][0], pts[s + 1][1]), layer: 'FRAME' });
-            if (e.c || e.close) out.push({ t: 'line', a: P(pts[pts.length - 1][0], pts[pts.length - 1][1]), b: P(pts[0][0], pts[0][1]), layer: 'FRAME' });
+            for (let s = 0; s + 1 < pts.length; s++) out.push({ t: 'line', a: P(pts[s][0], pts[s][1]), b: P(pts[s + 1][0], pts[s + 1][1]), layer: lyr });
+            if (e.c || e.close) out.push({ t: 'line', a: P(pts[pts.length - 1][0], pts[pts.length - 1][1]), b: P(pts[0][0], pts[0][1]), layer: lyr });
           }
         });
         out.push({ t: 'text', p: P(500, 210), s: 'IN-LADDER', h: 42, rot: (dir === 'L' || dir === 'R') ? 90 : 0, align: 'center', layer: 'DIM' });
-      } else {
+      } else if (!customEnts && ladderCount > 0) {
+        // 커스텀 맨홀이 아니고(기본 내장 맨홀), 사다리가 존재하는 경우에만 기본 내부사다리 기호 및 텍스트 표시
         const ladX1 = 360, ladX2 = 640;
         out.push({ t: 'line', a: P(ladX1, 230), b: P(ladX1, 380), layer: 'FRAME' });
         out.push({ t: 'line', a: P(ladX2, 230), b: P(ladX2, 380), layer: 'FRAME' });
@@ -1914,9 +1928,14 @@
         const b6X = mPos[0] - Math.round(7.0 * N);
         drawBalloonCallout(ents, [mPos[0] - 120, mPos[1] + 150], [b6X, topBaseY - Math.round(4 * N)], [b6X, topBaseY], no6, N, 'BALLOON', usedSet);
 
-        // 내부사다리 지시선 (NO. 7): 맨홀 직하부 내부사다리에서 상단 우측으로 인출 (내부사다리는 맨홀 위치)
-        const b7X = mPos[0] + Math.round(7.0 * N);
-        drawBalloonCallout(ents, [mPos[0] + 120, mPos[1] + 150], [b7X, topBaseY - Math.round(4 * N)], [b7X, topBaseY], no7, N, 'BALLOON', usedSet);
+        // 내부사다리 지시선 (NO. 7): 사다리가 존재할 때만 맨홀 직하부 내부사다리에서 상단 우측으로 인출
+        const ladderCount = (opt && opt.ladders !== undefined && opt.ladders !== null)
+          ? Object.keys(opt.ladders).length
+          : 1;
+        if (ladderCount > 0) {
+          const b7X = mPos[0] + Math.round(7.0 * N);
+          drawBalloonCallout(ents, [mPos[0] + 120, mPos[1] + 150], [b7X, topBaseY - Math.round(4 * N)], [b7X, topBaseY], no7, N, 'BALLOON', usedSet);
+        }
       }
 
       // 2. 에어벤트 (Air Vent - NO. 5): 상단 바깥으로 지시선 인출
