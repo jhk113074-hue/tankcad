@@ -420,7 +420,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.17</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.18</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1487,15 +1487,20 @@ canvas.drag{cursor:grabbing}
                 <!-- 평면도 외벽 방향성 설정 (맨홀 & 천정 전용 4방향) -->
                 <div id="cadPanelPlanDirSection" style="display:none;background:rgba(2,132,199,0.06);border:1px dashed var(--accent);border-radius:6px;padding:7px 10px;margin-top:6px">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                    <span style="font-size:11px;font-weight:700;color:var(--accent)">🧭 평면도 설치 방향 (탱크 외벽 기준):</span>
+                    <span id="lblPanelPlanDirTitle" style="font-size:11px;font-weight:700;color:var(--accent)">🧭 평면도 맨홀 입구(걸쇠) 방향 (탱크 외벽 기준):</span>
                     <span id="curPanelPlanDirBadge" style="font-size:10px;font-weight:700;color:var(--accent)">🌟 자동 회전 (Auto)</span>
                   </div>
                   <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:4px">
-                    <button type="button" class="btn-sm cad-dir-btn active" data-dir="auto" style="padding:4px 2px;font-size:10px;font-weight:700">🌟 자동</button>
-                    <button type="button" class="btn-sm cad-dir-btn" data-dir="south" style="padding:4px 2px;font-size:10px">⬇️ 남(하)</button>
-                    <button type="button" class="btn-sm cad-dir-btn" data-dir="north" style="padding:4px 2px;font-size:10px">⬆️ 북(상)</button>
-                    <button type="button" class="btn-sm cad-dir-btn" data-dir="east" style="padding:4px 2px;font-size:10px">➡️ 동(우)</button>
-                    <button type="button" class="btn-sm cad-dir-btn" data-dir="west" style="padding:4px 2px;font-size:10px">⬅️ 서(좌)</button>
+                    <button type="button" class="btn-sm cad-dir-btn active" data-dir="auto" style="padding:4px 2px;font-size:10px;font-weight:700" title="외벽 위치에 맞춰 입구가 탱크 밖으로 자동 정렬됩니다">🌟 자동</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="south" style="padding:4px 2px;font-size:10px" title="입구가 남측(하단)을 향함: 정면도(정면) / 우측면도(측면 좌향) 투영">⬇️ 남(하)</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="east" style="padding:4px 2px;font-size:10px" title="입구가 동측(우측)을 향함: 정면도(측면 우향) / 우측면도(정면) 투영">➡️ 동(우)</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="north" style="padding:4px 2px;font-size:10px" title="입구가 북측(상단)을 향함: 정면도(배면) / 우측면도(측면 우향) 투영">⬆️ 북(상)</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="west" style="padding:4px 2px;font-size:10px" title="입구가 서측(좌측)을 향함: 정면도(측면 좌향) / 우측면도(배면) 투영">⬅️ 서(좌)</button>
+                  </div>
+                  <!-- 맨홀 입구 방향별 투영 연동 안내 가이드 박스 -->
+                  <div id="cadPanelManholeProjectionGuideBox" style="display:none;margin-top:6px;padding:6px 8px;background:rgba(2,132,199,0.08);border-radius:4px;font-size:10px;line-height:1.45;color:var(--fg);border:1px solid rgba(2,132,199,0.2)">
+                    <div style="font-weight:700;color:var(--accent);margin-bottom:3px">🔗 입구 방향에 따른 정면도·우측면도 투영 연동:</div>
+                    <div id="cadPanelManholeProjectionGuideText">• <b>🌟 자동</b>: 외벽 방향에 맞춰 입구가 자동 회전되며 입면도 형상이 자동 연동 투영됩니다.</div>
                   </div>
                   <div style="font-size:9.5px;color:var(--muted);margin-top:4px">
                     💡 <b>자동</b> 선택 시 외벽 위치에 맞춰 탱크 밖을 향하도록 자동 회전됩니다. 특정 방향만 따로 등록하려면 해당 버튼을 누르세요.
@@ -1571,49 +1576,59 @@ canvas.drag{cursor:grabbing}
                   </div>
                   <button type="button" class="btn-sm" onclick="downloadAll4ViewsDxf()" style="padding:2px 8px;font-size:10.5px;background:rgba(2,132,199,0.12);color:var(--accent);border:1px solid var(--accent);font-weight:700;border-radius:4px;cursor:pointer" title="현재 부품의 평면·정면·우측·좌측 4방향 전체를 하나의 통합 DXF 파일로 일괄 다운로드">📦 4방향 전체 DXF 받기</button>
                 </div>
-                <!-- 4방향 뷰 버튼 (부품용) -->
+                <!-- 4방향/5방향 뷰 버튼 (부품용) -->
                 <div class="cad-view-nav" id="cadViewNav" style="margin-bottom:10px">
                   <button type="button" class="cad-view-btn" data-cad-view="plan" id="cadViewBtnPlan">
                     <span class="v-icon">🔲</span>
-                    <span class="v-name">평면도</span>
+                    <span class="v-name" id="vNamePlan">평면도</span>
                     <span class="v-stat" id="statBadgePlan">⚪ 기본</span>
                   </button>
                   <button type="button" class="cad-view-btn active" data-cad-view="front" id="cadViewBtnFront">
                     <span class="v-icon">🏢</span>
-                    <span class="v-name">정면도</span>
+                    <span class="v-name" id="vNameFront">정면도</span>
                     <span class="v-stat" id="statBadgeFront">⚪ 기본</span>
                   </button>
                   <button type="button" class="cad-view-btn" data-cad-view="right" id="cadViewBtnRight">
                     <span class="v-icon">📐</span>
-                    <span class="v-name">우측면도</span>
+                    <span class="v-name" id="vNameRight">우측면도</span>
                     <span class="v-stat" id="statBadgeRight">⚪ 기본</span>
                   </button>
                   <button type="button" class="cad-view-btn" data-cad-view="left" id="cadViewBtnLeft">
                     <span class="v-icon">📐</span>
-                    <span class="v-name">좌측면도</span>
+                    <span class="v-name" id="vNameLeft">좌측면도</span>
                     <span class="v-stat" id="statBadgeLeft">⚪ 기본</span>
+                  </button>
+                  <button type="button" class="cad-view-btn" data-cad-view="rear" id="cadViewBtnRear" style="display:none">
+                    <span class="v-icon">🚪</span>
+                    <span class="v-name" id="vNameRear">배면도</span>
+                    <span class="v-stat" id="statBadgeRear">⚪ 기본</span>
                   </button>
                 </div>
 
                 <!-- 평면도 외벽 방향성 설정 (사다리 & 맨홀 전용 4방향) -->
                 <div id="cadPlanDirSection" style="display:none;background:rgba(2,132,199,0.06);border:1px dashed var(--accent);border-radius:6px;padding:7px 10px;margin-bottom:10px">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                    <span style="font-size:11px;font-weight:700;color:var(--accent)">🧭 평면도 설치 방향 (탱크 외벽 기준):</span>
+                    <span id="lblPlanDirTitle" style="font-size:11px;font-weight:700;color:var(--accent)">🧭 평면도 맨홀 입구(걸쇠) 방향 (탱크 외벽 기준):</span>
                     <span id="curPlanDirBadge" style="font-size:10px;font-weight:700;color:var(--accent)">🌟 자동 회전 (Auto)</span>
                   </div>
                   <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:4px">
-                    <button type="button" class="btn-sm cad-dir-btn active" data-dir="auto" style="padding:4px 2px;font-size:10px;font-weight:700">🌟 자동</button>
-                    <button type="button" class="btn-sm cad-dir-btn" data-dir="south" style="padding:4px 2px;font-size:10px">⬇️ 남(하)</button>
-                    <button type="button" class="btn-sm cad-dir-btn" data-dir="north" style="padding:4px 2px;font-size:10px">⬆️ 북(상)</button>
-                    <button type="button" class="btn-sm cad-dir-btn" data-dir="east" style="padding:4px 2px;font-size:10px">➡️ 동(우)</button>
-                    <button type="button" class="btn-sm cad-dir-btn" data-dir="west" style="padding:4px 2px;font-size:10px">⬅️ 서(좌)</button>
+                    <button type="button" class="btn-sm cad-dir-btn active" data-dir="auto" style="padding:4px 2px;font-size:10px;font-weight:700" title="외벽 위치에 맞춰 입구가 탱크 밖으로 자동 정렬됩니다">🌟 자동</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="south" style="padding:4px 2px;font-size:10px" title="입구가 남측(하단)을 향함: 정면도(정면) / 우측면도(측면 좌향) 투영">⬇️ 남(하)</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="east" style="padding:4px 2px;font-size:10px" title="입구가 동측(우측)을 향함: 정면도(측면 우향) / 우측면도(정면) 투영">➡️ 동(우)</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="north" style="padding:4px 2px;font-size:10px" title="입구가 북측(상단)을 향함: 정면도(배면) / 우측면도(측면 우향) 투영">⬆️ 북(상)</button>
+                    <button type="button" class="btn-sm cad-dir-btn" data-dir="west" style="padding:4px 2px;font-size:10px" title="입구가 서측(좌측)을 향함: 정면도(측면 좌향) / 우측면도(배면) 투영">⬅️ 서(좌)</button>
+                  </div>
+                  <!-- 맨홀 입구 방향별 투영 연동 안내 가이드 박스 -->
+                  <div id="cadManholeProjectionGuideBox" style="display:none;margin-top:6px;padding:6px 8px;background:rgba(2,132,199,0.08);border-radius:4px;font-size:10px;line-height:1.45;color:var(--fg);border:1px solid rgba(2,132,199,0.2)">
+                    <div style="font-weight:700;color:var(--accent);margin-bottom:3px">🔗 입구 방향에 따른 정면도·우측면도 투영 연동 안내:</div>
+                    <div id="cadManholeProjectionGuideText">• <b>🌟 자동</b>: 외벽 방향에 맞춰 입구가 자동 회전되며 입면도 형상이 자동 연동 투영됩니다.</div>
                   </div>
                   <div style="margin-top:6px;display:flex;gap:4px">
-                    <button type="button" class="btn-sm" id="btnAutoGenerate4Dirs" style="flex:1;padding:5px 6px;font-size:10.5px;background:rgba(2,132,199,0.12);color:var(--accent);border:1px solid var(--accent);font-weight:700;border-radius:4px" title="현재 미리보기 화면의 맨홀 모양을 기준으로 남·북·동·서 4방향 전체 회전 형상을 자동 계산하여 도면에 일괄 등록합니다">
-                      🔄 현재 모양 기준 4방향 일괄 자동 생성 & 도면 등록
+                    <button type="button" class="btn-sm" id="btnAutoGenerate4Dirs" style="flex:1;padding:5px 6px;font-size:10.5px;background:rgba(2,132,199,0.12);color:var(--accent);border:1px solid var(--accent);font-weight:700;border-radius:4px" title="현재 미리보기 화면의 맨홀 모양을 기준으로 남·동·북·서 4방향 전체 회전 형상을 자동 계산하여 도면에 일괄 등록합니다">
+                      🔄 현재 입구 모양 기준 4방향 일괄 자동 생성 & 도면 등록
                     </button>
                   </div>
-                  <div style="font-size:9.5px;color:var(--muted);margin-top:4px">
+                  <div id="cadPlanDirHelpText" style="font-size:9.5px;color:var(--muted);margin-top:4px">
                     💡 <b>자동</b>: 탱크 외벽 위치에 맞춰 탱크 밖을 향하도록 자동 회전됩니다. <b>4방향 일괄 생성</b>을 누르면 현재 각도를 기준으로 모든 방향이 자동 정렬됩니다.
                   </div>
                 </div>
@@ -1699,6 +1714,7 @@ canvas.drag{cursor:grabbing}
               <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center;justify-content:space-between">
                 <div style="display:flex;gap:4px">
                   <button type="button" id="btnPartRotate90" class="btn-sm" style="font-size:11px;padding:4px 8px" title="오른쪽으로 90도 회전">🔄 90° 회전</button>
+                  <button type="button" id="btnPartAlignEntranceSouth" class="btn-sm" style="display:none;font-size:11px;padding:4px 8px;background:rgba(2,132,199,0.12);color:var(--accent);border:1px solid var(--accent);font-weight:700" title="현재 도면의 입구(걸쇠)를 표준 기준인 하단(남측)으로 90도 회전 정렬합니다">🎯 입구를 하단(남측)으로 90° 정렬</button>
                   <button type="button" id="btnPartMirrorH" class="btn-sm" style="font-size:11px;padding:4px 8px" title="좌우 수평 대칭 반전">↔️ 좌우반전</button>
                   <button type="button" id="btnPartMirrorV" class="btn-sm" style="font-size:11px;padding:4px 8px" title="상하 수직 대칭 반전">↕️ 상하반전</button>
                   <button type="button" id="btnPartFitSize" class="btn-sm" style="font-size:11px;padding:4px 8px;color:var(--accent);font-weight:700" title="현재 WxH 규격에 맞게 비율 자동 맞춤">📐 W×H 맞춤</button>
@@ -2139,7 +2155,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.17</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.18</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2149,7 +2165,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.17</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.18</span></div>
     </div>
   </main>
 </div>
@@ -12717,7 +12733,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.17</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.18</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -15249,13 +15265,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             { k: 'poly', p: [[310, 110], [390, 110], [390, 67], [310, 67]], c: true },
             { k: 'poly', p: [[610, 110], [690, 110], [690, 67], [610, 67]], c: true },
             { k: 'poly', p: [[462, 945], [538, 945], [538, 898], [462, 898]], c: true },
-            { k: 'circle', c: [500, 500], r: 300 },
-            { k: 'line', p: [[360, 230], [360, 380]] },
-            { k: 'line', p: [[640, 230], [640, 380]] },
-            { k: 'line', p: [[360, 250], [640, 250]] },
-            { k: 'line', p: [[360, 290], [640, 290]] },
-            { k: 'line', p: [[360, 330], [640, 330]] },
-            { k: 'line', p: [[360, 370], [640, 370]] }
+            { k: 'circle', c: [500, 500], r: 300 }
           ];
         } else if (view === 'right' || view === 'left' || view === 'side') {
           const T = 20, cy = 100, ms = W >> 1;
@@ -15271,12 +15281,40 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             { k: 'poly', p: [[hx - 15, cy + mhH], [hx + 15, cy + mhH], [hx + 15, cy + mhH + covH], [hx - 15, cy + mhH + covH]], c: true },
             { k: 'line', p: [[hx + 15, cy + mhH + 60], [ms + 140, cy + mhH]] },
             { k: 'poly', p: [[hx - 25, cy + mhH - 10], [hx + 25, cy + mhH - 10], [hx + 25, cy + mhH + 15], [hx - 25, cy + mhH + 15]], c: true },
+            { k: 'poly', p: [[ms + mhW / 2 - 35, cy + mhH - 8], [ms + mhW / 2 + 5, cy + mhH - 8], [ms + mhW / 2 + 5, cy + mhH + 12], [ms + mhW / 2 - 35, cy + mhH + 12]], c: true },
             { k: 'line', p: [[ms - 100, T], [ms - 25, cy]] },
             { k: 'line', p: [[ms + 100, T], [ms + 25, cy]] },
             { k: 'line', p: [[0, 0], [0, T]] },
             { k: 'line', p: [[W, 0], [W, T]] }
           ];
           return (view === 'left') ? mirrorEntitiesH(ents) : ents;
+        } else if (view === 'rear') {
+          const T = 20, cy = 100, ms = W >> 1;
+          const DO = Math.round(W * 0.456), UO = Math.round(W * 0.1);
+          const mhW = 550, mhH = 60, covW = 580, covH = 640, ch = 120;
+          const cx0 = ms, cy0 = cy + mhH;
+          return [
+            { k: 'line', p: [[0, 0], [W, 0]] },
+            { k: 'line', p: [[0, T], [W, T]] },
+            { k: 'line', p: [[0, T / 2], [W, T / 2]] },
+            { k: 'poly', p: [[ms - DO, T], [ms - UO, cy], [ms + UO, cy], [ms + DO, T]], c: true },
+            { k: 'poly', p: [[ms - mhW/2, cy], [ms + mhW/2, cy], [ms + mhW/2, cy + mhH], [ms - mhW/2, cy + mhH]], c: true },
+            { k: 'poly', p: [
+              [cx0 - covW/2 + ch, cy0], [cx0 + covW/2 - ch, cy0],
+              [cx0 + covW/2, cy0 + ch], [cx0 + covW/2, cy0 + covH - ch],
+              [cx0 + covW/2 - ch, cy0 + covH], [cx0 - covW/2 + ch, cy0 + covH],
+              [cx0 - covW/2, cy0 + covH - ch], [cx0 - covW/2, cy0 + ch]
+            ], c: true },
+            { k: 'line', p: [[cx0 - 110, cy0], [cx0 - 110, cy0 + covH]] },
+            { k: 'line', p: [[cx0 + 110, cy0], [cx0 + 110, cy0 + covH]] },
+            { k: 'poly', p: [[cx0 - 30, cy0 + 200], [cx0 + 30, cy0 + 200], [cx0 + 30, cy0 + 260], [cx0 - 30, cy0 + 260]], c: true },
+            { k: 'poly', p: [[cx0 - 25, cy0 + covH], [cx0 + 25, cy0 + covH], [cx0 + 25, cy0 + covH + 25], [cx0 - 25, cy0 + covH + 25]], c: true },
+            { k: 'poly', p: [[cx0 - 40, cy0 - 15], [cx0 + 40, cy0 - 15], [cx0 + 40, cy0 + 15], [cx0 - 40, cy0 + 15]], c: true },
+            { k: 'line', p: [[ms - 100, T], [ms - 25, cy]] },
+            { k: 'line', p: [[ms + 100, T], [ms + 25, cy]] },
+            { k: 'line', p: [[0, 0], [0, T]] },
+            { k: 'line', p: [[W, 0], [W, T]] }
+          ];
         } else {
           const T = 20, cy = 100, ms = W >> 1;
           const DO = Math.round(W * 0.456), UO = Math.round(W * 0.1);
@@ -15713,24 +15751,44 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     document.querySelectorAll('.cad-dir-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.dir === dir);
     });
-    const labels = {
+    const curCat = getSelectedCadCategory();
+    const isMh = (curCat === 'manhole' || cadCurrentPanelPos === 'manhole');
+    const mhLabels = {
+      auto: '🌟 자동 (외벽 입구)',
+      south: '⬇️ 남(하) ➜ 정면[정면]·우측[좌향]',
+      east: '➡️ 동(우) ➜ 정면[우향]·우측[정면]',
+      north: '⬆️ 북(상) ➜ 정면[배면]·우측[우향]',
+      west: '⬅️ 서(좌) ➜ 정면[좌향]·우측[배면]'
+    };
+    const stdLabels = {
       auto: '🌟 자동 회전 (Auto)',
       south: '⬇️ 남측(전면 / D)',
       north: '⬆️ 북측(배면 / U)',
       east: '➡️ 동측(우측 / R)',
       west: '⬅️ 서측(좌측 / L)'
     };
+    const labels = isMh ? mhLabels : stdLabels;
     const curBadge = $('curPlanDirBadge');
     if (curBadge) curBadge.textContent = labels[dir] || dir;
     const curPanelBadge = $('curPanelPlanDirBadge');
     if (curPanelBadge) curPanelBadge.textContent = labels[dir] || dir;
 
+    const mhGuideTexts = {
+      auto: '• <b>🌟 자동</b>: 외벽 방향에 맞춰 입구가 자동 회전되며 정면도/우측면도 형상이 자동 연동 투영됩니다.',
+      south: '• <b>⬇️ 남(하)</b>: 정면도에 [정면 덮개(정면 입구)], 우측면도에 [좌향 측면(남측 입구)] 자동 투영',
+      east: '• <b>➡️ 동(우)</b>: 정면도에 [우향 측면(동측 입구)], 우측면도에 [정면 덮개(동측 입구)] 자동 투영',
+      north: '• <b>⬆️ 북(상)</b>: 정면도에 [배면 덮개(북측 입구)], 우측면도에 [우향 측면(북측 입구)] 자동 투영',
+      west: '• <b>⬅️ 서(좌)</b>: 정면도에 [좌향 측면(서측 입구)], 우측면도에 [배면 덮개(서측 입구)] 자동 투영'
+    };
+    const gText = mhGuideTexts[dir] || mhGuideTexts.auto;
+    if ($('cadManholeProjectionGuideText')) $('cadManholeProjectionGuideText').innerHTML = gText;
+    if ($('cadPanelManholeProjectionGuideText')) $('cadPanelManholeProjectionGuideText').innerHTML = gText;
+
     const isPanel = $('cadPanelControlSection') && $('cadPanelControlSection').style.display !== 'none';
     if (isPanel) {
       loadActivePanelToPreview();
     } else {
-      const cat = getSelectedCadCategory();
-      loadPartForCategory(cat, cadCurrentView, cadCurrentHeight);
+      loadPartForCategory(curCat, cadCurrentView, cadCurrentHeight);
     }
   }
   window.setCadPlanDir = setCadPlanDir;
@@ -15753,8 +15811,31 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     const planDirSec = $('cadPlanDirSection');
     const panelPlanDirSec = $('cadPanelPlanDirSection');
     const curCat = getSelectedCadCategory();
+    const isMh = (curCat === 'manhole' || cadCurrentPanelPos === 'manhole');
     if (planDirSec) planDirSec.style.display = (isPlan && (curCat === 'ladder' || curCat === 'inladder' || curCat === 'manhole' || curCat === 'top')) ? 'block' : 'none';
     if (panelPlanDirSec) panelPlanDirSec.style.display = (isPlan && (cadCurrentPanelPos === 'manhole' || cadCurrentPanelPos === 'top')) ? 'block' : 'none';
+
+    const mhGuideBox = $('cadManholeProjectionGuideBox');
+    const panelMhGuideBox = $('cadPanelManholeProjectionGuideBox');
+    if (mhGuideBox) mhGuideBox.style.display = (isPlan && isMh) ? 'block' : 'none';
+    if (panelMhGuideBox) panelMhGuideBox.style.display = (isPlan && isMh) ? 'block' : 'none';
+
+    const btnRear = $('cadViewBtnRear');
+    if (btnRear) btnRear.style.display = isMh ? 'flex' : 'none';
+    const viewNav = $('cadViewNav');
+    if (viewNav) viewNav.style.gridTemplateColumns = isMh ? 'repeat(5, 1fr)' : 'repeat(4, 1fr)';
+
+    const btnAlign = $('btnPartAlignEntranceSouth');
+    if (btnAlign) btnAlign.style.display = (isPlan && isMh) ? 'inline-block' : 'none';
+
+    if ($('lblPlanDirTitle')) $('lblPlanDirTitle').textContent = isMh ? '🧭 평면도 맨홀 입구(걸쇠) 방향 (탱크 외벽 기준):' : '🧭 평면도 설치 방향 (탱크 외벽 기준):';
+    if ($('lblPanelPlanDirTitle')) $('lblPanelPlanDirTitle').textContent = isMh ? '🧭 평면도 맨홀 입구(걸쇠) 방향 (탱크 외벽 기준):' : '🧭 평면도 설치 방향 (탱크 외벽 기준):';
+
+    if ($('vNamePlan')) $('vNamePlan').textContent = '평면도';
+    if ($('vNameFront')) $('vNameFront').textContent = isMh ? '정면도 (남향입구)' : '정면도';
+    if ($('vNameRight')) $('vNameRight').textContent = isMh ? '우측면도 (동향입구)' : '우측면도';
+    if ($('vNameLeft')) $('vNameLeft').textContent = isMh ? '좌측면도 (서향입구)' : '좌측면도';
+    if ($('vNameRear')) $('vNameRear').textContent = isMh ? '배면도 (북향입구)' : '배면도';
 
     const isPanel = $('cadModeBtnPanels')?.classList.contains('active');
     if (isPanel) {
@@ -15784,8 +15865,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if (!ents || !ents.length || !dir || dir === 'auto' || dir === 'south' || dir === 'D') return ents;
     const angleMap = {
       north: Math.PI, U: Math.PI,
-      east: Math.PI / 2, R: Math.PI / 2,
-      west: -Math.PI / 2, L: -Math.PI / 2
+      east: -Math.PI / 2, R: -Math.PI / 2,
+      west: Math.PI / 2, L: Math.PI / 2
     };
     const angle = angleMap[dir];
     if (angle == null) return ents;
@@ -16231,7 +16312,14 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       pctx.textAlign = 'center';
       pctx.textBaseline = 'middle';
 
-      const dirLabels = {
+      const isMh = (getSelectedCadCategory() === 'manhole' || cadCurrentPanelPos === 'manhole');
+      const dirLabels = isMh ? {
+        auto: '🌟 [표준 기준(남측)] 하단: 맨홀 입구/걸쇠 (OUTSIDE ⬇️) | 상단: 힌지/탱크 내부 (INSIDE ⬆️)',
+        south: '⬇️ [남측 입구] 하단: 맨홀 입구/걸쇠 (⬇️) ➜ 정면도: 정면 / 우측면도: 측면(좌향)',
+        north: '⬆️ [북측 입구] 상단: 맨홀 입구/걸쇠 (⬆️) ➜ 정면도: 배면 / 우측면도: 측면(우향)',
+        east: '➡️ [동측 입구] 우측: 맨홀 입구/걸쇠 (➡️) ➜ 정면도: 측면(우향) / 우측면도: 정면',
+        west: '⬅️ [서측 입구] 좌측: 맨홀 입구/걸쇠 (⬅️) ➜ 정면도: 측면(좌향) / 우측면도: 배면'
+      } : {
         auto: '🌟 [표준 기준(남측)] 하단: 탱크 밖 (OUTSIDE ⬇️) | 상단: 탱크 내부 (INSIDE ⬆️)',
         south: '⬇️ [전면/남측 외벽] 하단: 탱크 밖 (OUTSIDE ⬇️) | 상단: 탱크 내부 (INSIDE ⬆️)',
         north: '⬆️ [배면/북측 외벽] 상단: 탱크 밖 (OUTSIDE ⬆️) | 하단: 탱크 내부 (INSIDE ⬇️)',
@@ -18090,10 +18178,10 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     return { minX, maxX, minY, maxY, w: maxX - minX, h: maxY - minY };
   }
 
-  function rotateEntities90(ents) {
+  function rotateEntities90(ents, center) {
     const bb = getEntitiesBoundingBox(ents);
-    const cx = (bb.minX + bb.maxX) / 2;
-    const cy = (bb.minY + bb.maxY) / 2;
+    const cx = center ? center[0] : (bb.minX + bb.maxX) / 2;
+    const cy = center ? center[1] : (bb.minY + bb.maxY) / 2;
     return (ents || []).map(e => {
       if (e.k === 'line') {
         return {
@@ -18217,6 +18305,20 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       wEl.value = hEl.value;
       hEl.value = tmp;
     }
+    updateCadPartPreview();
+  });
+
+  $('btnPartAlignEntranceSouth')?.addEventListener('click', () => {
+    if (!currentCadEntities || !currentCadEntities.length) {
+      alert('회전할 도면 요소가 없습니다.');
+      return;
+    }
+    const w = Number($('cadPartW')?.value) || 1000;
+    const h = Number($('cadPartH')?.value) || 1000;
+    const cat = getSelectedCadCategory();
+    const isPanelOrMh = (cat === 'manhole' || cat === 'top' || $('cadModeBtnPanels')?.classList.contains('active'));
+    const center = isPanelOrMh ? [w / 2, h / 2] : null;
+    currentCadEntities = rotateEntities90(currentCadEntities, center);
     updateCadPartPreview();
   });
 
