@@ -4179,6 +4179,22 @@
     const ceilTemplates = (templates && (templates[mat] || templates.SMC)) || {};
     const sidePanels = opt.sidePanels || {};
 
+    const lenSecs = (opt.length || []).filter(Boolean);
+    const widSecs = (opt.width || []).filter(Boolean);
+    const WALL_TH = 70;
+    const xPartitions = new Set();
+    let pCurX = 0;
+    for (let s = 0; s < lenSecs.length - 1; s++) {
+      pCurX += lenSecs[s];
+      xPartitions.add(pCurX);
+    }
+    const yPartitions = new Set();
+    let pCurY = 0;
+    for (let s = 0; s < widSecs.length - 1; s++) {
+      pCurY += widSecs[s];
+      yPartitions.add(pCurY);
+    }
+
     const renderWallPanel = (plane, x0, y0, z0, w, h, pType, depth) => {
       let p1, p2, p3, p4, cx, cy, cz;
       if (plane === 'XZ') {
@@ -4581,7 +4597,7 @@
           ln(toIso(x1, y0 - FD, H - FT), toIso(x1, y0 - FD, H), 'FRAME', topDepthF);
 
           // 종 플랜지 림 (층별 분할 렌더링으로 상단 판넬에 의한 은선 차폐 방지)
-          if (map.has(i, j + 1) && !map.has(i - 1, j + 1)) {
+          if (map.has(i, j + 1) && !map.has(i - 1, j + 1) && !xPartitions.has(x1)) {
             const x = x1;
             for (let k = 0; k < hs.length; k++) {
               const z0 = zs[k], z1 = zs[k + 1];
@@ -4651,7 +4667,7 @@
           ln(toIso(xWall + FD, y1, H - FT), toIso(xWall + FD, y1, H), 'FRAME', topDepthR);
 
           // 종 플랜지 림 (층별 분할 렌더링으로 상단 판넬에 의한 은선 차폐 방지)
-          if (map.has(i + 1, j) && !map.has(i + 1, j + 1)) {
+          if (map.has(i + 1, j) && !map.has(i + 1, j + 1) && !yPartitions.has(y1)) {
             const y = y1;
             for (let k = 0; k < hs.length; k++) {
               const z0 = zs[k], z1 = zs[k + 1];
@@ -4749,6 +4765,89 @@
           }
         }
       }
+    }
+
+    // 4-C. 구간 경계 칸막이 벽체 (Partition Walls / CWallLT: 70mm폭 주황색 벽체 + 솔리드 채움)
+    if (xPartitions.size > 0 || yPartitions.size > 0) {
+      const FD = (mat === 'SMC' ? 75 : 0);
+      // 1) 길이 방향 칸막이 벽 (X 분할벽 - 전면 수직 띠 및 지붕 횡단 띠)
+      xPartitions.forEach(bx => {
+        // 전면 벽체 분할 기둥 (Z = 0 ~ H, Y = map.ys[0] - FD)
+        const fy0 = map.ys[0];
+        for (let k = 0; k < hs.length; k++) {
+          const z0 = zs[k], z1 = zs[k + 1];
+          const cz = (z0 + z1) / 2;
+          const wDepth = getDepth(bx + WALL_TH / 2, fy0 - FD, cz) - 5;
+          const pBotL = toIso(bx, fy0 - FD, z0);
+          const pBotR = toIso(bx + WALL_TH, fy0 - FD, z0);
+          const pTopR = toIso(bx + WALL_TH, fy0 - FD, z1);
+          const pTopL = toIso(bx, fy0 - FD, z1);
+          poly([pBotL, pBotR, pTopR, pTopL], 'WALL', true, true, wDepth);
+          ents.push({
+            t: 'solid',
+            p: [pBotL, pBotR, pTopL, pTopR],
+            layer: 'WALL',
+            depth: wDepth,
+            _idx: ents.length
+          });
+        }
+        // 천정 지붕 분할 띠 (Roof strip: Z = H, Y = map.ys[0] ~ totalW)
+        for (let i = 0; i < map.rows.length; i++) {
+          const ry0 = map.ys[i], ry1 = map.ys[i + 1];
+          const rDepth = getDepth(bx + WALL_TH / 2, (ry0 + ry1) / 2, H) - 5;
+          const pFrtL = toIso(bx, ry0, H);
+          const pFrtR = toIso(bx + WALL_TH, ry0, H);
+          const pRearR = toIso(bx + WALL_TH, ry1, H);
+          const pRearL = toIso(bx, ry1, H);
+          poly([pFrtL, pFrtR, pRearR, pRearL], 'WALL', true, true, rDepth);
+          ents.push({
+            t: 'solid',
+            p: [pFrtL, pFrtR, pRearL, pRearR],
+            layer: 'WALL',
+            depth: rDepth,
+            _idx: ents.length
+          });
+        }
+      });
+
+      // 2) 너비 방향 칸막이 벽 (Y 분할벽 - 우측면 수직 띠 및 지붕 종단 띠)
+      yPartitions.forEach(by => {
+        // 우측 벽체 분할 기둥 (Z = 0 ~ H, X = totalL + FD)
+        for (let k = 0; k < hs.length; k++) {
+          const z0 = zs[k], z1 = zs[k + 1];
+          const cz = (z0 + z1) / 2;
+          const wDepth = getDepth(totalL + FD, by + WALL_TH / 2, cz) - 5;
+          const pBotF = toIso(totalL + FD, by, z0);
+          const pBotR = toIso(totalL + FD, by + WALL_TH, z0);
+          const pTopR = toIso(totalL + FD, by + WALL_TH, z1);
+          const pTopF = toIso(totalL + FD, by, z1);
+          poly([pBotF, pBotR, pTopR, pTopF], 'WALL', true, true, wDepth);
+          ents.push({
+            t: 'solid',
+            p: [pBotF, pBotR, pTopF, pTopR],
+            layer: 'WALL',
+            depth: wDepth,
+            _idx: ents.length
+          });
+        }
+        // 천정 지붕 분할 띠 (Roof strip: Z = H, X = 0 ~ totalL)
+        for (let j = 0; j < map.cols.length; j++) {
+          const rx0 = map.xs[j], rx1 = map.xs[j + 1];
+          const rDepth = getDepth((rx0 + rx1) / 2, by + WALL_TH / 2, H) - 5;
+          const pLftF = toIso(rx0, by, H);
+          const pRgtF = toIso(rx1, by, H);
+          const pRgtR = toIso(rx1, by + WALL_TH, H);
+          const pLftR = toIso(rx0, by + WALL_TH, H);
+          poly([pLftF, pRgtF, pRgtR, pLftR], 'WALL', true, true, rDepth);
+          ents.push({
+            t: 'solid',
+            p: [pLftF, pRgtF, pLftR, pRgtR],
+            layer: 'WALL',
+            depth: rDepth,
+            _idx: ents.length
+          });
+        }
+      });
     }
 
     // 5. 맨홀 및 환기구 (Manhole & Air Vent on Roof - 평면도 및 정면도 표준 형상 반영)
@@ -5141,9 +5240,36 @@
       }
     });
 
-    // 7. 벽체 보강재 (Internal Reinforcement Plates - 외각 코너 브라켓 외부 돌출)
-    const flangeD = 75; // 외부 플랜지 돌출 폭 (75mm)
+    // 7. 벽체 보강재 (Internal Reinforcement Plates - 외각 코너 브라켓 외부 돌출 및 플랜지 은선 차폐)
+    const flangeD = (mat === 'SMC' ? 75 : 0); // 외부 플랜지 돌출 폭
     const HX = 110, hq = 55, sr = 12;
+
+    function reinfPlateFront(x1, x2, z1, z2, py, y0, pDepth) {
+      // 플랜지 깊이(py ~ y0)를 포괄하는 6점 볼록다각형 차폐체 (은선 완벽 제거)
+      const hull = [
+        toIso(x1, py, z1),
+        toIso(x2, py, z1),
+        toIso(x2, y0, z1),
+        toIso(x2, y0, z2),
+        toIso(x1, y0, z2),
+        toIso(x1, py, z2)
+      ];
+      poly(hull, 'REINF', false, true, pDepth);
+      poly([toIso(x1, py, z1), toIso(x2, py, z1), toIso(x2, py, z2), toIso(x1, py, z2)], 'REINF', true, true, pDepth);
+    }
+
+    function reinfPlateRight(y1, y2, z1, z2, px, xWall, pDepth) {
+      const hull = [
+        toIso(xWall, y1, z1),
+        toIso(px, y1, z1),
+        toIso(px, y2, z1),
+        toIso(px, y2, z2),
+        toIso(xWall, y2, z2),
+        toIso(xWall, y1, z2)
+      ];
+      poly(hull, 'REINF', false, true, pDepth);
+      poly([toIso(px, y1, z1), toIso(px, y2, z1), toIso(px, y2, z2), toIso(px, y1, z2)], 'REINF', true, true, pDepth);
+    }
 
     // (1) 전면 벽체 보강재 (Front-Facing Walls: plane 'XZ', Y = y0 - flangeD)
     for (let i = 0; i < map.rows.length; i++) {
@@ -5160,16 +5286,22 @@
           if (!map.has(i, j - 1)) {
             const pDepth = getDepth(x0 - flangeD / 2, py, z) - 35;
             // 전면 날개: x0 - flangeD ~ x0 + 40
-            poly([toIso(x0 - flangeD, py, z - HX), toIso(x0 + 40, py, z - HX), toIso(x0 + 40, py, z + HX), toIso(x0 - flangeD, py, z + HX)], 'REINF', true, true, pDepth);
+            reinfPlateFront(x0 - flangeD, x0 + 40, z - HX, z + HX, py, y0, pDepth);
             isoCircle(x0 - flangeD / 2, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
             isoCircle(x0 - flangeD / 2, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
             // 좌측면 날개 (L-앵글 코너 마감): y0 - flangeD ~ y0
             poly([toIso(x0 - flangeD, py, z - HX), toIso(x0 - flangeD, y0, z - HX), toIso(x0 - flangeD, y0, z + HX), toIso(x0 - flangeD, py, z + HX)], 'REINF', true, true, pDepth);
             isoCircle(x0 - flangeD, y0 - flangeD / 2, z, sr, 'YZ', 'REINF', pDepth, 12);
+          } else if (xPartitions.has(x0)) {
+            // 칸막이 격벽 접합부: 좌측 구획으로 향하는 반쪽 격자판 (halfPlate facing left into compartment)
+            const pDepth = getDepth(x0 - HX / 2, py, z) - 30;
+            reinfPlateFront(x0 - HX, x0, z - HX, z + HX, py, y0, pDepth);
+            isoCircle(x0 - HX / 2, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
+            isoCircle(x0 - HX / 2, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
           } else {
             // 내부 기둥 접합부: fullPlate (220x220, 4볼트 + 중앙 원형 보스)
             const pDepth = getDepth(x0, py, z) - 30;
-            poly([toIso(x0 - HX, py, z - HX), toIso(x0 + HX, py, z - HX), toIso(x0 + HX, py, z + HX), toIso(x0 - HX, py, z + HX)], 'REINF', true, true, pDepth);
+            reinfPlateFront(x0 - HX, x0 + HX, z - HX, z + HX, py, y0, pDepth);
             isoCircle(x0 - hq, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
             isoCircle(x0 - hq, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
             isoCircle(x0 + hq, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
@@ -5180,28 +5312,28 @@
           // 우측 모서리 끝단 (외각 코너 브라켓 전면 날개: x1 - 40 ~ x1 + flangeD, 우측 밖으로 돌출)
           if (!map.has(i, j + 1)) {
             const pDepth = getDepth(x1 + flangeD / 2, py, z) - 35;
-            poly([toIso(x1 - 40, py, z - HX), toIso(x1 + flangeD, py, z - HX), toIso(x1 + flangeD, py, z + HX), toIso(x1 - 40, py, z + HX)], 'REINF', true, true, pDepth);
+            reinfPlateFront(x1 - 40, x1 + flangeD, z - HX, z + HX, py, y0, pDepth);
             isoCircle(x1 + flangeD / 2, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
             isoCircle(x1 + flangeD / 2, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
           }
         }
 
-        // 최상단 판넬 중앙 보강판 (midRect: 220x110, 2볼트)
+        // 최상단 판넬 중앙 보강판 (midRect: 220x110, 2볼트 - 칸막이벽 위치 제외)
         if (hs.length >= 1) {
           const topK = hs.length - 1;
           const topZMid = zs[topK] + Math.round(hs[topK] / 2);
-          if (map.has(i, j - 1)) {
+          if (map.has(i, j - 1) && !xPartitions.has(x0)) {
             const pDepth = getDepth(x0, py, topZMid) - 30;
-            poly([toIso(x0 - HX, py, topZMid - hq), toIso(x0 + HX, py, topZMid - hq), toIso(x0 + HX, py, topZMid + hq), toIso(x0 - HX, py, topZMid + hq)], 'REINF', true, true, pDepth);
+            reinfPlateFront(x0 - HX, x0 + HX, topZMid - hq, topZMid + hq, py, y0, pDepth);
             isoCircle(x0 - hq, py, topZMid, sr, 'XZ', 'REINF', pDepth, 12);
             isoCircle(x0 + hq, py, topZMid, sr, 'XZ', 'REINF', pDepth, 12);
           }
         }
 
-        // H > 3000 바닥 보강판 (lowPlate: 220x110, 2볼트)
-        if (H > 3000 && map.has(i, j - 1)) {
+        // H > 3000 바닥 보강판 (lowPlate: 220x110, 2볼트 - 칸막이벽 위치 제외)
+        if (H > 3000 && map.has(i, j - 1) && !xPartitions.has(x0)) {
           const pDepth = getDepth(x0, py, hq) - 30;
-          poly([toIso(x0 - HX, py, 0), toIso(x0 + HX, py, 0), toIso(x0 + HX, py, HX), toIso(x0 - HX, py, HX)], 'REINF', true, true, pDepth);
+          reinfPlateFront(x0 - HX, x0 + HX, 0, HX, py, y0, pDepth);
           isoCircle(x0 - hq, py, hq, sr, 'XZ', 'REINF', pDepth, 12);
           isoCircle(x0 + hq, py, hq, sr, 'XZ', 'REINF', pDepth, 12);
         }
@@ -5222,13 +5354,19 @@
           // 전면 모서리 외각 브라켓 우측 날개 (y0 - flangeD ~ y0 + 40, 전면 코너와 연결되어 완벽한 L-Angle 완성)
           if (!map.has(i - 1, j)) {
             const pDepth = getDepth(px, y0 - flangeD / 2, z) - 35;
-            poly([toIso(px, y0 - flangeD, z - HX), toIso(px, y0 + 40, z - HX), toIso(px, y0 + 40, z + HX), toIso(px, y0 - flangeD, z + HX)], 'REINF', true, true, pDepth);
+            reinfPlateRight(y0 - flangeD, y0 + 40, z - HX, z + HX, px, xWall, pDepth);
             isoCircle(px, y0 - flangeD / 2, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
             isoCircle(px, y0 - flangeD / 2, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
+          } else if (yPartitions.has(y0)) {
+            // 칸막이 격벽 접합부: 전면 구획으로 향하는 반쪽 격자판
+            const pDepth = getDepth(px, y0 - HX / 2, z) - 30;
+            reinfPlateRight(y0 - HX, y0, z - HX, z + HX, px, xWall, pDepth);
+            isoCircle(px, y0 - HX / 2, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
+            isoCircle(px, y0 - HX / 2, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
           } else {
             // 내부 기둥 접합부: fullPlate (220x220, 4볼트 + 중앙 원형 보스)
             const pDepth = getDepth(px, y0, z) - 30;
-            poly([toIso(px, y0 - HX, z - HX), toIso(px, y0 + HX, z - HX), toIso(px, y0 + HX, z + HX), toIso(px, y0 - HX, z + HX)], 'REINF', true, true, pDepth);
+            reinfPlateRight(y0 - HX, y0 + HX, z - HX, z + HX, px, xWall, pDepth);
             isoCircle(px, y0 - hq, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
             isoCircle(px, y0 - hq, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
             isoCircle(px, y0 + hq, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
@@ -5239,7 +5377,7 @@
           // 후면 모서리 끝단 (외각 코너 브라켓 우측 날개: y1 - 40 ~ y1 + flangeD, 후면 밖으로 돌출)
           if (!map.has(i + 1, j)) {
             const pDepth = getDepth(px, y1 + flangeD / 2, z) - 35;
-            poly([toIso(px, y1 - 40, z - HX), toIso(px, y1 + flangeD, z - HX), toIso(px, y1 + flangeD, z + HX), toIso(px, y1 - 40, z + HX)], 'REINF', true, true, pDepth);
+            reinfPlateRight(y1 - 40, y1 + flangeD, z - HX, z + HX, px, xWall, pDepth);
             isoCircle(px, y1 + flangeD / 2, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
             isoCircle(px, y1 + flangeD / 2, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
             // 후면 날개 (L-앵글 코너 마감)
@@ -5248,22 +5386,22 @@
           }
         }
 
-        // 최상단 판넬 중앙 보강판 (midRect: 220x110, 2볼트)
+        // 최상단 판넬 중앙 보강판 (midRect: 220x110, 2볼트 - 칸막이벽 위치 제외)
         if (hs.length >= 1) {
           const topK = hs.length - 1;
           const topZMid = zs[topK] + Math.round(hs[topK] / 2);
-          if (map.has(i - 1, j)) {
+          if (map.has(i - 1, j) && !yPartitions.has(y0)) {
             const pDepth = getDepth(px, y0, topZMid) - 30;
-            poly([toIso(px, y0 - HX, topZMid - hq), toIso(px, y0 + HX, topZMid - hq), toIso(px, y0 + HX, topZMid + hq), toIso(px, y0 - HX, topZMid + hq)], 'REINF', true, true, pDepth);
+            reinfPlateRight(y0 - HX, y0 + HX, topZMid - hq, topZMid + hq, px, xWall, pDepth);
             isoCircle(px, y0 - hq, topZMid, sr, 'YZ', 'REINF', pDepth, 12);
             isoCircle(px, y0 + hq, topZMid, sr, 'YZ', 'REINF', pDepth, 12);
           }
         }
 
-        // H > 3000 바닥 보강판 (lowPlate: 220x110, 2볼트)
-        if (H > 3000 && map.has(i - 1, j)) {
+        // H > 3000 바닥 보강판 (lowPlate: 220x110, 2볼트 - 칸막이벽 위치 제외)
+        if (H > 3000 && map.has(i - 1, j) && !yPartitions.has(y0)) {
           const pDepth = getDepth(px, y0, hq) - 30;
-          poly([toIso(px, y0 - HX, 0), toIso(px, y0 + HX, 0), toIso(px, y0 + HX, HX), toIso(px, y0 - HX, HX)], 'REINF', true, true, pDepth);
+          reinfPlateRight(y0 - HX, y0 + HX, 0, HX, px, xWall, pDepth);
           isoCircle(px, y0 - hq, hq, sr, 'YZ', 'REINF', pDepth, 12);
           isoCircle(px, y0 + hq, hq, sr, 'YZ', 'REINF', pDepth, 12);
         }
@@ -5356,8 +5494,8 @@
       const isReinfA = a.layer === 'REINF';
       const isReinfB = b.layer === 'REINF';
       if (isReinfA !== isReinfB) {
-        const isWallA = a.layer === 'PANEL' || a.layer === 'PANEL_DETAIL' || a.layer === 'FRAME';
-        const isWallB = b.layer === 'PANEL' || b.layer === 'PANEL_DETAIL' || b.layer === 'FRAME';
+        const isWallA = a.layer === 'PANEL' || a.layer === 'PANEL_DETAIL' || a.layer === 'FRAME' || a.layer === 'WALL';
+        const isWallB = b.layer === 'PANEL' || b.layer === 'PANEL_DETAIL' || b.layer === 'FRAME' || b.layer === 'WALL';
         if (isReinfA && isWallB) return 1;
         if (isReinfB && isWallA) return -1;
       }
@@ -5433,7 +5571,7 @@
         for (let i = 0; i < opaquePolys.length; i++) {
           const poly = opaquePolys[i];
           // Polygon must be strictly in FRONT of the line (lower depth by at least 15mm)
-          if ((poly.layer === 'REINF' && (e.layer === 'FRAME' || e.layer === 'PANEL' || e.layer === 'PANEL_DETAIL')) || poly.depth < eDepth - 15) {
+          if (((poly.layer === 'REINF' || poly.layer === 'WALL') && (e.layer === 'FRAME' || e.layer === 'PANEL' || e.layer === 'PANEL_DETAIL')) || poly.depth < eDepth - 15) {
             // Foundation elements (PAD / isFoundation) must NEVER be clipped by any polygon, and foundation polygons never clip lines
             if (e.isFoundation || e.layer === 'PAD') continue;
             if (poly.isFoundation || poly.layer === 'PAD') continue;
@@ -5699,7 +5837,7 @@
 
   /* ---------- 도면 시트 (A1 가로, 표제란) ---------- */
   const SCALES = [10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 125, 150, 200, 250, 300];
-  const SHEET = { w: 841, h: 594, title: 200, margin: 10 };   // 종이 mm (표제란 200mm 최적 확장)
+  const SHEET = { w: 841, h: 594, title: 200, margin: 15, gridMargin: 10 };   // 종이 mm (A1 글로벌 표준: 표제란 200mm, 외곽 10mm 그리드, 본선 15mm)
   function pickScale(L, W, H, isAsm5 = false) {
     if (isAsm5) {
       const isoW = Math.round((L + W) * 0.55);
@@ -5926,26 +6064,97 @@
     const side = sideT ? buildElevation(opt, sideT, 'side') : null;
 
     const ents = [], t = opt.title || {};
-    const S = SHEET, x0 = S.margin, y0 = S.margin, x1 = S.w - S.margin, y1 = S.h - S.margin;
+    const S = SHEET;
+    const gx0 = S.gridMargin, gy0 = S.gridMargin, gx1 = S.w - S.gridMargin, gy1 = S.h - S.gridMargin;
+    const x0 = S.margin, y0 = S.margin, x1 = S.w - S.margin, y1 = S.h - S.margin;
     const line = (a, b, color) => ents.push({ t: 'line', a: [P(a[0]), P(a[1])], b: [P(b[0]), P(b[1])], layer: 'SHEET', ...(color ? { color } : {}) });
     const circle = (c, r) => ents.push({ t: 'circle', c: [P(c[0]), P(c[1])], r: P(r), layer: 'SHEET' });
     const arc = (c, r, a0, a1) => ents.push({ t: 'arc', c: [P(c[0]), P(c[1])], r: P(r), a0: a0 || 0, a1: a1 || 360, layer: 'SHEET' });
     const poly = (pts, layer = 'SHEET') => ents.push({ t: 'poly', pts: pts.map(pt => [P(pt[0]), P(pt[1])]), layer });
+    const solid = (pts, layer = 'SHEET', color) => ents.push({ t: 'solid', p: pts.map(pt => [P(pt[0]), P(pt[1])]), layer, ...(color ? { color } : {}) });
     const rect = (xa, ya, xb, yb) => { line([xa, ya], [xb, ya]); line([xb, ya], [xb, yb]); line([xb, yb], [xa, yb]); line([xa, yb], [xa, ya]); };
     const text = (x, y, h, str, align, rot, valign) => { if (str) ents.push({ t: 'text', p: [P(x), P(y)], h: P(h), s: str, rot: rot || 0, align: align || 'left', valign: valign || 'baseline', layer: 'SHEET' }); };
+
+    // --- [글로벌 엔지니어링 도면틀: ISO 5457 / ISO 7200 / ASME Y14 표준 준수] ---
+    // 1. 도면 모서리 재단 마크 (Corner Trimming Marks: A1 841x594 기준 4개소)
+    const cropLen = 10;
+    line([0, cropLen], [cropLen, cropLen]); line([cropLen, 0], [cropLen, cropLen]);
+    line([S.w, cropLen], [S.w - cropLen, cropLen]); line([S.w - cropLen, 0], [S.w - cropLen, cropLen]);
+    line([0, S.h - cropLen], [cropLen, S.h - cropLen]); line([cropLen, S.h], [cropLen, S.h - cropLen]);
+    line([S.w, S.h - cropLen], [S.w - cropLen, S.h - cropLen]); line([S.w - cropLen, S.h], [S.w - cropLen, S.h - cropLen]);
+
+    // 2. 외곽 그리드 경계선 (Outer Grid Margin 10mm) 및 본선 도면 테두리 (Inner Border 15mm)
+    rect(gx0, gy0, gx1, gy1);
     rect(x0, y0, x1, y1);
+
+    // 3. 중심 마크 (Centering Marks: 상하좌우 4개소, 중앙 420.5, 297)
+    const midX = S.w / 2, midY = S.h / 2;
+    line([midX, gy0 - 5], [midX, y0 + 5]); // 하단
+    line([midX, y1 - 5], [midX, gy1 + 5]); // 상단
+    line([gx0 - 5, midY], [x0 + 5, midY]); // 좌측
+    line([x1 - 5, midY], [gx1 + 5, midY]); // 우측
+
+    // 4. 방향 표시 삼각형 (Orientation Mark: ISO 5457 하단 중심)
+    poly([[midX, y0 + 2], [midX - 2.5, gy0 + 1], [midX + 2.5, gy0 + 1], [midX, y0 + 2]]);
+    solid([[midX, y0 + 2], [midX - 2.5, gy0 + 1], [midX + 2.5, gy0 + 1], [midX, y0 + 2]]);
+
+    // 5. 도면 구획 참조 격자 좌표계 (Grid Reference System: 1~8 수평, A~F 수직)
+    const numCols = 8;
+    const wz = (x1 - x0) / numCols;
+    for (let i = 1; i < numCols; i++) {
+      const zx = x0 + i * wz;
+      line([zx, gy0], [zx, y0]);
+      line([zx, y1], [zx, gy1]);
+    }
+    for (let i = 0; i < numCols; i++) {
+      const zcx = x0 + (i + 0.5) * wz;
+      // i === 0 하단은 100mm 메트릭 참조 척도 스케일바가 배치되므로 스케일바 간섭 방지(상단에는 1 표기 유지)
+      if (i > 0) text(zcx, (gy0 + y0) / 2, 2.6, String(i + 1), 'center', 0, 'middle');
+      text(zcx, (y1 + gy1) / 2, 2.6, String(i + 1), 'center', 0, 'middle');
+    }
+
+    const numRows = 6;
+    const hz = (y1 - y0) / numRows;
+    const vLetters = ['F', 'E', 'D', 'C', 'B', 'A']; // 하단부터 F, E, D, C, B, 상단 A (ISO 5457 표준)
+    for (let j = 1; j < numRows; j++) {
+      const zy = y0 + j * hz;
+      line([gx0, zy], [x0, zy]);
+      line([x1, zy], [gx1, zy]);
+    }
+    for (let j = 0; j < numRows; j++) {
+      const zcy = y0 + (j + 0.5) * hz;
+      text((gx0 + x0) / 2, zcy, 2.6, vLetters[j], 'center', 0, 'middle');
+      text((x1 + gx1) / 2, zcy, 2.6, vLetters[j], 'center', 0, 'middle');
+    }
+
+    // 6. 메트릭 참조 척도 스케일바 (100mm Metric Reference Scale Bar: ISO 5457 표준)
+    // 하단 좌측 1구획 내 15mm ~ 115mm (정확히 100mm 길이)에 10mm 간격 눈금 및 흑백 블록
+    const sbX = x0, sbY0 = gy0 + 1.0, sbY1 = y0 - 0.5;
+    rect(sbX, sbY0, sbX + 100, sbY1);
+    for (let si = 1; si < 10; si++) {
+      line([sbX + si * 10, sbY0], [sbX + si * 10, sbY1]);
+    }
+    for (let si = 0; si < 10; si += 2) {
+      solid([[sbX + si * 10, (sbY0 + sbY1) / 2], [sbX + (si + 1) * 10, (sbY0 + sbY1) / 2], [sbX + (si + 1) * 10, sbY1], [sbX + si * 10, sbY1]]);
+    }
+    text(sbX, gy0 - 2.5, 2.0, '0', 'center', 0, 'middle');
+    text(sbX + 50, gy0 - 2.5, 2.0, '50', 'center', 0, 'middle');
+    text(sbX + 100, gy0 - 2.5, 2.0, '100 mm', 'center', 0, 'middle');
+
+    // 표제란 세로 구획선
     const tx0 = x1 - S.title, tw = S.title;
     line([tx0, y0], [tx0, y1]);
 
     const lang = opt.drawingLang || opt.lang || 'ko';
 
-    // 머리글 (회사 로고 및 회사정보/주소)
+    // ==========================================
+    // 상단 헤더: 회사정보 및 개정 이력표 (Revision Block)
+    // ==========================================
     let y = y1;
     // 1. 회사명 및 로고 (높이 16mm)
     y -= 16;
     line([tx0, y], [x1, y]);
-    // 회사 로고 마크 (원형 이니셜 엠블럼 또는 사용자 등록 CAD/이미지 로고)
-    const logoX = tx0 + 15, logoY = y + 8;
+    const logoX = tx0 + 16, logoY = y + 8;
     const logoTxt = (t.logoText !== undefined && t.logoText !== null) ? t.logoText : 'Y';
     if (t.logoCadEntities && t.logoCadEntities.length) {
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -6016,19 +6225,19 @@
     }
     const defComp = lang === 'ko' ? '(주)와이에스에이씨' : 'YSACC CO., LTD';
     const compName = t.customer || defComp;
-    text(tx0 + 28 + (tw - 28) / 2, y + 8, 6.2, compName, 'center', 0, 'middle');
+    text(tx0 + 30 + (tw - 30) / 2, y + 8, 6.2, compName, 'center', 0, 'middle');
 
-    // 2. 제품명 (높이 12mm - 설정값 연동)
-    y -= 12;
+    // 2. 제품명 (높이 11mm)
+    y -= 11;
     line([tx0, y], [x1, y]);
     const defProd = lang === 'ko' ? ((opt.material === 'STS' ? 'STS' : 'GRP') + ' 조립식 물탱크') : ((opt.material === 'STS' ? 'STS' : 'GRP') + ' PANEL WATER TANK');
     const prodName = (t.prodName && t.prodName.trim()) ? t.prodName.trim() : defProd;
-    text(tx0 + tw / 2, y + 6, 5.5, prodName, 'center', 0, 'middle');
+    text(tx0 + tw / 2, y + 5.5, 5.2, prodName, 'center', 0, 'middle');
 
-    // 3. 주소 및 연락처 (높이 16mm)
-    y -= 16;
+    // 3. 주소 및 연락처 (높이 14mm)
+    y -= 14;
     line([tx0, y], [x1, y]);
-    const defAddr = lang === 'ko' ? '충청북도 청주시 흥덕구 가로수로 1251, 201-1호 (28420)' : '201-1, 1251, Garosu-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28420, Republic of Korea';
+    const defAddr = lang === 'ko' ? '충청북도 청주시 흥덕구 가로수로 1251, 201-1호 (28420)' : '201-1, 1251, Garosu-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28420, Korea';
     const rawAddr = t.address || defAddr;
     const telInfo = t.tel ? (t.tel.toUpperCase().includes('TEL') ? t.tel : ('TEL : ' + t.tel)) : '';
     let addrLines = [rawAddr];
@@ -6046,24 +6255,62 @@
     }
     if (telInfo) {
       if (addrLines.length > 1) {
-        text(tx0 + tw / 2, y + 11.5, 3.2, addrLines[0], 'center', 0, 'middle');
-        text(tx0 + tw / 2, y + 7.5, 3.2, addrLines[1], 'center', 0, 'middle');
-        text(tx0 + tw / 2, y + 3.2, 3.0, telInfo, 'center', 0, 'middle');
+        text(tx0 + tw / 2, y + 10.5, 3.0, addrLines[0], 'center', 0, 'middle');
+        text(tx0 + tw / 2, y + 6.8, 3.0, addrLines[1], 'center', 0, 'middle');
+        text(tx0 + tw / 2, y + 2.8, 2.8, telInfo, 'center', 0, 'middle');
       } else {
-        text(tx0 + tw / 2, y + 10.0, 3.5, addrLines[0], 'center', 0, 'middle');
-        text(tx0 + tw / 2, y + 4.5, 3.3, telInfo, 'center', 0, 'middle');
+        text(tx0 + tw / 2, y + 9.0, 3.2, addrLines[0], 'center', 0, 'middle');
+        text(tx0 + tw / 2, y + 3.8, 3.0, telInfo, 'center', 0, 'middle');
       }
     } else {
       if (addrLines.length > 1) {
-        text(tx0 + tw / 2, y + 10.5, 3.5, addrLines[0], 'center', 0, 'middle');
-        text(tx0 + tw / 2, y + 5.5, 3.5, addrLines[1], 'center', 0, 'middle');
+        text(tx0 + tw / 2, y + 9.5, 3.2, addrLines[0], 'center', 0, 'middle');
+        text(tx0 + tw / 2, y + 4.5, 3.2, addrLines[1], 'center', 0, 'middle');
       } else {
-        text(tx0 + tw / 2, y + 8.0, 3.8, addrLines[0], 'center', 0, 'middle');
+        text(tx0 + tw / 2, y + 7.0, 3.5, addrLines[0], 'center', 0, 'middle');
       }
     }
 
-    // 하부 표 (아래에서 위로 - 칸 대폭 확대 및 글씨 시인성/가독성 극대화)
-    const fd = a => { const v = a.filter(Boolean).map(x => x / 1000); return v.length > 1 ? '(' + v.join('+') + ')' : String(v[0] || 0); };
+    // 4. 개정 이력표 (REVISION BLOCK: ISO 7200 / ASME Y14.35 표준)
+    // 높이 24mm: 헤더 6mm + 개정 행 2개(각 9mm)
+    const revHeaderH = 6, revRowH = 9;
+    const revTotalH = revHeaderH + revRowH * 2;
+    y -= revTotalH;
+    line([tx0, y], [x1, y]);
+    line([tx0, y + revRowH * 2], [x1, y + revRowH * 2]);
+    line([tx0, y + revRowH], [x1, y + revRowH]);
+    // 열 구획: ZONE(14), REV(14), DESCRIPTION(116), DATE(28), APPROVED(28)
+    const revCols = [
+      { key: 'zone', label: 'ZONE', w: 14 },
+      { key: 'rev', label: 'REV.', w: 14 },
+      { key: 'desc', label: lang === 'ko' ? '개 정 내 역  (DESCRIPTION)' : 'REVISION DESCRIPTION', w: 116 },
+      { key: 'date', label: lang === 'ko' ? '일자(DATE)' : 'DATE', w: 28 },
+      { key: 'appd', label: lang === 'ko' ? '승인(APPD)' : 'APPROVED', w: 28 }
+    ];
+    let rx = tx0;
+    revCols.forEach((col, ci) => {
+      text(rx + col.w / 2, y + revRowH * 2 + revHeaderH / 2, 2.5, col.label, 'center', 0, 'middle');
+      if (ci > 0) {
+        line([rx, y], [rx, y + revTotalH]);
+      }
+      rx += col.w;
+    });
+
+    const today = new Date(), pad2 = v => String(v).padStart(2, '0');
+    const todayStr = t.date || (today.getFullYear() + '.' + pad2(today.getMonth() + 1) + '.' + pad2(today.getDate()));
+
+    // 개정 0 (최초 발행)
+    const revRow1Y = y + revRowH;
+    text(tx0 + 7, revRow1Y + revRowH / 2, 2.8, '-', 'center', 0, 'middle');
+    text(tx0 + 21, revRow1Y + revRowH / 2, 3.0, '0', 'center', 0, 'middle');
+    const initDesc = lang === 'ko' ? '도면 최초 제정 및 발행 (FOR APPROVAL)' : 'INITIAL ISSUE / FOR APPROVAL';
+    text(tx0 + 28 + 4, revRow1Y + revRowH / 2, 2.6, initDesc, 'left', 0, 'middle');
+    text(tx0 + 144 + 14, revRow1Y + revRowH / 2, 2.5, todayStr, 'center', 0, 'middle');
+    text(tx0 + 172 + 14, revRow1Y + revRowH / 2, 2.8, t.approved || (lang === 'ko' ? '와이에스' : 'YSACC'), 'center', 0, 'middle');
+
+    // ==========================================
+    // 하부 표제란 (ISO 7200 / ASME Y14 블록: 아래에서 위로)
+    // ==========================================
     const anyRemoved = mmap.removed && mmap.removed.size > 0;
     const autoDimStr = getTankDimStr(opt, mmap, H);
     const dimStr = (t.tankSize && t.tankSize.trim()) ? t.tankSize.trim() : autoDimStr;
@@ -6078,80 +6325,116 @@
     });
     const ton = (activeAreaMm2 * H / 1e9).toFixed(1);
     let ty = y0;
-    const colLabelW = 60, colValW = tw - colLabelW;
+    const colLabelW = 55, colValW = tw - colLabelW;
 
-    // 1. TITLE (높이 32mm, 폰트 5.5 / 6.5mm)
-    const titleH = 32;
+    // 1. DRAWING TITLE (높이 28mm)
+    const titleH = 28;
     line([tx0, ty + titleH], [x1, ty + titleH]);
-    const titleLabel = lang === 'ko' ? '도면명' : (lang === 'en' ? 'TITLE' : 'TITLE (도면명)');
-    text(tx0 + colLabelW / 2, ty + titleH / 2, 5.0, titleLabel, 'center', 0, 'middle');
+    const titleLabel = lang === 'ko' ? '도  면  명' : (lang === 'en' ? 'DRAWING TITLE' : 'TITLE (도면명)');
+    text(tx0 + colLabelW / 2, ty + titleH / 2, 4.8, titleLabel, 'center', 0, 'middle');
     line([tx0 + colLabelW, ty], [tx0 + colLabelW, ty + titleH]);
     const titleVal = opt.sheetKind === 'frame' ? (lang === 'ko' ? '기초 프레임 및 스테이 도면' : 'STEEL SKID DRAWING') : opt.sheetKind === 'detail' ? (lang === 'ko' ? '탱크 상세도' : 'DETAILS DWG') : opt.sheetKind === 'pad' ? (lang === 'ko' ? '기초 콘크리트 패드 도면' : 'FOUNDATION PAD DWG') : dimStr + '\n= ' + ton + ' Ton';
     const tparts = titleVal.split('\n');
     if (tparts.length > 1) {
       const maxChar = Math.max(tparts[0].length, tparts[1].length);
-      const fs = maxChar > 35 ? 4.2 : (maxChar > 24 ? 5.0 : 6.2);
-      text(tx0 + colLabelW + colValW / 2, ty + titleH / 2 + 5.5, fs, tparts[0], 'center', 0, 'middle');
-      text(tx0 + colLabelW + colValW / 2, ty + titleH / 2 - 5.5, 6.2, tparts[1], 'center', 0, 'middle');
+      const fs = maxChar > 35 ? 4.2 : (maxChar > 24 ? 5.0 : 6.0);
+      text(tx0 + colLabelW + colValW / 2, ty + titleH / 2 + 5.0, fs, tparts[0], 'center', 0, 'middle');
+      text(tx0 + colLabelW + colValW / 2, ty + titleH / 2 - 5.0, 5.8, tparts[1], 'center', 0, 'middle');
     } else {
-      text(tx0 + colLabelW + colValW / 2, ty + titleH / 2, 6.5, titleVal, 'center', 0, 'middle');
+      text(tx0 + colLabelW + colValW / 2, ty + titleH / 2, 6.2, titleVal, 'center', 0, 'middle');
     }
     ty += titleH;
 
-    // 2. PROJECT (높이 22mm, 폰트 5.0 / 5.2mm)
-    const projH = 22;
+    // 2. PROJECT (높이 18mm)
+    const projH = 18;
     line([tx0, ty + projH], [x1, ty + projH]);
-    const projLabel = lang === 'ko' ? '공사명' : (lang === 'en' ? 'PROJECT' : 'PROJECT (공사명)');
-    text(tx0 + colLabelW / 2, ty + projH / 2, 5.0, projLabel, 'center', 0, 'middle');
+    const projLabel = lang === 'ko' ? '공  사  명' : (lang === 'en' ? 'PROJECT' : 'PROJECT (공사명)');
+    text(tx0 + colLabelW / 2, ty + projH / 2, 4.8, projLabel, 'center', 0, 'middle');
     line([tx0 + colLabelW, ty], [tx0 + colLabelW, ty + projH]);
     text(tx0 + colLabelW + colValW / 2, ty + projH / 2, 5.2, t.project || '', 'center', 0, 'middle');
     ty += projH;
 
-    // 3. 5개 사양 행 (각 13.0mm, 폰트 4.8 / 5.0mm로 대폭 확대)
-    const rowH = 13.0;
-    const rows = [
-      [lang === 'ko' ? '고객명' : (lang === 'en' ? 'CLIENT' : 'Client (고객명)'), t.client || ''],
+    // 3. 4개 사양 행 (각 11.0mm) - TANK SIZE, CONTRACTOR, CONSULTANT, CLIENT
+    const rowH = 11.0;
+    const specRows = [
+      [lang === 'ko' ? '고 객 명' : (lang === 'en' ? 'CLIENT' : 'Client (고객명)'), t.client || ''],
       [lang === 'ko' ? '설계감리' : (lang === 'en' ? 'CONSULTANT' : 'Consultant (감리)'), t.consultant || ''],
-      [lang === 'ko' ? '시공사' : (lang === 'en' ? 'MAIN CONTRACTOR' : 'Contractor (시공)'), t.contractor || ''],
-      [lang === 'ko' ? '설비공사' : (lang === 'en' ? 'MEP CONTRACTOR' : 'MEP (설비)'), t.mep || ''],
+      [lang === 'ko' ? '시 공 사' : (lang === 'en' ? 'CONTRACTOR' : 'Contractor (시공)'), t.contractor || ''],
       [lang === 'ko' ? '탱크규격' : (lang === 'en' ? 'TANK SIZE' : 'TANK SIZE (규격)'), dimStr]
     ];
-    rows.slice().reverse().forEach(([k, v]) => {
+    specRows.slice().reverse().forEach(([k, v]) => {
       line([tx0, ty + rowH], [x1, ty + rowH]);
-      text(tx0 + colLabelW / 2, ty + rowH / 2, 4.8, k, 'center', 0, 'middle');
+      text(tx0 + colLabelW / 2, ty + rowH / 2, 4.5, k, 'center', 0, 'middle');
       line([tx0 + colLabelW, ty], [tx0 + colLabelW, ty + rowH]);
-      const fs = (k.includes('TANK SIZE') && v && v.length > 30) ? 3.8 : (k.includes('TANK SIZE') && v && v.length > 20 ? 4.3 : 5.0);
+      const fs = (k.includes('TANK SIZE') && v && v.length > 30) ? 3.6 : (k.includes('TANK SIZE') && v && v.length > 20 ? 4.2 : 4.8);
       text(tx0 + colLabelW + colValW / 2, ty + rowH / 2, fs, v, 'center', 0, 'middle');
       ty += rowH;
     });
 
-    // 4. 서명란 / DATE / SCALE / Chart No. (각 13.0mm, 폰트 4.8 / 5.0mm)
-    const today = new Date(), pad2 = v => String(v).padStart(2, '0');
-    const info = [
-      [lang === 'ko' ? '도면번호' : (lang === 'en' ? 'DWG NO.' : 'DWG NO. (도번)'), t.dwgNo || ''],
-      [lang === 'ko' ? '도면식별' : (lang === 'en' ? 'CHART NO.' : 'Chart No.'), t.chartNo || ''],
-      [lang === 'ko' ? '축척' : (lang === 'en' ? 'SCALE' : 'SCALE (축척)'), '1 / ' + N],
-      [lang === 'ko' ? '일자' : (lang === 'en' ? 'DATE' : 'DATE (일자)'), t.date || (today.getFullYear() + '.' + pad2(today.getMonth() + 1) + '.' + pad2(today.getDate()))]
-    ];
-    info.forEach(([k, v]) => {
-      line([tx0, ty + rowH], [x1, ty + rowH]);
-      text(tx0 + colLabelW / 2, ty + rowH / 2, 4.8, k, 'center', 0, 'middle');
-      line([tx0 + colLabelW, ty], [tx0 + colLabelW, ty + rowH]);
-      text(tx0 + colLabelW + colValW / 2, ty + rowH / 2, 5.0, v, 'center', 0, 'middle');
-      ty += rowH;
-    });
+    // 4. 도면 제어 메타데이터 및 제3각법 기호 블록 (ISO 128 / ISO 5456 표준 투상기호) (높이 22mm)
+    const metaH = 22;
+    line([tx0, ty + metaH], [x1, ty + metaH]);
+    line([tx0, ty + metaH / 2], [tx0 + 132, ty + metaH / 2]);
+    line([tx0 + 132, ty], [tx0 + 132, ty + metaH]);
 
-    // 5. 서명 승인란 (DRAWN, CHECKED, APPROVED) (높이 30mm: 헤더 12mm, 서명란 18mm)
-    const signHeaderH = 12, signValH = 18;
+    // 좌측 (132mm): DWG NO(26), Value(64), REV(18), 0(24)
+    // 상단 반 (ty + 11 ~ ty + 22)
+    line([tx0 + 26, ty + metaH / 2], [tx0 + 26, ty + metaH]);
+    line([tx0 + 90, ty + metaH / 2], [tx0 + 90, ty + metaH]);
+    line([tx0 + 108, ty + metaH / 2], [tx0 + 108, ty + metaH]);
+    text(tx0 + 13, ty + metaH * 0.75, 3.8, lang === 'ko' ? '도면번호' : 'DWG NO.', 'center', 0, 'middle');
+    text(tx0 + 26 + 32, ty + metaH * 0.75, 4.0, t.dwgNo || '', 'center', 0, 'middle');
+    text(tx0 + 90 + 9, ty + metaH * 0.75, 3.8, 'REV.', 'center', 0, 'middle');
+    text(tx0 + 108 + 12, ty + metaH * 0.75, 4.2, '0', 'center', 0, 'middle');
+
+    // 하단 반 (ty ~ ty + 11): SCALE(26), 1:N(64), SHEET(18), 1/1(24)
+    line([tx0 + 26, ty], [tx0 + 26, ty + metaH / 2]);
+    line([tx0 + 90, ty], [tx0 + 90, ty + metaH / 2]);
+    line([tx0 + 108, ty], [tx0 + 108, ty + metaH / 2]);
+    text(tx0 + 13, ty + metaH * 0.25, 3.8, lang === 'ko' ? '축  척' : 'SCALE', 'center', 0, 'middle');
+    text(tx0 + 26 + 32, ty + metaH * 0.25, 4.2, '1 : ' + N, 'center', 0, 'middle');
+    text(tx0 + 90 + 9, ty + metaH * 0.25, 3.8, 'SHEET', 'center', 0, 'middle');
+    text(tx0 + 108 + 12, ty + metaH * 0.25, 4.2, '1 / 1', 'center', 0, 'middle');
+
+    // 우측 (68mm): 제3각법 투상 기호 (ISO 128 Third Angle Projection Symbol) & 단위/용지
+    const projBoxX0 = tx0 + 132, projBoxW = tw - 132;
+    const projMidX = projBoxX0 + projBoxW / 2;
+    const symCy = ty + 13.5;
+    // 중심선
+    line([projMidX - 22, symCy], [projMidX + 22, symCy]);
+    line([projMidX - 10, symCy - 6], [projMidX - 10, symCy + 6]);
+    // 동심원
+    circle([projMidX - 10, symCy], 2.0);
+    circle([projMidX - 10, symCy], 4.4);
+    // 원추대 (좌측 소구경 4.0, 우측 대구경 8.8, 폭 9)
+    const coneX1 = projMidX + 3, coneX2 = projMidX + 13;
+    line([coneX1, symCy - 2.0], [coneX1, symCy + 2.0]);
+    line([coneX2, symCy - 4.4], [coneX2, symCy + 4.4]);
+    line([coneX1, symCy - 2.0], [coneX2, symCy - 4.4]);
+    line([coneX1, symCy + 2.0], [coneX2, symCy + 4.4]);
+    // 하단 라벨
+    text(projMidX, ty + 4.2, 2.3, lang === 'ko' ? '제 3 각 법' : '3RD ANGLE PROJECTION', 'center', 0, 'middle');
+    ty += metaH;
+
+    // 5. 서명 승인란 (4단계: DESIGNED, DRAWN, CHECKED, APPROVED) (높이 26mm: 헤더 9mm, 서명란 17mm)
+    const signHeaderH = 9, signValH = 17;
     line([tx0, ty + signValH], [x1, ty + signValH]);
     line([tx0, ty + signValH + signHeaderH], [x1, ty + signValH + signHeaderH]);
-    const scw = tw / 3;
-    const signLabels = lang === 'ko' ? ['작도', '검토', '승인'] : (lang === 'en' ? ['DRAWN', 'CHECKED', 'APPROVED'] : ['작도(DWN)', '검토(CHK)', '승인(APP)']);
+    const scw = tw / 4;
+    const signLabels = lang === 'ko' ? ['설계(DSGN)', '작도(DWN)', '검토(CHK)', '승인(APP)'] : ['DESIGNED', 'DRAWN', 'CHECKED', 'APPROVED'];
     signLabels.forEach((k, i) => {
-      text(tx0 + scw * i + scw / 2, ty + signValH + signHeaderH / 2, 4.8, k, 'center', 0, 'middle');
+      text(tx0 + scw * i + scw / 2, ty + signValH + signHeaderH / 2, 4.0, k, 'center', 0, 'middle');
       if (i > 0) line([tx0 + scw * i, ty], [tx0 + scw * i, ty + signValH + signHeaderH]);
     });
-    if (t.drawn) text(tx0 + scw / 2, ty + signValH / 2, 5.0, t.drawn, 'center', 0, 'middle');
+    const signVals = [
+      t.designed || (lang === 'ko' ? '와이에스' : 'YSACC'),
+      t.drawn || '',
+      t.checked || '',
+      t.approved || ''
+    ];
+    signVals.forEach((val, i) => {
+      if (val) text(tx0 + scw * i + scw / 2, ty + signValH / 2, 4.5, val, 'center', 0, 'middle');
+    });
     ty += signValH + signHeaderH;
 
     // 2. 부품 사양 명세표 (ITEM LIST / BOM Table)
@@ -6160,17 +6443,17 @@
     let itemTableTop = ty;
     if (activeBoms.length) {
       const colDefs = [
-        { key: 'no', label: lang === 'ko' ? '번호' : 'NO.', w: 12 },
-        { key: 'name', label: lang === 'ko' ? '품명' : (lang === 'en' ? 'ITEMS' : 'ITEMS (품명)'), w: 44 },
-        { key: 'mat', label: lang === 'ko' ? '재질' : (lang === 'en' ? 'MATERIAL' : 'MATERIAL (재질)'), w: 32 },
-        { key: 'qty', label: lang === 'ko' ? '수량' : (lang === 'en' ? 'QTY' : 'QTY (수량)'), w: 18 },
-        { key: 'spec', label: lang === 'ko' ? '사양 및 규격' : (lang === 'en' ? 'SPECIFICATIONS' : 'SPECIFICATIONS (사양)'), w: 76 }
+        { key: 'no', label: lang === 'ko' ? '번호' : 'NO.', w: 10 },
+        { key: 'name', label: lang === 'ko' ? '품명' : (lang === 'en' ? 'ITEMS' : 'ITEMS (품명)'), w: 52 },
+        { key: 'mat', label: lang === 'ko' ? '재질' : (lang === 'en' ? 'MATERIAL' : 'MATERIAL (재질)'), w: 26 },
+        { key: 'qty', label: lang === 'ko' ? '수량' : (lang === 'en' ? 'QTY' : 'QTY (수량)'), w: 16 },
+        { key: 'spec', label: lang === 'ko' ? '사양 및 규격' : (lang === 'en' ? 'SPECIFICATIONS' : 'SPECIFICATIONS (사양)'), w: 78 }
       ];
       const tableW = 182; // tx0 + 4 to x1 - 4
       const bCnt = activeBoms.length;
       const rowH = bCnt > 12 ? 4.4 : (bCnt > 8 ? 4.8 : 5.5);
       const headH = 5.5, titleH = 6.5;
-      const dataFontH = bCnt > 12 ? 2.5 : (bCnt > 8 ? 2.8 : 3.2);
+      const dataFontH = bCnt > 12 ? 2.3 : (bCnt > 8 ? 2.5 : 3.0);
       const headFontH = 3.2, titleFontH = 4.2;
 
       const totalTblH = titleH + headH + bCnt * rowH;
