@@ -2273,12 +2273,63 @@
           { t: 'line', a: [w, len], b: [0, len], layer: 'PAD' },
           { t: 'line', a: [0, len], b: [0, 0], layer: 'PAD' }
         ];
-        // 글로벌 건축/설비 CAD 표준: 기초 패드 평면도는 깨끗한 외곽선 사각형으로 표기 (불필요한 자갈/잡선 제거)
+
+        // 글로벌 건축/토목/설비 표준 기초 평면 철근 배근 (REINF 레이어)
+        // 1) 종방향 주철근 (Longitudinal Main Rebar HD13)
+        const cover = 45;
+        bEnts.push({ t: 'line', a: [cover, 50], b: [cover, len - 50], layer: 'REINF' });
+        bEnts.push({ t: 'line', a: [w - cover, 50], b: [w - cover, len - 50], layer: 'REINF' });
+        // 주철근 양단 90도 정착 갈고리 (Standard 90° Anchorage Hooks)
+        const hookLen = Math.min(60, Math.round((w - cover * 2) * 0.4));
+        bEnts.push({ t: 'line', a: [cover, 50], b: [cover + hookLen, 50], layer: 'REINF' });
+        bEnts.push({ t: 'line', a: [w - cover, 50], b: [w - cover - hookLen, 50], layer: 'REINF' });
+        bEnts.push({ t: 'line', a: [cover, len - 50], b: [cover + hookLen, len - 50], layer: 'REINF' });
+        bEnts.push({ t: 'line', a: [w - cover, len - 50], b: [w - cover - hookLen, len - 50], layer: 'REINF' });
+
+        if (w >= 380) {
+          // 외측 400mm 패드는 중앙 주근 1가닥 추가 (3-HD13)
+          bEnts.push({ t: 'line', a: [w / 2, 50], b: [w / 2, len - 50], layer: 'REINF' });
+        }
+
+        // 2) 횡방향 늑근 / 스트럽 (Transverse Stirrups / Ties HD10 @200mm)
+        for (let py = 100; py <= len - 80; py += 200) {
+          bEnts.push({ t: 'line', a: [cover, py], b: [w - cover, py], layer: 'REINF' });
+        }
+
+        // 3) 기초 앙카볼트 위치 표기 (Anchor Bolt Symbols @1000mm)
+        const boltStep = 1000;
+        const bOv = Math.max(100, Math.round(w / 2));
+        for (let by = bOv; by <= len - bOv + 10; by += boltStep) {
+          const cx = w / 2;
+          bEnts.push({ t: 'circle', c: [cx, by], r: 12, layer: 'FRAME' });
+          bEnts.push({ t: 'line', a: [cx - 18, by], b: [cx + 18, by], layer: 'FRAME' });
+          bEnts.push({ t: 'line', a: [cx, by - 18], b: [cx, by + 18], layer: 'FRAME' });
+        }
+
         blocks[blkName] = bEnts;
       }
       ents.push({ t: 'insert', block: blkName, p: [x, y0], w, h: len, layer: 'PAD' });
     });
     ents.blocks = blocks;
+
+    // 1-1. 기초 평면도 철근 배근 지시선 (Standard Callout Leader)
+    if (pieces.length > 0) {
+      const p0 = pieces[0];
+      const midY = (p0.y0 + p0.y1) / 2;
+      const lx0 = p0.x + 45;
+      const tx = p0.x - 120;
+      const ty = midY - 60;
+      ln([lx0, midY], [tx + 180, ty], 'DIM');
+      ln([tx + 180, ty], [tx, ty], 'DIM');
+      ents.push({
+        t: 'text',
+        p: [tx, ty + 12],
+        h: Math.round(2.6 * (opt._N || 25)),
+        s: (opt.lang === 'en' ? 'PAD REBAR: 2-HD13 / TIE HD10 @ 200' : '패드 배근: 주근 2-HD13 / 늑근 HD10 @ 200'),
+        align: 'left',
+        layer: 'DIM'
+      });
+    }
 
     // 2. 기초 콘크리트 위에 물탱크가 놓이는 외곽선 및 구획(Compartment)별 테두리 / 대각선 X자 표시
     const L_secs = (opt.length || []).filter(Boolean);
@@ -2542,6 +2593,64 @@
       hatchAlignedRect(ents, lx, slabTopY, rx, 0, hatchStep, 'PAD', 1);
     });
     hatchAlignedRect(ents, px0, slabBotY, pxEnd, slabTopY, hatchStep, 'PAD', 1);
+
+    // 5. 글로벌 표준 기초 단면 철근 배근 (REINF 레이어)
+    // (1) 하부 슬래브 배근망 (Mat Slab Bottom & Top Bars)
+    // 하부 주근 (Bottom Bar: y = slabBotY + 45) + 양단 90도 상향 갈고리
+    ln([px0 + 50, slabBotY + 45], [pxEnd - 50, slabBotY + 45], 'REINF');
+    ln([px0 + 50, slabBotY + 45], [px0 + 50, slabBotY + 115], 'REINF');
+    ln([pxEnd - 50, slabBotY + 45], [pxEnd - 50, slabBotY + 115], 'REINF');
+
+    // 상부 주근 (Top Bar: y = slabTopY - 35) + 양단 90도 하향 갈고리
+    ln([px0 + 50, slabTopY - 35], [pxEnd - 50, slabTopY - 35], 'REINF');
+    ln([px0 + 50, slabTopY - 35], [px0 + 50, slabTopY - 105], 'REINF');
+    ln([pxEnd - 50, slabTopY - 35], [pxEnd - 50, slabTopY - 105], 'REINF');
+
+    // 슬래브 횡방향 배력근 점근 (@200mm 피치)
+    for (let bx = px0 + 80; bx <= pxEnd - 60; bx += 200) {
+      circ(bx, slabBotY + 45 + 10, 4.5, 'REINF');
+      circ(bx, slabTopY - 35 - 10, 4.5, 'REINF');
+    }
+
+    // (2) 각 기둥(Plinth) 수직 주근 및 늑근(스트럽)
+    plinths.forEach(([lx, rx]) => {
+      const padW = rx - lx;
+      // 수직 주근 (좌/우 피복 45mm, 하부 90도 정착 갈고리)
+      ln([lx + 45, -35], [lx + 45, slabBotY + 45], 'REINF');
+      ln([lx + 45, slabBotY + 45], [lx + 45 + Math.min(120, padW - 90), slabBotY + 45], 'REINF');
+      ln([rx - 45, -35], [rx - 45, slabBotY + 45], 'REINF');
+      ln([rx - 45, slabBotY + 45], [rx - 45 - Math.min(120, padW - 90), slabBotY + 45], 'REINF');
+
+      // 상단 정착 갈고리
+      ln([lx + 45, -35], [lx + 45 + 60, -35], 'REINF');
+      ln([rx - 45, -35], [rx - 45 - 60, -35], 'REINF');
+
+      // 늑근 / 대근 (Stirrups / Ties @130mm)
+      for (let ty = -75; ty >= slabTopY + 20; ty -= 130) {
+        ln([lx + 45, ty], [rx - 45, ty], 'REINF');
+      }
+
+      // 기초 앵커볼트 (Anchor Bolt M16: 볼트 몸체, L형 갈고리, 상부 너트/와셔 플레이트)
+      const cx = (lx + rx) / 2;
+      ln([cx, 35], [cx, -260], 'FRAME');
+      ln([cx, -260], [cx + 45, -260], 'FRAME');
+      ln([cx - 25, 0], [cx + 25, 0], 'FRAME');
+      poly([[cx - 15, 0], [cx + 15, 0], [cx + 15, 18], [cx - 15, 18]], 'FRAME', true);
+    });
+
+    // (3) 철근 배근 지시선 (Callout Leader)
+    const calloutX = px0 + 150;
+    const calloutY = slabTopY - 70;
+    ln([calloutX, slabTopY - 35], [calloutX + 60, calloutY], 'DIM');
+    ln([calloutX + 60, calloutY], [calloutX + 280, calloutY], 'DIM');
+    ents.push({
+      t: 'text',
+      p: [calloutX + 70, calloutY + 12],
+      h: Math.round(2.6 * N),
+      s: (opt.lang === 'en' ? 'SLAB REBAR: HD10 @ 200 (TOP & BOT)' : '슬래브 배근: HD10 @ 200 (상·하부 복배근)'),
+      align: 'left',
+      layer: 'DIM'
+    });
 
     // 7. 좌측 지면 GL선 (media_1791120706510.png: 좌측 GL도 바닥 레벨 slabBotY로 배치)
     const glLen = Math.max(650, Math.round(18.0 * N));
@@ -3226,6 +3335,43 @@
       hatchAlignedRect(ents, lx, slabTopY, rx, -th, hatchStep, 'PAD', 1);
     });
     hatchAlignedRect(ents, px0, slabBotY, pxEnd, slabTopY, hatchStep, 'PAD', 1);
+
+    // 5. 글로벌 표준 기초 단면 철근 배근 (REINF 레이어)
+    // 슬래브 하부 주근 (y = slabBotY + 45) + 양단 90도 상향 갈고리
+    ln([px0 + 50, slabBotY + 45], [pxEnd - 50, slabBotY + 45], 'REINF');
+    ln([px0 + 50, slabBotY + 45], [px0 + 50, slabBotY + 115], 'REINF');
+    ln([pxEnd - 50, slabBotY + 45], [pxEnd - 50, slabBotY + 115], 'REINF');
+
+    // 슬래브 상부 주근 (y = slabTopY - 35) + 양단 90도 하향 갈고리
+    ln([px0 + 50, slabTopY - 35], [pxEnd - 50, slabTopY - 35], 'REINF');
+    ln([px0 + 50, slabTopY - 35], [px0 + 50, slabTopY - 105], 'REINF');
+    ln([pxEnd - 50, slabTopY - 35], [pxEnd - 50, slabTopY - 105], 'REINF');
+
+    // 슬래브 횡방향 배력근 점근 (@200mm 피치)
+    for (let bx = px0 + 80; bx <= pxEnd - 60; bx += 200) {
+      circ(bx, slabBotY + 45 + 10, 4.5, 'REINF');
+      circ(bx, slabTopY - 35 - 10, 4.5, 'REINF');
+    }
+
+    // 각 기둥 수직 주근 및 늑근
+    plinths.forEach(([lx, rx]) => {
+      const padW = rx - lx;
+      ln([lx + 45, -th - 35], [lx + 45, slabBotY + 45], 'REINF');
+      ln([lx + 45, slabBotY + 45], [lx + 45 + Math.min(120, padW - 90), slabBotY + 45], 'REINF');
+      ln([rx - 45, -th - 35], [rx - 45, slabBotY + 45], 'REINF');
+      ln([rx - 45, slabBotY + 45], [rx - 45 - Math.min(120, padW - 90), slabBotY + 45], 'REINF');
+
+      ln([lx + 45, -th - 35], [lx + 45 + 60, -th - 35], 'REINF');
+      ln([rx - 45, -th - 35], [rx - 45 - 60, -th - 35], 'REINF');
+
+      for (let ty = -th - 75; ty >= slabTopY + 20; ty -= 130) {
+        ln([lx + 45, ty], [rx - 45, ty], 'REINF');
+      }
+
+      const cx = (lx + rx) / 2;
+      ln([cx, -th + 35], [cx, -th - 260], 'FRAME');
+      ln([cx, -th - 260], [cx + 45, -th - 260], 'FRAME');
+    });
 
     // 7. 좌측 지면 GL선 (media_1790952977248.png: 좌측 GL도 바닥 레벨 slabBotY = -750로 배치)
     const glLen = Math.max(650, Math.round(18.0 * N));
@@ -6074,7 +6220,7 @@
 
       // 3. 우측 하단: 기초 콘크리트 설계 사양표 (FOUNDATION SPECIFICATION TABLE)
       const tbx = tx0 - 135, tby = y0 + 35;
-      const tbw = 125, tbh = 72;
+      const tbw = 125, tbh = 78;
       rect(tbx, tby, tbx + tbw, tby + tbh);
       line([tbx, tby + tbh - 13], [tbx + tbw, tby + tbh - 13]);
       text(tbx + tbw / 2, tby + tbh - 6.5, 3.8, lang === 'en' ? 'FOUNDATION SPECIFICATION' : '기초 콘크리트 설계 사양', 'center', 0, 'middle');
@@ -6089,6 +6235,7 @@
         [lang === 'en' ? 'Pad Height' : '패드 높이 (H)', `${padHVal} mm`],
         [lang === 'en' ? 'Pad Overhang' : '패드 돌출 (Ov)', `${padOv} mm`],
         [lang === 'en' ? 'Concrete Strength' : '콘크리트 강도', '21 MPa (210 kgf/cm²)'],
+        [lang === 'en' ? 'Rebar (Main/Tie)' : '철근 규격 (주근/늑근)', 'HD13 / HD10 (SD400)'],
         [lang === 'en' ? 'Anchor Bolt' : '기초 앙카볼트', 'M16 (SUS304)']
       ];
       const rH = (tbh - 13) / specs.length;
@@ -6299,7 +6446,7 @@
       drawViewTitleBubble(col1_tank_cx, row3_title_y, 1, 2, viewTitlePad);
 
       // 6. Row 3 Col 2: 기초 콘크리트 설계 사양표 (FOUNDATION SPECIFICATION TABLE)
-      const tbw = 125, tbh = 72;
+      const tbw = 125, tbh = 78;
       let tbx = col2_tank_cx - tbw / 2;
       if (tbx + tbw > tx0 - 6) tbx = tx0 - 6 - tbw;
       if (tbx < x0 + 10) tbx = x0 + 10;
@@ -6320,6 +6467,7 @@
         [lang === 'en' ? 'Pad Height' : '패드 높이 (H)', `${padH} mm`],
         [lang === 'en' ? 'Pad Overhang' : '패드 돌출 (Ov)', `${padOv} mm`],
         [lang === 'en' ? 'Concrete Strength' : '콘크리트 강도', '21 MPa (210 kgf/cm²)'],
+        [lang === 'en' ? 'Rebar (Main/Tie)' : '철근 규격 (주근/늑근)', 'HD13 / HD10 (SD400)'],
         [lang === 'en' ? 'Anchor Bolt' : '기초 앙카볼트', 'M16 (SUS304)']
       ];
       const rH = (tbh - 13) / specs.length;
