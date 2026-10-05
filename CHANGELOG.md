@@ -5,6 +5,14 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.14] - 2026-10-05
+
+### Enhanced (맨홀 위치 기존 천정판넬 중복 렌더링 제거 및 맨홀판넬 단독 배치)
+- **🚪 맨홀 위치 천정판넬 제거 및 맨홀판넬 단독 렌더링 (사용자 피드백 media_1791167542074.png 반영)**:
+  - 평면도(`buildPlan`)에서 맨홀(`mark & 1`)이 지정된 위치에는 기존 천정판넬(`PANEL_TOP_...` 블록 및 다이아몬드 엠보싱 리브 형상) 삽입을 제외(`continue`).
+  - 사용자가 등록한 CAD 전용 부품(또는 내장 맨홀판넬)만 해당 셀에 단독 배치되도록 개편하여, 맨홀판넬 배면에 기존 천정판넬 리브선이 비치며 중복 간섭되던 현상 원천 해결.
+  - 등록된 맨홀 부품에 외곽 1000x1000 경계선이 없는 경우(또는 기본 내장 맨홀)에는 판넬 접합선(`PANEL` 레이어)을 자동 보강하여 도면 무결성 보장.
+
 ## [1.6.13] - 2026-10-04
 
 ### Enhanced (기초 패드 단면도 상부 스키드 제거 및 평면도-단면도 간 중복 치수선 정리)

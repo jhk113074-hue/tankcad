@@ -468,6 +468,40 @@
       // 방향별 등록된 전용 CAD 도면 확인
       const dirCustom = resolvePartEntities(customParts, `manhole_plan_${dir}`, 'plan', 0, opt)
                      || resolvePartEntities(customParts, `manhole_plan_${dir.toLowerCase()}`, 'plan', 0, opt);
+      const mhPlan = (!dirCustom || dirCustom.length === 0) ? resolvePartEntities(customParts, 'manhole', 'plan', 0, opt) : null;
+      const customEnts = (dirCustom && dirCustom.length > 0) ? dirCustom : ((mhPlan && mhPlan.length > 0) ? mhPlan : null);
+
+      // 천정판넬이 제거되므로, 등록된 커스텀 부품에 1000x1000 외곽선이 없는 경우(또는 기본 내장 맨홀)에만 PANEL 외곽 테두리선 보강
+      let hasOuter = false;
+      if (customEnts && customEnts.length > 0) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        customEnts.forEach(e => {
+          const k = e.k || e.t;
+          if (k === 'line') {
+            const p1 = (e.p && e.p[0]) || e.a; const p2 = (e.p && e.p[1]) || e.b;
+            if (p1 && p2) {
+              minX = Math.min(minX, p1[0], p2[0]); maxX = Math.max(maxX, p1[0], p2[0]);
+              minY = Math.min(minY, p1[1], p2[1]); maxY = Math.max(maxY, p1[1], p2[1]);
+            }
+          } else if (k === 'poly') {
+            const pts = e.p || e.pts || [];
+            pts.forEach(p => {
+              minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]);
+              minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]);
+            });
+          } else if (k === 'circle' || k === 'arc') {
+            const c = e.c || e.center;
+            if (c && e.r) {
+              minX = Math.min(minX, c[0] - e.r); maxX = Math.max(maxX, c[0] + e.r);
+              minY = Math.min(minY, c[1] - e.r); maxY = Math.max(maxY, c[1] + e.r);
+            }
+          }
+        });
+        if (minX <= 50 && maxX >= 950 && minY <= 50 && maxY >= 950) hasOuter = true;
+      }
+      if (!hasOuter) {
+        poly([[0, 0], [1000, 0], [1000, 1000], [0, 1000]], 'PANEL');
+      }
 
       if (dirCustom && dirCustom.length > 0) {
         const Pdirect = (a, b) => [x + a, y + b];
@@ -492,9 +526,7 @@
           }
         });
         out.push({ t: 'text', p: [x + 500, y + ((mark & 2) ? 610 : 500)], s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
-      } else {
-        const mhPlan = resolvePartEntities(customParts, 'manhole', 'plan', 0, opt);
-        if (mhPlan && mhPlan.length > 0) {
+      } else if (mhPlan && mhPlan.length > 0) {
           mhPlan.forEach(e => {
             const k = e.k || e.t;
             if (k === 'line') {
@@ -524,7 +556,6 @@
           out.push({ t: 'circle', c: [x + 500, y + 500], r: 300, layer: 'FRAME' });
           out.push({ t: 'text', p: [x + 500, y + ((mark & 2) ? 610 : 500)], s: 'MANHOLE 600', h: 60, rot: 0, align: 'center', layer: 'DIM' });
         }
-      }
 
       // 내부사다리 (IN-LADDER) 기호 (맨홀 직하부 탱크 내부 설치 위치 - 외벽 쪽으로 회전)
       const inladPlan = resolvePartEntities(customParts, 'inladder', 'plan', 0, opt);
@@ -1529,10 +1560,16 @@
       return blkName;
     };
 
-    // 패널 (블럭 단위 삽입)
+    // 패널 (블럭 단위 삽입 - 맨홀판넬 위치는 기존 천정판넬을 제거하고 맨홀판넬만 배치)
     for (let i = 0; i < map.rows.length; i++) {
       for (let j = 0; j < map.cols.length; j++) {
         if (!map.has(i, j)) continue;
+        const cellKey = `${i},${j}`;
+        const hasManhole = Boolean(opt.marks && (opt.marks[cellKey] & 1));
+        if (hasManhole) {
+          // 맨홀판넬이 올라가는 위치는 기존 천정판넬을 제외 (markShapes에서 맨홀판넬 단독 렌더링)
+          continue;
+        }
         const x = map.xs[j], y = map.ys[i], w = map.cols[j], h = map.rows[i];
         const blkName = getTopBlock(w, h);
         ents.push({ t: 'insert', block: blkName, p: [x, y], w, h, layer: 'PANEL' });
