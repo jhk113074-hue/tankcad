@@ -314,15 +314,15 @@
         const hKey = Object.keys(customParts).find(k => k.startsWith(`${cat}_${v}_`) && customParts[k]?.length);
         if (hKey) return customParts[hKey];
       }
-      if ((v === 'right' || v === 'left' || v === 'rear') && (cat === 'top' || cat === 'roof' || cat === 'manhole')) {
-        if (v === 'left') {
-          const rightEnts = resolvePartEntities(customParts, cat, 'right', h, opt);
-          if (rightEnts && rightEnts.length) return mirrorEntitiesH(rightEnts);
-        }
+      if (v === 'left' && (cat === 'top' || cat === 'roof' || cat === 'manhole')) {
+        const rightEnts = resolvePartEntities(customParts, cat, 'right', h, opt);
+        if (rightEnts && rightEnts.length) return mirrorEntitiesH(rightEnts);
+      }
+      if ((v === 'right' || v === 'left' || v === 'rear') && (cat === 'top' || cat === 'roof')) {
         const frontEnts = resolvePartEntities(customParts, cat, 'front', h, opt);
         if (frontEnts && frontEnts.length) return frontEnts;
       }
-      if (v === 'rear') {
+      if (v === 'rear' && (cat === 'top' || cat === 'roof')) {
         return resolvePartEntities(customParts, cat, 'front', h, opt);
       }
       // 8. 오직 평면도(plan)일 때만 레거시 평면 키(customParts[cat]) 사용
@@ -3018,26 +3018,20 @@
 
       if (hasMh) {
         let customMh = null;
+        const noDefOpt = { ...opt, defaultPartEntities: null };
         if (mhViewType === 'front') {
-          customMh = resolvePartEntities(customParts, 'manhole', 'front', cy, opt)
-                  || resolvePartEntities(customParts, 'manhole', view, cy, opt);
+          customMh = resolvePartEntities(customParts, 'manhole', 'front', cy, noDefOpt);
         } else if (mhViewType === 'rear') {
-          customMh = resolvePartEntities(customParts, 'manhole', 'rear', cy, opt)
-                  || resolvePartEntities(customParts, 'manhole', 'front', cy, opt)
-                  || resolvePartEntities(customParts, 'manhole', view, cy, opt);
+          customMh = resolvePartEntities(customParts, 'manhole', 'rear', cy, noDefOpt);
         } else if (mhViewType === 'side_right') {
-          customMh = resolvePartEntities(customParts, 'manhole', 'right', cy, opt)
-                  || resolvePartEntities(customParts, 'manhole', 'side', cy, opt)
-                  || resolvePartEntities(customParts, 'manhole', view, cy, opt);
+          customMh = resolvePartEntities(customParts, 'manhole', 'right', cy, noDefOpt)
+                  || resolvePartEntities(customParts, 'manhole', 'side', cy, noDefOpt);
         } else if (mhViewType === 'side_left') {
-          customMh = resolvePartEntities(customParts, 'manhole', 'left', cy, opt);
+          customMh = resolvePartEntities(customParts, 'manhole', 'left', cy, noDefOpt);
           if (!customMh || !customMh.length) {
-            const rEnts = resolvePartEntities(customParts, 'manhole', 'right', cy, opt)
-                       || resolvePartEntities(customParts, 'manhole', 'side', cy, opt);
+            const rEnts = resolvePartEntities(customParts, 'manhole', 'right', cy, noDefOpt)
+                       || resolvePartEntities(customParts, 'manhole', 'side', cy, noDefOpt);
             if (rEnts && rEnts.length) customMh = mirrorEntitiesH(rEnts);
-          }
-          if (!customMh || !customMh.length) {
-            customMh = resolvePartEntities(customParts, 'manhole', view, cy, opt);
           }
         }
 
@@ -3057,7 +3051,8 @@
         }
       }
 
-      const customTop = resolvePartEntities(customParts, 'top', view, cy, opt);
+      const noDefOpt = { ...opt, defaultPartEntities: null };
+      const customTop = resolvePartEntities(customParts, 'top', view, cy, noDefOpt);
       if (customTop && customTop.length > 0) {
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         customTop.forEach(e => {
