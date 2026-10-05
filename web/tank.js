@@ -2221,11 +2221,8 @@
     out.push(last === 1000 ? [x - 200, 400, -1] : [x - 150, 300, -1]);
     return out;
   }
-  // CConcLT::ConcDesign (자갈 무늬), 기준점 (px,py)
-  function concDesign(ents, px, py) {
-    [[150, 300, 40], [100, 180, 30], [130, 100, 20], [135, 70, 10], [120, 50, 10]].forEach(c => ents.push({ t: 'circle', c: [px + c[0], py + c[1]], r: c[2], layer: 'PAD' }));
-    [[[40, 50], [180, 200]], [[10, 100], [150, 250]], [[50, 200], [190, 350]]].forEach(l => ents.push({ t: 'line', a: [px + l[0][0], py + l[0][1]], b: [px + l[1][0], py + l[1][1]], layer: 'PAD' }));
-  }
+  // 글로벌 건축/설비 표준: 콘크리트 기초 평면도는 자갈/잡선 없이 깔끔한 외곽선으로 표기
+  function concDesign(ents, px, py) {}
   const PAD_OVERHANG = 200; // 상하 대칭 각 200mm 돌출 (총 EXTC = 400mm)
   const EXTC = PAD_OVERHANG * 2;
   function buildConcrete(opt) {
@@ -2276,9 +2273,7 @@
           { t: 'line', a: [w, len], b: [0, len], layer: 'PAD' },
           { t: 'line', a: [0, len], b: [0, 0], layer: 'PAD' }
         ];
-        if (w >= 190 && len >= 350) {
-          concDesign(bEnts, 0, 0);
-        }
+        // 글로벌 건축/설비 CAD 표준: 기초 패드 평면도는 깨끗한 외곽선 사각형으로 표기 (불필요한 자갈/잡선 제거)
         blocks[blkName] = bEnts;
       }
       ents.push({ t: 'insert', block: blkName, p: [x, y0], w, h: len, layer: 'PAD' });
@@ -2547,26 +2542,6 @@
       hatchAlignedRect(ents, lx, slabTopY, rx, 0, hatchStep, 'PAD', 1);
     });
     hatchAlignedRect(ents, px0, slabBotY, pxEnd, slabTopY, hatchStep, 'PAD', 1);
-
-    // 6. 단부 기둥 철근 배근 형상 (REINF 레이어 - media_1791120706510.png)
-    // 좌측 기둥 (px0 ~ px0 + padW1)
-    ln([px0 + 150, -80], [px0 + 330, -260], 'REINF');
-    circ(px0 + 190, -120, 12, 'REINF');
-    circ(px0 + 240, -170, 12, 'REINF');
-    circ(px0 + 290, -220, 12, 'REINF');
-    ln([px0 + 100, -180], [px0 + 140, -140], 'REINF');
-    ln([px0 + 85, -195], [px0 + 125, -155], 'REINF');
-    ln([px0 + 145, slabTopY + 80], [px0 + 205, slabTopY + 20], 'REINF');
-    circ(px0 + 175, slabTopY + 50, 12, 'REINF');
-    // 우측 기둥 (pxEnd - padWEnd ~ pxEnd) (좌우 완벽 대칭)
-    ln([pxEnd - 150, -80], [pxEnd - 330, -260], 'REINF');
-    circ(pxEnd - 190, -120, 12, 'REINF');
-    circ(pxEnd - 240, -170, 12, 'REINF');
-    circ(pxEnd - 290, -220, 12, 'REINF');
-    ln([pxEnd - 100, -180], [pxEnd - 140, -140], 'REINF');
-    ln([pxEnd - 85, -195], [pxEnd - 125, -155], 'REINF');
-    ln([pxEnd - 145, slabTopY + 80], [pxEnd - 205, slabTopY + 20], 'REINF');
-    circ(pxEnd - 175, slabTopY + 50, 12, 'REINF');
 
     // 7. 좌측 지면 GL선 (media_1791120706510.png: 좌측 GL도 바닥 레벨 slabBotY로 배치)
     const glLen = Math.max(650, Math.round(18.0 * N));
@@ -3251,25 +3226,6 @@
       hatchAlignedRect(ents, lx, slabTopY, rx, -th, hatchStep, 'PAD', 1);
     });
     hatchAlignedRect(ents, px0, slabBotY, pxEnd, slabTopY, hatchStep, 'PAD', 1);
-
-    // 6. 단부 기둥 철근 배근 형상 (REINF 레이어 - media_1790951915253.png)
-    // 좌측 기둥 철근
-    ln([-50, -th - 80], [130, -th - 260], 'REINF');
-    circ(-10, -th - 120, 12, 'REINF');
-    circ(40, -th - 170, 12, 'REINF');
-    circ(90, -th - 220, 12, 'REINF');
-    ln([-100, -th - 180], [-60, -th - 140], 'REINF');
-    ln([-115, -th - 195], [-75, -th - 155], 'REINF');
-    ln([-55, slabTopY + 80], [5, slabTopY + 20], 'REINF');
-    circ(-25, slabTopY + 50, 12, 'REINF');
-    // 우측 기둥 철근 (대칭)
-    ln([pxEnd - 25, -th - 80], [total - 130, -th - 260], 'REINF');
-    circ(pxEnd - 65, -th - 120, 12, 'REINF');
-    circ(total - 40, -th - 170, 12, 'REINF');
-    circ(total - 90, -th - 220, 12, 'REINF');
-    ln([pxEnd - 20, slabTopY + 80], [total - 5, slabTopY + 20], 'REINF');
-    circ(pxEnd - 50, slabTopY + 50, 12, 'REINF');
-    ln([pxEnd, slabTopY], [pxEnd, slabBotY - 35], 'FRAME');
 
     // 7. 좌측 지면 GL선 (media_1790952977248.png: 좌측 GL도 바닥 레벨 slabBotY = -750로 배치)
     const glLen = Math.max(650, Math.round(18.0 * N));
