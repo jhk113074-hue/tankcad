@@ -2,9 +2,10 @@ import json
 import re
 
 pkg = json.load(open('package.json', encoding='utf-8'))
-ver = pkg.get('version', '1.5.40')
+ver = pkg.get('version', '1.6.22')
 
 src = open('web/index.src.html', encoding='utf-8').read()
+src = re.sub(r'<title>.*?</title>', f'<title>YSACC TANK CAD v{ver}</title>', src)
 src = re.sub(r'(<span class="ver-badge"[^>]*>)v[0-9.]+(</span>)', rf'\g<1>v{ver}\g<2>', src)
 js = open('web/tank.js', encoding='utf-8').read()
 tp = json.dumps(json.load(open('panel_templates.json')), separators=(',', ':'))

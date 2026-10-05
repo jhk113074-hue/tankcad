@@ -55,9 +55,14 @@ def main():
         src = f.read()
 
     new_src = re.sub(
+        r'<title>.*?</title>',
+        f'<title>YSACC TANK CAD v{new_ver}</title>',
+        src
+    )
+    new_src = re.sub(
         r'<span class="ver-badge">v[\d\.]+.*?</span>',
         f'<span class="ver-badge">v{new_ver}</span>',
-        src
+        new_src
     )
     with open("web/index.src.html", "w", encoding="utf-8") as f:
         f.write(new_src)
