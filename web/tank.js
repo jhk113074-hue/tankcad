@@ -5493,11 +5493,15 @@
       }
       const isReinfA = a.layer === 'REINF';
       const isReinfB = b.layer === 'REINF';
-      if (isReinfA !== isReinfB) {
-        const isWallA = a.layer === 'PANEL' || a.layer === 'PANEL_DETAIL' || a.layer === 'FRAME' || a.layer === 'WALL';
-        const isWallB = b.layer === 'PANEL' || b.layer === 'PANEL_DETAIL' || b.layer === 'FRAME' || b.layer === 'WALL';
-        if (isReinfA && isWallB) return 1;
-        if (isReinfB && isWallA) return -1;
+      if (isReinfA !== isReinfB) return isReinfA ? 1 : -1;
+
+      const isWallA = a.layer === 'WALL';
+      const isWallB = b.layer === 'WALL';
+      if (isWallA !== isWallB) {
+        const isBaseA = a.layer === 'PANEL' || a.layer === 'PANEL_DETAIL' || a.layer === 'FRAME';
+        const isBaseB = b.layer === 'PANEL' || b.layer === 'PANEL_DETAIL' || b.layer === 'FRAME';
+        if (isWallA && isBaseB) return 1;
+        if (isWallB && isBaseA) return -1;
       }
       const dDiff = (b.depth !== undefined ? b.depth : 0) - (a.depth !== undefined ? a.depth : 0);
       if (Math.abs(dDiff) > 1e-4) return dDiff;
@@ -5571,12 +5575,18 @@
         for (let i = 0; i < opaquePolys.length; i++) {
           const poly = opaquePolys[i];
           // Polygon must be strictly in FRONT of the line (lower depth by at least 15mm)
+          // Foundation elements (PAD / isFoundation) must NEVER be clipped by any polygon, and foundation polygons never clip lines
+          if (e.isFoundation || e.layer === 'PAD') continue;
+          if (poly.isFoundation || poly.layer === 'PAD') continue;
+          // Skid channels (z <= 0) can NEVER occlude tank panels, panel details, nozzles, or reinforcements (z >= 0)
+          if (poly.layer === 'FRAME' && (e.layer === 'PANEL' || e.layer === 'PANEL_DETAIL' || e.layer === 'NOZZLE' || e.layer === 'REINF' || e.layer === 'WALL')) continue;
+          // Exterior reinforcements (REINF), partition markers (WALL), and nozzles (NOZZLE) must NEVER be clipped by background panels, frames, or each other
+          if (e.layer === 'REINF' || e.layer === 'WALL' || e.layer === 'NOZZLE') continue;
+          // Roof accessories (manholes/vents: FRAME at z >= H) and base skid (FRAME at z <= 0) must never be clipped by wall/roof panels
+          if (e.layer === 'FRAME' && (poly.layer === 'PANEL' || poly.layer === 'PANEL_DETAIL')) continue;
+
+          // Polygon must be strictly in FRONT of the line (lower depth by at least 15mm)
           if (((poly.layer === 'REINF' || poly.layer === 'WALL') && (e.layer === 'FRAME' || e.layer === 'PANEL' || e.layer === 'PANEL_DETAIL')) || poly.depth < eDepth - 15) {
-            // Foundation elements (PAD / isFoundation) must NEVER be clipped by any polygon, and foundation polygons never clip lines
-            if (e.isFoundation || e.layer === 'PAD') continue;
-            if (poly.isFoundation || poly.layer === 'PAD') continue;
-            // Skid channels (z <= 0) can NEVER occlude tank panels, panel details, nozzles, or reinforcements (z >= 0)
-            if (poly.layer === 'FRAME' && (e.layer === 'PANEL' || e.layer === 'PANEL_DETAIL' || e.layer === 'NOZZLE' || e.layer === 'REINF')) continue;
             const bb = poly._bb;
             const nextSegs = [];
             for (let s = 0; s < segs.length; s++) {

@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.6.29</title>
+<title>YSACC TANK CAD v1.6.30</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -420,7 +420,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.29</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.30</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2183,7 +2183,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.29</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.30</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2193,7 +2193,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.29</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.30</span></div>
     </div>
   </main>
 </div>
@@ -7693,11 +7693,15 @@ canvas.drag{cursor:grabbing}
       }
       const isReinfA = a.layer === 'REINF';
       const isReinfB = b.layer === 'REINF';
-      if (isReinfA !== isReinfB) {
-        const isWallA = a.layer === 'PANEL' || a.layer === 'PANEL_DETAIL' || a.layer === 'FRAME' || a.layer === 'WALL';
-        const isWallB = b.layer === 'PANEL' || b.layer === 'PANEL_DETAIL' || b.layer === 'FRAME' || b.layer === 'WALL';
-        if (isReinfA && isWallB) return 1;
-        if (isReinfB && isWallA) return -1;
+      if (isReinfA !== isReinfB) return isReinfA ? 1 : -1;
+
+      const isWallA = a.layer === 'WALL';
+      const isWallB = b.layer === 'WALL';
+      if (isWallA !== isWallB) {
+        const isBaseA = a.layer === 'PANEL' || a.layer === 'PANEL_DETAIL' || a.layer === 'FRAME';
+        const isBaseB = b.layer === 'PANEL' || b.layer === 'PANEL_DETAIL' || b.layer === 'FRAME';
+        if (isWallA && isBaseB) return 1;
+        if (isWallB && isBaseA) return -1;
       }
       const dDiff = (b.depth !== undefined ? b.depth : 0) - (a.depth !== undefined ? a.depth : 0);
       if (Math.abs(dDiff) > 1e-4) return dDiff;
@@ -7771,12 +7775,18 @@ canvas.drag{cursor:grabbing}
         for (let i = 0; i < opaquePolys.length; i++) {
           const poly = opaquePolys[i];
           // Polygon must be strictly in FRONT of the line (lower depth by at least 15mm)
+          // Foundation elements (PAD / isFoundation) must NEVER be clipped by any polygon, and foundation polygons never clip lines
+          if (e.isFoundation || e.layer === 'PAD') continue;
+          if (poly.isFoundation || poly.layer === 'PAD') continue;
+          // Skid channels (z <= 0) can NEVER occlude tank panels, panel details, nozzles, or reinforcements (z >= 0)
+          if (poly.layer === 'FRAME' && (e.layer === 'PANEL' || e.layer === 'PANEL_DETAIL' || e.layer === 'NOZZLE' || e.layer === 'REINF' || e.layer === 'WALL')) continue;
+          // Exterior reinforcements (REINF), partition markers (WALL), and nozzles (NOZZLE) must NEVER be clipped by background panels, frames, or each other
+          if (e.layer === 'REINF' || e.layer === 'WALL' || e.layer === 'NOZZLE') continue;
+          // Roof accessories (manholes/vents: FRAME at z >= H) and base skid (FRAME at z <= 0) must never be clipped by wall/roof panels
+          if (e.layer === 'FRAME' && (poly.layer === 'PANEL' || poly.layer === 'PANEL_DETAIL')) continue;
+
+          // Polygon must be strictly in FRONT of the line (lower depth by at least 15mm)
           if (((poly.layer === 'REINF' || poly.layer === 'WALL') && (e.layer === 'FRAME' || e.layer === 'PANEL' || e.layer === 'PANEL_DETAIL')) || poly.depth < eDepth - 15) {
-            // Foundation elements (PAD / isFoundation) must NEVER be clipped by any polygon, and foundation polygons never clip lines
-            if (e.isFoundation || e.layer === 'PAD') continue;
-            if (poly.isFoundation || poly.layer === 'PAD') continue;
-            // Skid channels (z <= 0) can NEVER occlude tank panels, panel details, nozzles, or reinforcements (z >= 0)
-            if (poly.layer === 'FRAME' && (e.layer === 'PANEL' || e.layer === 'PANEL_DETAIL' || e.layer === 'NOZZLE' || e.layer === 'REINF')) continue;
             const bb = poly._bb;
             const nextSegs = [];
             for (let s = 0; s < segs.length; s++) {
@@ -13445,7 +13455,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.29</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.30</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
