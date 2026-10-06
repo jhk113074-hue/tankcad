@@ -537,6 +537,26 @@
   - `python build.py`로 `web/index.html` 단일 파일 번들링 갱신.
   - 버전 `v1.6.32` 판올림 및 검증 완료.
 
+### [2026-10-06 10:15] 500×1000mm 등 공통판넬 직사각형 셀 표시 및 직사각형 판넬 문양 생성 (v1.6.33)
+
+#### 1. 요구사항 및 문제 현상 (media_1791248856132.png)
+- **요구사항**: "500x1000mm 판넬 구간도 직사각형으로 판넬형상을 만들어주세요,,"
+- **원인 분석**:
+  1. 평면도 편집기(`.egrid button`)에 CSS `aspect-ratio: 1`이 적용되어 있어, 500×1000mm 직사각형 트랙임에도 버튼이 강제로 1:1 정사각형으로 축소되어 셀 상하에 회색 여백이 발생.
+  2. `panel_templates.json` 및 `side_templates.json`에서 `500x1000`, `1000x500`, `500x500`의 내부 문양이 빈 배열(`[]`)로 되어 있어, 2D 평면도(`buildPlan`), 입면도(`buildElevation`), 3D 등각도(`buildIsometric`) 및 격자 아이콘에서 내부 리브/엠보싱 형상이 생성되지 않았음.
+
+#### 2. 조치 내역
+- **직사각형 판넬 형상(다이아몬드/옥타곤 리브) 데이터 및 파라메트릭 생성기 구축**:
+  - `web/tank.js`에 `getDefaultPanelPattern(w, h)` 구현: 1000×1000 비율에 정확히 부합하는 옥타곤 + 8방향 대각선 리브 + 코너 챔퍼 + 중앙 원형 엠보싱 형상을 직사각형(500×1000, 1000×500) 및 정사각형(500×500)으로 완벽하게 비례 생성.
+  - `panel_templates.json` 및 `side_templates.json`에 `500x1000`, `1000x500`, `500x500` 기본 템플릿 데이터 등록.
+  - `tank.js`의 `panelShapes`, `getSideBlock`, `buildIsometric`에서 템플릿 미존재 시 `getDefaultPanelPattern`으로 자동 폴백 보장.
+- **평면도 패널 격자(egrid) 직사각형 완벽 표시**:
+  - `web/index.src.html`: `.egrid button`의 `aspect-ratio: 1`을 제거하고 `width: 100%; height: 100%; box-sizing: border-box;` 적용.
+  - 500×1000mm는 세로 직사각형, 1000×500mm는 가로 직사각형으로 셀을 100% 꽉 채우며 내부 직사각형 판넬 문양이 선명하게 렌더링되도록 개선.
+- **빌드 및 배포**:
+  - `python build.py`로 재빌드 및 `python bump_version.py 1.6.33` 판올림 완료.
+
+
 
 
 

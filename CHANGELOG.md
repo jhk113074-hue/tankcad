@@ -5,6 +5,19 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.33] - 2026-10-06
+
+### Added & Fixed (500×1000mm 등 공통판넬 직사각형 셀 표시 및 직사각형 판넬 문양 생성)
+- **📐 500×1000mm(0.5×1M) 직사각형 판넬 표준 문양(다이아몬드/옥타곤 리브) 신설**:
+  - `panel_templates.json` 및 `side_templates.json`의 빈 배열(`[]`) 상태였던 `500×1000`, `1000×500`, `500×500` 규격에 1000×1000과 기하학적으로 일치하는 직사각형 옥타곤 + 대각선 리브 + 모서리 챔퍼 + 중앙 원형 엠보싱 형상 데이터 구축.
+  - `web/tank.js`에 `getDefaultPanelPattern(w, h)` 파라메트릭 생성기 탑재:
+    - 2D 평면도(`buildPlan`) 천정판넬 블록 생성 시 직사각형 판넬 문양 기본 렌더링.
+    - 2D 입면도(`buildElevation`) 측면판넬 블록 생성 시 직사각형 판넬 문양 기본 렌더링.
+    - 3D 등각도(`buildIsometric`) 투영 시 벽체 및 천정 직사각형 판넬 형상 100% 렌더링.
+- **🖥️ 평면도 패널 격자(egrid) 500×1000 구간 정사각형 축소 버그 수정 및 직사각형 표시**:
+  - 기존 `.egrid button` CSS에 하드코딩되어 있던 `aspect-ratio: 1` 제약을 제거하고 `width: 100%; height: 100%;`로 개선.
+  - 500×1000mm 셀이 정사각형으로 축소되어 위아래 여백이 남던 현상을 완치하고, 도면 비율에 맞는 완전한 세로 직사각형(500×1000) 및 가로 직사각형(1000×500)으로 표시되도록 수정.
+
 ## [1.6.32] - 2026-10-06
 
 ### Changed & Fixed (실제 사용 6종 판넬 규격 한정 등록/관리 및 2D/3D 도면 즉각 반영 최적화)

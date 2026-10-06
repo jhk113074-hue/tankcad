@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.6.32</title>
+<title>YSACC TANK CAD v1.6.33</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -257,7 +257,7 @@ tr:last-child td{border-bottom:0}
 .plan-grid-wrap{display:flex;justify-content:center;overflow-x:auto;padding:2px 0}
 
 .egrid{display:grid;gap:1px;margin-top:4px;max-width:100%;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
-.egrid button{position:relative;border:0;background:var(--surface);border-radius:0;padding:0;cursor:pointer;color:var(--fg);overflow:visible;aspect-ratio:1}
+.egrid button{position:relative;border:0;background:var(--surface);border-radius:0;padding:0;cursor:pointer;color:var(--fg);overflow:visible;width:100%;height:100%;box-sizing:border-box}
 .egrid button:hover{background:color-mix(in srgb,var(--accent) 15%,var(--surface))}
 .egrid button.off{background:repeating-linear-gradient(45deg,transparent 0 4px,var(--line-sub) 4px 5px);color:var(--muted)}
 .egrid button.pil{background:var(--line)}
@@ -420,7 +420,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.32</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.33</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2160,7 +2160,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.32</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.33</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2170,7 +2170,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.32</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.33</span></div>
     </div>
   </main>
 </div>
@@ -7536,6 +7536,9 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if (type === 'fitting') {
       return getFittingDefaultEntities(w, h);
     }
+    if ((type === 'diamond' || type === 'panel') && typeof C !== 'undefined' && C.getDefaultPanelPattern) {
+      return C.getDefaultPanelPattern(w, h);
+    }
     const ents = [];
     if (type === 'diamond') {
       ents.push({ k: 'poly', p: [[Math.round(w * 0.5), Math.round(h * 0.15)], [Math.round(w * 0.85), Math.round(h * 0.5)], [Math.round(w * 0.5), Math.round(h * 0.85)], [Math.round(w * 0.15), Math.round(h * 0.5)]] });
@@ -9336,7 +9339,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         const topDict = (typeof TEMPLATES !== 'undefined' && TEMPLATES && (TEMPLATES[mat] || TEMPLATES.SMC)) || {};
         const ents = sideDict[sizeKey] || topDict[sizeKey] || sideDict[`${h}x${w}`] || topDict[`${h}x${w}`];
         if (ents && ents.length) return JSON.parse(JSON.stringify(ents));
-        return generatePresetEntities('chamfer', w || 1000, h || 1000);
+        return generatePresetEntities('diamond', w || 1000, h || 1000);
       } else if (panelPos === 'top') {
         const topDict = (typeof TEMPLATES !== 'undefined' && TEMPLATES && (TEMPLATES[mat] || TEMPLATES.SMC)) || {};
         if (topDict[sizeKey] && topDict[sizeKey].length) {

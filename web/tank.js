@@ -193,6 +193,37 @@
     return baseDimStr + cutoutStr;
   }
 
+  /* ---------- 기본 표준 판넬 문양 (직사각형/정사각형 공통 다이아몬드/옥타곤 리브) ---------- */
+  function getDefaultPanelPattern(w, h) {
+    const cx = Math.round(w / 2), cy = Math.round(h / 2);
+    const ox = Math.round(w * 0.15), oy = Math.round(h * 0.15);
+    const boxW = Math.round(w * 0.20), boxH = Math.round(h * 0.20);
+    const chX = Math.round(boxW * 0.30), chY = Math.round(boxH * 0.30);
+    const x0 = cx - Math.round(boxW / 2), x1 = x0 + chX, x2 = cx + Math.round(boxW / 2) - chX, x3 = cx + Math.round(boxW / 2);
+    const y0 = cy - Math.round(boxH / 2), y1 = y0 + chY, y2 = cy + Math.round(boxH / 2) - chY, y3 = cy + Math.round(boxH / 2);
+
+    const octPts = [
+      [x1, y0], [x2, y0], [x3, y1], [x3, y2],
+      [x2, y3], [x1, y3], [x0, y2], [x0, y1]
+    ];
+    return [
+      { k: 'poly', p: octPts },
+      { k: 'line', p: [[0, oy], [ox, 0]] },
+      { k: 'line', p: [[w - ox, 0], [w, oy]] },
+      { k: 'line', p: [[w, h - oy], [w - ox, h]] },
+      { k: 'line', p: [[ox, h], [0, h - oy]] },
+      { k: 'line', p: [[x0, y1], [0, oy]] },
+      { k: 'line', p: [[x1, y0], [ox, 0]] },
+      { k: 'line', p: [[x2, y0], [w - ox, 0]] },
+      { k: 'line', p: [[x3, y1], [w, oy]] },
+      { k: 'line', p: [[x3, y2], [w, h - oy]] },
+      { k: 'line', p: [[x2, y3], [w - ox, h]] },
+      { k: 'line', p: [[x1, y3], [ox, h]] },
+      { k: 'line', p: [[x0, y2], [0, h - oy]] },
+      { k: 'circle', c: [cx, cy], r: Math.max(15, Math.round(Math.min(w, h) * 0.06)) }
+    ];
+  }
+
   /* ---------- 패널 내부 도형 (CeilLT) ---------- */
   function panelShapes(templates, mat, x, y, w, h, opt) {
     const key = w + 'x' + h;
@@ -212,6 +243,7 @@
       );
       if (matched) t = matched.entities;
     }
+    if (!t || !t.length) t = getDefaultPanelPattern(w, h);
     if (!t) t = [];
     const out = [];
     t.forEach(s => {
@@ -2979,6 +3011,7 @@
             );
             if (matched) t = matched.entities;
           }
+          if (!t || !t.length) t = getDefaultPanelPattern(w, h);
           if (!t) t = [];
           t.forEach(s => {
             if (!s) return;
@@ -4303,6 +4336,7 @@
           );
           if (matched) rawT = matched.entities;
         }
+        if (!rawT || !rawT.length) rawT = getDefaultPanelPattern(w, h);
         if (rawT && rawT.length > 0) {
           const fm = 75;
           if (plane === 'XZ') {
@@ -4603,6 +4637,7 @@
           );
           if (matched) rawT = matched.entities;
         }
+        if (!rawT || !rawT.length) rawT = getDefaultPanelPattern(w, h);
         const fm = 60; // 천정판넬 플랜지 길이 60mm (내측 절곡)
         if (rawT && rawT.length > 0) {
           poly([toIso(x0 + fm, y0 + fm, H), toIso(x0 + w - fm, y0 + fm, H), toIso(x0 + w - fm, y0 + h - fm, H), toIso(x0 + fm, y0 + h - fm, H)], 'PANEL_DETAIL', true, false, depth);
@@ -7415,6 +7450,6 @@
     return o.join('\r\n') + '\r\n';
   }
 
-  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, getFoundationDesign, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType };
+  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, getFoundationDesign, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType, getDefaultPanelPattern };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TankCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
