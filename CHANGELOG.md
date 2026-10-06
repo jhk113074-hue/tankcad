@@ -5,6 +5,30 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.39] - 2026-10-06
+
+### Added & Enhanced (콘크리트 기초 180 kgf/cm² 표준 스펙·도면 완벽 적용 및 CAD 4대 폰트 선택 기능 구축)
+- **🏗️ 콘크리트 기초 180 kgf/cm² (18 MPa) 물탱크 표준 시방 전면 적용**:
+  - **콘크리트 강도 (`fck`)**: 기본 설계기준강도를 기존 24 MPa (240 kgf/cm²)에서 물탱크 표준 시방인 **18 MPa (180 kgf/cm²)**로 공식 전환. (사용자 선택 및 수위별 스펙 연동 지원)
+  - **기초 슬래브 두께 (`slabT`)**: 표준 물탱크 기초 슬래브 두께를 **150 mm**로 표준화(기존 3.5m+ 수위에서 250mm 적용되던 수치를 150mm 표준 매트로 조정).
+  - **철근 배근 규격**: 패드 주근/늑근 `HD10 / HD10 (SD300)`, 슬래브 상·하부 복배근 `HD10 @ 200 (SD300, Double)`으로 180 kgf/cm² 시방에 최적화.
+  - **기초 콘크리트 설계 사양표 (FOUNDATION SPECIFICATION TABLE)**: A1 조립도 3행 및 기초패드도면의 설계 사양표에 콘크리트 강도 `18 MPa (180 kgf/cm²)`, 슬래브 `150 mm`, 배근 규격 100% 일치 표시.
+  - **부품 사양 명세표 (BOM Table)**: NO. 1 기초 콘크리트 사양을 `기초 패드 도면 참조 (180kgf/cm², H${padH})`로 업데이트.
+  - **도면 일반사항 (NOTES)**: 기존 특기사항 `'기초 콘크리트의 설계 기준 강도는 최소 180 kgf/cm² 이상이어야 합니다.'`와 사양표 및 도면 엔티티 100% 무모순 정합성 달성.
+  - **웹 UI 실시간 연동**: 콘크리트 패드 탭에 `콘크리트 강도 (fck)` 선택 컨트롤(180/210/240/270/300) 추가 및 구조 설계 실시간 정보 카드에 `18 MPa (180 kgf/㎠)`, `150 mm`, `HD10 / HD10` 즉시 반영.
+- **🔤 CAD 4대 글꼴 폰트 선택 기능 구축 (RomanS / Arial / Simplex / txt)**:
+  - **상단 툴바에 전용 폰트 셀렉터 (`cadFontSel`) 추가**:
+    - **RomanS (romans.shx)**: AutoCAD 표준 1선 단선 벡터 폰트 (`romans.shx` + `whgtxt.shx`, 폭비율 0.85)
+    - **Arial (arial.ttf)**: 깔끔한 트루타입(TrueType) 서체 (`arial.ttf`, 폭비율 1.0)
+    - **Simplex (simplex.shx)**: 엔지니어링 표준 간결 폰트 (`simplex.shx` + `whgtxt.shx`, 폭비율 0.85)
+    - **txt (txt.shx)**: AutoCAD 기본 시스템 폰트 (`txt.shx` + `whgtxt.shx`, 폭비율 0.85)
+  - **캔버스 화면 실시간 렌더링 동기화**: 폰트 변경 시 브라우저 화면 상의 모든 치수 문자, 풍선 번호, 표제란, 부품표, 일반사항 텍스트가 즉각 해당 글꼴 계열로 반응 렌더링.
+  - **AutoCAD DXF/DWG 완벽 반영**: DXF 파일 생성(`toDxf`) 시 `STYLE` 테이블의 `STANDARD` 글꼴에 선택한 서체 및 BigFont(`whgtxt.shx`), 종횡 폭비율을 정확히 정의하여 AutoCAD에서 열었을 때 지정 폰트로 정확히 표시.
+- **🛡️ 풍선 기호 2번 탱크 모서리 침범 문제 원천 차단 (정면도/측면도 입면)**:
+  - `elevRightX` 기준선을 기초 패드 돌출부(`pxEnd`) 및 `slabT` 치수선, GL 접지 기호보다 안전하게 외곽(`pxPadEnd + 18.0 * N`)으로 배치.
+  - 입면도 우측 풍선 기호 1번, 2번, 3번, 11번의 지시선 선반(Shelf)을 풍선 원형 기준 좌측 수평선으로 통일하여 수직 열 정렬 확립.
+  - 충돌 방지 엔진에서 수직 열 정렬된 풍선 기호 간 상호 밀림 시 좌측(도면 내부)으로의 부정 변위 및 지터링 원천 제거.
+
 ## [1.6.38] - 2026-10-06
 
 ### Optimized & Aligned (풍선기호 지시선 거리 대폭 최소화 및 상하좌우 격자 정렬 체계 구축)

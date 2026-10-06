@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.6.38</title>
+<title>YSACC TANK CAD v1.6.39</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -425,7 +425,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.38</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.39</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -934,8 +934,28 @@ canvas.drag{cursor:grabbing}
             </div>
             <div>
               <label for="slabT" id="lblSlabT" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">기초 슬래브 두께</label>
-              <input type="number" id="slabT" value="" min="150" max="1500" step="50" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="자동 (수위연동)">
-              <div id="hintSlabT" style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">10mH: 500mm 매트</div>
+              <input type="number" id="slabT" value="" min="150" max="1500" step="50" style="width:100%;padding:5px 4px;font-size:12px;font-weight:600;text-align:center" placeholder="자동 (150mm)">
+              <div id="hintSlabT" style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">180kgf/cm²: 150mm 매트</div>
+            </div>
+          </div>
+
+          <!-- 콘크리트 강도 (fck) 및 표준 배근 규격 설정 -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+            <div>
+              <label for="concreteFck" id="lblConcreteFck" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">콘크리트 강도 (fck)</label>
+              <select id="concreteFck" style="width:100%;padding:5px 4px;font-size:11px;font-weight:600;text-align:center">
+                <option value="180" selected>180 kgf/cm² (18 MPa)</option>
+                <option value="210">210 kgf/cm² (21 MPa)</option>
+                <option value="240">240 kgf/cm² (24 MPa)</option>
+                <option value="270">270 kgf/cm² (27 MPa)</option>
+                <option value="300">300 kgf/cm² (30 MPa)</option>
+              </select>
+              <div id="hintConcreteFck" style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">물탱크 표준: 180 kgf/cm²</div>
+            </div>
+            <div>
+              <label id="lblRebarSpec" style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">철근 규격 (주근/늑근)</label>
+              <div id="badgeRebarSpec" style="font-size:11px;font-weight:700;color:var(--fg);background:rgba(100,116,139,0.12);padding:5px 4px;border-radius:4px;text-align:center">HD10 / HD10</div>
+              <div id="hintRebarSpec" style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px">180kgf/cm² 표준 배근</div>
             </div>
           </div>
 
@@ -972,9 +992,9 @@ canvas.drag{cursor:grabbing}
               <span id="badgePadSeismicStatus" style="font-size:10px;background:rgba(2,132,199,0.15);color:var(--accent);padding:1px 5px;border-radius:3px;font-weight:700">연동 활성</span>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;line-height:1.4">
-              <div><span style="color:var(--muted)">콘크리트 강도:</span> <b id="infoPadFck">24 MPa</b></div>
+              <div><span style="color:var(--muted)">콘크리트 강도:</span> <b id="infoPadFck">18 MPa (180 kgf/㎠)</b></div>
               <div><span style="color:var(--muted)">기초 슬래브:</span> <b id="infoPadSlabT">150 mm</b></div>
-              <div><span style="color:var(--muted)">패드 배근:</span> <b id="infoPadRebar">HD13 / HD10</b></div>
+              <div><span style="color:var(--muted)">패드 배근:</span> <b id="infoPadRebar">HD10 / HD10</b></div>
               <div><span style="color:var(--muted)">슬래브 복배근:</span> <b id="infoSlabRebar">HD10 @ 200</b></div>
               <div><span style="color:var(--muted)">기초 앙카:</span> <b id="infoPadAnchor">M16 (L=260)</b></div>
               <div><span style="color:var(--muted)">요구 지내력:</span> <b id="infoPadBearing">≥ 10 t/m²</b></div>
@@ -1146,6 +1166,16 @@ canvas.drag{cursor:grabbing}
             <option value="ko" selected>🇰🇷 한글 전용 도면</option>
             <option value="en">🇺🇸 English Only</option>
             <option value="bilingual">🌐 국/영문 병기 (Bilingual)</option>
+          </select>
+        </div>
+        <div class="vs-sep"></div>
+        <div class="vs-item" title="CAD 글꼴/폰트 (Font Style: RomanS / Arial / Simplex / txt)">
+          <span class="vs-icon">🔤</span>
+          <select id="cadFontSel" class="vs-select" title="AutoCAD 및 화면 글꼴 선택 (RomanS / Arial / Simplex / txt)">
+            <option value="romans" selected>RomanS (romans.shx)</option>
+            <option value="arial">Arial (arial.ttf)</option>
+            <option value="simplex">Simplex (simplex.shx)</option>
+            <option value="txt">txt (txt.shx)</option>
           </select>
         </div>
       </div>
@@ -2101,7 +2131,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.38</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.39</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2111,7 +2141,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.38</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.39</span></div>
     </div>
   </main>
 </div>
@@ -5621,10 +5651,12 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
     // 구조·내진 설계 실시간 연동 정보 업데이트
     if (C.getFoundationDesign) {
-      const fd = C.getFoundationDesign({ height: [H], slabT: userSlabT, padFirstW: pf, padMidW: pm });
-      if ($('infoPadFck')) $('infoPadFck').textContent = fd.fckStr.split(' ')[0] + ' MPa';
+      const userFck = ($('concreteFck') && $('concreteFck').value) ? Number($('concreteFck').value) : 180;
+      const fd = C.getFoundationDesign({ height: [H], slabT: userSlabT, padFirstW: pf, padMidW: pm, concreteFck: userFck });
+      if ($('infoPadFck')) $('infoPadFck').textContent = fd.fckStr.includes('kgf') ? fd.fckStr : (fd.fckStr.split(' ')[0] + ' MPa');
       if ($('infoPadSlabT')) $('infoPadSlabT').textContent = fd.slabT + ' mm';
       if ($('infoPadRebar')) $('infoPadRebar').textContent = fd.rebarPadStr.split(' ')[0];
+      if ($('badgeRebarSpec')) $('badgeRebarSpec').textContent = fd.rebarPadStr.split(' ')[0];
       if ($('infoSlabRebar')) $('infoSlabRebar').textContent = fd.rebarSlabStr.split(' ')[0] + ' @ ' + fd.slabRebarPitch;
       if ($('infoPadAnchor')) $('infoPadAnchor').textContent = fd.anchorStr.split(' ')[0] + ' (L=' + fd.anchorEmbed + ')';
       if ($('infoPadBearing')) $('infoPadBearing').textContent = fd.bearingStr.split('(')[0].trim();
@@ -5646,6 +5678,10 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   });
   $('scaleSel').addEventListener('change', () => schedule());
   if ($('drawingLangSel')) $('drawingLangSel').addEventListener('change', () => schedule());
+  if ($('cadFontSel')) $('cadFontSel').addEventListener('change', () => {
+    try { localStorage.setItem('tankcad_cad_font', $('cadFontSel').value); } catch(e) {}
+    schedule();
+  });
 
   ['padFirstW', 'padMidW'].forEach(id => {
     const el = $(id);
@@ -5653,6 +5689,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   });
 
   if ($('slabT')) $('slabT').addEventListener('input', () => { updatePadBadges(); schedule(); });
+  if ($('concreteFck')) $('concreteFck').addEventListener('change', () => { updatePadBadges(); schedule(); });
 
   if ($('padH')) {
     $('padH').addEventListener('input', () => {
@@ -5677,18 +5714,22 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
   if ($('btnPadPresetStd')) $('btnPadPresetStd').addEventListener('click', () => {
     $('padFirstW').value = 400; $('padMidW').value = 300;
+    if ($('concreteFck')) $('concreteFck').value = '180';
     updatePadBadges(); schedule();
   });
   if ($('btnPadPresetWide')) $('btnPadPresetWide').addEventListener('click', () => {
     $('padFirstW').value = 450; $('padMidW').value = 350;
+    if ($('concreteFck')) $('concreteFck').value = '180';
     updatePadBadges(); schedule();
   });
   if ($('btnPadPresetEqual3')) $('btnPadPresetEqual3').addEventListener('click', () => {
     $('padFirstW').value = 300; $('padMidW').value = 300;
+    if ($('concreteFck')) $('concreteFck').value = '180';
     updatePadBadges(); schedule();
   });
   if ($('btnPadPresetEqual4')) $('btnPadPresetEqual4').addEventListener('click', () => {
     $('padFirstW').value = 400; $('padMidW').value = 400;
+    if ($('concreteFck')) $('concreteFck').value = '180';
     updatePadBadges(); schedule();
   });
   if ($('btnPadPresetSeismic10')) $('btnPadPresetSeismic10').addEventListener('click', () => {
@@ -5696,6 +5737,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     $('padMidW').value = 400;
     $('padH').value = 600;
     if ($('slabT')) $('slabT').value = 500;
+    if ($('concreteFck')) $('concreteFck').value = '240';
     isPadHCustom = true;
     updatePadBadges();
     schedule();
@@ -5961,10 +6003,13 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         padH: ($('padH') && $('padH').value !== '' && !isNaN($('padH').value)) ? Number($('padH').value) : (600 - (Number($('frm').value) || 75)),
         padOverhang: Math.round(($('padFirstW') ? (Number($('padFirstW').value) || 400) : 400) / 2),
         slabT: ($('slabT') && $('slabT').value !== '' && !isNaN($('slabT').value)) ? Number($('slabT').value) : null,
+        concreteFck: ($('concreteFck') && $('concreteFck').value) ? Number($('concreteFck').value) : 180,
         rf: Number(document.querySelector('input[name=rf]:checked').value),
         userScale: $('scaleSel').value === 'auto' ? null : Number($('scaleSel').value),
         sidePanels: Object.assign({}, sidePanelTypes),
         drawingLang: $('drawingLangSel') ? $('drawingLangSel').value : 'bilingual',
+        font: $('cadFontSel') ? $('cadFontSel').value : 'romans',
+        cadFont: $('cadFontSel') ? $('cadFontSel').value : 'romans',
         lang: currentLang || 'ko',
         useNozzles: $('pipeFeatureToggle') ? $('pipeFeatureToggle').checked : true,
         nozzles: nozzleData.filter(n => n.use !== false),
@@ -6093,10 +6138,12 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       padLastW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
       padH: ($('padH') && $('padH').value !== '' && !isNaN($('padH').value)) ? Number($('padH').value) : (600 - (Number($('frm').value) || 75)),
       slabT: ($('slabT') && $('slabT').value !== '') ? $('slabT').value : '',
+      concreteFck: ($('concreteFck') && $('concreteFck').value) ? Number($('concreteFck').value) : 180,
       isPadHCustom: isPadHCustom,
       padOverhang: Math.round(($('padFirstW') ? (Number($('padFirstW').value) || 400) : 400) / 2),
       scale: $('scaleSel').value,
       drawingLang: $('drawingLangSel') ? $('drawingLangSel').value : 'bilingual',
+      cadFont: $('cadFontSel') ? $('cadFontSel').value : 'romans',
       lang: currentLang || 'ko',
       sheetOn: $('sheetOn').checked,
       sheetKind: $('sheetKind').value,
@@ -6198,6 +6245,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         isPadHCustom = false;
       }
       if (st.slabT !== undefined && $('slabT')) $('slabT').value = st.slabT;
+      if (st.concreteFck !== undefined && $('concreteFck')) $('concreteFck').value = String(st.concreteFck);
       updatePadBadges();
 
       if (typeof st.useNozzles === 'boolean') {
@@ -6243,6 +6291,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       }
 
       if (st.drawingLang && $('drawingLangSel')) $('drawingLangSel').value = st.drawingLang;
+      if (st.cadFont && $('cadFontSel')) $('cadFontSel').value = st.cadFont;
       if (st.lang && (st.lang === 'ko' || st.lang === 'en') && st.lang !== currentLang) {
         setLanguage(st.lang, false);
       }
@@ -6349,8 +6398,14 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && applyAppState(parsed)) return true;
+        if (parsed && applyAppState(parsed)) {
+          const savedFont = localStorage.getItem('tankcad_cad_font');
+          if (savedFont && $('cadFontSel')) $('cadFontSel').value = savedFont;
+          return true;
+        }
       }
+      const savedFont = localStorage.getItem('tankcad_cad_font');
+      if (savedFont && $('cadFontSel')) $('cadFontSel').value = savedFont;
     } catch (e) {}
     return false;
   }
@@ -6493,6 +6548,35 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         }
       };
 
+      const CAD_FONT_CONFIGS = {
+        romans: {
+          label: 'RomanS (romans.shx)',
+          css: '"RomanS", "ISOCPEUR", "Segoe UI", "Malgun Gothic", sans-serif',
+          shx: 'romans.shx'
+        },
+        arial: {
+          label: 'Arial (arial.ttf)',
+          css: 'Arial, "Helvetica Neue", Helvetica, "Noto Sans KR", "Malgun Gothic", sans-serif',
+          shx: 'arial.ttf'
+        },
+        simplex: {
+          label: 'Simplex (simplex.shx)',
+          css: '"Simplex", "simplex", "Segoe UI", "Consolas", "Malgun Gothic", sans-serif',
+          shx: 'simplex.shx'
+        },
+        txt: {
+          label: 'txt (txt.shx)',
+          css: '"txt", "Consolas", "Courier New", "Malgun Gothic", monospace',
+          shx: 'txt.shx'
+        }
+      };
+
+      const getCadFontCss = () => {
+        const sel = $('cadFontSel');
+        const key = sel ? sel.value.toLowerCase().trim() : 'romans';
+        return (CAD_FONT_CONFIGS[key] || CAD_FONT_CONFIGS.romans).css;
+      };
+
       const hasFills = (plan.ents || []).some(e => e && (e.fill || e.t === 'solid' || (e.t === 'insert' && blocks[e.block] && blocks[e.block].some(be => be && (be.fill || be.t === 'solid')))));
       if (hasFills) {
         const bgCol = css('--cv-bg') || '#0b1120';
@@ -6600,7 +6684,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           if (!e || !e.p) return;
           const px = Math.max(3, (e.h || 10) * view.s); if (px < 3) return;
           ctx.fillStyle = col[e.layer] || '#cbd5e1';
-          const fontFam = (e.layer === 'SHEET') ? '"Consolas", "Noto Sans KR", "Malgun Gothic", monospace' : css('--font-num');
+          const fontFam = getCadFontCss();
           const isBold = ((e.layer === 'SHEET' && e.h >= 5.5 * plan.scale) || e.layer === 'BALLOON') ? 'bold ' : '';
           ctx.font = isBold + px + 'px ' + fontFam;
           ctx.textAlign = e.align === 'left' ? 'left' : e.align === 'right' ? 'right' : 'center';
@@ -6663,7 +6747,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           texts.forEach(e => {
             if (!e || !e.p) return;
             const px = Math.max(3, (e.h || 10) * view.s); if (px < 3) return;
-            const fontFam = (e.layer === 'SHEET') ? '"Consolas", "Noto Sans KR", "Malgun Gothic", monospace' : css('--font-num');
+            const fontFam = getCadFontCss();
             const isBold = ((e.layer === 'SHEET' && e.h >= 5.5 * plan.scale) || e.layer === 'BALLOON') ? 'bold ' : '';
             ctx.font = isBold + px + 'px ' + fontFam;
             ctx.textAlign = e.align === 'left' ? 'left' : e.align === 'right' ? 'right' : 'center';
@@ -6763,13 +6847,18 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   }
 
   /* ODA Guide Modal Controls */
+  const getDxfContent = () => {
+    const fOpt = { font: ($('cadFontSel') ? $('cadFontSel').value : 'romans') };
+    return C.toDxf(plan.ents, plan.blocks, fOpt);
+  };
+
   const isOdaModalSuppressed = () => {
     return localStorage.getItem('hide_oda_modal') === 'true' || ($('chkHideOdaModal') && $('chkHideOdaModal').checked);
   };
 
   const showOdaGuide = url => {
     if (isOdaModalSuppressed()) {
-      if (plan) save(stamp() + '.dxf', C.toDxf(plan.ents, plan.blocks));
+      if (plan) save(stamp() + '.dxf', getDxfContent());
       return;
     }
     if (url) $('odaLink').href = url;
@@ -6778,7 +6867,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   $('closeOdaModal').addEventListener('click', () => { $('odaModal').style.display = 'none'; });
   $('modalDxfBtn').addEventListener('click', () => {
     $('odaModal').style.display = 'none';
-    if (plan) save(stamp() + '.dxf', C.toDxf(plan.ents, plan.blocks));
+    if (plan) save(stamp() + '.dxf', getDxfContent());
   });
   if ($('btnOdaAlreadyInstalled')) {
     $('btnOdaAlreadyInstalled').addEventListener('click', () => {
@@ -6786,7 +6875,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       if ($('chkHideOdaModal')) $('chkHideOdaModal').checked = true;
       $('odaModal').style.display = 'none';
       if (plan) {
-        save(stamp() + '.dxf', C.toDxf(plan.ents, plan.blocks));
+        save(stamp() + '.dxf', getDxfContent());
         $('status').textContent = 'AutoCAD 호환 도면(.dxf) 다운로드 완료 (다음부터 안내창 숨김)';
       }
     });
@@ -6807,7 +6896,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     btn.disabled = true;
     btn.innerHTML = '⏳ 변환 중...';
     st.textContent = '⚡ 클라우드 서버에서 DWG 도면 변환 중... (약 3~7초 소요)';
-    const dxfContent = C.toDxf(plan.ents, plan.blocks);
+    const dxfContent = getDxfContent();
     const filename = stamp();
     try {
       let apiUrl = '/api/convert-dwg';
@@ -6866,8 +6955,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     }
   });
 
-  $('dxfDirect').addEventListener('click', () => { if (plan) save(stamp() + '.dxf', C.toDxf(plan.ents, plan.blocks)); });
-  $('dxf').addEventListener('click', () => { if (plan) save(stamp() + '.zip', zipStore(stamp() + '.dxf', C.toDxf(plan.ents, plan.blocks))); });
+  $('dxfDirect').addEventListener('click', () => { if (plan) save(stamp() + '.dxf', getDxfContent()); });
+  $('dxf').addEventListener('click', () => { if (plan) save(stamp() + '.zip', zipStore(stamp() + '.dxf', getDxfContent())); });
 
   $('svg').addEventListener('click', () => {
     if (!plan) return;

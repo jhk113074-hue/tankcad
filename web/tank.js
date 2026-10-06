@@ -1268,11 +1268,13 @@
             if (dist < 1) { nx = 1; ny = 0; }
             let sx = 0, sy = 0;
             if (Math.abs(dy) < Math.round(5.0 * N)) {
+              // 수평 일직선상 배치인 경우: X축으로만 분리 (수평 정렬 유지)
               sx = Math.round(overlap * (nx >= 0 ? 1 : -1));
-              sy = (j % 2 === 0 ? 1 : -1) * Math.round(2.5 * N);
+              sy = 0;
             } else if (Math.abs(dx) < Math.round(5.0 * N)) {
+              // 수직 일직선상 배치인 경우: Y축으로만 분리 (수직 열 정렬 유지 및 도면 침범 원천 방지)
               sy = Math.round(overlap * (ny >= 0 ? 1 : -1));
-              sx = (j % 2 === 0 ? 1 : -1) * Math.round(2.5 * N);
+              sx = 0;
             } else {
               sx = Math.round(nx * overlap);
               sy = Math.round(ny * overlap);
@@ -1320,7 +1322,9 @@
               normX = -normX; normY = -normY;
             }
             const push = Math.round(reqDist - d + 3);
-            const sx = Math.round(normX * push), sy = Math.round(normY * push);
+            let sx = Math.round(normX * push), sy = Math.round(normY * push);
+            // 외곽 풍선은 도면 내부(탱크/패드 방향)로 밀려 들어가지 않도록 보호
+            if (bx > 0 && sx < 0 && (b.center[0] + sx < dl.a[0])) sx = 0;
             shiftBalloon(ents, b.id, sx, sy);
             b.center[0] += sx; b.center[1] += sy;
             movedAny = true;
@@ -1477,7 +1481,7 @@
       ];
     } else if (lang === 'ko') {
       return [
-        { no: 1, key: 'foundation', name: '기초 콘크리트 (Foundation)', mat: 'CONC', qty: '1식', spec: `기초 패드 도면 참조 (H${padH})` },
+        { no: 1, key: 'foundation', name: '기초 콘크리트 (Foundation)', mat: 'CONC', qty: '1식', spec: `기초 패드 도면 참조 (180kgf/cm², H${padH})` },
         { no: 2, key: 'skid', name: '스키드 프레임 (Skid Frame)', mat: 'SS275(HDG)', qty: '1식', spec: '주찬넬: [-75x75x6T, 종찬넬: [-75x40x5T' },
         { no: 3, key: 'panel', name: '본체 판넬 (바닥/측면/지붕)', mat: mat, qty: '1식', spec: `전체 ${mat} 판넬 (${totalW}W x ${totalL}L x ${H}H)` },
         { no: 4, key: 'corner', name: '코너 프레임 (Corner Frame)', mat: 'HDG', qty: '4조', spec: 'L-70x70x8.0T' },
@@ -1491,7 +1495,7 @@
       ];
     } else { // bilingual
       return [
-        { no: 1, key: 'foundation', name: 'Concrete Foundation', mat: 'CONC', qty: '1 Set (1식)', spec: `Refer Foundation Pad plan (H${padH})` },
+        { no: 1, key: 'foundation', name: 'Concrete Foundation', mat: 'CONC', qty: '1 Set (1식)', spec: `Refer Foundation Pad plan (180kgf/cm², H${padH})` },
         { no: 2, key: 'skid', name: 'Skid Frame', mat: 'SS275(HDG)', qty: '1 Set (1식)', spec: 'Main: [-75x75x6T, Sub: [-75x40x5T' },
         { no: 3, key: 'panel', name: 'Panel (Bottom/Side/Roof)', mat: mat, qty: '1 Set (1식)', spec: `All ${mat} Panels (${totalW}W x ${totalL}L x ${H}H)` },
         { no: 4, key: 'corner', name: 'Corner Frame', mat: 'HDG', qty: '4 Sets (4조)', spec: 'L-70x70x8.0T' },
@@ -2197,6 +2201,7 @@
     }
 
     ents.blocks = blocks;
+    ents.font = opt.font || opt.cadFont || 'romans';
     const H = (opt.height || []).reduce((a, b) => a + (b || 0), 0);
     const autoDimStr = getTankDimStr(opt, map, H);
     const t = opt.title || {};
@@ -2319,64 +2324,67 @@
     return autoGenerateHeightSegs(total, one);
   }
 
-  /* ---------- 글로벌 토목·건축·플랜트 수조 표준 (ACI 350.3 / KDS 내진 및 10mH 고수위 연동) 기초 설계 ---------- */
+  /* ---------- 콘크리트 기초 설계 표준 (기본: 180 kgf/cm² / 18 MPa 수조 표준 시방 연동) ---------- */
   function getFoundationDesign(opt = {}) {
     const totalH = (Array.isArray(opt.height) ? opt.height.reduce((a, b) => a + (b || 0), 0) : Number(opt.height)) || 3000;
     const isEn = opt.lang === 'en';
 
-    // 1. 기초 슬래브 두께 (Slab Thickness: mm)
-    // 10mH: ACI 350.3 / KDS 전도모멘트 및 펀칭전단 저항 500mm 매트 기초
+    // 1. 기초 슬래브 두께 (Slab Thickness: mm) - 180 kgf/cm² 표준 수조 기초는 150mm 매트 슬래브
     let slabT = Number(opt.slabT) || 0;
     if (!slabT) {
-      if (totalH >= 8000) slabT = 500;
-      else if (totalH >= 5000) slabT = 350;
-      else if (totalH >= 3500) slabT = 250;
+      if (totalH >= 8000) slabT = 300;
+      else if (totalH >= 5000) slabT = 200;
       else slabT = 150;
     }
 
-    // 2. 콘크리트 설계기준강도 (fck)
-    // 10mH: 30 MPa (수두압 100kPa, 내진 및 수밀 설계)
-    let fck = 24;
-    let fckStr = '24 MPa (240 kgf/cm²)';
-    if (totalH >= 8000) {
-      fck = 30;
-      fckStr = '30 MPa (300 kgf/cm²)';
+    // 2. 콘크리트 설계기준강도 (fck) - 기본: 18 MPa (180 kgf/cm²)
+    let fck = 18;
+    let fckStr = '18 MPa (180 kgf/cm²)';
+    const reqFck = opt.concreteFck || opt.fck;
+    if (reqFck) {
+      const numFck = Number(reqFck);
+      if (numFck >= 100) {
+        fck = Math.round(numFck / 10);
+        fckStr = `${fck} MPa (${numFck} kgf/cm²)`;
+      } else if (numFck > 0) {
+        fck = numFck;
+        fckStr = `${fck} MPa (${fck * 10} kgf/cm²)`;
+      }
+    } else if (totalH >= 8000) {
+      fck = 24;
+      fckStr = '24 MPa (240 kgf/cm²)';
     } else if (totalH >= 5000) {
-      fck = 27;
-      fckStr = '27 MPa (270 kgf/cm²)';
+      fck = 21;
+      fckStr = '21 MPa (210 kgf/cm²)';
     }
 
-    // 3. 패드 기둥 배근 (주근 / 늑근)
-    let rebarPadStr = 'HD13 / HD10 (SD400)';
-    let padCallout = isEn ? 'PAD REBAR: 2-HD13 / TIE HD10 @ 200' : '패드 배근: 주근 2-HD13 / 늑근 HD10 @ 200';
+    // 3. 패드 기둥 배근 (주근 / 늑근) - 180 kgf/cm² 표준: HD10 / HD10 (SD300/SD400)
+    let rebarPadStr = 'HD10 / HD10 (SD300)';
+    let padCallout = isEn ? 'PAD REBAR: 2-HD10 / TIE HD10 @ 200' : '패드 배근: 주근 2-HD10 / 늑근 HD10 @ 200';
     let padTiePitch = 200;
     if (totalH >= 8000) {
-      rebarPadStr = 'HD22 / HD13 (SD500/SD400)';
-      padCallout = isEn ? 'PAD REBAR: 2-HD22 / TIE HD13 @ 100' : '패드 배근: 주근 2-HD22 / 늑근 HD13 @ 100';
+      rebarPadStr = 'HD19 / HD13 (SD400)';
+      padCallout = isEn ? 'PAD REBAR: 2-HD19 / TIE HD13 @ 100' : '패드 배근: 주근 2-HD19 / 늑근 HD13 @ 100';
       padTiePitch = 100;
     } else if (totalH >= 5000) {
-      rebarPadStr = 'HD19 / HD13 (SD400)';
-      padCallout = isEn ? 'PAD REBAR: 2-HD19 / TIE HD13 @ 150' : '패드 배근: 주근 2-HD19 / 늑근 HD13 @ 150';
-      padTiePitch = 150;
-    } else if (totalH >= 3500) {
       rebarPadStr = 'HD16 / HD10 (SD400)';
       padCallout = isEn ? 'PAD REBAR: 2-HD16 / TIE HD10 @ 150' : '패드 배근: 주근 2-HD16 / 늑근 HD10 @ 150';
       padTiePitch = 150;
+    } else if (totalH >= 3500) {
+      rebarPadStr = 'HD13 / HD10 (SD300)';
+      padCallout = isEn ? 'PAD REBAR: 2-HD13 / TIE HD10 @ 200' : '패드 배근: 주근 2-HD13 / 늑근 HD10 @ 200';
+      padTiePitch = 200;
     }
 
-    // 4. 기초 슬래브 배근 (상·하부 복배근)
-    let rebarSlabStr = 'HD10 @ 200 (SD400, Double)';
+    // 4. 기초 슬래브 배근 (상·하부 복배근) - 180 kgf/cm² 표준: HD10 @ 200 (SD300)
+    let rebarSlabStr = 'HD10 @ 200 (SD300, Double)';
     let slabCallout = isEn ? 'SLAB REBAR: HD10 @ 200 (TOP & BOT)' : '슬래브 배근: HD10 @ 200 (상·하부 복배근)';
     let slabRebarPitch = 200;
     if (totalH >= 8000) {
-      rebarSlabStr = 'HD19 @ 150 (SD400, Double)';
-      slabCallout = isEn ? 'SLAB REBAR: HD19 @ 150 (TOP & BOT)' : '슬래브 배근: HD19 @ 150 (상·하부 복배근)';
-      slabRebarPitch = 150;
-    } else if (totalH >= 5000) {
       rebarSlabStr = 'HD16 @ 150 (SD400, Double)';
       slabCallout = isEn ? 'SLAB REBAR: HD16 @ 150 (TOP & BOT)' : '슬래브 배근: HD16 @ 150 (상·하부 복배근)';
       slabRebarPitch = 150;
-    } else if (totalH >= 3500) {
+    } else if (totalH >= 5000) {
       rebarSlabStr = 'HD13 @ 200 (SD400, Double)';
       slabCallout = isEn ? 'SLAB REBAR: HD13 @ 200 (TOP & BOT)' : '슬래브 배근: HD13 @ 200 (상·하부 복배근)';
       slabRebarPitch = 200;
@@ -2387,26 +2395,21 @@
     let anchorEmbed = 260;
     let anchorHasPlate = false;
     if (totalH >= 8000) {
-      anchorStr = 'M30 (High-Tension, L=550)';
-      anchorEmbed = 550;
-      anchorHasPlate = true;
-    } else if (totalH >= 5000) {
       anchorStr = 'M24 (STS304 / SS275, L=450)';
       anchorEmbed = 450;
       anchorHasPlate = true;
-    } else if (totalH >= 3500) {
+    } else if (totalH >= 5000) {
       anchorStr = 'M20 (SUS304 / SS275, L=350)';
       anchorEmbed = 350;
+      anchorHasPlate = true;
     }
 
     // 6. 요구 지내력 (Soil Bearing Capacity: qa)
     let bearingStr = '≥ 100 kN/m² (10 t/m²)';
     if (totalH >= 8000) {
-      bearingStr = '≥ 250 kN/m² (Seismic: 35 t/m²)';
+      bearingStr = '≥ 200 kN/m² (Seismic: 25 t/m²)';
     } else if (totalH >= 5000) {
-      bearingStr = '≥ 200 kN/m² (Seismic: 27 t/m²)';
-    } else if (totalH >= 3500) {
-      bearingStr = '≥ 150 kN/m² (Seismic: 20 t/m²)';
+      bearingStr = '≥ 150 kN/m² (Seismic: 18 t/m²)';
     }
 
     // 7. 설계 안전율 (Safety Factor)
@@ -4126,24 +4129,26 @@
           if (ext + textW > maxRightExt) maxRightExt = ext + textW;
         });
       });
-      const elevRightX = Math.max(pxEndElev + Math.round(10.0 * N), maxRightExt + Math.round(8.0 * N));
-      const elevBotY = slabTopY - 150 - dimGap2 - Math.round(14 * N);
-
-      // 1. 기초 콘크리트 (Concrete Foundation - NO. 1): 리드선(Leader line)을 아래쪽으로 꺾어 인출하여 NO. 2 및 600 치수선 간섭 원천 차단
-      const concY = slabTopY + padH * 0.5;
-      const b1_elbowY = concY - Math.round(2.0 * N);
-      drawBalloonCallout(ents, [total, concY], [total + 75 + Math.round(3.5 * N), b1_elbowY], [elevRightX, b1_elbowY], getItemNo('foundation') || 1, N, 'BALLOON');
-
-      // 2. 스키드 프레임 (Skid Frame - NO. 2): 리드선(Leader line)을 위쪽으로 꺾어 인출하여 NO. 1 및 치수선 간섭 원천 차단
-      const skidY = -th * 0.5;
-      const b2_elbowY = skidY + Math.round(2.0 * N);
-      drawBalloonCallout(ents, [total + 75, skidY], [total + 75 + Math.round(3.5 * N), b2_elbowY], [elevRightX, b2_elbowY], getItemNo('skid') || 2, N, 'BALLOON');
-
-      // 3. 측면 판넬 (Wall Panel - NO. 3): 리드선 우측 정렬
-      drawBalloonCallout(ents, [total, nH * 0.65], [total + 75 + Math.round(3.5 * N), nH * 0.65], [elevRightX, nH * 0.65], getItemNo('panel') || 3, N, 'BALLOON');
+      const pxPadEnd = (typeof pxEnd !== 'undefined') ? pxEnd : (total + PAD_OVERHANG);
+      const glSymExt = pxPadEnd + Math.round(12.0 * N);
+      const elevRightX = Math.max(pxEndElev + Math.round(14.0 * N), glSymExt + Math.round(6.0 * N), maxRightExt + Math.round(8.0 * N));
+      const elevBotY = slabTopY - slabT - dimGap2 - Math.round(14 * N);
 
       const bR = Math.round(4.2 * N);
       const sL = Math.round(4.0 * N);
+
+      // 1. 기초 콘크리트 (Concrete Foundation - NO. 1): 우측 수평 선반 정렬 및 패드/치수/GL 간섭 완전 배제
+      const concY = slabTopY + padH * 0.5;
+      const b1_elbowY = concY - Math.round(2.0 * N);
+      drawBalloonCallout(ents, [total, concY], [elevRightX - sL - bR, b1_elbowY], [elevRightX, b1_elbowY], getItemNo('foundation') || 1, N, 'BALLOON');
+
+      // 2. 스키드 프레임 (Skid Frame - NO. 2): 우측 수평 선반 정렬 및 NO. 1과 수직 열 정렬
+      const skidY = -th * 0.5;
+      const b2_elbowY = skidY + Math.round(2.0 * N);
+      drawBalloonCallout(ents, [total + 75, skidY], [elevRightX - sL - bR, b2_elbowY], [elevRightX, b2_elbowY], getItemNo('skid') || 2, N, 'BALLOON');
+
+      // 3. 측면 판넬 (Wall Panel - NO. 3): 리드선 우측 수평 선반 정렬
+      drawBalloonCallout(ents, [total, nH * 0.65], [elevRightX - sL - bR, nH * 0.65], [elevRightX, nH * 0.65], getItemNo('panel') || 3, N, 'BALLOON');
 
       // 4. 코너 프레임 (Corner Frame - NO. 4): 좌상단 바깥 외곽 (수평 선반)
       const b4X = Math.min(-75 - Math.round(12 * N), overallX - Math.round(6.0 * N));
@@ -4181,8 +4186,8 @@
         drawBalloonCallout(ents, [stayX, nH * 0.5], [b10X + sL + bR, elevTopY], [b10X, elevTopY], getItemNo('stay') || 10, N, 'BALLOON');
       }
 
-      // 11. 노즐 (Nozzles - NO. 11): 리드선 우측 정렬
-      drawBalloonCallout(ents, [total + 75, nH * 0.3], [total + 75 + Math.round(3.5 * N), nH * 0.3], [elevRightX, nH * 0.3], getItemNo('nozzle') || 11, N, 'BALLOON');
+      // 11. 노즐 (Nozzles - NO. 11): 리드선 우측 수평 선반 정렬
+      drawBalloonCallout(ents, [total + 75, nH * 0.3], [elevRightX - sL - bR, nH * 0.3], [elevRightX, nH * 0.3], getItemNo('nozzle') || 11, N, 'BALLOON');
     }
 
     recheckAndResolveCollisions(ents, opt);
@@ -7249,14 +7254,15 @@
     });
     const blocks = Object.assign({}, plan.blocks, (conc && conc.blocks), (front && front.blocks), (side && side.blocks), (frontSec && frontSec.blocks));
     ents.blocks = blocks;
-    return { map: mmap, ents, blocks, scale: N, elev, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
+    ents.font = opt.font || opt.cadFont || 'romans';
+    return { map: mmap, ents, blocks, scale: N, elev, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 }, font: ents.font };
   }
 
   /* ---------- DXF (AutoCAD R12 ASCII, mm) ---------- */
   const LAYERS = { PANEL: 7, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4, PAD: 8, GUIDE: 3 };
   const dxfText = str => Array.from(str).map(ch => { const c = ch.codePointAt(0); return c < 128 ? ch : '\\U+' + c.toString(16).toUpperCase().padStart(4, '0'); }).join('');
 
-  function toDxf(ents, blocks) {
+  function toDxf(ents, blocks, opt = {}) {
     const o = [];
     const g = (c, v) => { o.push(String(c)); o.push(String(v)); };
     const n = v => (Math.round(v * 1000) / 1000).toString();
@@ -7320,9 +7326,21 @@
     g(0, 'LAYER'); g(2, '0'); g(70, 0); g(62, 7); g(6, 'CONTINUOUS');
     Object.entries(LAYERS).forEach(([k, c]) => { g(0, 'LAYER'); g(2, k); g(70, 0); g(62, c); g(6, 'CONTINUOUS'); });
     g(0, 'ENDTAB');
+
+    const fontKey = String((opt && (opt.font || opt.cadFont)) || (ents && ents.font) || (blocks && blocks.font) || 'romans').toLowerCase().trim();
+    const fontTable = {
+      romans: { shx: 'romans.shx', bigFont: 'whgtxt.shx', widthFactor: 0.85 },
+      arial: { shx: 'arial.ttf', bigFont: '', widthFactor: 1.0 },
+      ariral: { shx: 'arial.ttf', bigFont: '', widthFactor: 1.0 },
+      simplex: { shx: 'simplex.shx', bigFont: 'whgtxt.shx', widthFactor: 0.85 },
+      txt: { shx: 'txt.shx', bigFont: 'whgtxt.shx', widthFactor: 0.85 }
+    };
+    const fontInfo = fontTable[fontKey] || fontTable.romans;
+
     g(0, 'TABLE'); g(2, 'STYLE'); g(70, 1);
-    g(0, 'STYLE'); g(2, 'STANDARD'); g(70, 0); g(40, 0); g(41, 0.85); g(50, 0); g(71, 0); g(42, n(dimTxtH));
-    g(3, 'simplex.shx'); g(4, 'whgtxt.shx');
+    g(0, 'STYLE'); g(2, 'STANDARD'); g(70, 0); g(40, 0); g(41, fontInfo.widthFactor); g(50, 0); g(71, 0); g(42, n(dimTxtH));
+    g(3, fontInfo.shx);
+    if (fontInfo.bigFont) g(4, fontInfo.bigFont);
     g(0, 'ENDTAB');
     g(0, 'TABLE'); g(2, 'DIMSTYLE'); g(70, 1);
     g(0, 'DIMSTYLE'); g(2, 'STANDARD'); g(70, 0);
