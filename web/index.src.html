@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.6.39</title>
+<title>YSACC TANK CAD v1.6.40</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -425,7 +425,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.39</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v--help</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2131,7 +2131,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.39</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v--help</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2141,7 +2141,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.39</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v--help</span></div>
     </div>
   </main>
 </div>
@@ -5673,11 +5673,28 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       $('padH').value = 600 - frm;
       $('padH').dataset.lastDef = 600 - frm;
     }
+    const padH = Number($('padH') ? $('padH').value : (600 - frm));
+    if (itemList && itemList.length) {
+      const dLang = ($('drawingLangSel') ? $('drawingLangSel').value : currentLang) || 'ko';
+      const foundItem = itemList.find(it => it.key === 'foundation' || it.no === 1);
+      if (foundItem) {
+        if (dLang === 'en' || dLang === 'bilingual') foundItem.spec = `Refer Foundation Pad plan (180kgf/cm², H${padH})`;
+        else foundItem.spec = `기초 패드 도면 참조 (180kgf/cm², H${padH})`;
+      }
+      const skidItem = itemList.find(it => it.key === 'skid' || it.no === 2);
+      if (skidItem) {
+        skidItem.spec = C.getSkidSpec ? C.getSkidSpec(frm, dLang) : (dLang === 'ko' ? `주부재: L-75x75x6T, 종부재: [-75x40x5T` : `Main: L-75x75x6T, Sub: [-75x40x5T`);
+      }
+      renderBOMTable();
+    }
     updatePadBadges();
     schedule();
   });
   $('scaleSel').addEventListener('change', () => schedule());
-  if ($('drawingLangSel')) $('drawingLangSel').addEventListener('change', () => schedule());
+  if ($('drawingLangSel')) $('drawingLangSel').addEventListener('change', () => {
+    initBOM(true);
+    schedule();
+  });
   if ($('cadFontSel')) $('cadFontSel').addEventListener('change', () => {
     try { localStorage.setItem('tankcad_cad_font', $('cadFontSel').value); } catch(e) {}
     schedule();
@@ -5694,6 +5711,16 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   if ($('padH')) {
     $('padH').addEventListener('input', () => {
       isPadHCustom = true;
+      const padH = Number($('padH').value) || 0;
+      if (itemList && itemList.length) {
+        const dLang = ($('drawingLangSel') ? $('drawingLangSel').value : currentLang) || 'ko';
+        const foundItem = itemList.find(it => it.key === 'foundation' || it.no === 1);
+        if (foundItem) {
+          if (dLang === 'en' || dLang === 'bilingual') foundItem.spec = `Refer Foundation Pad plan (180kgf/cm², H${padH})`;
+          else foundItem.spec = `기초 패드 도면 참조 (180kgf/cm², H${padH})`;
+          renderBOMTable();
+        }
+      }
       updatePadBadges();
       schedule();
     });
@@ -5707,6 +5734,16 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         $('padH').dataset.lastDef = 600 - frm;
       }
       isPadHCustom = false;
+      const padH = 600 - frm;
+      if (itemList && itemList.length) {
+        const dLang = ($('drawingLangSel') ? $('drawingLangSel').value : currentLang) || 'ko';
+        const foundItem = itemList.find(it => it.key === 'foundation' || it.no === 1);
+        if (foundItem) {
+          if (dLang === 'en' || dLang === 'bilingual') foundItem.spec = `Refer Foundation Pad plan (180kgf/cm², H${padH})`;
+          else foundItem.spec = `기초 패드 도면 참조 (180kgf/cm², H${padH})`;
+          renderBOMTable();
+        }
+      }
       updatePadBadges();
       schedule();
     });
@@ -8806,8 +8843,10 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       { id: 'nozzle_socket', name: '소켓 노즐 (나사식 Socket)', w: 150, h: 150, mat: 'COMMON' }
     ],
     skid: [
-      { id: 'skid_75', name: '[-75x75x6T 베이스 찬넬', w: 75, h: 75, mat: 'COMMON' },
-      { id: 'skid_100', name: '[-100x50x5T 보강 찬넬', w: 100, h: 50, mat: 'COMMON' }
+      { id: 'skid_shs50', name: 'SHS-50x50x3.2T 각관 프레임 (Main/Sub)', w: 50, h: 50, mat: 'COMMON' },
+      { id: 'skid_75', name: 'L-75x75x6T / [-75x40x5T 베이스 프레임', w: 75, h: 75, mat: 'COMMON' },
+      { id: 'skid_125', name: '[-125x65x6T / [-75x40x5T 베이스 찬넬', w: 125, h: 65, mat: 'COMMON' },
+      { id: 'skid_150', name: '[-150x75x6.5T / [-100x50x5T 베이스 찬넬', w: 150, h: 75, mat: 'COMMON' }
     ],
     foundation: [
       { id: 'foundation_pad', name: '기초 콘크리트 패드 빔 300x525', w: 300, h: 525, mat: 'COMMON' }

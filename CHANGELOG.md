@@ -5,6 +5,28 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.40] - 2026-10-06
+
+### Added & Enhanced (스틸 스키드 프레임 규격 전면 업데이트 및 실시간 도면·BOM 연동)
+- **🏗️ 스틸 스키드 프레임 (Steel Skid Frame) 4대 규격 완벽 정립**:
+  - 사용자 제공 표준 부재 규격표를 기준으로 하부 베이스 프레임 4종에 대한 주부재(Main) 및 종부재/보조부재(Sub) 사양 전면 연동:
+    - **SHS 50 (`frame = 50`)**: Main = `SHS-50x50x3.2T` (각관), Sub = `SHS-50x50x3.2T` (각관)
+    - **75 Angle (`frame = 75`)**: Main = `L-75x75x6T` (앵글), Sub = `[-75x40x5T` (찬넬)
+    - **125 Channel (`frame = 125`)**: Main = `[-125x65x6T` (찬넬), Sub = `[-75x40x5T` (찬넬)
+    - **150 Channel (`frame = 150`)**: Main = `[-150x75x6.5T` (찬넬), Sub = `[-100x50x5T` (찬넬)
+- **📋 부품 사양 명세표 (BOM Table) Item 2 (Skid Frame) 실시간 동적 계산**:
+  - 기존 `[-75x75x6T` 고정 문자열을 제거하고 선택된 `opt.frame`에 따라 Main/Sub 규격이 동적으로 계산되도록 `getSkidSpec(frame, lang)` 엔진 구현.
+  - 한글(`ko`), 영문(`en`), 한·영 병기(`bilingual`) 모드에 맞춰 정확한 규격 문자열 생성:
+    - 한글: `주부재: [-125x65x6T, 종부재: [-75x40x5T` 등
+    - 영문/병기: `Main: [-125x65x6T, Sub: [-75x40x5T` 등
+  - 입력 탭에서 하부 프레임(`#frm`)을 `125 (Channel)`로 선택 시, BOM 표의 1번 콘크리트 기초 높이 `H475`와 함께 2번 스키드 프레임 사양이 즉시 `Main: [-125x65x6T, Sub: [-75x40x5T`로 실시간 자동 동기화.
+- **📐 도면 형상 및 단면도·부품목록 (Skid Dwg & Cross Section) 치수 정밀화**:
+  - **입면도 (`buildElevation`)**: 선택된 프레임 종류별 실제 외경/플랜지 폭(`50`, `75`, `65`, `75`) 및 두께에 따른 정밀 형상 렌더링. SHS 50 각관 단면, 75 앵글 단면, 125/150 찬넬 단면 완벽 분기.
+  - **기초 프레임 단면도 (`buildSkidCross`)**: 각 프레임 단면 치수선에 실제 규격 높이(50/75/125/150), 폭(50/75/65/75), 두께(`3.2T`/`6T`/`6.5T`)가 정확히 치수화되도록 개선.
+  - **프레임 부품 목록 (`buildSkid`)**: PART LIST 표제에 프레임 명칭 및 `MAIN: ... / SUB: ...` 상세 규격을 함께 명시하여 도면 검토 효율성 극대화.
+- **🧩 CAD 부품 라이브러리 (`CAD_DEFAULT_LIBRARY`) 동기화**:
+  - 스키드 카테고리에 `SHS-50x50x3.2T`, `L-75x75x6T`, `[-125x65x6T`, `[-150x75x6.5T` 4대 부재 DB를 완벽히 등록.
+
 ## [1.6.39] - 2026-10-06
 
 ### Added & Enhanced (콘크리트 기초 180 kgf/cm² 표준 스펙·도면 완벽 적용 및 CAD 4대 폰트 선택 기능 구축)

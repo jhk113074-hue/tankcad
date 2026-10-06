@@ -708,6 +708,41 @@
    - `python build.py` 빌드 완료 (1,010,474 bytes).
    - `python bump_version.py 1.6.39` 버전 판올림 완료.
 
+### [2026-10-06 12:05] 스틸 스키드 프레임 규격 전면 업데이트 및 실시간 도면·BOM 연동 (v1.6.40)
+
+#### 1. 요구사항 및 배경
+- **사용자 요청**: "Steel skid도 업데이트해주세요." (부재 규격표 이미지 첨부)
+  - `SHS 50`: Main = `SHS-50x50x3.2T`, Sub = `SHS-50x50x3.2T`
+  - `75 Angle`: Main = `L-75x75x6T`, Sub = `[-75x40x5T`
+  - `125 Channel`: Main = `[-125x65x6T`, Sub = `[-75x40x5T`
+  - `150 Channel`: Main = `[-150x75x6.5T`, Sub = `[-100x50x5T`
+- **문제점**:
+  - 기존 BOM Item 2 (Skid Frame) 사양이 사용자의 프레임 선택(`opt.frame`)과 무관하게 `[-75x75x6T`로 하드코딩되어 있었음.
+  - 사용자가 125 Channel을 선택해도 BOM에 `Main: [-75x75x6T`로 남아 불일치 발생.
+
+#### 2. 상세 작업 내역
+1. **스틸 스키드 프레임 규격 함수 (`getSkidDimensions`, `getSkidSpec`) 구현 (`web/tank.js`)**:
+   - `getSkidDimensions(frame)`: 프레임 번호(50, 75, 125, 150)에 따라 주부재/보조부재 사양, 단면 높이, 플랜지 폭, 두께, 단면 형태(`shs`, `angle`, `channel`)를 정밀 반환.
+   - `getSkidSpec(frame, lang)`: 도면 언어(한글, 영문, 병기)에 맞추어 `Main: ..., Sub: ...` 또는 `주부재: ..., 종부재: ...` 규격 문자열 생성.
+   - `TankCore` API 객체에 `getSkidDimensions`와 `getSkidSpec` 공식 노출.
+2. **부품 사양 명세표 (BOM Table) Item 2 동적 연동 (`buildDefaultBOM`)**:
+   - 영문: `Main: [-125x65x6T, Sub: [-75x40x5T` (선택된 프레임 규격 즉시 반영)
+   - 한글: `주부재: [-125x65x6T, 종부재: [-75x40x5T`
+   - 한·영 병기: `Main: [-125x65x6T, Sub: [-75x40x5T`
+   - Item 1 (기초 콘크리트) 역시 `180kgf/cm², H${padH}`로 모든 언어에서 일치 표기.
+3. **웹 UI 실시간 동기화 (`web/index.src.html`)**:
+   - 하부 프레임(`#frm`) 변경 시, 기초 패드 높이뿐만 아니라 `itemList`의 Item 1(콘크리트 기초 높이)과 Item 2(스키드 프레임 규격)를 즉시 실시간 갱신 및 테이블 재렌더링.
+   - 패드 높이(`#padH`) 직접 수정 및 리셋 시에도 BOM Item 1과 실시간 동기화.
+   - 도면 언어(`#drawingLangSel`) 변경 시 `initBOM(true)`로 즉시 언어별 사양 일괄 동기화.
+   - CAD 부품 라이브러리(`CAD_DEFAULT_LIBRARY`)에 50각관, 75앵글, 125찬넬, 150찬넬 부재 4종 정식 등록.
+4. **도면 단면도 및 입면도 형상 정밀화**:
+   - **입면도 (`buildElevation`)**: 선택된 프레임 종류별 실제 외경/플랜지 폭(`50`, `75`, `65`, `75`) 및 두께에 따른 정밀 형상 렌더링. SHS 50 각관 단면, 75 앵글 단면, 125/150 찬넬 단면 완벽 분기.
+   - **기초 프레임 단면도 (`buildSkidCross`)**: 각 프레임 단면 치수선에 실제 규격 높이(50/75/125/150), 폭(50/75/65/75), 두께(`3.2T`/`6T`/`6.5T`)가 정확히 치수화되도록 개선.
+   - **프레임 부품 목록 (`buildSkid`)**: PART LIST 표제에 프레임 명칭 및 `MAIN: ... / SUB: ...` 상세 규격을 함께 명시하여 도면 검토 효율성 극대화.
+5. **빌드 및 배포**:
+   - `python build.py` 빌드 완료 (1,015,490 bytes).
+   - `python bump_version.py 1.6.40` 버전 판올림 완료.
+
 
 
 
