@@ -1533,12 +1533,13 @@
       ? Object.keys(opt.ladders).length
       : 1;
     const nozzleList = getNozzleList(opt);
-    const padH = (typeof opt.padH === 'number' && !isNaN(opt.padH)) ? opt.padH : (600 - (opt.frame || 75));
+    const frmVal = opt.frame || opt.frm || 75;
+    const padH = (typeof opt.padH === 'number' && !isNaN(opt.padH)) ? opt.padH : (600 - frmVal);
 
     if (lang === 'en') {
       return [
         { no: 1, key: 'foundation', name: 'Concrete Foundation', mat: 'CONC', qty: '1 Set', spec: `Refer Foundation Pad plan (180kgf/cm², H${padH})` },
-        { no: 2, key: 'skid', name: 'Skid Frame', mat: 'SS275(HDG)', qty: '1 Set', spec: getSkidSpec(opt.frame, 'en') },
+        { no: 2, key: 'skid', name: 'Skid Frame', mat: 'SS275(HDG)', qty: '1 Set', spec: getSkidSpec(frmVal, 'en') },
         { no: 3, key: 'panel', name: 'Panel (Bottom/Side/Roof)', mat: mat, qty: '1 Set', spec: `All ${mat} Panels (${totalW}W x ${totalL}L x ${H}H)` },
         { no: 4, key: 'corner', name: 'Corner Frame', mat: 'HDG', qty: '4 Sets', spec: 'L-70x70x8.0T' },
         { no: 5, key: 'airvent', name: 'Air Vent', mat: 'ABS', qty: `${ventCount || 1} EA`, spec: 'Φ50 (Insect screen #20 attached)' },
@@ -1552,7 +1553,7 @@
     } else if (lang === 'ko') {
       return [
         { no: 1, key: 'foundation', name: '기초 콘크리트 (Foundation)', mat: 'CONC', qty: '1식', spec: `기초 패드 도면 참조 (180kgf/cm², H${padH})` },
-        { no: 2, key: 'skid', name: '스키드 프레임 (Skid Frame)', mat: 'SS275(HDG)', qty: '1식', spec: getSkidSpec(opt.frame, 'ko') },
+        { no: 2, key: 'skid', name: '스키드 프레임 (Skid Frame)', mat: 'SS275(HDG)', qty: '1식', spec: getSkidSpec(frmVal, 'ko') },
         { no: 3, key: 'panel', name: '본체 판넬 (바닥/측면/지붕)', mat: mat, qty: '1식', spec: `전체 ${mat} 판넬 (${totalW}W x ${totalL}L x ${H}H)` },
         { no: 4, key: 'corner', name: '코너 프레임 (Corner Frame)', mat: 'HDG', qty: '4조', spec: 'L-70x70x8.0T' },
         { no: 5, key: 'airvent', name: '에어벤트 (Air Vent)', mat: 'ABS', qty: `${ventCount || 1}개`, spec: 'Φ50 (합성수지 방충망 #20 부착)' },
@@ -1566,7 +1567,7 @@
     } else { // bilingual
       return [
         { no: 1, key: 'foundation', name: 'Concrete Foundation', mat: 'CONC', qty: '1 Set (1식)', spec: `Refer Foundation Pad plan (180kgf/cm², H${padH})` },
-        { no: 2, key: 'skid', name: 'Skid Frame', mat: 'SS275(HDG)', qty: '1 Set (1식)', spec: getSkidSpec(opt.frame, 'bilingual') },
+        { no: 2, key: 'skid', name: 'Skid Frame', mat: 'SS275(HDG)', qty: '1 Set (1식)', spec: getSkidSpec(frmVal, 'bilingual') },
         { no: 3, key: 'panel', name: 'Panel (Bottom/Side/Roof)', mat: mat, qty: '1 Set (1식)', spec: `All ${mat} Panels (${totalW}W x ${totalL}L x ${H}H)` },
         { no: 4, key: 'corner', name: 'Corner Frame', mat: 'HDG', qty: '4 Sets (4조)', spec: 'L-70x70x8.0T' },
         { no: 5, key: 'airvent', name: 'Air Vent', mat: 'ABS', qty: `${ventCount || 1} EA`, spec: 'Φ50 (Insect screen #20 attached)' },
