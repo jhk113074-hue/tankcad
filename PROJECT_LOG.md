@@ -500,6 +500,17 @@
 - 자동 버전 업 도구 [bump_version.py](file:///e:/tankcad/bump_version.py) 구축 (`python bump_version.py patch|minor|major` 명령으로 버전 동기화 및 자동 빌드).
 - Git 태그 `v1.2.0` 발행 및 GitHub 원격 태그 푸시.
 
+### [2026-10-06 09:35] 3D 등각도 내부 기둥 접합부 보강재 브라켓 4구 홀 일치화 (v1.6.31)
+
+#### 1. 문제 현상 및 원인
+- **문제**: 2D 도면에서는 내부 기둥 접합부 보강재 브라켓(`fullPlate`)이 4구 홀인데, 3D 등각도(Isometric)에서는 모서리 4개 홀 외에 중앙 홀이 추가되어 5구 홀로 표현됨.
+- **원인**: `web/tank.js`의 `buildIsometric` 함수 내 전면 벽체(`XZ`) 및 우측 벽체(`YZ`)의 `fullPlate` 접합부에 중앙 원형 홀(`isoCircle(..., 18, ...)`)이 삽입되어 있었음.
+
+#### 2. 조치 내역
+- `web/tank.js`: 전면(`XZ`) 및 우측(`YZ`) 벽체 `fullPlate` 블록에서 중앙 원형 홀(`r=18`) 렌더링 호출을 제거하여 모서리 4개 볼트 홀(4구 홀)만 생성되도록 수정.
+- 단위 테스트 검증: `buildIsometric` 결과 내부 접합부당 정확히 4개의 볼트 홀(4구 홀)만 생성됨을 검증 완료.
+- 웹 번들 재빌드(`web/index.html`, `index.html`) 및 버전 v1.6.31 판올림 완료.
+
 
 
 

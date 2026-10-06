@@ -5299,14 +5299,13 @@
             isoCircle(x0 - HX / 2, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
             isoCircle(x0 - HX / 2, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
           } else {
-            // 내부 기둥 접합부: fullPlate (220x220, 4볼트 + 중앙 원형 보스)
+            // 내부 기둥 접합부: fullPlate (220x220, 4볼트)
             const pDepth = getDepth(x0, py, z) - 30;
             reinfPlateFront(x0 - HX, x0 + HX, z - HX, z + HX, py, y0, pDepth);
             isoCircle(x0 - hq, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
             isoCircle(x0 - hq, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
             isoCircle(x0 + hq, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
             isoCircle(x0 + hq, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
-            isoCircle(x0, py, z, 18, 'XZ', 'REINF', pDepth, 12);
           }
 
           // 우측 모서리 끝단 (외각 코너 브라켓 전면 날개: x1 - 40 ~ x1 + flangeD, 우측 밖으로 돌출)
@@ -5364,14 +5363,13 @@
             isoCircle(px, y0 - HX / 2, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
             isoCircle(px, y0 - HX / 2, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
           } else {
-            // 내부 기둥 접합부: fullPlate (220x220, 4볼트 + 중앙 원형 보스)
+            // 내부 기둥 접합부: fullPlate (220x220, 4볼트)
             const pDepth = getDepth(px, y0, z) - 30;
             reinfPlateRight(y0 - HX, y0 + HX, z - HX, z + HX, px, xWall, pDepth);
             isoCircle(px, y0 - hq, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
             isoCircle(px, y0 - hq, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
             isoCircle(px, y0 + hq, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
             isoCircle(px, y0 + hq, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
-            isoCircle(px, y0, z, 18, 'YZ', 'REINF', pDepth, 12);
           }
 
           // 후면 모서리 끝단 (외각 코너 브라켓 우측 날개: y1 - 40 ~ y1 + flangeD, 후면 밖으로 돌출)

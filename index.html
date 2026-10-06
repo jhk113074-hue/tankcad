@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.6.30</title>
+<title>YSACC TANK CAD v1.6.31</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -420,7 +420,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.30</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.31</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -2183,7 +2183,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.30</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.31</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2193,7 +2193,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.30</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.31</span></div>
     </div>
   </main>
 </div>
@@ -7499,14 +7499,13 @@ canvas.drag{cursor:grabbing}
             isoCircle(x0 - HX / 2, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
             isoCircle(x0 - HX / 2, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
           } else {
-            // 내부 기둥 접합부: fullPlate (220x220, 4볼트 + 중앙 원형 보스)
+            // 내부 기둥 접합부: fullPlate (220x220, 4볼트)
             const pDepth = getDepth(x0, py, z) - 30;
             reinfPlateFront(x0 - HX, x0 + HX, z - HX, z + HX, py, y0, pDepth);
             isoCircle(x0 - hq, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
             isoCircle(x0 - hq, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
             isoCircle(x0 + hq, py, z + hq, sr, 'XZ', 'REINF', pDepth, 12);
             isoCircle(x0 + hq, py, z - hq, sr, 'XZ', 'REINF', pDepth, 12);
-            isoCircle(x0, py, z, 18, 'XZ', 'REINF', pDepth, 12);
           }
 
           // 우측 모서리 끝단 (외각 코너 브라켓 전면 날개: x1 - 40 ~ x1 + flangeD, 우측 밖으로 돌출)
@@ -7564,14 +7563,13 @@ canvas.drag{cursor:grabbing}
             isoCircle(px, y0 - HX / 2, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
             isoCircle(px, y0 - HX / 2, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
           } else {
-            // 내부 기둥 접합부: fullPlate (220x220, 4볼트 + 중앙 원형 보스)
+            // 내부 기둥 접합부: fullPlate (220x220, 4볼트)
             const pDepth = getDepth(px, y0, z) - 30;
             reinfPlateRight(y0 - HX, y0 + HX, z - HX, z + HX, px, xWall, pDepth);
             isoCircle(px, y0 - hq, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
             isoCircle(px, y0 - hq, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
             isoCircle(px, y0 + hq, z + hq, sr, 'YZ', 'REINF', pDepth, 12);
             isoCircle(px, y0 + hq, z - hq, sr, 'YZ', 'REINF', pDepth, 12);
-            isoCircle(px, y0, z, 18, 'YZ', 'REINF', pDepth, 12);
           }
 
           // 후면 모서리 끝단 (외각 코너 브라켓 우측 날개: y1 - 40 ~ y1 + flangeD, 후면 밖으로 돌출)
@@ -13455,7 +13453,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.30</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.31</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();

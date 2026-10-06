@@ -5,6 +5,13 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.31] - 2026-10-06
+
+### Fixed (3D 등각도 내부 기둥 접합부 보강재 브라켓 4구 홀 일치화)
+- **🔩 3D 등각도(Isometric) 보강재 플레이트 홀 규격 2D 도면 일치화 (4구 홀)**:
+  - 기존 3D 등각도에서 내부 기둥 접합부 브라켓(`fullPlate`)에 중앙 원형 홀(`r=18`)이 포함되어 5구 홀로 표현되던 문제를 수정.
+  - 전면 벽체(`XZ`) 및 우측 벽체(`YZ`)의 중앙 홀 렌더링 코드를 제거하여, 2D 도면과 100% 동일하게 모서리 4개 볼트 홀(4구 홀)만 정밀하게 렌더링되도록 수정.
+
 ## [1.6.14] - 2026-10-05
 
 ### Enhanced (맨홀 위치 기존 천정판넬 중복 렌더링 제거 및 맨홀판넬 단독 배치)
