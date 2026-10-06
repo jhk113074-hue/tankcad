@@ -3797,10 +3797,12 @@
     const topMhY = roofTopY + mhOpenSpan;
 
     // 좌측 치수선 열 배치 (1열 세부단/개방맨홀 -> 2열 탱크전고 -> 3열 맨홀개방시 최고높이)
-    const leftBound = Math.min(-75, minLeftNozX);
+    // 노즐 유무에 관계없이 치수선 위치 100% 완전 고정 (사용자 요구: 노즐 체크 시 치수 위치 불변, 노즐표시만 이동)
+    const leftBound = hasLeftLadder ? -235 : -75;
     const segX = leftBound - dimGap1;
     const dimStep = Math.max(Math.round(8.0 * N), Math.round(textH * 2.2));
     const overallX = segX - dimStep;
+    const mhOverallX = overallX - dimStep;
 
     // 1열 치수 (FrontDim / SideDim: 축척 비례 계산 - media_1790951915253.png 표준 정위치)
     dimLinear(ents, [px0, slabTopY], [px0, -th], segX, true, String(padH), textH, 'DIM');
@@ -3874,7 +3876,8 @@
 
       const xTip = isFlg ? (xBase - spec.neckLen) : (xBase - spec.sockLen);
       // 리드선(Leader line)을 치수선 바깥으로 꺾어 인출하여 치수선 및 치수 숫자와의 간섭 원천 차단
-      const elbowX = overallX - Math.round(4.0 * N);
+      const outDimX = hasMhInView ? mhOverallX : overallX;
+      const elbowX = outDimX - Math.round(4.0 * N);
       const shelfEndX = elbowX - Math.round(2.5 * N);
       drawLeader(ents, [xTip, elev], [elbowX, ey], [shelfEndX, ey], [line1, line2], nozTextH, 'right', 'NOZZLE');
     });

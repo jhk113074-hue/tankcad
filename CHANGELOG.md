@@ -5,6 +5,16 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.34] - 2026-10-06
+
+### Fixed (노즐 체크 시 입면도 치수 위치 완전 고정 및 노즐 지시선만 외부로 인출)
+- **📏 노즐 On/Off 토글 시 치수선 위치 100% 완전 고정화**:
+  - `buildElevation`(정면도/우측면도)에서 노즐이 존재할 때 `minLeftNozX`가 치수선 기준점(`leftBound`)을 외측으로 밀어내던 로직을 전면 제거.
+  - 치수선 기준점을 탱크 외곽 플랜지 기준(`leftBound = hasLeftLadder ? -235 : -75`)으로 고정하여, 노즐을 켜거나 끄더라도 치수선(`segX`, `overallX`, `mhOverallX`)이 단 1mm도 움직이지 않고 항상 정위치에 고정되도록 완벽 수정.
+- **🎯 노즐 지시선 및 라벨만 치수선 외곽으로 자동 인출**:
+  - 치수선은 정위치에 그대로 유지하면서, 좌측 노즐의 리드선(Leader line)만 고정된 최외측 치수선 바깥(`elbowX`)으로 안전하게 꺾어 인출.
+  - 노즐 지시선 및 사양 텍스트(`[N4] IN 100A / EL.+...`)가 치수선이나 치수 숫자와 전혀 겹치지 않고 외곽에 단독으로 미려하게 정렬되도록 개선.
+
 ## [1.6.33] - 2026-10-06
 
 ### Added & Fixed (500×1000mm 등 공통판넬 직사각형 셀 표시 및 직사각형 판넬 문양 생성)
