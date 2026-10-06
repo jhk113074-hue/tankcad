@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.6.36</title>
+<title>YSACC TANK CAD v1.6.37</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -85,8 +85,13 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:1
 .cad-unified-mode-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;font-size:12px;font-weight:700;border:1px solid transparent;background:transparent;color:var(--muted);border-radius:8px;cursor:pointer;transition:all .18s}
 .cad-unified-mode-btn:hover{background:var(--surface-sub);color:var(--fg)}
 .cad-unified-mode-btn.active{background:var(--surface);color:var(--accent);border-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,0.08)}
-.btn-panel-preset{font-size:11px;padding:3px 7px;font-weight:600}
-.btn-panel-preset:hover{background:rgba(2,132,199,0.12);border-color:var(--accent);color:var(--accent)}
+.btn-panel-preset{display:flex;flex-direction:column;justify-content:center;padding:8px 10px;background:var(--surface);border:1.5px solid var(--line);border-radius:8px;cursor:pointer;text-align:left;transition:all .15s ease;min-height:50px}
+.btn-panel-preset:hover{background:rgba(2,132,199,0.04);border-color:var(--accent)}
+.btn-panel-preset.active{background:rgba(2,132,199,0.12) !important;border-color:var(--accent) !important;box-shadow:0 0 0 1px var(--accent) !important}
+.preset-name{font-weight:700;font-size:11.5px;color:var(--fg)}
+.btn-panel-preset.active .preset-name{color:var(--accent)}
+.preset-stat{font-size:9.5px;font-weight:600}
+.preset-sub{font-size:10px;color:var(--muted);margin-top:2px}
 
 /* CAD 4-Direction View Buttons & Panel Position Buttons */
 .cad-view-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
@@ -420,7 +425,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.36</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.37</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1377,12 +1382,12 @@ canvas.drag{cursor:grabbing}
         <div class="cad-unified-mode-bar" style="display:flex;background:var(--bg);padding:4px;border-radius:10px;border:1px solid var(--line);gap:6px;flex:1;max-width:680px">
           <button type="button" class="cad-unified-mode-btn active" id="cadModeBtnPanels" data-cad-mode="panels" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;font-size:12px;font-weight:700;border:1px solid transparent;background:transparent;color:var(--muted);border-radius:8px;cursor:pointer;transition:all .18s">
             <span style="font-size:16px">🧱</span>
-            <span>탱크 판넬 등록 &amp; 관리 (6대 부위·규격별)</span>
+            <span>탱크 판넬 등록 &amp; 관리 (공식 6종 판넬)</span>
             <span class="badge" id="badgePanelCustomCount" style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--accent);color:#fff">0건</span>
           </button>
           <button type="button" class="cad-unified-mode-btn" id="cadModeBtnParts" data-cad-mode="parts" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;font-size:12px;font-weight:700;border:1px solid transparent;background:transparent;color:var(--muted);border-radius:8px;cursor:pointer;transition:all .18s">
             <span style="font-size:16px">🪜</span>
-            <span>탱크 부품·의장품 등록 (4방향·높이별)</span>
+            <span>탱크 부품·의장품 등록 (8대 의장품)</span>
             <span class="badge" id="badgePartCustomCount" style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--accent);color:#fff">0건</span>
           </button>
         </div>
@@ -1432,98 +1437,81 @@ canvas.drag{cursor:grabbing}
 
             <!-- MODE 1: 판넬 모드 컨트롤 섹션 -->
             <div id="cadPanelControlSection" style="display:block">
-              <!-- 1. 판넬 설치 위치 선택 (측판·공통·천정) -->
+              <!-- 1. 등록 대상 판넬 선택 (공식 6종 판넬 카드 그리드) -->
               <div style="background:var(--surface-sub);padding:10px 12px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                  <label style="font-size:11.5px;font-weight:700">1. 판넬 설치 위치 및 종류 (측판·공통·천정)</label>
-                  <span id="curPanelPosBadge" style="font-size:11px;color:var(--accent);font-weight:700">🏢 측면판넬 선택됨</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:11.5px;font-weight:700;color:var(--fg)">1. 등록 대상 판넬 선택 (공식 6종 판넬)</span>
+                  <span id="curPanelPosBadge" style="font-size:10.5px;color:var(--accent);font-weight:700">🏢 측판 1×1M 선택됨</span>
                 </div>
-                <div class="cad-panel-pos-nav" id="cadPanelPosNav" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:4px">
-                  <button type="button" class="cad-pos-btn active" data-pos="side" id="cadPosBtnSide">
-                    <span class="v-icon">🏢</span>
-                    <span class="v-name">측판 (Side)</span>
-                    <span class="v-stat" id="statBadgeSide">⚪ 기본</span>
-                  </button>
-                  <button type="button" class="cad-pos-btn" data-pos="common" id="cadPosBtnCommon">
-                    <span class="v-icon">🌟</span>
-                    <span class="v-name">공통판넬 (Common)</span>
-                    <span class="v-stat" id="statBadgeCommon">⚪ 기본</span>
-                  </button>
-                  <button type="button" class="cad-pos-btn" data-pos="top" id="cadPosBtnTop">
-                    <span class="v-icon">🏠</span>
-                    <span class="v-name">천정판넬 (Roof)</span>
-                    <span class="v-stat" id="statBadgeTop">⚪ 기본</span>
-                  </button>
-                </div>
-              </div>
 
-              <!-- 2. 도면 투영 방향 (4방향 뷰: 평면도·정면도·우측면도·좌측면도) -->
-              <div style="background:var(--surface-sub);padding:10px 12px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:4px">
+                <!-- 6종 판넬 전용 카드 그리드 (2열 3행) -->
+                <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:6px;margin-bottom:8px">
+                  <button type="button" class="btn-panel-preset active" data-pos="side" data-w="1000" data-h="1000" id="preset_side_1000x1000">
+                    <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+                      <span class="preset-name">🏢 측판 1×1M</span>
+                      <span class="preset-stat" id="statPreset_side_1000x1000">⚪ 기본</span>
+                    </div>
+                    <div class="preset-sub">1000 × 1000 mm · 측면(입면)</div>
+                  </button>
+
+                  <button type="button" class="btn-panel-preset" data-pos="side" data-w="1000" data-h="1500" id="preset_side_1000x1500">
+                    <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+                      <span class="preset-name">🏢 측판 1×1.5M</span>
+                      <span class="preset-stat" id="statPreset_side_1000x1500">⚪ 기본</span>
+                    </div>
+                    <div class="preset-sub">1000 × 1500 mm · 측면(입면)</div>
+                  </button>
+
+                  <button type="button" class="btn-panel-preset" data-pos="side" data-w="1000" data-h="2000" id="preset_side_1000x2000">
+                    <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+                      <span class="preset-name">🏢 측판 1×2M</span>
+                      <span class="preset-stat" id="statPreset_side_1000x2000">⚪ 기본</span>
+                    </div>
+                    <div class="preset-sub">1000 × 2000 mm · 측면(입면)</div>
+                  </button>
+
+                  <button type="button" class="btn-panel-preset" data-pos="common" data-w="500" data-h="1000" id="preset_common_500x1000">
+                    <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+                      <span class="preset-name">🌟 공통 0.5×1M</span>
+                      <span class="preset-stat" id="statPreset_common_500x1000">⚪ 기본</span>
+                    </div>
+                    <div class="preset-sub">500 × 1000 mm · 공통</div>
+                  </button>
+
+                  <button type="button" class="btn-panel-preset" data-pos="common" data-w="500" data-h="500" id="preset_common_500x500">
+                    <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+                      <span class="preset-name">🌟 공통 0.5×0.5M</span>
+                      <span class="preset-stat" id="statPreset_common_500x500">⚪ 기본</span>
+                    </div>
+                    <div class="preset-sub">500 × 500 mm · 공통</div>
+                  </button>
+
+                  <button type="button" class="btn-panel-preset" data-pos="top" data-w="1000" data-h="1000" id="preset_top_1000x1000">
+                    <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+                      <span class="preset-name">🏠 천정 1×1M</span>
+                      <span class="preset-stat" id="statPreset_top_1000x1000">⚪ 기본</span>
+                    </div>
+                    <div class="preset-sub">1000 × 1000 mm · 천정(평면)</div>
+                  </button>
+                </div>
+
+                <!-- 뷰 방향 선택 칩 & 상태 안내 -->
+                <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg);padding:6px 10px;border-radius:6px;border:1px solid var(--line);font-size:11px">
                   <div style="display:flex;align-items:center;gap:6px">
-                    <span style="font-size:11.5px;font-weight:700">2. 도면 투영 방향 (4방향 뷰)</span>
-                    <span id="curPanelViewBadge" style="font-size:11px;color:var(--accent);font-weight:700">🔲 평면도 선택됨</span>
+                    <span style="color:var(--muted);font-weight:600">투영 뷰:</span>
+                    <div class="cad-view-nav" id="cadPanelViewNav" style="display:inline-flex;gap:3px">
+                      <button type="button" class="btn-sm cad-view-btn active" data-cad-view="front" style="padding:2px 8px;font-size:10.5px">🏢 입면(정면)</button>
+                      <button type="button" class="btn-sm cad-view-btn" data-cad-view="plan" style="padding:2px 8px;font-size:10.5px">🔲 평면</button>
+                      <button type="button" class="btn-sm cad-view-btn" data-cad-view="right" style="padding:2px 8px;font-size:10.5px">📐 우측면</button>
+                      <button type="button" class="btn-sm cad-view-btn" data-cad-view="left" style="padding:2px 8px;font-size:10.5px">📐 좌측면</button>
+                    </div>
                   </div>
-                  <button type="button" class="btn-sm" onclick="downloadAll4ViewsDxf()" style="padding:2px 8px;font-size:10.5px;background:rgba(2,132,199,0.12);color:var(--accent);border:1px solid var(--accent);font-weight:700;border-radius:4px;cursor:pointer" title="현재 부품·판넬의 평면·정면·우측·좌측 4방향 전체를 하나의 통합 DXF 파일로 일괄 다운로드">📦 4방향 전체 DXF 받기</button>
+                  <span id="curPanelViewBadge" style="color:var(--accent);font-weight:700">🏢 정면도 선택됨</span>
                 </div>
-                <div class="cad-view-nav" id="cadPanelViewNav" style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:4px">
-                  <button type="button" class="cad-view-btn active" data-cad-view="plan" id="cadPanelViewBtnPlan">
-                    <span class="v-icon">🔲</span>
-                    <span class="v-name">평면도</span>
-                    <span class="v-stat" id="statBadgePanelPlan">⚪ 기본</span>
-                  </button>
-                  <button type="button" class="cad-view-btn" data-cad-view="front" id="cadPanelViewBtnFront">
-                    <span class="v-icon">🏢</span>
-                    <span class="v-name">정면도</span>
-                    <span class="v-stat" id="statBadgePanelFront">⚪ 기본</span>
-                  </button>
-                  <button type="button" class="cad-view-btn" data-cad-view="right" id="cadPanelViewBtnRight">
-                    <span class="v-icon">📐</span>
-                    <span class="v-name">우측면도</span>
-                    <span class="v-stat" id="statBadgePanelRight">⚪ 기본</span>
-                  </button>
-                  <button type="button" class="cad-view-btn" data-cad-view="left" id="cadPanelViewBtnLeft">
-                    <span class="v-icon">📐</span>
-                    <span class="v-name">좌측면도</span>
-                    <span class="v-stat" id="statBadgePanelLeft">⚪ 기본</span>
-                  </button>
-                </div>
-              </div>
 
-              <!-- 3. 판넬 규격 설정 (500mm 단위 증감) -->
-              <div style="background:var(--surface-sub);padding:10px 12px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                  <label style="font-size:11.5px;font-weight:700">3. 판넬 규격 설정 (500mm 단위 증감)</label>
-                  <span style="font-size:10.5px;color:var(--muted)">재질: <b>SMC (GRP)</b></span>
-                </div>
-                <!-- 빠른 규격 프리셋 칩 (실제 도면 사용 6종 공식 판넬) -->
-                <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
-                  <button type="button" class="btn-sm btn-panel-preset active" data-pos="side" data-w="1000" data-h="1000">측판 1×1M (1000×1000)</button>
-                  <button type="button" class="btn-sm btn-panel-preset" data-pos="side" data-w="1000" data-h="1500">측판 1×1.5M (1000×1500)</button>
-                  <button type="button" class="btn-sm btn-panel-preset" data-pos="side" data-w="1000" data-h="2000">측판 1×2M (1000×2000)</button>
-                  <button type="button" class="btn-sm btn-panel-preset" data-pos="common" data-w="500" data-h="1000">공통판넬 0.5×1M (500×1000)</button>
-                  <button type="button" class="btn-sm btn-panel-preset" data-pos="common" data-w="500" data-h="500">공통판넬 0.5×0.5M (500×500)</button>
-                  <button type="button" class="btn-sm btn-panel-preset" data-pos="top" data-w="1000" data-h="1000">천정판넬 1×1M (1000×1000)</button>
-                </div>
-                <!-- 화살표 500mm 증감 입력 -->
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                  <div>
-                    <label style="font-size:10.5px;color:var(--muted);display:block;margin-bottom:3px">가로 폭 (W mm)</label>
-                    <div style="display:flex;align-items:center;gap:3px">
-                      <button type="button" class="btn-sm" id="btnStepWMinus" style="padding:4px 8px;font-weight:700" title="500mm 감소">◀ -500</button>
-                      <input type="number" id="cadPartW" value="1000" step="500" style="flex:1;font-size:12px;padding:4px;text-align:center;font-weight:700">
-                      <button type="button" class="btn-sm" id="btnStepWPlus" style="padding:4px 8px;font-weight:700" title="500mm 증가">+500 ▶</button>
-                    </div>
-                  </div>
-                  <div>
-                    <label style="font-size:10.5px;color:var(--muted);display:block;margin-bottom:3px">세로 높이 (H mm)</label>
-                    <div style="display:flex;align-items:center;gap:3px">
-                      <button type="button" class="btn-sm" id="btnStepHMinus" style="padding:4px 8px;font-weight:700" title="500mm 감소">◀ -500</button>
-                      <input type="number" id="cadPartH" value="1000" step="500" style="flex:1;font-size:12px;padding:4px;text-align:center;font-weight:700">
-                      <button type="button" class="btn-sm" id="btnStepHPlus" style="padding:4px 8px;font-weight:700" title="500mm 증가">+500 ▶</button>
-                    </div>
-                  </div>
-                </div>
+                <!-- 히든 규격 필드 (JS 기존 호환성 100% 보장) -->
+                <input type="hidden" id="cadPartW" value="1000">
+                <input type="hidden" id="cadPartH" value="1000">
               </div>
             </div>
 
@@ -1647,101 +1635,81 @@ canvas.drag{cursor:grabbing}
               </div>
             </div>
 
-            <!-- 공통 섹션: 3. CAD 파일 드래그 앤 드롭 영역 -->
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-              <span style="font-weight:700;font-size:12px;color:var(--fg)">3. 도면 로드 &amp; 자동 블록 감지</span>
-              <span id="cadServerStatusBadge" style="font-size:10.5px;padding:2px 8px;border-radius:10px;background:rgba(16,185,129,0.12);color:#10b981;font-weight:600" title="DWG 변환 엔진 상태">🟢 DWG 직접 로드 · 곡선 완벽 보존</span>
+            <!-- 공통 섹션: 2. CAD 도면 파일 등록 -->
+            <div style="background:var(--surface-sub);padding:10px 12px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <span style="font-weight:700;font-size:11.5px;color:var(--fg)">2. CAD 도면 파일 등록</span>
+                <span id="cadServerStatusBadge" style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(16,185,129,0.12);color:#10b981;font-weight:600" title="DWG 변환 엔진 상태">🟢 DWG / DXF 지원</span>
+              </div>
+              <div style="border:2px dashed var(--accent);border-radius:8px;padding:14px 10px;text-align:center;background:rgba(2,132,199,0.03);cursor:pointer;position:relative" id="cadDropZone">
+                <input type="file" id="cadPartFileInput" accept=".dwg,.dxf,.stp,.step" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
+                <div style="font-size:22px;margin-bottom:2px">📂</div>
+                <div style="font-size:12px;font-weight:700;color:var(--accent)" id="cadDropText">DWG / DXF 도면 파일을 여기로 드래그하거나 클릭</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:2px">AutoCAD DWG 변환 · DXF 곡선·폴리선 원형 보존</div>
+              </div>
+              <div id="cadParseStatus" style="font-size:11px;margin-top:6px;display:none;padding:7px 10px;border-radius:6px;line-height:1.5"></div>
             </div>
-            <div style="border:2px dashed var(--line);border-radius:8px;padding:12px 10px;text-align:center;background:var(--bg);cursor:pointer;position:relative;margin-bottom:10px" id="cadDropZone">
-              <input type="file" id="cadPartFileInput" accept=".dwg,.dxf,.stp,.step" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
-              <div style="font-size:22px;margin-bottom:4px">📁</div>
-              <div style="font-size:12px;font-weight:700;color:var(--fg)" id="cadDropText">DWG / DXF 도면 파일을 여기로 드래그하거나 클릭하여 선택</div>
-              <div style="font-size:10.5px;color:var(--muted);margin-top:2px"><b>AutoCAD DWG (직접 지원)</b>, DXF (곡선·아치 원형 보존), 3D STEP 지원</div>
-            </div>
-            <div id="cadParseStatus" style="font-size:11px;margin-top:-6px;margin-bottom:10px;display:none;padding:7px 10px;border-radius:6px;line-height:1.5"></div>
 
-            <!-- 공통 섹션: 4. 도면 등록 및 즉시 반영 버튼군 -->
-            <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:8px;margin-bottom:8px">
-              <button type="button" id="btnApplyCadPart" class="pri" style="padding:10px 12px;font-size:12px;font-weight:700" title="현재 CAD 형상을 도면에 등록">
-                💾 이 판넬 도면에 등록
-              </button>
-              <button type="button" id="btnApplyAllViewsCadPart" class="btn-sm" style="font-size:11.5px;background:rgba(2,132,199,0.1);color:var(--accent);border-color:var(--accent);font-weight:700" title="현재 CAD 형상을 전체 부위/방향에 공통 적용">
-                🌟 공통 일괄 등록
-              </button>
-            </div>
-            <div style="display:flex;gap:6px">
-              <button type="button" id="btnResetCurrentCadPart" class="btn-sm" style="flex:1;color:#ef4444;font-size:11px;padding:6px" title="현재 선택된 대상을 기본 표준형으로 복원">
-                현재 뷰 기본값 복원
-              </button>
-              <button type="button" id="btnResetCurrentItemAll" class="btn-sm" style="flex:1;color:#ef4444;font-size:11px;padding:6px" title="이 항목의 모든 설정을 공장 표준으로 초기화">
-                이 대상 전체 초기화
-              </button>
+            <!-- 공통 섹션: 3. 도면 등록 및 즉시 반영 버튼군 -->
+            <div style="background:var(--surface-sub);padding:10px 12px;border-radius:8px;border:1px solid var(--line)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <span style="font-weight:700;font-size:11.5px;color:var(--fg)">3. 도면 반영 및 관리</span>
+                <span style="font-size:10.5px;color:var(--muted)">재질: <b>SMC (GRP)</b></span>
+              </div>
+              <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:6px;margin-bottom:6px">
+                <button type="button" id="btnApplyCadPart" class="pri" style="padding:10px 12px;font-size:12px;font-weight:700" title="현재 CAD 형상을 도면에 등록">
+                  💾 이 판넬 도면에 등록
+                </button>
+                <button type="button" id="btnApplyAllViewsCadPart" class="btn-sm" style="font-size:11px;background:rgba(2,132,199,0.1);color:var(--accent);border-color:var(--accent);font-weight:700" title="현재 CAD 형상을 전체 부위/방향에 공통 적용">
+                  🌟 공통 일괄 등록
+                </button>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button type="button" id="btnResetCurrentCadPart" class="btn-sm" style="flex:1;color:#ef4444;font-size:10.5px;padding:6px" title="현재 선택된 대상을 기본 표준형으로 복원">
+                  ↺ 현재 판넬 기본값 복원
+                </button>
+                <button type="button" id="btnResetCurrentItemAll" class="btn-sm" style="flex:1;color:#ef4444;font-size:10.5px;padding:6px" title="이 항목의 모든 설정을 공장 표준으로 초기화">
+                  🗑️ 판넬 전체 초기화
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- Right Column (flex 1): Large Canvas Preview & Dynamic Status Hub (Panel DB / Part 4-Direction) -->
+          <!-- Right Column (flex 1): Large Canvas Preview & Dynamic Status Hub (Part 4-Direction) -->
           <div class="cad-preview-col">
             <!-- 1. 실시간 CAD 2D 미리보기 & 초간편 수정 툴바 -->
-            <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:12px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                <span style="font-size:12.5px;font-weight:700;color:var(--fg)" id="cadPreviewTitle">미리보기: [측면판넬 · 1000×1000mm]</span>
-                <span style="font-size:11px;color:var(--muted)" id="cadPreviewEntityCount">도형 0개</span>
+            <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:6px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:13px;font-weight:800;color:var(--fg)" id="cadPreviewTitle">미리보기: [측판 1×1M · 1000×1000mm]</span>
+                  <span id="cadPreviewStatusBadge" style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(100,116,139,0.15);color:var(--muted);font-weight:600">⚪ 기본 표준형</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="font-size:11px;color:var(--muted)" id="cadPreviewEntityCount">도형 0개</span>
+                  <button type="button" id="btnDownloadSampleDxf" class="btn-sm" onclick="downloadCurrentPartDxf()" style="font-size:11px;padding:3px 8px;color:var(--accent);font-weight:700" title="현재 선택된 1개 방향 뷰만 DXF 파일로 다운로드">⬇️ 현재 뷰 DXF</button>
+                  <button type="button" id="btnDownloadAllViewsDxf" class="btn-sm" onclick="downloadAll4ViewsDxf()" style="font-size:11px;padding:3px 10px;background:var(--accent);color:#fff;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,0.2)" title="평면도·정면도·우측면도·좌측면도 4방향 뷰 전체를 하나의 통합 DXF 도면으로 일괄 다운로드">📦 전체 DXF 받기</button>
+                </div>
               </div>
 
-              <div style="display:flex;justify-content:center;align-items:center;background:#0f172a;border-radius:6px;height:300px;position:relative;overflow:hidden">
-                <canvas id="cadPartPreviewCv" width="540" height="300" style="width:100%;height:100%"></canvas>
+              <!-- 대형 고해상도 CAD 캔버스 래퍼 -->
+              <div id="cadPartPreviewWrap" style="display:flex;justify-content:center;align-items:center;background:#0b1120;border-radius:8px;height:470px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.06);box-shadow:inset 0 2px 10px rgba(0,0,0,0.5)">
+                <canvas id="cadPartPreviewCv" width="600" height="470" style="width:100%;height:100%"></canvas>
               </div>
 
               <!-- 실시간 편집 툴바 -->
-              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center;justify-content:space-between">
+              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;align-items:center;justify-content:space-between">
                 <div style="display:flex;gap:4px">
-                  <button type="button" id="btnPartRotate90" class="btn-sm" style="font-size:11px;padding:4px 8px" title="오른쪽으로 90도 회전">🔄 90° 회전</button>
-                  <button type="button" id="btnPartAlignEntranceSouth" class="btn-sm" style="display:none;font-size:11px;padding:4px 8px;background:rgba(2,132,199,0.12);color:var(--accent);border:1px solid var(--accent);font-weight:700" title="현재 도면의 입구(걸쇠)를 표준 기준인 하단(남측)으로 90도 회전 정렬합니다">🎯 입구를 하단(남측)으로 90° 정렬</button>
-                  <button type="button" id="btnPartMirrorH" class="btn-sm" style="font-size:11px;padding:4px 8px" title="좌우 수평 대칭 반전">↔️ 좌우반전</button>
-                  <button type="button" id="btnPartMirrorV" class="btn-sm" style="font-size:11px;padding:4px 8px" title="상하 수직 대칭 반전">↕️ 상하반전</button>
-                  <button type="button" id="btnPartFitSize" class="btn-sm" style="font-size:11px;padding:4px 8px;color:var(--accent);font-weight:700" title="현재 WxH 규격에 맞게 비율 자동 맞춤">📐 W×H 맞춤</button>
-                  <button type="button" id="btnPartCleanFillets" class="btn-sm" style="font-size:11px;padding:4px 8px;color:#10b981;font-weight:700" title="중복선 및 불필요 필렛 제거">✨ 선정제</button>
+                  <button type="button" id="btnPartRotate90" class="btn-sm" style="font-size:11px;padding:5px 9px" title="오른쪽으로 90도 회전">🔄 90° 회전</button>
+                  <button type="button" id="btnPartAlignEntranceSouth" class="btn-sm" style="display:none;font-size:11px;padding:5px 9px;background:rgba(2,132,199,0.12);color:var(--accent);border:1px solid var(--accent);font-weight:700" title="현재 도면의 입구(걸쇠)를 표준 기준인 하단(남측)으로 90도 회전 정렬합니다">🎯 입구를 하단(남측)으로 90° 정렬</button>
+                  <button type="button" id="btnPartMirrorH" class="btn-sm" style="font-size:11px;padding:5px 9px" title="좌우 수평 대칭 반전">↔️ 좌우반전</button>
+                  <button type="button" id="btnPartMirrorV" class="btn-sm" style="font-size:11px;padding:5px 9px" title="상하 수직 대칭 반전">↕️ 상하반전</button>
+                  <button type="button" id="btnPartFitSize" class="btn-sm" style="font-size:11px;padding:5px 9px;color:var(--accent);font-weight:700" title="현재 WxH 규격에 맞게 비율 자동 맞춤">📐 W×H 맞춤</button>
+                  <button type="button" id="btnPartCleanFillets" class="btn-sm" style="font-size:11px;padding:5px 9px;color:#10b981;font-weight:700" title="중복선 및 불필요 필렛 제거">✨ 선 정제</button>
+                  <button type="button" id="btnCopyFromRight" class="btn-sm" style="font-size:11px;padding:5px 9px;color:#f59e0b;font-weight:700" title="우측면도 CAD 형상을 그대로 가져와 좌우 반전 복사">↔️ 우측면도 복사</button>
                 </div>
-                <div style="display:flex;gap:4px">
-                  <button type="button" id="btnCopyFromRight" class="btn-sm" style="font-size:11px;padding:4px 8px;color:#f59e0b;font-weight:700" title="우측면도 CAD 형상을 그대로 가져와 좌우 반전 복사">↔️ 우측면도 복사</button>
-                  <button type="button" id="btnDownloadSampleDxf" class="btn-sm" onclick="downloadCurrentPartDxf()" style="font-size:11px;padding:4px 8px;color:var(--muted);font-weight:600" title="현재 선택된 1개 방향 뷰만 DXF 파일로 다운로드">⬇️ 현재 뷰 DXF</button>
-                  <button type="button" id="btnDownloadAllViewsDxf" class="btn-sm" onclick="downloadAll4ViewsDxf()" style="font-size:11px;padding:4px 10px;background:var(--accent);color:#fff;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,0.2)" title="평면도·정면도·우측면도·좌측면도 4방향 뷰 전체를 하나의 통합 DXF 도면으로 일괄 다운로드">📦 4방향 전체 DXF 받기</button>
+                <div style="font-size:10.5px;color:var(--muted)">
+                  💡 <b>DWG / DXF</b> 파일을 드래그하여 올려놓으면 판넬 형상이 즉시 등록됩니다.
                 </div>
-              </div>
-            </div>
-
-            <!-- 2. 동적 현황 허브: 판넬 모드일 때 (판넬 DB 현황 테이블) -->
-            <div id="cadPanelStatusHub" style="display:block;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
-                <div style="display:flex;align-items:center;gap:8px">
-                  <span style="font-size:12px;font-weight:700;color:var(--fg)">📋 등록된 규격별 판넬 목록</span>
-                  <span style="font-size:10.5px;color:var(--muted)">(행 클릭 시 미리보기 즉시 로드)</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:6px">
-                  <select id="dbFilterCat" style="font-size:11px;padding:3px 6px">
-                    <option value="ALL">전체 판넬 (6종 표준 규격)</option>
-                    <option value="side">🏢 측판 (1×1M, 1×1.5M, 1×2M)</option>
-                    <option value="common">🌟 공통판넬 (0.5×1M, 0.5×0.5M)</option>
-                    <option value="top">🏠 천정판넬 (1×1M)</option>
-                  </select>
-                  <button type="button" id="syncDbBtn" class="btn-sm" style="font-size:11px;padding:3px 8px;color:var(--accent);font-weight:700" title="DB의 최신 판넬 형상을 현재 2D 캐드 도면에 즉시 반영">🔄 도면 동기화</button>
-                </div>
-              </div>
-
-              <div style="max-height:220px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--bg)">
-                <table style="width:100%;font-size:11px;border-collapse:collapse" id="panelTable">
-                  <thead style="position:sticky;top:0;background:var(--surface-sub);border-bottom:1px solid var(--line);z-index:2">
-                    <tr>
-                      <th style="padding:5px 6px;text-align:left">구분</th>
-                      <th style="padding:5px 6px;text-align:left">규격</th>
-                      <th style="padding:5px 6px;text-align:left">명칭 / 상태</th>
-                      <th style="padding:5px 6px;text-align:center">관리</th>
-                    </tr>
-                  </thead>
-                  <tbody id="panelTableBody">
-                    <tr><td colspan="4" style="text-align:center;padding:12px;color:var(--muted)">판넬 목록을 불러오는 중...</td></tr>
-                  </tbody>
-                </table>
               </div>
             </div>
 
@@ -2133,7 +2101,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.36</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.37</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2143,7 +2111,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.36</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.37</span></div>
     </div>
   </main>
 </div>
@@ -13494,7 +13462,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.36</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.37</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -16335,35 +16303,20 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
   function setCadCurrentPanelPos(pos) {
     cadCurrentPanelPos = pos;
-    document.querySelectorAll('.cad-pos-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.pos === pos);
-    });
     const curBadge = $('curPanelPosBadge');
     if (curBadge) {
       curBadge.textContent = `${getPanelPosIcon(pos)} ${getPanelPosLabel(pos)} 선택됨`;
     }
     if (pos === 'top') {
       cadCurrentView = 'plan';
-    } else if (pos === 'side') {
+    } else {
       cadCurrentView = 'front';
     }
-    document.querySelectorAll('.cad-view-btn').forEach(b => {
+    document.querySelectorAll('#cadPanelViewNav .cad-view-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.cadView === cadCurrentView);
     });
     const curVBadge = $('curPanelViewBadge');
     if (curVBadge) curVBadge.textContent = `${getViewIcon(cadCurrentView)} ${getViewLabel(cadCurrentView)} 선택됨`;
-
-    if (pos === 'top') {
-      if ($('cadPartW')) $('cadPartW').value = 1000;
-      if ($('cadPartH')) $('cadPartH').value = 1000;
-    } else if (pos === 'common') {
-      const curW = Number($('cadPartW')?.value) || 500;
-      const curH = Number($('cadPartH')?.value) || 1000;
-      if (curW !== 500) {
-        if ($('cadPartW')) $('cadPartW').value = 500;
-        if ($('cadPartH')) $('cadPartH').value = 1000;
-      }
-    }
 
     loadActivePanelToPreview();
   }
@@ -16508,14 +16461,62 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     });
   }
 
+  function updatePanelPresetBadges() {
+    let customPanels = [];
+    try { customPanels = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]'); } catch (e) {}
+
+    const presets = [
+      { id: 'statPreset_side_1000x1000', pos: 'side', w: 1000, h: 1000 },
+      { id: 'statPreset_side_1000x1500', pos: 'side', w: 1000, h: 1500 },
+      { id: 'statPreset_side_1000x2000', pos: 'side', w: 1000, h: 2000 },
+      { id: 'statPreset_common_500x1000', pos: 'common', w: 500, h: 1000 },
+      { id: 'statPreset_common_500x500', pos: 'common', w: 500, h: 500 },
+      { id: 'statPreset_top_1000x1000', pos: 'top', w: 1000, h: 1000 }
+    ];
+
+    presets.forEach(p => {
+      const el = $(p.id);
+      if (!el) return;
+      const sizeKey = `${p.w}x${p.h}`;
+      const cp = customPanels.find(x => (x.size_key === sizeKey || (x.width === p.w && x.height === p.h)) && (x.category === p.pos || (!x.category && p.pos === 'side')));
+      const isCustom = cp && cp.entities && cp.entities.length;
+      const cnt = isCustom ? cp.entities.length : 0;
+      if (isCustom) {
+        el.innerHTML = `<span style="color:#10b981;font-weight:700">🟢 커스텀 (${cnt})</span>`;
+      } else {
+        el.innerHTML = `<span style="color:var(--muted)">⚪ 기본</span>`;
+      }
+    });
+
+    const statusBadge = $('cadPreviewStatusBadge');
+    if (statusBadge) {
+      const curW = Number($('cadPartW')?.value) || 1000;
+      const curH = Number($('cadPartH')?.value) || 1000;
+      const curPos = cadCurrentPanelPos || 'side';
+      const sizeKey = `${curW}x${curH}`;
+      const cp = customPanels.find(x => (x.size_key === sizeKey || (x.width === curW && x.height === curH)) && (x.category === curPos || (!x.category && curPos === 'side')));
+      const isCustom = cp && cp.entities && cp.entities.length;
+      if (isCustom) {
+        statusBadge.style.background = 'rgba(16,185,129,0.15)';
+        statusBadge.style.color = '#10b981';
+        statusBadge.innerHTML = `🟢 사용자 CAD 적용 중 (${cp.entities.length}개)`;
+      } else {
+        statusBadge.style.background = 'rgba(100,116,139,0.15)';
+        statusBadge.style.color = 'var(--muted)';
+        statusBadge.innerHTML = `⚪ 기본 표준형`;
+      }
+    }
+  }
+
   function loadActivePanelToPreview() {
     const w = Number($('cadPartW')?.value) || 1000;
     const h = Number($('cadPartH')?.value) || 1000;
-    const pos = cadCurrentPanelPos || 'top';
-    const view = cadCurrentView || 'plan';
+    const pos = cadCurrentPanelPos || 'side';
+    const view = cadCurrentView || 'front';
     currentCadEntities = getCurrentActivePartEntities('panel', pos, w, h, view, cadCurrentPlanDir);
     updateCadPartPreview();
     updateViewBadges('panel', pos, null);
+    updatePanelPresetBadges();
   }
 
   // CAD DB 탭 서브 네비게이션 전환 (판넬 DB vs 부품 CAD)
@@ -16532,16 +16533,18 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       partsBtn?.classList.remove('active');
       if (panelCtrl) panelCtrl.style.display = 'block';
       if (partCtrl) partCtrl.style.display = 'none';
-      if (panelHub) panelHub.style.display = 'block';
+      if (panelHub) panelHub.style.display = 'none';
       if (partHub) partHub.style.display = 'none';
 
+      const previewWrap = $('cadPartPreviewWrap');
+      if (previewWrap) previewWrap.style.height = '470px';
+      const cv = $('cadPartPreviewCv');
+      if (cv) cv.height = 470;
+
       if (!['plan', 'front', 'right', 'left'].includes(cadCurrentView)) {
-        cadCurrentView = (cadCurrentPanelPos === 'side') ? 'front' : 'plan';
+        cadCurrentView = (cadCurrentPanelPos === 'top') ? 'plan' : 'front';
       }
-      document.querySelectorAll('.cad-pos-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.pos === cadCurrentPanelPos);
-      });
-      document.querySelectorAll('.cad-view-btn').forEach(b => {
+      document.querySelectorAll('#cadPanelViewNav .cad-view-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.cadView === cadCurrentView);
       });
       const curBadge = $('curPanelPosBadge');
@@ -16554,9 +16557,9 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       }
 
       updateCadActionButtons('panels');
-      try { loadDbPanels(); } catch (e) {}
       updateModeBadges();
       loadActivePanelToPreview();
+      updatePanelPresetBadges();
     } else {
       partsBtn?.classList.add('active');
       panelsBtn?.classList.remove('active');
@@ -16565,10 +16568,15 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       if (panelHub) panelHub.style.display = 'none';
       if (partHub) partHub.style.display = 'block';
 
+      const previewWrap = $('cadPartPreviewWrap');
+      if (previewWrap) previewWrap.style.height = '280px';
+      const cv = $('cadPartPreviewCv');
+      if (cv) cv.height = 280;
+
       if (!['plan', 'front', 'right', 'left'].includes(cadCurrentView)) {
         cadCurrentView = 'front';
       }
-      document.querySelectorAll('.cad-view-btn').forEach(b => {
+      document.querySelectorAll('#cadViewNav .cad-view-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.cadView === cadCurrentView);
       });
       const curBadge = $('curViewBadge');
@@ -16613,33 +16621,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     });
   });
 
-  // 500mm 스텝 증감 버튼 이벤트 등록
-  $('btnStepWMinus')?.addEventListener('click', () => {
-    const el = $('cadPartW');
-    if (!el) return;
-    el.value = Math.max(100, (Number(el.value) || 1000) - 500);
-    loadActivePanelToPreview();
-  });
-  $('btnStepWPlus')?.addEventListener('click', () => {
-    const el = $('cadPartW');
-    if (!el) return;
-    el.value = (Number(el.value) || 1000) + 500;
-    loadActivePanelToPreview();
-  });
-  $('btnStepHMinus')?.addEventListener('click', () => {
-    const el = $('cadPartH');
-    if (!el) return;
-    el.value = Math.max(100, (Number(el.value) || 1000) - 500);
-    loadActivePanelToPreview();
-  });
-  $('btnStepHPlus')?.addEventListener('click', () => {
-    const el = $('cadPartH');
-    if (!el) return;
-    el.value = (Number(el.value) || 1000) + 500;
-    loadActivePanelToPreview();
-  });
-
-  // 판넬 규격 프리셋 칩 클릭 이벤트 등록 (6종 공식 판넬)
+  // 판넬 규격 프리셋 카드 클릭 이벤트 등록 (6종 공식 판넬)
   document.querySelectorAll('.btn-panel-preset').forEach(btn => {
     btn.addEventListener('click', () => {
       const pos = btn.dataset.pos;
@@ -16653,6 +16635,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       document.querySelectorAll('.btn-panel-preset').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       loadActivePanelToPreview();
+      updatePanelPresetBadges();
     });
   });
 
@@ -18609,27 +18592,18 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
     if (cat === 'panel') {
       const sizeKey = `${w}x${h}`;
-      let panelCat = 'side';
-      if (view === 'top') panelCat = 'top';
-      else if (view === 'bottom') panelCat = 'bottom';
-      else if (view === 'common') panelCat = 'common';
-      else if (view === 'side' || view === 'front' || view === 'right' || view === 'left') panelCat = 'side';
-      else if (view === 'plan') panelCat = 'top_bottom';
+      const panelCat = cadCurrentPanelPos || 'side';
       try {
         let custom = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]');
-        custom = custom.filter(p => !(p.material === mat && (p.category === panelCat || (panelCat === 'top_bottom' && (p.category === 'top' || p.category === 'bottom' || p.category === 'top_bottom'))) && p.size_key === sizeKey));
+        custom = custom.filter(p => !(p.material === mat && (p.category === panelCat || (panelCat === 'top' && p.category === 'top') || (panelCat === 'common' && p.category === 'common')) && (p.size_key === sizeKey || (p.width === w && p.height === h))));
         localStorage.setItem('tankcad_custom_panels', JSON.stringify(custom));
 
         let customComp = JSON.parse(localStorage.getItem('tankcad_custom_components') || '{}');
         delete customComp[`${panelCat}_${view}`];
         delete customComp[`panel_${panelCat}_${view}`];
-        if (view === 'plan') {
-          delete customComp[panelCat];
-          ['north', 'south', 'east', 'west', 'U', 'D', 'R', 'L'].forEach(d => {
-            delete customComp[`${panelCat}_plan_${d}`];
-            delete customComp[`panel_${panelCat}_plan_${d}`];
-          });
-        }
+        delete customComp[`panel_${panelCat}_${sizeKey}`];
+        delete customComp[`panel_${sizeKey}`];
+        delete customComp[panelCat];
         localStorage.setItem('tankcad_custom_components', JSON.stringify(customComp));
         applyActiveTemplates();
       } catch (e) {}
