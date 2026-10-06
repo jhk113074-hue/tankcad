@@ -934,8 +934,9 @@
           face: String(n.face || 'front').toLowerCase(),
           seg: Number(n.seg) || 1,
           offset: Number(n.offset) || 0,
-          elev: (n.face === 'top' || n.elev === 'TOP') ? 'TOP' : (Number(n.elev) || 0),
-          topCell: Array.isArray(n.topCell) ? n.topCell : [0, 0]
+          elev: (n.face === 'top' || n.elev === 'TOP') ? 'TOP' : ((n.face === 'bottom' || n.elev === 'BOTTOM') ? 'BOTTOM' : (Number(n.elev) || 0)),
+          topCell: Array.isArray(n.topCell) ? n.topCell : [0, 0],
+          bottomCell: Array.isArray(n.bottomCell) ? n.bottomCell : (Array.isArray(n.topCell) ? n.topCell : [0, 0])
         });
       });
       return list;
@@ -957,12 +958,13 @@
           name: n.name || def.name,
           desc: n.desc || def.desc,
           size: String(n.size || (def.key === 'fire' ? '150A' : '100A')).trim().toUpperCase(),
-          type: String(n.type || 'FLANGE').toUpperCase(),
-          face: String(n.face || (def.key === 'inlet' ? 'front' : def.key === 'overflow' ? 'right' : 'front')).toLowerCase(),
+          type: String(n.type || (def.key === 'drain' ? 'SOCKET' : 'FLANGE')).toUpperCase(),
+          face: String(n.face || (def.key === 'inlet' ? 'front' : def.key === 'overflow' ? 'right' : def.key === 'drain' ? 'bottom' : 'front')).toLowerCase(),
           seg: Number(n.seg) || 1,
           offset: Number(n.offset) || 0,
-          elev: (n.face === 'top' || n.elev === 'TOP') ? 'TOP' : (Number(n.elev) || (def.key === 'fire' ? 200 : 0)),
-          topCell: Array.isArray(n.topCell) ? n.topCell : [0, 0]
+          elev: (n.face === 'top' || n.elev === 'TOP') ? 'TOP' : ((n.face === 'bottom' || n.elev === 'BOTTOM') ? 'BOTTOM' : (Number(n.elev) || (def.key === 'fire' ? 200 : 0))),
+          topCell: Array.isArray(n.topCell) ? n.topCell : [0, 0],
+          bottomCell: Array.isArray(n.bottomCell) ? n.bottomCell : (Array.isArray(n.topCell) ? n.topCell : [0, 0])
         });
       }
     });
@@ -978,8 +980,9 @@
           face: String(n.face || 'front').toLowerCase(),
           seg: Number(n.seg) || 1,
           offset: Number(n.offset) || 0,
-          elev: (n.face === 'top' || n.elev === 'TOP') ? 'TOP' : (Number(n.elev) || 0),
-          topCell: Array.isArray(n.topCell) ? n.topCell : [0, 0]
+          elev: (n.face === 'top' || n.elev === 'TOP') ? 'TOP' : ((n.face === 'bottom' || n.elev === 'BOTTOM') ? 'BOTTOM' : (Number(n.elev) || 0)),
+          topCell: Array.isArray(n.topCell) ? n.topCell : [0, 0],
+          bottomCell: Array.isArray(n.bottomCell) ? n.bottomCell : (Array.isArray(n.topCell) ? n.topCell : [0, 0])
         });
       }
     });
@@ -1875,9 +1878,11 @@
       const label = formatNozzleLabel(n);
       const offVal = n.offset || 0;
       
-      if (n.face === 'top') {
-        const i = Math.max(0, Math.min(n.topCell[0], map.rows.length - 1));
-        const j = Math.max(0, Math.min(n.topCell[1], map.cols.length - 1));
+      if (n.face === 'top' || n.face === 'bottom') {
+        const isBottom = (n.face === 'bottom');
+        const cell = isBottom ? (n.bottomCell || n.topCell || [0, 0]) : (n.topCell || [0, 0]);
+        const i = Math.max(0, Math.min(cell[0], map.rows.length - 1));
+        const j = Math.max(0, Math.min(cell[1], map.cols.length - 1));
         if (!map.has(i, j)) return;
         const cx = (map.xs[j] + map.xs[j + 1]) / 2 + offVal;
         const cy = (map.ys[i] + map.ys[i + 1]) / 2;
@@ -1901,7 +1906,10 @@
         
         const leadLen = Math.max(100, 3.0 * N);
         const stagger = (idx % 3) * Math.round(1.5 * N);
-        drawLeader(ents, [cx + spec.r * 0.7, cy + spec.r * 0.7], [cx + spec.r * 0.7 + leadLen * 0.5, cy + spec.r * 0.7 + leadLen * 0.5 + stagger], [cx + spec.r * 0.7 + leadLen * 1.2, cy + spec.r * 0.7 + leadLen * 0.5 + stagger], [label], nozTextH, 'left', 'NOZZLE');
+        const lang = opt.drawingLang || opt.lang || 'ko';
+        const isEn = lang === 'en';
+        const displayLabel = isBottom ? `${label} (${isEn ? 'BOTTOM' : '하부'})` : label;
+        drawLeader(ents, [cx + spec.r * 0.7, cy + spec.r * 0.7], [cx + spec.r * 0.7 + leadLen * 0.5, cy + spec.r * 0.7 + leadLen * 0.5 + stagger], [cx + spec.r * 0.7 + leadLen * 1.2, cy + spec.r * 0.7 + leadLen * 0.5 + stagger], [displayLabel], nozTextH, 'left', 'NOZZLE');
       } else if (n.face === 'front') {
         const colIdx = Math.max(0, Math.min(n.seg - 1, map.cols.length - 1));
         let frontRow = -1;
@@ -3834,11 +3842,12 @@
     // 배관 노즐 (INLET, OUTLET, OVERFLOW, DRAIN, FIRE 등) 입면도 배치 (글로벌 표준 간결 표기 & 중복 결합)
     const nozList = getNozzleList(opt);
 
-    // 1. 현재 뷰(view: 'front' | 'side')에 맞춰 4개 그룹으로 분류
+    // 1. 현재 뷰(view: 'front' | 'side')에 맞춰 5개 그룹으로 분류
     const faceNozzles = [];
     const leftNozzles = [];
     const rightNozzles = [];
     const topNozzles = [];
+    const bottomNozzles = [];
 
     nozList.forEach(n => {
       let rawElev = typeof n.elev === 'number' ? n.elev : (nH - 300);
@@ -3873,6 +3882,13 @@
           if (!mmap.has(rowIdx, colIdx)) return;
           const cx = (mmap.xs[colIdx] + mmap.xs[colIdx + 1]) / 2 + (n.offset || 0);
           topNozzles.push({ n, spec, isFlg, cx, elev: 'TOP' });
+        } else if (n.face === 'bottom') {
+          const cell = n.bottomCell || n.topCell || [0, (n.seg - 1) || 0];
+          const colIdx = Math.max(0, Math.min(cell[1], mmap.cols.length - 1));
+          const rowIdx = Math.max(0, Math.min(cell[0], mmap.rows.length - 1));
+          if (!mmap.has(rowIdx, colIdx)) return;
+          const cx = (mmap.xs[colIdx] + mmap.xs[colIdx + 1]) / 2 + (n.offset || 0);
+          bottomNozzles.push({ n, spec, isFlg, cx, elev: 0 });
         }
       } else { // side view
         if (n.face === 'right') {
@@ -3892,6 +3908,13 @@
           if (!mmap.has(rowIdx, colIdx)) return;
           const cy = (mmap.ys[rowIdx] + mmap.ys[rowIdx + 1]) / 2 + (n.offset || 0);
           topNozzles.push({ n, spec, isFlg, cx: cy, elev: 'TOP' });
+        } else if (n.face === 'bottom') {
+          const cell = n.bottomCell || n.topCell || [(n.seg - 1) || 0, 0];
+          const colIdx = Math.max(0, Math.min(cell[1], mmap.cols.length - 1));
+          const rowIdx = Math.max(0, Math.min(cell[0], mmap.rows.length - 1));
+          if (!mmap.has(rowIdx, colIdx)) return;
+          const cy = (mmap.ys[rowIdx] + mmap.ys[rowIdx + 1]) / 2 + (n.offset || 0);
+          bottomNozzles.push({ n, spec, isFlg, cx: cy, elev: 0 });
         }
       }
     });
@@ -4159,6 +4182,56 @@
         ex = prevTopEx + minHorizGap;
       }
       prevTopEx = ex;
+
+      drawLeader(ents, [cx, yTip], [ex, ey], [ex + Math.round(3.0 * N), ey], [line1, line2], nozTextH, 'left', 'NOZZLE');
+    });
+
+    // 4.5. 하부 바닥 스터브 (Bottom Stubs - 드레인 등 하향 돌출 노즐)
+    const groupBottom = [];
+    bottomNozzles.sort((a, b) => a.cx - b.cx);
+    bottomNozzles.forEach(item => {
+      const g = groupBottom.find(grp => Math.abs(grp.cx - item.cx) < 60);
+      if (g) {
+        g.items.push(item);
+      } else {
+        groupBottom.push({ cx: item.cx, items: [item] });
+      }
+    });
+
+    let prevBottomEx = null;
+    groupBottom.forEach((grp, gIdx) => {
+      const cx = grp.cx;
+      const items = grp.items;
+      let bestItem = items[0];
+      items.forEach(it => { if (it.spec.r > bestItem.spec.r) bestItem = it; });
+      const spec = bestItem.spec;
+      const isFlg = items.some(it => it.isFlg);
+
+      const yBase = 0;
+      if (isFlg) {
+        const yPlate1 = yBase - spec.neckLen;
+        const yPlate0 = yPlate1 + spec.flgThick;
+        ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'NOZZLE');
+        ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'NOZZLE');
+        rect(cx - spec.rf, yPlate1, cx + spec.rf, yPlate0, 'NOZZLE');
+      } else {
+        const yEnd = yBase - spec.sockLen;
+        rect(cx - spec.sockR, yEnd, cx + spec.sockR, yBase, 'NOZZLE');
+        ln([cx - spec.r, yEnd], [cx + spec.r, yEnd], 'NOZZLE');
+      }
+
+      const line1 = formatNozzleGroupLabel(items);
+      const isEn = (opt.drawingLang || opt.lang) === 'en';
+      const line2 = isEn ? 'EL.+0 (BOTTOM)' : 'EL.+0 (하부)';
+
+      const yTip = isFlg ? (yBase - spec.neckLen) : (yBase - spec.sockLen);
+      const staggerY = (gIdx % 2) * Math.round(1.5 * N);
+      const ey = yTip - Math.round(2.0 * N) - staggerY;
+      let ex = cx + Math.round(2.5 * N);
+      if (prevBottomEx !== null && Math.abs(ex - prevBottomEx) < minHorizGap) {
+        ex = prevBottomEx + minHorizGap;
+      }
+      prevBottomEx = ex;
 
       drawLeader(ents, [cx, yTip], [ex, ey], [ex + Math.round(3.0 * N), ey], [line1, line2], nozTextH, 'left', 'NOZZLE');
     });
@@ -5844,6 +5917,22 @@
           const pStart = toIso(cx, cy, H + stubLen);
           const pEnd = [pStart[0] + Math.round(textH * 3.5), pStart[1] + Math.round(textH * 2.0)];
           drawLeader(ents, pStart, [pEnd[0] - textH * 1.5, pEnd[1]], pEnd, [markLabel, '(TOP INLET)'], textH * 0.85, 'left', 'NOZZLE');
+        } else if (n.face === 'bottom') {
+          const cell = n.bottomCell || n.topCell || [0, 0];
+          const colIdx = Math.max(0, Math.min(cell[1], map.cols.length - 1));
+          const rowIdx = Math.max(0, Math.min(cell[0], map.rows.length - 1));
+          if (!map.has(rowIdx, colIdx)) return;
+          const cx = (map.xs[colIdx] + map.xs[colIdx + 1]) / 2 + (n.offset || 0);
+          const cy = (map.ys[rowIdx] + map.ys[rowIdx + 1]) / 2;
+          const stubLen = 140;
+          const nDepth = getDepth(cx, cy, -stubLen);
+          ln(toIso(cx, cy, 0), toIso(cx, cy, -stubLen), 'NOZZLE', nDepth);
+          isoCircle(cx, cy, -stubLen, spec.rf, 'XY', 'NOZZLE', nDepth);
+          isoCircle(cx, cy, -stubLen, spec.r, 'XY', 'NOZZLE', nDepth);
+          const pStart = toIso(cx, cy, -stubLen);
+          const pEnd = [pStart[0] + Math.round(textH * 3.5), pStart[1] - Math.round(textH * 1.8)];
+          const isEn = (opt.drawingLang || opt.lang) === 'en';
+          drawLeader(ents, pStart, [pEnd[0] - textH * 1.5, pEnd[1]], pEnd, [markLabel, isEn ? '(BOTTOM DRAIN)' : '(하부 드레인)'], textH * 0.85, 'left', 'NOZZLE');
         }
       });
     }
@@ -6951,7 +7040,7 @@
       line([tableX0, yy], [tableX1, yy]);
 
       // 3. 데이터 행
-      const faceNameMap = lang === 'en' ? { front: 'FRONT', rear: 'REAR', left: 'LEFT', right: 'RIGHT', top: 'TOP' } : (lang === 'ko' ? { front: '정면', rear: '배면', left: '좌측', right: '우측', top: '상부' } : { front: 'FRONT (정면)', rear: 'REAR (배면)', left: 'LEFT (좌측)', right: 'RIGHT (우측)', top: 'TOP (상부)' });
+      const faceNameMap = lang === 'en' ? { front: 'FRONT', rear: 'REAR', left: 'LEFT', right: 'RIGHT', top: 'TOP', bottom: 'BOTTOM' } : (lang === 'ko' ? { front: '정면', rear: '배면', left: '좌측', right: '우측', top: '상부', bottom: '하부' } : { front: 'FRONT (정면)', rear: 'REAR (배면)', left: 'LEFT (좌측)', right: 'RIGHT (우측)', top: 'TOP (상부)', bottom: 'BOTTOM (하부)' });
       activeNozzles.forEach(n => {
         curColX = tableX0;
         const abbr = getNozzleAbbr(n.name);
@@ -6964,7 +7053,7 @@
           else if (isInlet && n.face !== 'top') actualElev = Math.max(100, H - 300);
           else if (actualElev > H - 100) actualElev = Math.max(100, H - 150);
         }
-        const elevStr = n.face === 'top' ? (lang === 'ko' ? '상부' : 'TOP') : ('EL.+' + (typeof actualElev === 'number' ? actualElev.toLocaleString() : actualElev));
+        const elevStr = n.face === 'top' ? (lang === 'ko' ? '상부' : 'TOP') : (n.face === 'bottom' ? (lang === 'ko' ? '하부' : 'BOTTOM') : ('EL.+' + (typeof actualElev === 'number' ? actualElev.toLocaleString() : actualElev)));
         const rowVals = [
           n.mark,
           svcName,

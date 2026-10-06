@@ -577,7 +577,7 @@ canvas.drag{cursor:grabbing}
         </div>
         <p class="hint" id="hintSide" style="margin-bottom:8px">도구를 선택한 후 아래 측면 격자 칸을 클릭하여 <b>판넬 변경</b> 또는 <b>배관 노즐</b>을 배치합니다.</p>
 
-        <!-- 1. 뷰 선택 세그먼트 (정면 / 우측면 / 배면 / 좌측면) -->
+        <!-- 1. 뷰 선택 세그먼트 (정면 / 우측면 / 배면 / 좌측면 / 상부 / 하부) -->
         <div class="face-seg-control">
           <label class="face-seg-btn">
             <input type="radio" name="nozViewFace" value="front" checked>
@@ -599,10 +599,15 @@ canvas.drag{cursor:grabbing}
             <span id="lblFaceLeft">🏢 좌측면</span>
             <span class="face-sub">Left</span>
           </label>
-          <label class="face-seg-btn">
+          <label class="face-seg-btn" style="grid-column:span 2">
             <input type="radio" name="nozViewFace" value="top">
             <span id="lblFaceTop">🏠 상부</span>
             <span class="face-sub">Top</span>
+          </label>
+          <label class="face-seg-btn" style="grid-column:span 2">
+            <input type="radio" name="nozViewFace" value="bottom">
+            <span id="lblFaceBottom">⚓ 하부</span>
+            <span class="face-sub">Bottom</span>
           </label>
         </div>
 
@@ -688,6 +693,7 @@ canvas.drag{cursor:grabbing}
                 <option value="rear">🏢 배면 (Rear)</option>
                 <option value="left">🏢 좌측면 (Left)</option>
                 <option value="top">🏠 상부 지붕 (Top)</option>
+                <option value="bottom">⚓ 하부 바닥 (Bottom)</option>
               </select>
             </div>
             <div class="noz-field">
@@ -2500,6 +2506,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       faceRight: '🏢 우측면',
       faceRear: '🏢 배면',
       faceLeft: '🏢 좌측면',
+      faceTop: '🏢 상부 (지붕)',
+      faceBottom: '⚓ 하부 (바닥)',
       secPanelTool: '🔲 판넬 종류 선택',
       toolStd: '기본',
       toolFlat1: '1×1평판',
@@ -2610,6 +2618,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       faceRight: '🏢 Right',
       faceRear: '🏢 Rear',
       faceLeft: '🏢 Left',
+      faceTop: '🏢 Top (Roof)',
+      faceBottom: '⚓ Bottom (Floor)',
       secPanelTool: '🔲 Select Panel Type',
       toolStd: 'Standard',
       toolFlat1: '1×1 Flat',
@@ -2822,6 +2832,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if ($('lblFaceRight')) $('lblFaceRight').textContent = t.faceRight;
     if ($('lblFaceRear')) $('lblFaceRear').textContent = t.faceRear;
     if ($('lblFaceLeft')) $('lblFaceLeft').textContent = t.faceLeft;
+    if ($('lblFaceTop')) $('lblFaceTop').textContent = t.faceTop;
+    if ($('lblFaceBottom')) $('lblFaceBottom').textContent = t.faceBottom;
     if ($('lblSecPanelTool')) $('lblSecPanelTool').textContent = t.secPanelTool;
     if ($('lblToolStd')) $('lblToolStd').textContent = t.toolStd;
     if ($('lblToolFlat1')) $('lblToolFlat1').textContent = t.toolFlat1;
@@ -5096,7 +5108,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       { id: 'noz_1', mark: 'N1', name: 'INLET', desc: isEn ? 'Inlet' : '유입구', size: '100A', type: 'FLANGE', face: 'front', seg: 1, offset: 0, elev: Math.max(100, hVal - 300), use: true, topCell: [0, 0] },
       { id: 'noz_2', mark: 'N2', name: 'OUTLET', desc: isEn ? 'Outlet' : '유출구', size: '150A', type: 'FLANGE', face: 'front', seg: 2, offset: 0, elev: 300, use: true },
       { id: 'noz_3', mark: 'N3', name: 'OVERFLOW', desc: isEn ? 'Overflow' : '월류관', size: '100A', type: 'FLANGE', face: 'right', seg: 1, offset: 0, elev: Math.max(100, hVal - 200), use: true },
-      { id: 'noz_4', mark: 'N4', name: 'DRAIN', desc: isEn ? 'Drain' : '배수구', size: '50A', type: 'SOCKET', face: 'front', seg: 1, offset: -250, elev: 100, use: true },
+      { id: 'noz_4', mark: 'N4', name: 'DRAIN', desc: isEn ? 'Drain' : '배수구', size: '50A', type: 'SOCKET', face: 'bottom', seg: 1, offset: 0, elev: 0, bottomCell: [0, 0], topCell: [0, 0], use: true },
       { id: 'noz_5', mark: 'N5', name: 'FIRE', desc: isEn ? 'Fire Water' : '소방용수', size: '150A', type: 'FLANGE', face: 'front', seg: 3, offset: 0, elev: 200, use: true }
     ];
   }
@@ -5121,14 +5133,14 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       { id: 'noz_1', mark: 'N1', name: 'INLET', desc: isEn ? 'Comp.1 Inlet' : '1구획 유입구', size: '100A', type: 'FLANGE', face: 'front', seg: c1_inlet, offset: 0, elev: Math.max(100, hVal - 300), use: true, topCell: [0, 0] },
       { id: 'noz_2', mark: 'N2', name: 'OUTLET', desc: isEn ? 'Comp.1 Outlet' : '1구획 유출구', size: '150A', type: 'FLANGE', face: 'front', seg: c1_outlet, offset: 0, elev: 300, use: true },
       { id: 'noz_3', mark: 'N3', name: 'OVERFLOW', desc: isEn ? 'Comp.1 Overflow' : '1구획 월류관', size: '100A', type: 'FLANGE', face: 'left', seg: 1, offset: 0, elev: Math.max(100, hVal - 200), use: true },
-      { id: 'noz_4', mark: 'N4', name: 'DRAIN', desc: isEn ? 'Comp.1 Drain' : '1구획 배수구', size: '50A', type: 'SOCKET', face: 'front', seg: c1_drain, offset: -250, elev: 100, use: true },
+      { id: 'noz_4', mark: 'N4', name: 'DRAIN', desc: isEn ? 'Comp.1 Drain' : '1구획 배수구', size: '50A', type: 'SOCKET', face: 'bottom', seg: c1_drain, offset: 0, elev: 0, bottomCell: [0, c1_drain - 1], topCell: [0, c1_drain - 1], use: true },
       { id: 'noz_5', mark: 'N5', name: 'FIRE', desc: isEn ? 'Comp.1 Fire Water' : '1구획 소방용수', size: '150A', type: 'FLANGE', face: 'front', seg: c1_fire, offset: 0, elev: 200, use: true },
 
       // 2구획 노즐 세트 (5개)
       { id: 'noz_6', mark: 'N6', name: 'INLET', desc: isEn ? 'Comp.2 Inlet' : '2구획 유입구', size: '100A', type: 'FLANGE', face: 'front', seg: c2_inlet, offset: 0, elev: Math.max(100, hVal - 300), use: true, topCell: [0, Math.min(c2_inlet - 1, (map ? map.cols.length - 1 : 5))] },
       { id: 'noz_7', mark: 'N7', name: 'OUTLET', desc: isEn ? 'Comp.2 Outlet' : '2구획 유출구', size: '150A', type: 'FLANGE', face: 'front', seg: c2_outlet, offset: 0, elev: 300, use: true },
       { id: 'noz_8', mark: 'N8', name: 'OVERFLOW', desc: isEn ? 'Comp.2 Overflow' : '2구획 월류관', size: '100A', type: 'FLANGE', face: 'right', seg: 1, offset: 0, elev: Math.max(100, hVal - 200), use: true },
-      { id: 'noz_9', mark: 'N9', name: 'DRAIN', desc: isEn ? 'Comp.2 Drain' : '2구획 배수구', size: '50A', type: 'SOCKET', face: 'front', seg: c2_drain, offset: -250, elev: 100, use: true },
+      { id: 'noz_9', mark: 'N9', name: 'DRAIN', desc: isEn ? 'Comp.2 Drain' : '2구획 배수구', size: '50A', type: 'SOCKET', face: 'bottom', seg: c2_drain, offset: 0, elev: 0, bottomCell: [0, c2_drain - 1], topCell: [0, c2_drain - 1], use: true },
       { id: 'noz_10', mark: 'N10', name: 'FIRE', desc: isEn ? 'Comp.2 Fire Water' : '2구획 소방용수', size: '150A', type: 'FLANGE', face: 'front', seg: c2_fire, offset: 0, elev: 200, use: true }
     ];
   }
@@ -5169,7 +5181,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         { id: `noz_${baseIdx + 1}`, mark: `N${baseIdx + 1}`, name: 'INLET', desc: isEn ? `Comp.${c} Inlet` : `${c}구획 유입구`, size: '100A', type: 'FLANGE', face: 'front', seg: c_inlet, offset: 0, elev: Math.max(100, hVal - 300), use: true, topCell: [0, c_inlet - 1] },
         { id: `noz_${baseIdx + 2}`, mark: `N${baseIdx + 2}`, name: 'OUTLET', desc: isEn ? `Comp.${c} Outlet` : `${c}구획 유출구`, size: '150A', type: 'FLANGE', face: 'front', seg: c_outlet, offset: 0, elev: 300, use: true },
         { id: `noz_${baseIdx + 3}`, mark: `N${baseIdx + 3}`, name: 'OVERFLOW', desc: isEn ? `Comp.${c} Overflow` : `${c}구획 월류관`, size: '100A', type: 'FLANGE', face: (c === 1 ? 'left' : 'right'), seg: 1, offset: 0, elev: Math.max(100, hVal - 200), use: true },
-        { id: `noz_${baseIdx + 4}`, mark: `N${baseIdx + 4}`, name: 'DRAIN', desc: isEn ? `Comp.${c} Drain` : `${c}구획 배수구`, size: '50A', type: 'SOCKET', face: 'front', seg: c_drain, offset: -250, elev: 100, use: true },
+        { id: `noz_${baseIdx + 4}`, mark: `N${baseIdx + 4}`, name: 'DRAIN', desc: isEn ? `Comp.${c} Drain` : `${c}구획 배수구`, size: '50A', type: 'SOCKET', face: 'bottom', seg: c_drain, offset: 0, elev: 0, bottomCell: [0, c_drain - 1], topCell: [0, c_drain - 1], use: true },
         { id: `noz_${baseIdx + 5}`, mark: `N${baseIdx + 5}`, name: 'FIRE', desc: isEn ? `Comp.${c} Fire Water` : `${c}구획 소방용수`, size: '150A', type: 'FLANGE', face: 'front', seg: c_fire, offset: 0, elev: 200, use: true }
       );
     }
@@ -5242,25 +5254,29 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       right: '🏢 Right Side View (Right)',
       rear: '🏢 Rear View (Rear)',
       left: '🏢 Left Side View (Left)',
-      top: '🏢 Top Roof Plan (Top Roof)'
+      top: '🏢 Top Roof Plan (Top Roof)',
+      bottom: '⚓ Bottom Floor Plan (Bottom Floor)'
     } : {
       front: '🏢 정면 뷰 (Front)',
       right: '🏢 우측면 뷰 (Right)',
       rear: '🏢 배면 뷰 (Rear)',
       left: '🏢 좌측면 뷰 (Left)',
-      top: '🏢 상부 평면 뷰 (Top Roof)'
+      top: '🏢 상부 평면 뷰 (Top Roof)',
+      bottom: '⚓ 하부 바닥 평면 뷰 (Bottom Floor)'
     };
     if (title) title.textContent = titles[currentNozFace] || (isEn ? 'Side View' : '측면 뷰');
 
     const isTop = (currentNozFace === 'top');
-    if (baseFrame) baseFrame.style.display = isTop ? 'none' : 'flex';
+    const isBottom = (currentNozFace === 'bottom');
+    const isPlanLike = isTop || isBottom;
+    if (baseFrame) baseFrame.style.display = isPlanLike ? 'none' : 'flex';
 
     const H = [Number($('H').value) || 0, 0, 0, 0, 0];
     const nH = H.reduce((a, b) => a + (b || 0), 0) || 3000;
     const hs = C.heightSegs(H[0], $('b11').checked) || [1000, 1000, 1000];
 
     let cols, colXs, totalW;
-    const isCols = (currentNozFace === 'front' || currentNozFace === 'rear' || isTop);
+    const isCols = (currentNozFace === 'front' || currentNozFace === 'rear' || isPlanLike);
     if (isCols) {
       cols = map.cols;
       colXs = map.xs;
@@ -5272,8 +5288,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     }
 
     let rows;
-    const totalH = isTop ? map.width : nH;
-    if (isTop) {
+    const totalH = isPlanLike ? map.width : nH;
+    if (isPlanLike) {
       rows = map.rows.slice().reverse();
     } else {
       rows = hs.slice().reverse();
@@ -5295,7 +5311,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     });
 
     if (rowLabels) {
-      if (isTop) {
+      if (isPlanLike) {
         rowLabels.innerHTML = rows.map((r, ri) => {
           const actualRowIdx = map.rows.length - 1 - ri;
           return `<div style="height:${Math.max(14, Math.round(r * sc))}px;line-height:${Math.max(14, Math.round(r * sc))}px">${isEn ? ('Row ' + (actualRowIdx + 1)) : ((actualRowIdx + 1) + '행')}</div>`;
@@ -5349,8 +5365,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     };
 
     for (let ri = 0; ri < rows.length; ri++) {
-      const tierIdx = isTop ? (map.rows.length - 1 - ri) : (hs.length - 1 - ri);
-      const tierInt = isTop ? null : tierIntervals[tierIdx];
+      const tierIdx = isPlanLike ? (map.rows.length - 1 - ri) : (hs.length - 1 - ri);
+      const tierInt = isPlanLike ? null : tierIntervals[tierIdx];
       const rowHeightMm = rows[ri];
 
       for (let ci = 0; ci < cols.length; ci++) {
@@ -5362,7 +5378,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         b.type = 'button';
 
         let isCellDisabled = false;
-        if (isTop) {
+        if (isPlanLike) {
           if (removed.has(pk(tierIdx, ci))) isCellDisabled = true;
         } else if (currentNozFace === 'front' || currentNozFace === 'rear') {
           const hasCol = Array.from({length: map.rows.length}, (_, r) => r).some(r => map.has(r, ci));
@@ -5410,6 +5426,9 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           const leftNozs = nozzleData.filter(n => n.use !== false && n.face === 'left' && (Number(n.seg) || 1) === (tierIdx + 1) && ci === 0);
           const rightNozs = nozzleData.filter(n => n.use !== false && n.face === 'right' && (Number(n.seg) || 1) === (tierIdx + 1) && ci === (map.cols.length - 1));
           cellNozzles = [...topNozs, ...frontNozs, ...rearNozs, ...leftNozs, ...rightNozs];
+        } else if (isBottom) {
+          const bottomNozs = nozzleData.filter(n => n.use !== false && n.face === 'bottom' && (n.bottomCell || n.topCell) && (n.bottomCell ? (n.bottomCell[0] === tierIdx && n.bottomCell[1] === ci) : (n.topCell[0] === tierIdx && n.topCell[1] === ci)));
+          cellNozzles = [...bottomNozs];
         } else {
           cellNozzles = nozzleData.filter(n => {
             if (n.use === false || n.face !== currentNozFace) return false;
@@ -5430,10 +5449,11 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           }[n.name] || 'noz-marker-custom';
 
           const svcAbbr = (C && C.getNozzleAbbr) ? C.getNozzleAbbr(n.name) : ({ INLET: 'IN', OUTLET: 'OUT', OVERFLOW: 'O/F', DRAIN: 'DR', FIRE: 'FF' }[n.name] || n.name);
-          const faceKo = { front: '정면', rear: '배면', left: '좌측', right: '우측', top: '상부' }[n.face] || n.face;
+          const faceKo = { front: '정면', rear: '배면', left: '좌측', right: '우측', top: '상부', bottom: '하부' }[n.face] || n.face;
 
           marker.className = `noz-marker ${svcClass}` + (n.id === selectedNozzleId ? ' selected' : '');
-          marker.title = `[${n.mark}] ${svcAbbr} ${n.size} (${n.type}) [${faceKo}] ${n.face === 'top' ? '상부' : 'EL.+' + n.elev + 'mm'} ${n.desc ? '[' + n.desc + ']' : ''}`;
+          const elevLabel = n.face === 'top' ? '상부' : (n.face === 'bottom' ? '하부 (EL.+0)' : 'EL.+' + n.elev + 'mm');
+          marker.title = `[${n.mark}] ${svcAbbr} ${n.size} (${n.type}) [${faceKo}] ${elevLabel} ${n.desc ? '[' + n.desc + ']' : ''}`;
 
           let leftPct = 50;
           let topPct = 50;
@@ -5460,6 +5480,13 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
               if (n.face === 'front' || n.face === 'rear') {
                 leftPct = (idx === 0) ? 24 : (idx === 1 ? 76 : 50);
               }
+            }
+          } else if (isBottom) {
+            leftPct = 50;
+            topPct = 50;
+            if (cellNozzles.length >= 2) {
+              const idx = cellNozzles.indexOf(n);
+              leftPct = (idx === 0) ? 28 : 72;
             }
           } else {
             if (n.offset === -250 || n.offset < -50) {
@@ -5574,10 +5601,10 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       defaultSize = '100A';
       defaultType = 'FLANGE';
     } else if (svc === 'DRAIN') {
-      defaultElev = 100;
+      defaultElev = (face === 'bottom') ? 0 : 100;
       defaultSize = '50A';
       defaultType = 'SOCKET';
-      defaultOffset = -250;
+      defaultOffset = (face === 'bottom') ? 0 : -250;
     } else if (svc === 'FIRE') {
       defaultElev = 200;
       defaultSize = '150A';
@@ -5593,7 +5620,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       defaultOffset = (firstNoz.offset === -250) ? 250 : -250; // place 2nd nozzle on opposite side
 
       // If elevations are identical, adjust slightly
-      if (firstNoz.elev === defaultElev) {
+      if (firstNoz.elev === defaultElev && face !== 'bottom') {
         if (svc === 'DRAIN') defaultElev = 100;
         else if (svc === 'FIRE') defaultElev = 200;
         else if (defaultElev >= 300) defaultElev = Math.max(100, defaultElev - 200);
@@ -5610,8 +5637,9 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         face: face,
         seg: colIdx + 1,
         offset: defaultOffset,
-        elev: defaultElev,
-        topCell: [0, 0],
+        elev: face === 'bottom' ? 0 : (face === 'top' ? 'TOP' : defaultElev),
+        topCell: [tierIdx, colIdx],
+        bottomCell: [tierIdx, colIdx],
         use: true
       };
       nozzleData.push(newNoz);
@@ -5623,7 +5651,9 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         targetNoz.face = face;
         targetNoz.seg = colIdx + 1;
         targetNoz.offset = defaultOffset;
-        targetNoz.elev = (tierInt && (svc === 'INLET' || svc === 'OVERFLOW') && tierInt.idx === 0) ? (tierInt.y0 + 500) : defaultElev;
+        targetNoz.elev = face === 'bottom' ? 0 : ((tierInt && (svc === 'INLET' || svc === 'OVERFLOW') && tierInt.idx === 0) ? (tierInt.y0 + 500) : defaultElev);
+        targetNoz.topCell = [tierIdx, colIdx];
+        targetNoz.bottomCell = [tierIdx, colIdx];
         targetNoz.use = true;
         selectedNozzleId = targetNoz.id;
       } else {
@@ -5638,8 +5668,9 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           face: face,
           seg: colIdx + 1,
           offset: defaultOffset,
-          elev: defaultElev,
-          topCell: [0, 0],
+          elev: face === 'bottom' ? 0 : (face === 'top' ? 'TOP' : defaultElev),
+          topCell: [tierIdx, colIdx],
+          bottomCell: [tierIdx, colIdx],
           use: true
         };
         nozzleData.push(newNoz);
@@ -5711,11 +5742,11 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       return;
     }
     const faceTextMap = isEn
-      ? { front: 'FRONT', rear: 'REAR', left: 'LEFT', right: 'RIGHT', top: 'TOP' }
-      : { front: 'FRONT (정면)', rear: 'REAR (배면)', left: 'LEFT (좌측)', right: 'RIGHT (우측)', top: 'TOP (상부)' };
+      ? { front: 'FRONT', rear: 'REAR', left: 'LEFT', right: 'RIGHT', top: 'TOP', bottom: 'BOTTOM' }
+      : { front: 'FRONT (정면)', rear: 'REAR (배면)', left: 'LEFT (좌측)', right: 'RIGHT (우측)', top: 'TOP (상부)', bottom: 'BOTTOM (하부)' };
     tbody.innerHTML = nozzleData.map(n => {
       if (!n.use) return `<tr style="opacity:0.4"><td>${n.mark}</td><td>${n.name}${n.desc ? ' (' + n.desc + ')' : ''}</td><td colspan="5" style="text-align:center">${isEn ? 'Unused' : '미사용'}</td></tr>`;
-      const elev = (n.face === 'top' || n.elev === 'TOP') ? 'TOP' : `EL.+${Number(n.elev || 0).toLocaleString()}mm`;
+      const elev = (n.face === 'top' || n.elev === 'TOP') ? 'TOP' : (n.face === 'bottom' ? (isEn ? 'BOTTOM (EL.+0)' : '하부 (EL.+0)') : `EL.+${Number(n.elev || 0).toLocaleString()}mm`);
       const loc = faceTextMap[n.face] || n.face;
       const typeStr = n.type === 'FLANGE' ? 'FLG 10K' : 'SOCKET';
       const isSel = (n.id === selectedNozzleId);
@@ -5887,6 +5918,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         const cellNozs = (nozzleData || []).filter(n => {
           if (n.use === false) return false;
           if (n.face === 'top') return n.topCell && n.topCell[0] === i && n.topCell[1] === j;
+          if (n.face === 'bottom') return (n.bottomCell ? (n.bottomCell[0] === i && n.bottomCell[1] === j) : (n.topCell && n.topCell[0] === i && n.topCell[1] === j));
           if (n.face === 'front') return (Number(n.seg) || 1) === (j + 1) && i === 0;
           if (n.face === 'rear') return (Number(n.seg) || 1) === (j + 1) && i === (map.rows.length - 1);
           if (n.face === 'left') return (Number(n.seg) || 1) === (i + 1) && j === 0;
@@ -5903,10 +5935,11 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             DRAIN: 'badge-noz-drain',
             FIRE: 'badge-noz-fire'
           }[n.name] || 'badge-noz-custom';
-          const faceKo = { front: '정면', rear: '배면', left: '좌측', right: '우측', top: '상부' }[n.face] || n.face;
+          const faceKo = { front: '정면', rear: '배면', left: '좌측', right: '우측', top: '상부', bottom: '하부' }[n.face] || n.face;
           const svcAbbr = (C && C.getNozzleAbbr) ? C.getNozzleAbbr(n.name) : (n.name || 'NOZ');
           nozBadge.className = `badge-plan-nozzle ${svcClass}`;
-          nozBadge.title = `[${n.mark}] ${svcAbbr} ${n.size} (${faceKo} ${n.face === 'top' ? '상부' : 'EL.+' + n.elev + 'mm'})`;
+          const elevLabel = n.face === 'top' ? '상부' : (n.face === 'bottom' ? '하부' : 'EL.+' + n.elev + 'mm');
+          nozBadge.title = `[${n.mark}] ${svcAbbr} ${n.size} (${faceKo} ${elevLabel})`;
           nozBadge.textContent = n.mark;
           b.appendChild(nozBadge);
         });
@@ -6379,6 +6412,30 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     updatePreviewTbody();
     schedule();
   });
+
+  if ($('miniFace')) {
+    $('miniFace').addEventListener('change', e => {
+      const n = nozzleData.find(x => x.id === selectedNozzleId);
+      if (n) {
+        n.face = e.target.value;
+        if (n.face === 'top') {
+          n.elev = 'TOP';
+          if (!n.topCell) n.topCell = [0, 0];
+        } else if (n.face === 'bottom') {
+          n.elev = 0;
+          if (!n.bottomCell) n.bottomCell = n.topCell || [0, 0];
+        } else {
+          if (typeof n.elev !== 'number') n.elev = 300;
+        }
+        currentNozFace = n.face;
+        const r = document.querySelector(`input[name=nozViewFace][value="${n.face}"]`);
+        if (r) r.checked = true;
+        renderNozzleElevationGrid();
+        updatePreviewTbody();
+        schedule();
+      }
+    });
+  }
 
   $('miniSize').addEventListener('change', e => {
     const n = nozzleData.find(x => x.id === selectedNozzleId);
