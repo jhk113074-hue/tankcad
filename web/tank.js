@@ -1901,6 +1901,7 @@
     dimLinear(ents, [0, -F], [0, W + F], overallX, true, String(W + 2 * F), textH, 'DIM');
 
     // 부품 풍선 기호 (Plan View Balloon Callouts - 모두 물탱크 형상 및 치수선 바깥 외곽에 정렬)
+    // 부품 풍선 기호 (Plan View Balloon Callouts - 선거리 최소화 및 상하좌우 격자 정렬 체계)
     if (opt.showBalloons !== false) {
       const boms = (opt.itemList && opt.itemList.length) ? opt.itemList : buildDefaultBOM(opt);
       const getItemNo = key => {
@@ -1908,13 +1909,36 @@
         return it ? it.no : '';
       };
 
-      const topBaseY = W + F + Math.round(6.0 * N);
-      const topStaggerY = topBaseY + Math.round(5.0 * N);
-      const rightBaseX = L + F + Math.round(8 * N);
-      const botClearY = overallY - Math.round(14 * N);
-      const leftClearX = overallX - Math.round(14 * N);
+      const balloonR = Math.round(4.2 * N);
+      const shelfL = Math.round(4.0 * N);
 
-      // 1. 맨홀 (Manhole - NO. 6) & 내부사다리 (Internal Ladder - NO. 7): 맨홀 위치에 상호 무간섭 배치
+      // --- 기준 정렬 좌표선 (Standard Alignment Baselines) ---
+      // 1. 상단 수평 기준선 (모든 상단 풍선 기호의 Y좌표 100% 동일 정렬)
+      const topBaseY = W + F + Math.round(7.5 * N);
+
+      // 2. 우측 수직 기준선 (우측 노즐 및 라벨 돌출을 고려하여 모든 우측 풍선 기호의 X좌표 100% 동일 정렬)
+      let maxRightExt = L + F;
+      nozList.forEach(n => {
+        if (n.face === 'right') {
+          const spec = getNozzleSpec(n.size);
+          const ext = L + F + (n.type === 'FLANGE' ? spec.neckLen : spec.sockLen) + Math.round(10.0 * N);
+          if (ext > maxRightExt) maxRightExt = ext;
+        }
+      });
+      const rightBaseX = Math.max(L + F + Math.round(8.0 * N), maxRightExt + Math.round(4.0 * N));
+
+      // 3. 좌측 수직 기준선 (좌측 치수선 바깥 정렬)
+      const leftClearX = overallX - Math.round(6.0 * N);
+
+      // 4. 하단 수평 기준선 (하단 치수선 바깥 정렬)
+      const botBaseY = overallY - Math.round(4.5 * N);
+
+      const usedSet = ents._usedBalloons || (opt && opt.usedBalloons);
+
+      // ==========================================
+      // [1] 맨홀 (NO. 6) & 내부사다리 (NO. 7)
+      // 선거리 최소화: 맨홀 위치에 따라 가장 가까운 외곽(우측 또는 상단)으로 최단거리 인출
+      // ==========================================
       let mPos = null;
       const mEntries = Object.entries(opt.marks || {}).filter(([_, m]) => (m & 1));
       if (mEntries.length > 0) {
@@ -1922,7 +1946,7 @@
         if (map.has(i, j)) mPos = [(map.xs[j] + map.xs[j + 1]) / 2, (map.ys[i] + map.ys[i + 1]) / 2];
       }
       if (!mPos) {
-        for (let i = map.rows.length - 1; i >= 0; i--) {
+        for (let i = 0; i < map.rows.length; i++) {
           for (let j = map.cols.length - 1; j >= 0; j--) {
             if (map.has(i, j)) {
               mPos = [(map.xs[j] + map.xs[j + 1]) / 2, (map.ys[i] + map.ys[i + 1]) / 2];
@@ -1932,128 +1956,110 @@
           if (mPos) break;
         }
       }
+
+      let manholeOnRight = false;
       if (mPos) {
         const no6 = String(getItemNo('manhole') || 6).trim();
         const no7 = String(getItemNo('inladder') || 7).trim();
-        const usedSet = ents._usedBalloons || (opt && opt.usedBalloons);
-
-        // 맨홀 지시선 (NO. 6): 상단 좌측으로 인출
-        const b6X = mPos[0] - Math.round(7.0 * N);
-        drawBalloonCallout(ents, [mPos[0] - 120, mPos[1] + 150], [b6X, topBaseY - Math.round(4 * N)], [b6X, topBaseY], no6, N, 'BALLOON', usedSet);
-
-        // 내부사다리 지시선 (NO. 7): 사다리가 존재할 때만 맨홀 직하부 내부사다리에서 상단 우측으로 인출
         const ladderCount = (opt && opt.ladders !== undefined && opt.ladders !== null)
           ? Object.keys(opt.ladders).length
           : 1;
-        if (ladderCount > 0) {
-          const b7X = mPos[0] + Math.round(7.0 * N);
-          drawBalloonCallout(ents, [mPos[0] + 120, mPos[1] + 150], [b7X, topBaseY - Math.round(4 * N)], [b7X, topBaseY], no7, N, 'BALLOON', usedSet);
+
+        // 맨홀이 하반부(y <= W * 0.5) 및 우측(x >= L * 0.5)에 위치할 경우 우측으로 최단 인출
+        // (기존처럼 상단 끝까지 5~10미터를 가로지르는 긴 선 완전 제거!)
+        if (mPos[1] <= W * 0.5 && mPos[0] >= L * 0.5) {
+          manholeOnRight = true;
+          const mhCenterY = mPos[1];
+          const sepY = Math.round(6.5 * N);
+
+          // 맨홀 풍선 (NO. 6): 우측 기준선에 수직 정렬
+          const b6Center = [rightBaseX, mhCenterY + (ladderCount > 0 ? sepY : 0)];
+          const b6Elbow = [rightBaseX - shelfL - balloonR, b6Center[1]];
+          const b6Start = [mPos[0] + 120, mhCenterY + 80];
+          drawBalloonCallout(ents, b6Start, b6Elbow, b6Center, no6, N, 'BALLOON', usedSet);
+
+          // 내부사다리 풍선 (NO. 7): 맨홀 바로 아래 동일 X좌표(rightBaseX)에 수직 정렬
+          if (ladderCount > 0) {
+            const b7Center = [rightBaseX, mhCenterY - sepY];
+            const b7Elbow = [rightBaseX - shelfL - balloonR, b7Center[1]];
+            const b7Start = [mPos[0] + 120, mhCenterY - 80];
+            drawBalloonCallout(ents, b7Start, b7Elbow, b7Center, no7, N, 'BALLOON', usedSet);
+          }
+        } else if (mPos[1] > W * 0.5) {
+          // 맨홀이 상반부에 위치할 경우: 상단 기준선(topBaseY)에 수평 정렬
+          const sepX = Math.round(6.5 * N);
+          const b6Center = [mPos[0] - (ladderCount > 0 ? sepX : 0), topBaseY];
+          const b6Elbow = [b6Center[0] - shelfL - balloonR, topBaseY];
+          const b6Start = [mPos[0] - 80, mPos[1] + 120];
+          drawBalloonCallout(ents, b6Start, b6Elbow, b6Center, no6, N, 'BALLOON', usedSet);
+
+          if (ladderCount > 0) {
+            const b7Center = [mPos[0] + sepX, topBaseY];
+            const b7Elbow = [b7Center[0] - shelfL - balloonR, topBaseY];
+            const b7Start = [mPos[0] + 80, mPos[1] + 120];
+            drawBalloonCallout(ents, b7Start, b7Elbow, b7Center, no7, N, 'BALLOON', usedSet);
+          }
+        } else {
+          // 좌하단에 위치할 경우: 좌측 기준선(leftClearX)에 수직 정렬
+          const sepY = Math.round(6.5 * N);
+          const b6Center = [leftClearX, mPos[1] + (ladderCount > 0 ? sepY : 0)];
+          const b6Elbow = [leftClearX + shelfL + balloonR, b6Center[1]];
+          const b6Start = [mPos[0] - 120, mPos[1] + 80];
+          drawBalloonCallout(ents, b6Start, b6Elbow, b6Center, no6, N, 'BALLOON', usedSet);
+
+          if (ladderCount > 0) {
+            const b7Center = [leftClearX, mPos[1] - sepY];
+            const b7Elbow = [leftClearX + shelfL + balloonR, b7Center[1]];
+            const b7Start = [mPos[0] - 120, mPos[1] - 80];
+            drawBalloonCallout(ents, b7Start, b7Elbow, b7Center, no7, N, 'BALLOON', usedSet);
+          }
         }
       }
 
-      // 2. 에어벤트 (Air Vent - NO. 5): 상단 바깥으로 지시선 인출
-      let vPos = null;
-      const vEntries = Object.entries(opt.marks || {}).filter(([_, m]) => (m & 2));
-      if (vEntries.length > 0) {
-        const [i, j] = vEntries[0][0].split(',').map(Number);
-        if (map.has(i, j)) vPos = [(map.xs[j] + map.xs[j + 1]) / 2, (map.ys[i] + map.ys[i + 1]) / 2];
-      }
-      if (!vPos) {
-        for (let i = map.rows.length - 1; i >= 0; i--) {
-          for (let j = 0; j < map.cols.length; j++) {
-            if (map.has(i, j)) {
-              const cx = (map.xs[j] + map.xs[j + 1]) / 2, cy = (map.ys[i] + map.ys[i + 1]) / 2;
-              if (!mPos || Math.abs(cx - mPos[0]) > 50 || Math.abs(cy - mPos[1]) > 50) {
-                vPos = [cx, cy];
+      // ==========================================
+      // [2] 지붕 판넬 (Roof Panel - NO. 3)
+      // 우측 기준선(rightBaseX)에 수직 정렬, 맨홀과 겹치지 않는 상반부 우측 판넬 선택
+      // ==========================================
+      let panelTarget = null;
+      if (manholeOnRight) {
+        // 맨홀이 우하단에 있으면 상반부 우측 판넬(row: 최대 또는 상단) 타겟팅
+        for (let r = map.rows.length - 1; r >= 0; r--) {
+          for (let c = map.cols.length - 1; c >= 0; c--) {
+            if (map.has(r, c)) {
+              const cy = (map.ys[r] + map.ys[r + 1]) / 2;
+              if (cy > (mPos ? mPos[1] + Math.round(10.0 * N) : W * 0.4)) {
+                panelTarget = { r, c };
                 break;
               }
             }
           }
-          if (vPos) break;
+          if (panelTarget) break;
         }
-        if (!vPos && mPos) vPos = [mPos[0], mPos[1]];
       }
-      if (vPos) {
-        const xDiff = mPos ? Math.abs(vPos[0] - mPos[0]) : 999;
-        const closeX = xDiff < Math.round(12 * N);
-        const vBalloonY = closeX ? topStaggerY : topBaseY;
-        const vBalloonX = closeX ? (vPos[0] + (vPos[0] < L / 2 ? -Math.round(8 * N) : Math.round(8 * N))) : vPos[0];
-        drawBalloonCallout(ents, [vPos[0], vPos[1] + 120], [vBalloonX, vBalloonY - Math.round(5 * N)], [vBalloonX, vBalloonY], getItemNo('airvent') || 5, N, 'BALLOON');
-      }
-
-      // 3. 외부 사다리 (NO. 8): 하단 치수선(baseY / overallY) 바깥 아래로 인출하여 치수선 및 텍스트 1000/5150과 완전 비간섭
-      const lList = ladderList(opt, map);
-      if (lList.length > 0) {
-        const l = lList[0];
-        const no8 = String(getItemNo('exladder') || 8).trim();
-        const usedSet = ents._usedBalloons || (opt && opt.usedBalloons);
-        if (!usedSet || !usedSet.has(no8)) {
-          if (l.sd === 'D') {
-            // 하부 치수선(overallY) 아래로 완전히 빠져나오는 Y 좌표
-            const balloonY = overallY - Math.round(8.0 * N);
-            // 패널 중앙(x = 500)에 있는 치수 문자 '1000' 및 '5150'과의 겹침을 피하기 위해 x 오프셋 부여 (260mm)
-            const toRight = (l.x + 300 <= L);
-            const jogX = toRight ? 260 : -260;
-            const pStart = [l.x, l.y - F - 230];
-            const pElbow1 = [l.x + jogX, l.y - F - Math.round(4.0 * N)];
-            const pElbow2 = [l.x + jogX, balloonY];
-            const bx8 = l.x + jogX + (toRight ? Math.round(6.0 * N) : -Math.round(6.0 * N));
-            const sLen8 = String(no8).length;
-            const bR = Math.round(4.2 * N);
-            const bTextH = Math.round((sLen8 >= 3 ? 2.2 : (sLen8 === 2 ? 2.7 : 3.4)) * N);
-            const dotR = Math.max(3, Math.round(N * 0.2));
-
-            ents.push({ t: 'circle', c: pStart, r: dotR, layer: 'BALLOON', balloonNo: no8 });
-            ents.push({ t: 'line', a: pStart, b: pElbow1, layer: 'BALLOON', balloonNo: no8 });
-            ents.push({ t: 'line', a: pElbow1, b: pElbow2, layer: 'BALLOON', balloonNo: no8 });
-            const b8Entry = toRight ? [bx8 - bR, balloonY] : [bx8 + bR, balloonY];
-            ents.push({ t: 'line', a: pElbow2, b: b8Entry, layer: 'BALLOON', balloonNo: no8 });
-            ents.push({ t: 'circle', c: [bx8, balloonY], r: bR, layer: 'BALLOON', balloonNo: no8 });
-            ents.push({ t: 'text', p: [bx8, balloonY], h: bTextH, s: no8, rot: 0, align: 'center', valign: 'middle', layer: 'BALLOON', balloonNo: no8 });
-            if (usedSet) usedSet.add(no8);
-          } else if (l.sd === 'R') {
-            const ladSep = Math.max(120, Math.round(5.0 * N));
-            const ladBalloonX = L + F + Math.round(8 * N);
-            drawBalloonCallout(ents, [l.x + F + 20, l.y], [l.x + F + Math.round(4 * N), l.y - ladSep], [ladBalloonX, l.y - ladSep], no8, N, 'BALLOON', usedSet);
-          } else if (l.sd === 'U') {
-            drawBalloonCallout(ents, [l.x, l.y + F + 20], [l.x + Math.round(8 * N), topStaggerY], [l.x + Math.round(14 * N), topStaggerY], no8, N, 'BALLOON', usedSet);
-          } else {
-            const ladSep = Math.max(120, Math.round(5.0 * N));
-            drawBalloonCallout(ents, [l.x - F - 20, l.y], [leftClearX + Math.round(8 * N), l.y - ladSep], [leftClearX, l.y - ladSep], no8, N, 'BALLOON', usedSet);
+      if (!panelTarget) {
+        for (let r = Math.floor(map.rows.length / 2); r < map.rows.length; r++) {
+          for (let c = map.cols.length - 1; c >= 0; c--) {
+            if (map.has(r, c)) { panelTarget = { r, c }; break; }
           }
+          if (panelTarget) break;
         }
       }
+      if (!panelTarget) panelTarget = { r: 0, c: map.cols.length - 1 };
 
-      // 4. 지붕 판넬 (Roof Panel - NO. 3): 실제로 존재하는 최우측 판넬 선택
-      let panelTarget = null;
-      let maxRightX = -1;
-      for (let r = 0; r < map.rows.length; r++) {
-        for (let c = map.cols.length - 1; c >= 0; c--) {
-          if (map.has(r, c)) {
-            const rx = map.xs[c + 1];
-            if (rx > maxRightX) {
-              maxRightX = rx;
-              panelTarget = { r, c };
-            }
-            break;
-          }
-        }
+      const pcx = (map.xs[panelTarget.c] + map.xs[panelTarget.c + 1]) / 2;
+      const pcy = (map.ys[panelTarget.r] + map.ys[panelTarget.r + 1]) / 2;
+      let panelBalloonY = pcy;
+      if (manholeOnRight && mPos && Math.abs(panelBalloonY - mPos[1]) < Math.round(12.0 * N)) {
+        panelBalloonY = Math.min(W - Math.round(3.0 * N), mPos[1] + Math.round(14.0 * N));
       }
-      let panelPcy = null;
-      if (panelTarget) {
-        const pcx = (map.xs[panelTarget.c] + map.xs[panelTarget.c + 1]) / 2;
-        panelPcy = (map.ys[panelTarget.r] + map.ys[panelTarget.r + 1]) / 2;
-        let calloutPcy = panelPcy;
-        const hasRightLadder = lList.some(l => l.sd === 'R' && Math.abs(l.y - calloutPcy) < Math.round(15 * N));
-        if (hasRightLadder) {
-          calloutPcy = (calloutPcy + Math.round(12 * N) < W) ? (calloutPcy + Math.round(12 * N)) : (calloutPcy - Math.round(12 * N));
-        }
-        const panelBalloonX = L + F + Math.round(8 * N);
-        drawBalloonCallout(ents, [pcx, panelPcy], [L + F + Math.round(4 * N), calloutPcy], [panelBalloonX, calloutPcy], getItemNo('panel') || 3, N, 'BALLOON');
-        panelPcy = calloutPcy;
-      }
+      const b3Center = [rightBaseX, panelBalloonY];
+      const b3Elbow = [rightBaseX - shelfL - balloonR, panelBalloonY];
+      drawBalloonCallout(ents, [pcx, pcy], b3Elbow, b3Center, getItemNo('panel') || 3, N, 'BALLOON');
 
-      // 5. 코너 프레임 (Corner Frame - NO. 4): 실제로 존재하는 좌상단(또는 외곽) 코너 탐색
+      // ==========================================
+      // [3] 코너 프레임 (Corner Frame - NO. 4)
+      // 상단 좌측 코너: 상단 수평 기준선(topBaseY)에 정렬
+      // ==========================================
       let cornerPt = null;
       for (let i = map.rows.length - 1; i >= 0; i--) {
         for (let j = 0; j < map.cols.length; j++) {
@@ -2065,50 +2071,24 @@
         if (cornerPt) break;
       }
       if (!cornerPt) cornerPt = [0, W];
-      drawBalloonCallout(ents, [cornerPt[0] - F, cornerPt[1] + F], [cornerPt[0] - F - Math.round(6 * N), cornerPt[1] + F + Math.round(8 * N)], [cornerPt[0] - F - Math.round(14 * N), cornerPt[1] + F + Math.round(14 * N)], getItemNo('corner') || 4, N, 'BALLOON');
+      const b4X = cornerPt[0] - F - Math.round(6.0 * N);
+      const b4Center = [b4X, topBaseY];
+      const b4Elbow = [b4X + shelfL + balloonR, topBaseY];
+      drawBalloonCallout(ents, [cornerPt[0] - F, cornerPt[1] + F], b4Elbow, b4Center, getItemNo('corner') || 4, N, 'BALLOON');
 
-      // 6. 플랜지 바 (Flange Bar - NO. 9): 상단 외벽의 실제 존재하는 판넬 분할선 탐색
-      let seamPt = null;
-      for (let i = map.rows.length - 1; i >= 0; i--) {
-        for (let j = 1; j < map.cols.length; j++) {
-          if (map.has(i, j - 1) && map.has(i, j) && !map.has(i + 1, j - 1) && !map.has(i + 1, j)) {
-            seamPt = [map.xs[j], map.ys[i + 1]];
-            break;
-          }
-        }
-        if (seamPt) break;
-      }
-      if (!seamPt) {
-        for (let i = map.rows.length - 1; i >= 0; i--) {
-          for (let j = 0; j < map.cols.length; j++) {
-            if (map.has(i, j) && !map.has(i + 1, j)) {
-              seamPt = [map.xs[j] + map.cols[j] * 0.5, map.ys[i + 1]];
-              break;
-            }
-          }
-          if (seamPt) break;
-        }
-      }
-      if (seamPt) {
-        let fbx = seamPt[0];
-        if (mPos && Math.abs(fbx - mPos[0]) < Math.round(8 * N)) fbx += Math.round(8 * N);
-        if (vPos && Math.abs(fbx - vPos[0]) < Math.round(8 * N)) fbx += Math.round(8 * N);
-        drawBalloonCallout(ents, seamPt, [fbx, topStaggerY - Math.round(5 * N)], [fbx, topStaggerY], getItemNo('flangebar') || 9, N, 'BALLOON');
-      }
-
-      // 7. 내부 스테이 / 보강재 (Internal Stay - NO. 10): 상단 외곽(topStaggerY)으로 인출하여 우측 기초패드도와 완전 비간섭
+      // ==========================================
+      // [4] 내부 스테이 / 보강재 (Internal Stay - NO. 10)
+      // 선거리 최소화: 상단 외벽에서 가장 가까운 최상단 스테이 교차점(top row seam) 선택!
+      // 상단 수평 기준선(topBaseY)에 수평 정렬
+      // ==========================================
       let stayPt = null;
-      for (let i = Math.floor(map.rows.length / 2); i < map.rows.length; i++) {
-        for (let j = Math.floor(map.cols.length / 2); j < map.cols.length; j++) {
-          if (map.has(i, j) && map.has(i - 1, j) && map.has(i, j - 1)) {
-            stayPt = [map.xs[j], map.ys[i]];
-            break;
-          }
-        }
-        if (stayPt) break;
+      const topSeamRow = Math.max(1, map.rows.length - 1);
+      const stayCol = Math.max(1, Math.min(2, map.cols.length - 1));
+      if (map.has(topSeamRow, stayCol) && (map.has(topSeamRow - 1, stayCol) || map.has(topSeamRow, stayCol - 1))) {
+        stayPt = [map.xs[stayCol], map.ys[topSeamRow]];
       }
       if (!stayPt) {
-        for (let i = 1; i < map.rows.length; i++) {
+        for (let i = map.rows.length - 1; i >= 1; i--) {
           for (let j = 1; j < map.cols.length; j++) {
             if (map.has(i, j) && (map.has(i - 1, j) || map.has(i, j - 1))) {
               stayPt = [map.xs[j], map.ys[i]];
@@ -2119,22 +2099,100 @@
         }
       }
       if (!stayPt) {
-        for (let i = 0; i < map.rows.length; i++) {
-          for (let j = 0; j < map.cols.length; j++) {
-            if (map.has(i, j)) {
-              stayPt = [(map.xs[j] + map.xs[j + 1]) / 2, (map.ys[i] + map.ys[i + 1]) / 2];
-              break;
-            }
-          }
-          if (stayPt) break;
+        stayPt = [map.length * 0.25, map.width * 0.75];
+      }
+      const b10X = Math.max(b4X + Math.round(9.0 * N), stayPt[0] + Math.round(3.0 * N));
+      const b10Center = [b10X, topBaseY];
+      const b10Elbow = [b10X - shelfL - balloonR, topBaseY];
+      drawBalloonCallout(ents, stayPt, b10Elbow, b10Center, getItemNo('stay') || 10, N, 'BALLOON');
+
+      // ==========================================
+      // [5] 플랜지 바 (Flange Bar - NO. 9)
+      // 상단 외벽 판넬 조인트(seam): 상단 수평 기준선(topBaseY)에 수평 정렬
+      // ==========================================
+      let seamPt = null;
+      const midCol = Math.max(1, Math.floor(map.cols.length / 2));
+      for (let i = map.rows.length - 1; i >= 0; i--) {
+        if (map.has(i, midCol) && !map.has(i + 1, midCol)) {
+          seamPt = [map.xs[midCol], map.ys[i + 1]];
+          break;
         }
       }
-      if (stayPt) {
-        let stayX = stayPt[0];
-        if (mPos && Math.abs(stayX - mPos[0]) < Math.round(10 * N)) stayX += Math.round(10 * N);
-        if (vPos && Math.abs(stayX - vPos[0]) < Math.round(10 * N)) stayX += Math.round(10 * N);
-        if (seamPt && Math.abs(stayX - seamPt[0]) < Math.round(10 * N)) stayX += Math.round(10 * N);
-        drawBalloonCallout(ents, stayPt, [stayX, topStaggerY - Math.round(5 * N)], [stayX, topStaggerY], getItemNo('stay') || 10, N, 'BALLOON');
+      if (!seamPt) {
+        seamPt = [map.length * 0.5, W];
+      }
+      let b9X = seamPt[0] + Math.round(2.0 * N);
+      if (b9X < b10X + Math.round(8.0 * N)) b9X = b10X + Math.round(8.0 * N);
+      const b9Center = [b9X, topBaseY];
+      const b9Elbow = [b9X - shelfL - balloonR, topBaseY];
+      drawBalloonCallout(ents, [seamPt[0], seamPt[1] + F], b9Elbow, b9Center, getItemNo('flangebar') || 9, N, 'BALLOON');
+
+      // ==========================================
+      // [6] 에어벤트 (Air Vent - NO. 5)
+      // 상단 수평 기준선(topBaseY)에 수평 정렬
+      // ==========================================
+      let vPos = null;
+      const vEntries = Object.entries(opt.marks || {}).filter(([_, m]) => (m & 2));
+      if (vEntries.length > 0) {
+        const [i, j] = vEntries[0][0].split(',').map(Number);
+        if (map.has(i, j)) vPos = [(map.xs[j] + map.xs[j + 1]) / 2, (map.ys[i] + map.ys[i + 1]) / 2];
+      }
+      if (!vPos) {
+        for (let i = map.rows.length - 1; i >= 0; i--) {
+          for (let j = Math.floor(map.cols.length * 0.6); j < map.cols.length; j++) {
+            if (map.has(i, j)) {
+              const cx = (map.xs[j] + map.xs[j + 1]) / 2, cy = (map.ys[i] + map.ys[i + 1]) / 2;
+              if (!mPos || Math.abs(cx - mPos[0]) > 50 || Math.abs(cy - mPos[1]) > 50) {
+                vPos = [cx, cy];
+                break;
+              }
+            }
+          }
+          if (vPos) break;
+        }
+      }
+      if (!vPos) vPos = [map.length * 0.75, W * 0.8];
+      let b5X = vPos[0] + Math.round(2.0 * N);
+      if (b5X < b9X + Math.round(8.0 * N)) b5X = b9X + Math.round(8.0 * N);
+      const b5Center = [b5X, topBaseY];
+      const b5Elbow = [b5X - shelfL - balloonR, topBaseY];
+      drawBalloonCallout(ents, [vPos[0], vPos[1] + 100], b5Elbow, b5Center, getItemNo('airvent') || 5, N, 'BALLOON');
+
+      // ==========================================
+      // [7] 외부 사다리 (External Ladder - NO. 8)
+      // 방향별 깔끔한 단일 경사선 + 수평 선반 연결 (제목 및 치수선 비간섭)
+      // ==========================================
+      const lList = ladderList(opt, map);
+      if (lList.length > 0) {
+        const l = lList[0];
+        const no8 = String(getItemNo('exladder') || 8).trim();
+        if (!usedSet || !usedSet.has(no8)) {
+          if (l.sd === 'D') {
+            // 하단 사다리: 치수선 아래로 단일 경사선 + 수평 선반 인출
+            // 중앙 '평면도' 표제 버블과의 간섭을 피해 외곽 쪽으로 배치
+            const toRight = (l.x < L * 0.4);
+            const bx8 = l.x + (toRight ? Math.round(6.0 * N) : -Math.round(6.0 * N));
+            const b8Center = [bx8, botBaseY];
+            const b8Elbow = [bx8 - (toRight ? 1 : -1) * (shelfL + balloonR), botBaseY];
+            const pStart = [l.x, l.y - F - 180];
+            drawBalloonCallout(ents, pStart, b8Elbow, b8Center, no8, N, 'BALLOON', usedSet);
+          } else if (l.sd === 'R') {
+            // 우측 사다리: 우측 기준선(rightBaseX)에 수직 정렬
+            const b8Center = [rightBaseX, l.y];
+            const b8Elbow = [rightBaseX - shelfL - balloonR, l.y];
+            drawBalloonCallout(ents, [l.x + F + 20, l.y], b8Elbow, b8Center, no8, N, 'BALLOON', usedSet);
+          } else if (l.sd === 'U') {
+            // 상단 사다리: 상단 기준선(topBaseY)에 수평 정렬
+            const b8Center = [l.x + Math.round(6.0 * N), topBaseY];
+            const b8Elbow = [b8Center[0] - shelfL - balloonR, topBaseY];
+            drawBalloonCallout(ents, [l.x, l.y + F + 20], b8Elbow, b8Center, no8, N, 'BALLOON', usedSet);
+          } else {
+            // 좌측 사다리: 좌측 기준선(leftClearX)에 수직 정렬
+            const b8Center = [leftClearX, l.y];
+            const b8Elbow = [leftClearX + shelfL + balloonR, l.y];
+            drawBalloonCallout(ents, [l.x - F - 20, l.y], b8Elbow, b8Center, no8, N, 'BALLOON', usedSet);
+          }
+        }
       }
     }
 
@@ -4084,11 +4142,15 @@
       // 3. 측면 판넬 (Wall Panel - NO. 3): 리드선 우측 정렬
       drawBalloonCallout(ents, [total, nH * 0.65], [total + 75 + Math.round(3.5 * N), nH * 0.65], [elevRightX, nH * 0.65], getItemNo('panel') || 3, N, 'BALLOON');
 
-      // 4. 코너 프레임 (Corner Frame - NO. 4): 좌상단 바깥 외곽
-      const b4X = Math.min(-75 - Math.round(16 * N), overallX - Math.round(6.0 * N));
-      drawBalloonCallout(ents, [0, nH], [-75 - Math.round(6 * N), nH + Math.round(10 * N)], [b4X, nH + Math.round(16 * N)], getItemNo('corner') || 4, N, 'BALLOON');
+      const bR = Math.round(4.2 * N);
+      const sL = Math.round(4.0 * N);
 
-      // 8. 외부 사다리 (External Ladder - NO. 8) & 10. 내부 스테이 (Internal Stay - NO. 10): 상단 바깥 외곽 (상호 크로스 방지 방향 제어)
+      // 4. 코너 프레임 (Corner Frame - NO. 4): 좌상단 바깥 외곽 (수평 선반)
+      const b4X = Math.min(-75 - Math.round(12 * N), overallX - Math.round(6.0 * N));
+      const b4Y = nH + Math.round(12 * N);
+      drawBalloonCallout(ents, [0, nH], [b4X + sL + bR, b4Y], [b4X, b4Y], getItemNo('corner') || 4, N, 'BALLOON');
+
+      // 8. 외부 사다리 (External Ladder - NO. 8) & 10. 내부 스테이 (Internal Stay - NO. 10): 상단 바깥 외곽 (상호 크로스 방지 방향 제어 및 수평 선반)
       const lads = ladderList(opt, mmap);
       let lx = total - 300;
       if (lads.length > 0) {
@@ -4103,12 +4165,20 @@
 
       if (lx <= stayX) {
         // 사다리가 좌측(또는 동일), 스테이가 우측 -> 사다리는 좌측으로, 스테이는 우측으로 인출 (크로스 원천 차단)
-        if (lads.length > 0) drawBalloonCallout(ents, [lx, nH + 100], [lx, elevTopY - Math.round(5 * N)], [lx - Math.round(10 * N), elevTopY], getItemNo('exladder') || 8, N, 'BALLOON');
-        drawBalloonCallout(ents, [stayX, nH * 0.5], [stayX, elevTopY - Math.round(5 * N)], [stayX + Math.round(10 * N), elevTopY], getItemNo('stay') || 10, N, 'BALLOON');
+        if (lads.length > 0) {
+          const b8X = lx - Math.round(10 * N);
+          drawBalloonCallout(ents, [lx, nH + 100], [b8X + sL + bR, elevTopY], [b8X, elevTopY], getItemNo('exladder') || 8, N, 'BALLOON');
+        }
+        const b10X = stayX + Math.round(10 * N);
+        drawBalloonCallout(ents, [stayX, nH * 0.5], [b10X - sL - bR, elevTopY], [b10X, elevTopY], getItemNo('stay') || 10, N, 'BALLOON');
       } else {
         // 사다리가 우측, 스테이가 좌측 -> 사다리는 우측으로, 스테이는 좌측으로 인출 (크로스 원천 차단)
-        if (lads.length > 0) drawBalloonCallout(ents, [lx, nH + 100], [lx, elevTopY - Math.round(5 * N)], [lx + Math.round(10 * N), elevTopY], getItemNo('exladder') || 8, N, 'BALLOON');
-        drawBalloonCallout(ents, [stayX, nH * 0.5], [stayX, elevTopY - Math.round(5 * N)], [stayX - Math.round(10 * N), elevTopY], getItemNo('stay') || 10, N, 'BALLOON');
+        if (lads.length > 0) {
+          const b8X = lx + Math.round(10 * N);
+          drawBalloonCallout(ents, [lx, nH + 100], [b8X - sL - bR, elevTopY], [b8X, elevTopY], getItemNo('exladder') || 8, N, 'BALLOON');
+        }
+        const b10X = stayX - Math.round(10 * N);
+        drawBalloonCallout(ents, [stayX, nH * 0.5], [b10X + sL + bR, elevTopY], [b10X, elevTopY], getItemNo('stay') || 10, N, 'BALLOON');
       }
 
       // 11. 노즐 (Nozzles - NO. 11): 리드선 우측 정렬
