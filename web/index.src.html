@@ -486,14 +486,27 @@ canvas.drag{cursor:grabbing}
           </div>
           <label class="chk-b11-pill" title="1000/500 모듈 조합 토글"><input type="checkbox" id="b11" checked> <span id="lblB11">1×1 패널 모듈</span></label>
         </div>
-        <div class="seg">
-          <label for="frm" id="lblFrm">프레임</label>
-          <select id="frm">
-            <option value="50">50 (SHS)</option>
-            <option value="75" selected>75 (앵글)</option>
-            <option value="125">125 (채널)</option>
-            <option value="150">150 (채널)</option>
-          </select>
+        <div class="seg" id="segFrm" style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <label for="frm" id="lblFrm" style="margin:0;min-width:44px">프레임</label>
+          <div style="flex:1;display:flex;align-items:center;gap:4px">
+            <select id="frm" style="flex:1">
+              <option value="50">50 (SHS)</option>
+              <option value="75" selected>75 (앵글)</option>
+              <option value="125">125 (채널)</option>
+              <option value="150">150 (채널)</option>
+            </select>
+            <label class="chk-b11-pill" title="수조 높이에 맞춰 베이스 프레임을 자동 선택합니다" style="padding:4px 6px;margin:0">
+              <input type="checkbox" id="chkAutoFrame" checked>
+              <span id="lblAutoFrame" style="font-size:11px;font-weight:700">⚡ 자동</span>
+            </label>
+            <button type="button" class="btn-sm" id="btnOpenSkidModal" title="높이별 프레임 규격 규칙 설정 화면 열기" style="padding:4px 7px;font-size:11px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;cursor:pointer">
+              <span>⚙️</span><span id="lblBtnSkidSet">설정</span>
+            </button>
+          </div>
+        </div>
+        <div id="skidAutoRuleHint" style="font-size:10px;color:var(--muted);margin-top:-2px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;line-height:1.3">
+          <span>💡 <span id="lblSkidRuleLabel">높이 자동규칙:</span> <b id="skidRuleSummaryShort" style="color:var(--accent)">1~2.5m: 75앵글 / 3~4m: 125채널 / 4.5m+: 150채널</b></span>
+          <a href="#" id="linkGoToSkidSettings" style="font-size:10px;color:var(--accent);text-decoration:underline;white-space:nowrap;margin-left:4px">세팅 화면 ➔</a>
         </div>
         <p class="hint" id="hintDims">💡 길이는 여러 칸에 입력 시 구간별 분할(예: 3 + 2)됩니다. 폭은 단일 치수(m)입니다.</p>
         <div class="err" id="err" hidden></div>
@@ -772,9 +785,10 @@ canvas.drag{cursor:grabbing}
       <div class="subtab-nav">
         <button type="button" class="subtab-btn active" data-subtab="subtab-bom" id="subtabBtnBom" style="flex:1 1 calc(50% - 4px)">📋 BOM / Item List</button>
         <button type="button" class="subtab-btn" data-subtab="subtab-cad-parts" id="subtabBtnCadParts" style="flex:1 1 calc(50% - 4px)">🧩 CAD Parts (DWG/DXF)</button>
-        <button type="button" class="subtab-btn" data-subtab="subtab-pad" id="subtabBtnPad" style="flex:1 1 calc(33.3% - 4px)">🏗️ 기초패드</button>
-        <button type="button" class="subtab-btn" data-subtab="subtab-heights" id="subtabBtnHeights" style="flex:1 1 calc(33.3% - 4px)">📏 단별 판넬</button>
-        <button type="button" class="subtab-btn" data-subtab="subtab-title" id="subtabBtnTitle" style="flex:1 1 calc(33.3% - 4px)">📋 표제란</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-pad" id="subtabBtnPad" style="flex:1 1 calc(25% - 4px)">🏗️ 기초패드</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-skid" id="subtabBtnSkid" style="flex:1 1 calc(25% - 4px)">📐 스틸 스키드</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-heights" id="subtabBtnHeights" style="flex:1 1 calc(25% - 4px)">📏 단별 판넬</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-title" id="subtabBtnTitle" style="flex:1 1 calc(25% - 4px)">📋 표제란</button>
       </div>
 
       <!-- Subtab 1: BOM (부품 사양 명세표 & 도면 넘버링) -->
@@ -1002,6 +1016,94 @@ canvas.drag{cursor:grabbing}
             <div style="font-size:10px;color:var(--muted);border-top:1px dashed var(--line);padding-top:3px;display:flex;justify-content:space-between">
               <span>내진 안전율: 전도 ≥ 1.5 (지진 1.2)</span>
               <span>활동 ≥ 1.5</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Subtab 4: 스틸 스키드 (Base Frame) 높이별 규칙 설정 -->
+      <div class="subtab-content" id="subtab-skid">
+        <section class="box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h2 id="secTitleSkid" style="margin:0;font-size:13px">📐 스틸 스키드 (Base Frame) 규격 설정</h2>
+            <div style="display:flex;gap:4px">
+              <button type="button" id="btnResetSkidRules" class="btn-sm" style="font-size:10.5px;padding:3px 7px" title="표준 기본 규칙으로 초기화">🔄 기본값 복원</button>
+              <button type="button" id="btnSaveSkidRules" class="btn-sm" style="font-size:10.5px;padding:3px 8px;background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700" title="규칙 저장 및 즉시 반영">💾 저장 및 적용</button>
+            </div>
+          </div>
+          <p class="hint" id="hintSkidRules" style="margin-bottom:10px">
+            수조 높이(H)에 따라 기초 베이스 프레임(스틸 스키드) 규격을 자동 선택하는 매핑 규칙을 설정합니다.
+          </p>
+
+          <!-- Current Tank Status & Auto-Toggle Card -->
+          <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:11.5px;margin-bottom:12px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="color:var(--muted);font-weight:600">현재 수조 높이 (H):</span>
+              <b id="skidCurrentTankH" style="font-size:12px;color:var(--fg)">3.0 m (3000 mm)</b>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="color:var(--muted);font-weight:600">현재 적용 프레임:</span>
+              <span id="skidCurrentFrameBadge" style="font-weight:700;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 8px;border-radius:4px">125 (채널)</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px dashed var(--line);padding-top:6px;margin-top:2px">
+              <span style="color:var(--muted);font-weight:600">높이 연동 자동선택:</span>
+              <label style="display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--fg);cursor:pointer">
+                <input type="checkbox" id="chkAutoFrameSettings" checked>
+                <span id="lblAutoFrameSettings">수조 높이 변경 시 자동 적용</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Modeless/Wide Modal Trigger -->
+          <button type="button" id="btnOpenSkidModalFromTab" class="btn-sm" style="width:100%;margin-bottom:12px;padding:7px;font-size:11.5px;font-weight:700;background:var(--surface-sub);border:1px solid var(--accent);color:var(--accent);display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer">
+            <span>⚙️</span> <span id="lblBtnOpenSkidModalWide">모달 팝업으로 전체 규칙 편집</span>
+          </button>
+
+          <!-- Rules List Container -->
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:11.5px;font-weight:700;color:var(--fg)">📋 높이별 프레임 매핑 규칙</span>
+              <span id="skidRulesCountBadge" style="font-size:10px;padding:1px 6px;border-radius:8px;background:var(--surface-sub);border:1px solid var(--line);color:var(--muted)">3개 규칙</span>
+            </div>
+            <div id="skidRulesContainerTab" style="display:flex;flex-direction:column;gap:8px">
+              <!-- Dynamically populated cards/rows -->
+            </div>
+          </div>
+
+          <!-- Add Rule Card -->
+          <div style="background:var(--surface-sub);border:1px dashed var(--line);border-radius:8px;padding:10px;font-size:11.5px">
+            <div style="font-weight:700;margin-bottom:6px;color:var(--fg)">➕ 새 높이 규칙 추가</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+              <div>
+                <label style="font-size:10.5px;color:var(--muted);display:block;margin-bottom:2px">최소 높이 (min H, m)</label>
+                <input type="number" id="newRuleMinH" step="0.5" min="0.5" max="15.0" placeholder="예: 5.5" style="width:100%;padding:4px 6px;font-size:11.5px;text-align:center">
+              </div>
+              <div>
+                <label style="font-size:10.5px;color:var(--muted);display:block;margin-bottom:2px">최대 높이 (max H, m)</label>
+                <input type="number" id="newRuleMaxH" step="0.5" min="0.5" max="20.0" placeholder="예: 8.0" style="width:100%;padding:4px 6px;font-size:11.5px;text-align:center">
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <div style="flex:1">
+                <select id="newRuleFrame" style="width:100%;padding:5px;font-size:11.5px">
+                  <option value="50">50 (SHS-50×50×3.2T)</option>
+                  <option value="75">75 (L-75×75×6T / [-75×40×5T)</option>
+                  <option value="125">125 ([-125×65×6T / [-75×40×5T)</option>
+                  <option value="150">150 ([-150×75×6.5T / [-100×50×5T)</option>
+                </select>
+              </div>
+              <button type="button" id="btnAddSkidRule" class="btn-sm" style="padding:5px 12px;font-size:11.5px;font-weight:700;white-space:nowrap">규칙 추가</button>
+            </div>
+          </div>
+
+          <!-- Standard Engineering Reference Card -->
+          <div style="margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:11px">
+            <div style="font-weight:700;color:var(--accent);margin-bottom:4px">💡 물탱크 스틸 스키드 표준 엔지니어링 가이드</div>
+            <div style="color:var(--muted);line-height:1.5">
+              • <b>1.0m ~ 2.5mH</b>: <b>75 (앵글)</b> — 주부재 L-75×75×6T, 종부재 [-75×40×5T<br>
+              • <b>3.0m ~ 4.0mH</b>: <b>125 (채널)</b> — 주부재 [-125×65×6T, 종부재 [-75×40×5T<br>
+              • <b>4.5m ~ 5.0m+H</b>: <b>150 (채널)</b> — 주부재 [-150×75×6.5T, 종부재 [-100×50×5T<br>
+              • <b>소형/특수</b>: <b>50 (SHS)</b> — 각파이프 SHS-50×50×3.2T
             </div>
           </div>
         </section>
@@ -1275,6 +1377,74 @@ canvas.drag{cursor:grabbing}
             <button type="button" id="btnModalAddNewH" class="btn-sm" style="font-size:12px;padding:4px 10px">행 추가</button>
           </div>
           <button type="button" id="btnModalCloseBottom" class="btn-sm" style="font-size:12px;padding:4px 12px">닫기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Steel Skid Rules Modal Dialog (높이별 스틸 스키드 규칙 설정 모달) -->
+    <div id="skidRulesModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;max-width:640px;width:94%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);display:flex;flex-direction:column">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px">
+          <h3 id="skidRulesModalTitle" style="margin:0;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px">
+            <span>📐</span> <span id="lblSkidModalTitle">스틸 스키드 (Base Frame) 자동 선택 규칙 설정</span>
+          </h3>
+          <button type="button" id="btnCloseSkidModal" class="btn-sm" style="border:none;background:transparent;font-size:16px;cursor:pointer;color:var(--muted)">✕</button>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:11.5px">
+          <div>
+            <span style="color:var(--muted)">현재 수조 높이:</span> <b id="modalSkidCurrentH">3.0m</b>
+            <span style="margin:0 6px;color:var(--line)">|</span>
+            <span style="color:var(--muted)">추천 프레임:</span> <b id="modalSkidRecFrame" style="color:var(--accent)">125 (채널)</b>
+          </div>
+          <label style="display:inline-flex;align-items:center;gap:5px;font-weight:700;cursor:pointer">
+            <input type="checkbox" id="chkAutoFrameModal" checked>
+            <span id="lblAutoFrameModal">높이 변경 시 자동 선택</span>
+          </label>
+        </div>
+
+        <!-- Rules Table -->
+        <div style="flex:1;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface);margin-bottom:12px;max-height:320px">
+          <table style="width:100%;border-collapse:collapse;font-size:11.5px;text-align:center">
+            <thead style="background:var(--surface-sub);position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line)">
+              <tr>
+                <th style="padding:7px 4px;font-weight:700;width:45px">순번</th>
+                <th style="padding:7px 4px;font-weight:700;width:130px">높이 범위 (m)</th>
+                <th style="padding:7px 4px;font-weight:700;width:125px">적용 프레임</th>
+                <th style="padding:7px 4px;font-weight:700">부재 사양</th>
+                <th style="padding:7px 4px;font-weight:700;width:55px">삭제</th>
+              </tr>
+            </thead>
+            <tbody id="skidRulesModalTbody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Add Rule Row -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:6px;margin-bottom:14px;font-size:11.5px">
+          <div style="display:flex;align-items:center;gap:4px">
+            <span style="font-weight:700">➕ 규칙 추가:</span>
+            <input type="number" id="modalNewRuleMinH" step="0.5" min="0.5" max="15.0" placeholder="최소(m)" style="width:65px;padding:4px;font-size:11px;text-align:center">
+            <span>~</span>
+            <input type="number" id="modalNewRuleMaxH" step="0.5" min="0.5" max="20.0" placeholder="최대(m)" style="width:65px;padding:4px;font-size:11px;text-align:center">
+            <select id="modalNewRuleFrame" style="padding:4px;font-size:11px">
+              <option value="50">50 (SHS)</option>
+              <option value="75">75 (앵글)</option>
+              <option value="125">125 (채널)</option>
+              <option value="150">150 (채널)</option>
+            </select>
+          </div>
+          <button type="button" id="btnModalAddSkidRule" class="btn-sm" style="padding:4px 10px;font-size:11px;font-weight:700">추가</button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <button type="button" id="btnModalResetSkidRules" class="btn-sm" style="padding:6px 12px;font-size:11.5px">🔄 기본값 복원</button>
+          <div style="display:flex;gap:8px">
+            <button type="button" id="btnModalCloseSkidBottom" class="btn-sm" style="padding:6px 14px;font-size:11.5px">닫기</button>
+            <button type="button" id="btnModalSaveSkidRules" class="pri" style="padding:6px 18px;font-size:11.5px;font-weight:700">💾 저장 및 적용</button>
+          </div>
         </div>
       </div>
     </div>
@@ -2247,6 +2417,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           loadDbPanels();
         } else if (sId === 'subtab-heights') {
           renderHeightTable();
+        } else if (sId === 'subtab-skid') {
+          if (typeof renderSkidRulesUI === 'function') renderSkidRulesUI();
         }
       }
     });
@@ -2357,6 +2529,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       subtabBOM: '📋 BOM / Item List',
       subtabCadParts: '🧩 CAD Parts (DWG/DXF)',
       subtabPad: '🏗️ 기초패드',
+      subtabSkid: '📐 스틸스키드',
       subtabHeights: '📏 단별구성',
       subtabTitle: '📋 표제란',
       subtabPanels: '🗄️ 판넬 DB',
@@ -2466,6 +2639,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       subtabBOM: '📋 BOM / Item List',
       subtabCadParts: '🧩 CAD Parts (DWG/DXF)',
       subtabPad: '🏗️ Concrete Pad',
+      subtabSkid: '📐 Steel Skid',
       subtabHeights: '📏 Height & Tiers',
       subtabTitle: '📝 Title Block',
       subtabPanels: '🗄️ Panel DB',
@@ -2697,6 +2871,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if (cadPartsSubBtn) cadPartsSubBtn.textContent = t.subtabCadParts || t.tabCadParts;
     const padSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-pad"]');
     if (padSubBtn) padSubBtn.textContent = t.subtabPad;
+    const skidSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-skid"]');
+    if (skidSubBtn) skidSubBtn.textContent = t.subtabSkid || '📐 스틸스키드';
     const heightSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-heights"]');
     if (heightSubBtn) heightSubBtn.textContent = t.subtabHeights;
     const titleSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-title"]');
@@ -3521,8 +3697,309 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     });
   }
   renderHeightTable();
+
+  /* ---------- 높이별 스틸 스키드 (Base Frame) 자동 선택 규칙 관리 ---------- */
+  let activeSkidRules = C.getDefaultSkidRules();
+  try {
+    const savedRules = localStorage.getItem('tankcad_skid_rules');
+    if (savedRules) {
+      const parsed = JSON.parse(savedRules);
+      if (Array.isArray(parsed) && parsed.length > 0) activeSkidRules = parsed;
+    }
+  } catch (e) {
+    console.error('Failed to load saved skid rules:', e);
+  }
+  if (C.setCustomSkidRules) C.setCustomSkidRules(activeSkidRules);
+
+  let autoSelectFrameEnabled = true;
+  try {
+    const savedAuto = localStorage.getItem('tankcad_auto_frame');
+    if (savedAuto !== null) {
+      autoSelectFrameEnabled = savedAuto === '1' || savedAuto === 'true';
+    }
+  } catch (e) {}
+
+  function syncAutoFrameCheckboxes(val) {
+    autoSelectFrameEnabled = !!val;
+    try {
+      localStorage.setItem('tankcad_auto_frame', autoSelectFrameEnabled ? '1' : '0');
+    } catch (e) {}
+    if ($('chkAutoFrame')) $('chkAutoFrame').checked = autoSelectFrameEnabled;
+    if ($('chkAutoFrameSettings')) $('chkAutoFrameSettings').checked = autoSelectFrameEnabled;
+    if ($('chkAutoFrameModal')) $('chkAutoFrameModal').checked = autoSelectFrameEnabled;
+  }
+
+  function getFrameSpecLabel(frm) {
+    const num = Number(frm) || 75;
+    if (num === 50) return currentLang === 'en' ? '50 (SHS 50x50x3.2t)' : '50 (각파이프 50×50×3.2t)';
+    if (num === 75) return currentLang === 'en' ? '75 (Angle 75x75x6t)' : '75 (앵글 75×75×6t)';
+    if (num === 125) return currentLang === 'en' ? '125 (Channel 125x65x6t)' : '125 (채널 125×65×6t)';
+    if (num === 150) return currentLang === 'en' ? '150 (Channel 150x75x6.5t)' : '150 (채널 150×75×6.5t)';
+    return `${num} Frame`;
+  }
+
+  function applyAutoSkidFrame(force = false) {
+    const hVal = Number($('H') ? $('H').value : 3000) / 1000;
+    const recFrame = C.getFrameForHeight ? C.getFrameForHeight(hVal, activeSkidRules) : 75;
+
+    if ($('skidRuleSummaryShort') && C.formatSkidRuleSummary) {
+      $('skidRuleSummaryShort').textContent = C.formatSkidRuleSummary(activeSkidRules);
+    }
+    if ($('skidCurrentTankH')) $('skidCurrentTankH').textContent = `${hVal.toFixed(1)}m`;
+    if ($('modalSkidCurrentH')) $('modalSkidCurrentH').textContent = `${hVal.toFixed(1)}m`;
+
+    const curFrm = $('frm') ? $('frm').value : '75';
+    if ($('skidCurrentFrameBadge')) {
+      const parts = getFrameSpecLabel(curFrm).split(' ');
+      $('skidCurrentFrameBadge').textContent = `${curFrm} (${parts[1] || '프레임'})`;
+    }
+    if ($('modalSkidRecFrame')) {
+      const parts = getFrameSpecLabel(recFrame).split(' ');
+      $('modalSkidRecFrame').textContent = `${recFrame} (${parts[1] || '프레임'})`;
+    }
+
+    if (autoSelectFrameEnabled || force) {
+      if ($('frm') && $('frm').value !== String(recFrame)) {
+        $('frm').value = String(recFrame);
+        if ($('skidCurrentFrameBadge')) {
+          const parts = getFrameSpecLabel(recFrame).split(' ');
+          $('skidCurrentFrameBadge').textContent = `${recFrame} (${parts[1] || '프레임'})`;
+        }
+      }
+    }
+  }
+
+  function renderSkidRulesTab() {
+    const cont = $('skidRulesContainerTab');
+    if (!cont) return;
+    cont.innerHTML = '';
+    const isEn = currentLang === 'en';
+
+    activeSkidRules.forEach((rule, idx) => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px';
+
+      const maxStr = (rule.maxH && rule.maxH < 90) ? `${rule.maxH}m` : (isEn ? 'Above' : '이상');
+      const rangeText = `${rule.minH}m ~ ${maxStr}`;
+      const specLabel = getFrameSpecLabel(rule.frame);
+      const isAngle = rule.frame === 75 || rule.frame === '75';
+      const badgeColor = isAngle ? '#10b981' : (rule.frame === 150 ? '#8b5cf6' : '#0284c7');
+
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;flex:1">
+          <span style="font-size:11px;font-weight:700;color:var(--muted);width:20px;text-align:center">#${idx + 1}</span>
+          <span style="font-size:12px;font-weight:700;min-width:110px">${rangeText}</span>
+          <span style="font-size:11px;font-weight:700;background:${badgeColor}22;color:${badgeColor};border:1px solid ${badgeColor}44;border-radius:4px;padding:2px 6px">${rule.frame}</span>
+          <span style="font-size:11.5px;color:var(--muted)">${specLabel}</span>
+        </div>
+        <button type="button" class="btn-sm btn-del-skid-rule" data-idx="${idx}" style="color:#ef4444;border-color:rgba(239,68,68,0.3);padding:3px 7px;font-size:11px;cursor:pointer" title="${isEn ? 'Delete Rule' : '규칙 삭제'}">✕</button>
+      `;
+      cont.appendChild(card);
+    });
+
+    cont.querySelectorAll('.btn-del-skid-rule').forEach(b => {
+      b.addEventListener('click', (e) => {
+        const i = Number(e.currentTarget.getAttribute('data-idx'));
+        if (activeSkidRules.length <= 1) {
+          alert(isEn ? 'At least one rule must be maintained.' : '최소 1개 이상의 규칙이 유지되어야 합니다.');
+          return;
+        }
+        activeSkidRules.splice(i, 1);
+        renderSkidRulesUI();
+      });
+    });
+  }
+
+  function renderSkidRulesModalTable() {
+    const tbody = $('skidRulesModalTbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const isEn = currentLang === 'en';
+
+    activeSkidRules.forEach((rule, idx) => {
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid var(--line)';
+      const maxStr = (rule.maxH && rule.maxH < 90) ? `${rule.maxH}m` : (isEn ? 'Above' : '이상');
+      const specLabel = getFrameSpecLabel(rule.frame);
+      const isAngle = rule.frame === 75 || rule.frame === '75';
+      const badgeColor = isAngle ? '#10b981' : (rule.frame === 150 ? '#8b5cf6' : '#0284c7');
+
+      tr.innerHTML = `
+        <td style="padding:6px 4px;font-size:11px;color:var(--muted)">${idx + 1}</td>
+        <td style="padding:6px 4px;font-size:11.5px;font-weight:700">${rule.minH}m ~ ${maxStr}</td>
+        <td style="padding:6px 4px">
+          <span style="font-size:11px;font-weight:700;background:${badgeColor}22;color:${badgeColor};border:1px solid ${badgeColor}44;border-radius:4px;padding:2px 8px">${rule.frame}</span>
+        </td>
+        <td style="padding:6px 4px;font-size:11px;color:var(--muted);text-align:left">${specLabel}</td>
+        <td style="padding:6px 4px">
+          <button type="button" class="btn-sm btn-modal-del-skid-rule" data-idx="${idx}" style="color:#ef4444;border-color:rgba(239,68,68,0.3);padding:2px 6px;font-size:10px;cursor:pointer" title="${isEn ? 'Delete' : '삭제'}">✕</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.btn-modal-del-skid-rule').forEach(b => {
+      b.addEventListener('click', (e) => {
+        const i = Number(e.currentTarget.getAttribute('data-idx'));
+        if (activeSkidRules.length <= 1) {
+          alert(isEn ? 'At least one rule must be maintained.' : '최소 1개 이상의 규칙이 유지되어야 합니다.');
+          return;
+        }
+        activeSkidRules.splice(i, 1);
+        renderSkidRulesUI();
+      });
+    });
+  }
+
+  function renderSkidRulesUI() {
+    renderSkidRulesTab();
+    renderSkidRulesModalTable();
+    applyAutoSkidFrame();
+  }
+
+  function saveSkidRulesData(btnTrigger) {
+    try {
+      localStorage.setItem('tankcad_skid_rules', JSON.stringify(activeSkidRules));
+    } catch (e) {}
+    if (C.setCustomSkidRules) C.setCustomSkidRules(activeSkidRules);
+    applyAutoSkidFrame(true);
+    schedule();
+
+    if (btnTrigger) {
+      const origText = btnTrigger.textContent;
+      btnTrigger.textContent = currentLang === 'en' ? '✅ Saved!' : '✅ 저장 완료';
+      btnTrigger.style.background = '#16a34a';
+      setTimeout(() => {
+        btnTrigger.textContent = origText;
+        btnTrigger.style.background = '';
+      }, 1500);
+    }
+  }
+
+  function resetSkidRulesData() {
+    const isEn = currentLang === 'en';
+    if (confirm(isEn ? 'Reset steel skid selection rules to factory defaults?' : '스틸 스키드 규칙을 초기 기본값(1~2.5m: 75앵글, 3~4m: 125채널, 4.5m+: 150채널)으로 복원하시겠습니까?')) {
+      activeSkidRules = C.getDefaultSkidRules();
+      try {
+        localStorage.removeItem('tankcad_skid_rules');
+      } catch (e) {}
+      if (C.setCustomSkidRules) C.setCustomSkidRules(activeSkidRules);
+      renderSkidRulesUI();
+      applyAutoSkidFrame(true);
+      schedule();
+    }
+  }
+
+  function addSkidRuleFromInputs(minEl, maxEl, frmEl) {
+    if (!minEl || !maxEl || !frmEl) return;
+    const minH = parseFloat(minEl.value);
+    const maxH = parseFloat(maxEl.value);
+    const frame = parseInt(frmEl.value, 10);
+    if (isNaN(minH) || isNaN(maxH) || minH >= maxH) {
+      alert(currentLang === 'en' ? 'Please enter a valid height range (Min < Max).' : '올바른 높이 범위(최소높이 < 최대높이)를 입력하세요.');
+      return;
+    }
+    activeSkidRules.push({
+      id: `skid_rule_${Date.now()}`,
+      minH,
+      maxH,
+      frame,
+      desc: `${minH}m ~ ${maxH}mH`
+    });
+    activeSkidRules.sort((a, b) => a.minH - b.minH);
+    renderSkidRulesUI();
+  }
+
+  // Modal handlers
+  function openSkidRulesModal() {
+    if ($('skidRulesModal')) $('skidRulesModal').style.display = 'flex';
+    renderSkidRulesUI();
+  }
+  window.openSkidRulesModal = openSkidRulesModal;
+  function closeSkidRulesModal() {
+    if ($('skidRulesModal')) $('skidRulesModal').style.display = 'none';
+  }
+  window.closeSkidRulesModal = closeSkidRulesModal;
+
+  window.switchToSkidTab = () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const setBtn = document.querySelector('.tab-btn[data-tab="tab-settings"]');
+    if (setBtn) setBtn.classList.add('active');
+    const setContent = $('tab-settings');
+    if (setContent) setContent.classList.add('active');
+
+    document.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.subtab-content').forEach(c => c.classList.remove('active'));
+    const skidSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-skid"]');
+    if (skidSubBtn) skidSubBtn.classList.add('active');
+    const skidSubContent = $('subtab-skid');
+    if (skidSubContent) skidSubContent.classList.add('active');
+    renderSkidRulesUI();
+  };
+
+  // Wire skid rule UI elements
+  if ($('btnOpenSkidModal')) $('btnOpenSkidModal').addEventListener('click', openSkidRulesModal);
+  if ($('btnOpenSkidModalFromTab')) $('btnOpenSkidModalFromTab').addEventListener('click', openSkidRulesModal);
+  if ($('btnCloseSkidModal')) $('btnCloseSkidModal').addEventListener('click', closeSkidRulesModal);
+  if ($('btnModalCloseSkidBottom')) $('btnModalCloseSkidBottom').addEventListener('click', closeSkidRulesModal);
+  if ($('skidRulesModal')) {
+    $('skidRulesModal').addEventListener('click', (e) => {
+      if (e.target === $('skidRulesModal')) closeSkidRulesModal();
+    });
+  }
+  if ($('linkGoToSkidSettings')) {
+    $('linkGoToSkidSettings').addEventListener('click', (e) => {
+      e.preventDefault();
+      switchToSkidTab();
+    });
+  }
+
+  // Checkbox sync
+  ['chkAutoFrame', 'chkAutoFrameSettings', 'chkAutoFrameModal'].forEach(id => {
+    const el = $(id);
+    if (el) {
+      el.addEventListener('change', () => {
+        syncAutoFrameCheckboxes(el.checked);
+        applyAutoSkidFrame(true);
+        schedule();
+      });
+    }
+  });
+
+  // Add rule buttons
+  if ($('btnAddNewSkidRuleTab')) {
+    $('btnAddNewSkidRuleTab').addEventListener('click', () => {
+      addSkidRuleFromInputs($('newRuleMinHTab'), $('newRuleMaxHTab'), $('newRuleFrameTab'));
+    });
+  }
+  if ($('btnModalAddNewRule')) {
+    $('btnModalAddNewRule').addEventListener('click', () => {
+      addSkidRuleFromInputs($('modalNewRuleMinH'), $('modalNewRuleMaxH'), $('modalNewRuleFrame'));
+    });
+  }
+
+  // Save / Reset buttons
+  if ($('btnSaveSkidRulesTab')) $('btnSaveSkidRulesTab').addEventListener('click', (e) => saveSkidRulesData(e.target));
+  if ($('btnModalSaveSkidRules')) $('btnModalSaveSkidRules').addEventListener('click', (e) => saveSkidRulesData(e.target));
+  if ($('btnResetSkidRulesTab')) $('btnResetSkidRulesTab').addEventListener('click', resetSkidRulesData);
+  if ($('btnResetSkidRulesModal')) $('btnResetSkidRulesModal').addEventListener('click', resetSkidRulesData);
+
+  // Initialize UI & initial state
+  syncAutoFrameCheckboxes(autoSelectFrameEnabled);
+  renderSkidRulesUI();
+
+  // Listen to frame select change
+  if ($('frm')) {
+    $('frm').addEventListener('change', () => {
+      applyAutoSkidFrame(false);
+      schedule();
+    });
+  }
+
   $('H').addEventListener('change', () => {
     const newH = Number($('H').value) || 3000;
+    applyAutoSkidFrame();
     nozzleData.forEach(n => {
       const isOverflow = n.name === 'OVERFLOW' || (n.desc && n.desc.includes('월류'));
       const isInlet = n.name === 'INLET' || (n.desc && (n.desc.includes('유입') || n.desc.includes('급수')));
@@ -6355,6 +6832,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     }
     return true;
   }
+  window.applyAppState = applyAppState;
 
   function syncStateToStorageAndUrl() {
     if (isRestoringState) return;

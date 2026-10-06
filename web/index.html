@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.6.40</title>
+<title>YSACC TANK CAD v1.6.41</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -486,14 +486,27 @@ canvas.drag{cursor:grabbing}
           </div>
           <label class="chk-b11-pill" title="1000/500 모듈 조합 토글"><input type="checkbox" id="b11" checked> <span id="lblB11">1×1 패널 모듈</span></label>
         </div>
-        <div class="seg">
-          <label for="frm" id="lblFrm">프레임</label>
-          <select id="frm">
-            <option value="50">50 (SHS)</option>
-            <option value="75" selected>75 (앵글)</option>
-            <option value="125">125 (채널)</option>
-            <option value="150">150 (채널)</option>
-          </select>
+        <div class="seg" id="segFrm" style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <label for="frm" id="lblFrm" style="margin:0;min-width:44px">프레임</label>
+          <div style="flex:1;display:flex;align-items:center;gap:4px">
+            <select id="frm" style="flex:1">
+              <option value="50">50 (SHS)</option>
+              <option value="75" selected>75 (앵글)</option>
+              <option value="125">125 (채널)</option>
+              <option value="150">150 (채널)</option>
+            </select>
+            <label class="chk-b11-pill" title="수조 높이에 맞춰 베이스 프레임을 자동 선택합니다" style="padding:4px 6px;margin:0">
+              <input type="checkbox" id="chkAutoFrame" checked>
+              <span id="lblAutoFrame" style="font-size:11px;font-weight:700">⚡ 자동</span>
+            </label>
+            <button type="button" class="btn-sm" id="btnOpenSkidModal" title="높이별 프레임 규격 규칙 설정 화면 열기" style="padding:4px 7px;font-size:11px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;cursor:pointer">
+              <span>⚙️</span><span id="lblBtnSkidSet">설정</span>
+            </button>
+          </div>
+        </div>
+        <div id="skidAutoRuleHint" style="font-size:10px;color:var(--muted);margin-top:-2px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;line-height:1.3">
+          <span>💡 <span id="lblSkidRuleLabel">높이 자동규칙:</span> <b id="skidRuleSummaryShort" style="color:var(--accent)">1~2.5m: 75앵글 / 3~4m: 125채널 / 4.5m+: 150채널</b></span>
+          <a href="#" id="linkGoToSkidSettings" style="font-size:10px;color:var(--accent);text-decoration:underline;white-space:nowrap;margin-left:4px">세팅 화면 ➔</a>
         </div>
         <p class="hint" id="hintDims">💡 길이는 여러 칸에 입력 시 구간별 분할(예: 3 + 2)됩니다. 폭은 단일 치수(m)입니다.</p>
         <div class="err" id="err" hidden></div>
@@ -772,9 +785,10 @@ canvas.drag{cursor:grabbing}
       <div class="subtab-nav">
         <button type="button" class="subtab-btn active" data-subtab="subtab-bom" id="subtabBtnBom" style="flex:1 1 calc(50% - 4px)">📋 BOM / Item List</button>
         <button type="button" class="subtab-btn" data-subtab="subtab-cad-parts" id="subtabBtnCadParts" style="flex:1 1 calc(50% - 4px)">🧩 CAD Parts (DWG/DXF)</button>
-        <button type="button" class="subtab-btn" data-subtab="subtab-pad" id="subtabBtnPad" style="flex:1 1 calc(33.3% - 4px)">🏗️ 기초패드</button>
-        <button type="button" class="subtab-btn" data-subtab="subtab-heights" id="subtabBtnHeights" style="flex:1 1 calc(33.3% - 4px)">📏 단별 판넬</button>
-        <button type="button" class="subtab-btn" data-subtab="subtab-title" id="subtabBtnTitle" style="flex:1 1 calc(33.3% - 4px)">📋 표제란</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-pad" id="subtabBtnPad" style="flex:1 1 calc(25% - 4px)">🏗️ 기초패드</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-skid" id="subtabBtnSkid" style="flex:1 1 calc(25% - 4px)">📐 스틸 스키드</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-heights" id="subtabBtnHeights" style="flex:1 1 calc(25% - 4px)">📏 단별 판넬</button>
+        <button type="button" class="subtab-btn" data-subtab="subtab-title" id="subtabBtnTitle" style="flex:1 1 calc(25% - 4px)">📋 표제란</button>
       </div>
 
       <!-- Subtab 1: BOM (부품 사양 명세표 & 도면 넘버링) -->
@@ -1002,6 +1016,94 @@ canvas.drag{cursor:grabbing}
             <div style="font-size:10px;color:var(--muted);border-top:1px dashed var(--line);padding-top:3px;display:flex;justify-content:space-between">
               <span>내진 안전율: 전도 ≥ 1.5 (지진 1.2)</span>
               <span>활동 ≥ 1.5</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Subtab 4: 스틸 스키드 (Base Frame) 높이별 규칙 설정 -->
+      <div class="subtab-content" id="subtab-skid">
+        <section class="box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h2 id="secTitleSkid" style="margin:0;font-size:13px">📐 스틸 스키드 (Base Frame) 규격 설정</h2>
+            <div style="display:flex;gap:4px">
+              <button type="button" id="btnResetSkidRules" class="btn-sm" style="font-size:10.5px;padding:3px 7px" title="표준 기본 규칙으로 초기화">🔄 기본값 복원</button>
+              <button type="button" id="btnSaveSkidRules" class="btn-sm" style="font-size:10.5px;padding:3px 8px;background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700" title="규칙 저장 및 즉시 반영">💾 저장 및 적용</button>
+            </div>
+          </div>
+          <p class="hint" id="hintSkidRules" style="margin-bottom:10px">
+            수조 높이(H)에 따라 기초 베이스 프레임(스틸 스키드) 규격을 자동 선택하는 매핑 규칙을 설정합니다.
+          </p>
+
+          <!-- Current Tank Status & Auto-Toggle Card -->
+          <div style="background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:11.5px;margin-bottom:12px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="color:var(--muted);font-weight:600">현재 수조 높이 (H):</span>
+              <b id="skidCurrentTankH" style="font-size:12px;color:var(--fg)">3.0 m (3000 mm)</b>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="color:var(--muted);font-weight:600">현재 적용 프레임:</span>
+              <span id="skidCurrentFrameBadge" style="font-weight:700;color:var(--accent);background:rgba(2,132,199,0.12);padding:2px 8px;border-radius:4px">125 (채널)</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px dashed var(--line);padding-top:6px;margin-top:2px">
+              <span style="color:var(--muted);font-weight:600">높이 연동 자동선택:</span>
+              <label style="display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--fg);cursor:pointer">
+                <input type="checkbox" id="chkAutoFrameSettings" checked>
+                <span id="lblAutoFrameSettings">수조 높이 변경 시 자동 적용</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Modeless/Wide Modal Trigger -->
+          <button type="button" id="btnOpenSkidModalFromTab" class="btn-sm" style="width:100%;margin-bottom:12px;padding:7px;font-size:11.5px;font-weight:700;background:var(--surface-sub);border:1px solid var(--accent);color:var(--accent);display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer">
+            <span>⚙️</span> <span id="lblBtnOpenSkidModalWide">모달 팝업으로 전체 규칙 편집</span>
+          </button>
+
+          <!-- Rules List Container -->
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:11.5px;font-weight:700;color:var(--fg)">📋 높이별 프레임 매핑 규칙</span>
+              <span id="skidRulesCountBadge" style="font-size:10px;padding:1px 6px;border-radius:8px;background:var(--surface-sub);border:1px solid var(--line);color:var(--muted)">3개 규칙</span>
+            </div>
+            <div id="skidRulesContainerTab" style="display:flex;flex-direction:column;gap:8px">
+              <!-- Dynamically populated cards/rows -->
+            </div>
+          </div>
+
+          <!-- Add Rule Card -->
+          <div style="background:var(--surface-sub);border:1px dashed var(--line);border-radius:8px;padding:10px;font-size:11.5px">
+            <div style="font-weight:700;margin-bottom:6px;color:var(--fg)">➕ 새 높이 규칙 추가</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+              <div>
+                <label style="font-size:10.5px;color:var(--muted);display:block;margin-bottom:2px">최소 높이 (min H, m)</label>
+                <input type="number" id="newRuleMinH" step="0.5" min="0.5" max="15.0" placeholder="예: 5.5" style="width:100%;padding:4px 6px;font-size:11.5px;text-align:center">
+              </div>
+              <div>
+                <label style="font-size:10.5px;color:var(--muted);display:block;margin-bottom:2px">최대 높이 (max H, m)</label>
+                <input type="number" id="newRuleMaxH" step="0.5" min="0.5" max="20.0" placeholder="예: 8.0" style="width:100%;padding:4px 6px;font-size:11.5px;text-align:center">
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <div style="flex:1">
+                <select id="newRuleFrame" style="width:100%;padding:5px;font-size:11.5px">
+                  <option value="50">50 (SHS-50×50×3.2T)</option>
+                  <option value="75">75 (L-75×75×6T / [-75×40×5T)</option>
+                  <option value="125">125 ([-125×65×6T / [-75×40×5T)</option>
+                  <option value="150">150 ([-150×75×6.5T / [-100×50×5T)</option>
+                </select>
+              </div>
+              <button type="button" id="btnAddSkidRule" class="btn-sm" style="padding:5px 12px;font-size:11.5px;font-weight:700;white-space:nowrap">규칙 추가</button>
+            </div>
+          </div>
+
+          <!-- Standard Engineering Reference Card -->
+          <div style="margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:11px">
+            <div style="font-weight:700;color:var(--accent);margin-bottom:4px">💡 물탱크 스틸 스키드 표준 엔지니어링 가이드</div>
+            <div style="color:var(--muted);line-height:1.5">
+              • <b>1.0m ~ 2.5mH</b>: <b>75 (앵글)</b> — 주부재 L-75×75×6T, 종부재 [-75×40×5T<br>
+              • <b>3.0m ~ 4.0mH</b>: <b>125 (채널)</b> — 주부재 [-125×65×6T, 종부재 [-75×40×5T<br>
+              • <b>4.5m ~ 5.0m+H</b>: <b>150 (채널)</b> — 주부재 [-150×75×6.5T, 종부재 [-100×50×5T<br>
+              • <b>소형/특수</b>: <b>50 (SHS)</b> — 각파이프 SHS-50×50×3.2T
             </div>
           </div>
         </section>
@@ -1275,6 +1377,74 @@ canvas.drag{cursor:grabbing}
             <button type="button" id="btnModalAddNewH" class="btn-sm" style="font-size:12px;padding:4px 10px">행 추가</button>
           </div>
           <button type="button" id="btnModalCloseBottom" class="btn-sm" style="font-size:12px;padding:4px 12px">닫기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Steel Skid Rules Modal Dialog (높이별 스틸 스키드 규칙 설정 모달) -->
+    <div id="skidRulesModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;max-width:640px;width:94%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);display:flex;flex-direction:column">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px">
+          <h3 id="skidRulesModalTitle" style="margin:0;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px">
+            <span>📐</span> <span id="lblSkidModalTitle">스틸 스키드 (Base Frame) 자동 선택 규칙 설정</span>
+          </h3>
+          <button type="button" id="btnCloseSkidModal" class="btn-sm" style="border:none;background:transparent;font-size:16px;cursor:pointer;color:var(--muted)">✕</button>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:11.5px">
+          <div>
+            <span style="color:var(--muted)">현재 수조 높이:</span> <b id="modalSkidCurrentH">3.0m</b>
+            <span style="margin:0 6px;color:var(--line)">|</span>
+            <span style="color:var(--muted)">추천 프레임:</span> <b id="modalSkidRecFrame" style="color:var(--accent)">125 (채널)</b>
+          </div>
+          <label style="display:inline-flex;align-items:center;gap:5px;font-weight:700;cursor:pointer">
+            <input type="checkbox" id="chkAutoFrameModal" checked>
+            <span id="lblAutoFrameModal">높이 변경 시 자동 선택</span>
+          </label>
+        </div>
+
+        <!-- Rules Table -->
+        <div style="flex:1;overflow-y:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface);margin-bottom:12px;max-height:320px">
+          <table style="width:100%;border-collapse:collapse;font-size:11.5px;text-align:center">
+            <thead style="background:var(--surface-sub);position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line)">
+              <tr>
+                <th style="padding:7px 4px;font-weight:700;width:45px">순번</th>
+                <th style="padding:7px 4px;font-weight:700;width:130px">높이 범위 (m)</th>
+                <th style="padding:7px 4px;font-weight:700;width:125px">적용 프레임</th>
+                <th style="padding:7px 4px;font-weight:700">부재 사양</th>
+                <th style="padding:7px 4px;font-weight:700;width:55px">삭제</th>
+              </tr>
+            </thead>
+            <tbody id="skidRulesModalTbody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Add Rule Row -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:6px;margin-bottom:14px;font-size:11.5px">
+          <div style="display:flex;align-items:center;gap:4px">
+            <span style="font-weight:700">➕ 규칙 추가:</span>
+            <input type="number" id="modalNewRuleMinH" step="0.5" min="0.5" max="15.0" placeholder="최소(m)" style="width:65px;padding:4px;font-size:11px;text-align:center">
+            <span>~</span>
+            <input type="number" id="modalNewRuleMaxH" step="0.5" min="0.5" max="20.0" placeholder="최대(m)" style="width:65px;padding:4px;font-size:11px;text-align:center">
+            <select id="modalNewRuleFrame" style="padding:4px;font-size:11px">
+              <option value="50">50 (SHS)</option>
+              <option value="75">75 (앵글)</option>
+              <option value="125">125 (채널)</option>
+              <option value="150">150 (채널)</option>
+            </select>
+          </div>
+          <button type="button" id="btnModalAddSkidRule" class="btn-sm" style="padding:4px 10px;font-size:11px;font-weight:700">추가</button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <button type="button" id="btnModalResetSkidRules" class="btn-sm" style="padding:6px 12px;font-size:11.5px">🔄 기본값 복원</button>
+          <div style="display:flex;gap:8px">
+            <button type="button" id="btnModalCloseSkidBottom" class="btn-sm" style="padding:6px 14px;font-size:11.5px">닫기</button>
+            <button type="button" id="btnModalSaveSkidRules" class="pri" style="padding:6px 18px;font-size:11.5px;font-weight:700">💾 저장 및 적용</button>
+          </div>
         </div>
       </div>
     </div>
@@ -3210,18 +3380,23 @@ canvas.drag{cursor:grabbing}
     // 단부 점 (Terminal dot)
     ents.push({ t: 'circle', c: [...startPt], r: Math.max(3, Math.round(scaleN * 0.2)), layer, balloonNo: str, balloonId: bId, balloonRole: 'dot' });
 
-    // 지시선 (Leader line)
-    if (elbowPt && (elbowPt[0] !== startPt[0] || elbowPt[1] !== startPt[1])) {
+    // 지시선 (Leader line) - 사용자 권장: 안꺾어도 되고 직선 사용, 꺾더라도 풍선 내부에서 꺾지 않도록 원천 차단
+    const dxFull = balloonCenter[0] - startPt[0], dyFull = balloonCenter[1] - startPt[1];
+    const distFull = Math.hypot(dxFull, dyFull) || 1;
+    const directEndPt = [balloonCenter[0] - (dxFull / distFull) * balloonR, balloonCenter[1] - (dyFull / distFull) * balloonR];
+
+    const dElbow = elbowPt ? Math.hypot(balloonCenter[0] - elbowPt[0], balloonCenter[1] - elbowPt[1]) : 0;
+    // 꺾임점(elbowPt)이 풍선 원 외부(최소 balloonR + 12 이상 이격)에 충분히 떨어져 있을 때만 꺾임 허용
+    // 풍선 원 내부나 경계 근처에서는 절대 꺾지 않고 직접 직선 연결
+    if (elbowPt && dElbow > balloonR + 12 && (elbowPt[0] !== startPt[0] || elbowPt[1] !== startPt[1])) {
       const dx = balloonCenter[0] - elbowPt[0], dy = balloonCenter[1] - elbowPt[1];
       const dist = Math.hypot(dx, dy) || 1;
       const endPt = [balloonCenter[0] - (dx / dist) * balloonR, balloonCenter[1] - (dy / dist) * balloonR];
       ents.push({ t: 'line', a: [...startPt], b: [...elbowPt], layer, balloonNo: str, balloonId: bId, balloonRole: 'slant' });
       ents.push({ t: 'line', a: [...elbowPt], b: endPt, layer, balloonNo: str, balloonId: bId, balloonRole: 'shelf' });
     } else {
-      const dx = balloonCenter[0] - startPt[0], dy = balloonCenter[1] - startPt[1];
-      const dist = Math.hypot(dx, dy) || 1;
-      const endPt = [balloonCenter[0] - (dx / dist) * balloonR, balloonCenter[1] - (dy / dist) * balloonR];
-      ents.push({ t: 'line', a: [...startPt], b: endPt, layer, balloonNo: str, balloonId: bId, balloonRole: 'shelf' });
+      // 사용자 권장 기본: 부품 시작점에서 풍선 원 외곽 접점까지 깔끔한 단일 직선
+      ents.push({ t: 'line', a: [...startPt], b: directEndPt, layer, balloonNo: str, balloonId: bId, balloonRole: 'shelf' });
     }
 
     // 원형 풍선 (Circular balloon)
@@ -3276,14 +3451,21 @@ canvas.drag{cursor:grabbing}
 
     if (bubble && shelfLine) {
       if (slantLine) {
-        const origDx = Math.abs(shelfLine.b[0] - shelfLine.a[0]);
-        const origDy = Math.abs(shelfLine.b[1] - shelfLine.a[1]);
-        if (origDx >= origDy) {
-          shelfLine.a[1] += dy;
-          slantLine.b[1] += dy;
+        // 풍선 이동 후 꺾임점(slantLine.b)이 풍선 원 내부 또는 너무 가까워지면 단일 직선으로 자동 전환하여 내부 꺾임 원천 차단
+        const dElbow = Math.hypot(bubble.c[0] - slantLine.b[0], bubble.c[1] - slantLine.b[1]);
+        if (dElbow <= radius + 12) {
+          shelfLine.a = [...slantLine.a];
+          slantLine.b = [...slantLine.a];
         } else {
-          shelfLine.a[0] += dx;
-          slantLine.b[0] += dx;
+          const origDx = Math.abs(shelfLine.b[0] - shelfLine.a[0]);
+          const origDy = Math.abs(shelfLine.b[1] - shelfLine.a[1]);
+          if (origDx >= origDy) {
+            shelfLine.a[1] += dy;
+            slantLine.b[1] += dy;
+          } else {
+            shelfLine.a[0] += dx;
+            slantLine.b[0] += dx;
+          }
         }
       }
       const origin = shelfLine.a;
@@ -3662,6 +3844,62 @@ canvas.drag{cursor:grabbing}
       return `주부재: ${d.mainSpec}, 종부재: ${d.subSpec}`;
     }
     return `Main: ${d.mainSpec}, Sub: ${d.subSpec}`;
+  }
+
+  /* ---------- 높이별 스틸 스키드 프레임 기본 선정 규칙 (Skid Frame Rules by Height) ---------- */
+  const DEFAULT_SKID_RULES = [
+    { id: 'skid_rule_1', minH: 1.0, maxH: 2.5, frame: 75, desc: '1.0m ~ 2.5mH' },
+    { id: 'skid_rule_2', minH: 3.0, maxH: 4.0, frame: 125, desc: '3.0m ~ 4.0mH' },
+    { id: 'skid_rule_3', minH: 4.5, maxH: 10.0, frame: 150, desc: '4.5m ~ 5.0m+H' }
+  ];
+
+  let activeCustomSkidRules = null;
+
+  function getDefaultSkidRules() {
+    return JSON.parse(JSON.stringify(DEFAULT_SKID_RULES));
+  }
+
+  function setCustomSkidRules(rules) {
+    if (Array.isArray(rules) && rules.length > 0) {
+      activeCustomSkidRules = JSON.parse(JSON.stringify(rules));
+    } else {
+      activeCustomSkidRules = null;
+    }
+  }
+
+  function getCustomSkidRules() {
+    return activeCustomSkidRules ? JSON.parse(JSON.stringify(activeCustomSkidRules)) : null;
+  }
+
+  function getActiveSkidRules() {
+    return activeCustomSkidRules ? JSON.parse(JSON.stringify(activeCustomSkidRules)) : getDefaultSkidRules();
+  }
+
+  function getFrameForHeight(hInM, rules = null) {
+    const rList = rules || getActiveSkidRules();
+    const h = Number(hInM) || 3.0;
+    for (const r of rList) {
+      const min = Number(r.minH) || 0;
+      const max = Number(r.maxH) || 999;
+      if (h >= min - 0.001 && h <= max + 0.001) {
+        return Number(r.frame) || 75;
+      }
+    }
+    // 기본 범위 외 안전 기본값 (1-2.5: 75, 3-4: 125, 4.5-5+: 150)
+    if (h <= 2.5) return 75;
+    if (h <= 4.0) return 125;
+    return 150;
+  }
+
+  function formatSkidRuleSummary(rules = null) {
+    const rList = rules || getActiveSkidRules();
+    if (!rList || !rList.length) return '규칙 없음';
+    return rList.map(r => {
+      const minStr = (r.minH !== undefined && r.minH !== null) ? `${r.minH}` : '0';
+      const maxStr = (r.maxH && r.maxH < 90) ? `~${r.maxH}m` : 'm+';
+      const fName = (r.frame === 75 || r.frame === '75') ? '75앵글' : (r.frame === 50 || r.frame === '50' ? '50각관' : `${r.frame}채널`);
+      return `${minStr}${maxStr}: ${fName}`;
+    }).join(' / ');
   }
 
   /* ---------- 기본 부품 사양 명세표 생성 (Default Item List / BOM) ---------- */
@@ -4197,44 +4435,38 @@ canvas.drag{cursor:grabbing}
 
           // 맨홀 풍선 (NO. 6): 우측 기준선에 수직 정렬
           const b6Center = [rightBaseX, mhCenterY + (ladderCount > 0 ? sepY : 0)];
-          const b6Elbow = [rightBaseX - shelfL - balloonR, b6Center[1]];
           const b6Start = [mPos[0] + 120, mhCenterY + 80];
-          drawBalloonCallout(ents, b6Start, b6Elbow, b6Center, no6, N, 'BALLOON', usedSet);
+          drawBalloonCallout(ents, b6Start, null, b6Center, no6, N, 'BALLOON', usedSet);
 
           // 내부사다리 풍선 (NO. 7): 맨홀 바로 아래 동일 X좌표(rightBaseX)에 수직 정렬
           if (ladderCount > 0) {
             const b7Center = [rightBaseX, mhCenterY - sepY];
-            const b7Elbow = [rightBaseX - shelfL - balloonR, b7Center[1]];
             const b7Start = [mPos[0] + 120, mhCenterY - 80];
-            drawBalloonCallout(ents, b7Start, b7Elbow, b7Center, no7, N, 'BALLOON', usedSet);
+            drawBalloonCallout(ents, b7Start, null, b7Center, no7, N, 'BALLOON', usedSet);
           }
         } else if (mPos[1] > W * 0.5) {
           // 맨홀이 상반부에 위치할 경우: 상단 기준선(topBaseY)에 수평 정렬
           const sepX = Math.round(6.5 * N);
           const b6Center = [mPos[0] - (ladderCount > 0 ? sepX : 0), topBaseY];
-          const b6Elbow = [b6Center[0] - shelfL - balloonR, topBaseY];
           const b6Start = [mPos[0] - 80, mPos[1] + 120];
-          drawBalloonCallout(ents, b6Start, b6Elbow, b6Center, no6, N, 'BALLOON', usedSet);
+          drawBalloonCallout(ents, b6Start, null, b6Center, no6, N, 'BALLOON', usedSet);
 
           if (ladderCount > 0) {
             const b7Center = [mPos[0] + sepX, topBaseY];
-            const b7Elbow = [b7Center[0] - shelfL - balloonR, topBaseY];
             const b7Start = [mPos[0] + 80, mPos[1] + 120];
-            drawBalloonCallout(ents, b7Start, b7Elbow, b7Center, no7, N, 'BALLOON', usedSet);
+            drawBalloonCallout(ents, b7Start, null, b7Center, no7, N, 'BALLOON', usedSet);
           }
         } else {
           // 좌하단에 위치할 경우: 좌측 기준선(leftClearX)에 수직 정렬
           const sepY = Math.round(6.5 * N);
           const b6Center = [leftClearX, mPos[1] + (ladderCount > 0 ? sepY : 0)];
-          const b6Elbow = [leftClearX + shelfL + balloonR, b6Center[1]];
           const b6Start = [mPos[0] - 120, mPos[1] + 80];
-          drawBalloonCallout(ents, b6Start, b6Elbow, b6Center, no6, N, 'BALLOON', usedSet);
+          drawBalloonCallout(ents, b6Start, null, b6Center, no6, N, 'BALLOON', usedSet);
 
           if (ladderCount > 0) {
             const b7Center = [leftClearX, mPos[1] - sepY];
-            const b7Elbow = [leftClearX + shelfL + balloonR, b7Center[1]];
             const b7Start = [mPos[0] - 120, mPos[1] - 80];
-            drawBalloonCallout(ents, b7Start, b7Elbow, b7Center, no7, N, 'BALLOON', usedSet);
+            drawBalloonCallout(ents, b7Start, null, b7Center, no7, N, 'BALLOON', usedSet);
           }
         }
       }
@@ -4276,8 +4508,7 @@ canvas.drag{cursor:grabbing}
         panelBalloonY = Math.min(W - Math.round(3.0 * N), mPos[1] + Math.round(14.0 * N));
       }
       const b3Center = [rightBaseX, panelBalloonY];
-      const b3Elbow = [rightBaseX - shelfL - balloonR, panelBalloonY];
-      drawBalloonCallout(ents, [pcx, pcy], b3Elbow, b3Center, getItemNo('panel') || 3, N, 'BALLOON');
+      drawBalloonCallout(ents, [pcx, pcy], null, b3Center, getItemNo('panel') || 3, N, 'BALLOON');
 
       // ==========================================
       // [3] 코너 프레임 (Corner Frame - NO. 4)
@@ -4296,8 +4527,7 @@ canvas.drag{cursor:grabbing}
       if (!cornerPt) cornerPt = [0, W];
       const b4X = cornerPt[0] - F - Math.round(6.0 * N);
       const b4Center = [b4X, topBaseY];
-      const b4Elbow = [b4X + shelfL + balloonR, topBaseY];
-      drawBalloonCallout(ents, [cornerPt[0] - F, cornerPt[1] + F], b4Elbow, b4Center, getItemNo('corner') || 4, N, 'BALLOON');
+      drawBalloonCallout(ents, [cornerPt[0] - F, cornerPt[1] + F], null, b4Center, getItemNo('corner') || 4, N, 'BALLOON');
 
       // ==========================================
       // [4] 내부 스테이 / 보강재 (Internal Stay - NO. 10)
@@ -4326,8 +4556,7 @@ canvas.drag{cursor:grabbing}
       }
       const b10X = Math.max(b4X + Math.round(9.0 * N), stayPt[0] + Math.round(3.0 * N));
       const b10Center = [b10X, topBaseY];
-      const b10Elbow = [b10X - shelfL - balloonR, topBaseY];
-      drawBalloonCallout(ents, stayPt, b10Elbow, b10Center, getItemNo('stay') || 10, N, 'BALLOON');
+      drawBalloonCallout(ents, stayPt, null, b10Center, getItemNo('stay') || 10, N, 'BALLOON');
 
       // ==========================================
       // [5] 플랜지 바 (Flange Bar - NO. 9)
@@ -4347,8 +4576,7 @@ canvas.drag{cursor:grabbing}
       let b9X = seamPt[0] + Math.round(2.0 * N);
       if (b9X < b10X + Math.round(8.0 * N)) b9X = b10X + Math.round(8.0 * N);
       const b9Center = [b9X, topBaseY];
-      const b9Elbow = [b9X - shelfL - balloonR, topBaseY];
-      drawBalloonCallout(ents, [seamPt[0], seamPt[1] + F], b9Elbow, b9Center, getItemNo('flangebar') || 9, N, 'BALLOON');
+      drawBalloonCallout(ents, [seamPt[0], seamPt[1] + F], null, b9Center, getItemNo('flangebar') || 9, N, 'BALLOON');
 
       // ==========================================
       // [6] 에어벤트 (Air Vent - NO. 5)
@@ -4378,12 +4606,11 @@ canvas.drag{cursor:grabbing}
       let b5X = vPos[0] + Math.round(2.0 * N);
       if (b5X < b9X + Math.round(8.0 * N)) b5X = b9X + Math.round(8.0 * N);
       const b5Center = [b5X, topBaseY];
-      const b5Elbow = [b5X - shelfL - balloonR, topBaseY];
-      drawBalloonCallout(ents, [vPos[0], vPos[1] + 100], b5Elbow, b5Center, getItemNo('airvent') || 5, N, 'BALLOON');
+      drawBalloonCallout(ents, [vPos[0], vPos[1] + 100], null, b5Center, getItemNo('airvent') || 5, N, 'BALLOON');
 
       // ==========================================
       // [7] 외부 사다리 (External Ladder - NO. 8)
-      // 방향별 깔끔한 단일 경사선 + 수평 선반 연결 (제목 및 치수선 비간섭)
+      // 방향별 깔끔한 단일 직선 연결 (제목 및 치수선 비간섭, 꺾임 없는 깔끔한 표준)
       // ==========================================
       const lList = ladderList(opt, map);
       if (lList.length > 0) {
@@ -4391,29 +4618,20 @@ canvas.drag{cursor:grabbing}
         const no8 = String(getItemNo('exladder') || 8).trim();
         if (!usedSet || !usedSet.has(no8)) {
           if (l.sd === 'D') {
-            // 하단 사다리: 치수선 아래로 단일 경사선 + 수평 선반 인출
-            // 중앙 '평면도' 표제 버블과의 간섭을 피해 외곽 쪽으로 배치
             const toRight = (l.x < L * 0.4);
             const bx8 = l.x + (toRight ? Math.round(6.0 * N) : -Math.round(6.0 * N));
             const b8Center = [bx8, botBaseY];
-            const b8Elbow = [bx8 - (toRight ? 1 : -1) * (shelfL + balloonR), botBaseY];
             const pStart = [l.x, l.y - F - 180];
-            drawBalloonCallout(ents, pStart, b8Elbow, b8Center, no8, N, 'BALLOON', usedSet);
+            drawBalloonCallout(ents, pStart, null, b8Center, no8, N, 'BALLOON', usedSet);
           } else if (l.sd === 'R') {
-            // 우측 사다리: 우측 기준선(rightBaseX)에 수직 정렬
             const b8Center = [rightBaseX, l.y];
-            const b8Elbow = [rightBaseX - shelfL - balloonR, l.y];
-            drawBalloonCallout(ents, [l.x + F + 20, l.y], b8Elbow, b8Center, no8, N, 'BALLOON', usedSet);
+            drawBalloonCallout(ents, [l.x + F + 20, l.y], null, b8Center, no8, N, 'BALLOON', usedSet);
           } else if (l.sd === 'U') {
-            // 상단 사다리: 상단 기준선(topBaseY)에 수평 정렬
             const b8Center = [l.x + Math.round(6.0 * N), topBaseY];
-            const b8Elbow = [b8Center[0] - shelfL - balloonR, topBaseY];
-            drawBalloonCallout(ents, [l.x, l.y + F + 20], b8Elbow, b8Center, no8, N, 'BALLOON', usedSet);
+            drawBalloonCallout(ents, [l.x, l.y + F + 20], null, b8Center, no8, N, 'BALLOON', usedSet);
           } else {
-            // 좌측 사다리: 좌측 기준선(leftClearX)에 수직 정렬
             const b8Center = [leftClearX, l.y];
-            const b8Elbow = [leftClearX + shelfL + balloonR, l.y];
-            drawBalloonCallout(ents, [l.x - F - 20, l.y], b8Elbow, b8Center, no8, N, 'BALLOON', usedSet);
+            drawBalloonCallout(ents, [l.x - F - 20, l.y], null, b8Center, no8, N, 'BALLOON', usedSet);
           }
         }
       }
@@ -6680,100 +6898,92 @@ canvas.drag{cursor:grabbing}
     const slabT = fDesign.slabT || 150;
     const slabBotY = slabTopY - slabT;
 
-    // 2D concStrips와 100% 동일한 패드 보 목록 및 외곽 산출
+    // 2D concStrips 및 runsForStrip과 100% 동일한 실제 패드 보 유효 구간(piece) 산출 (이형물탱크 완벽 대응)
     const strips = concStrips(map.cols, opt);
     const firstW = Number(opt && opt.padFirstW) || (strips[0] ? strips[0][1] : 400);
     const padOv = (opt && opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : Math.round(firstW / 2);
     const px0 = strips[0][0];
     const pxEnd = strips[strips.length - 1][0] + strips[strips.length - 1][1];
-    const minY = -padOv;
-    const maxY = totalW + padOv;
 
-    // (A) 하부 150mm 연속 바닥 매트 슬래브 (Continuous Mat Slab)
-    const slabFrontDepth = getDepth((px0 + pxEnd) / 2, minY, (slabBotY + slabTopY) / 2);
-    const slabRightDepth = getDepth(pxEnd, (minY + maxY) / 2, (slabBotY + slabTopY) / 2);
+    const nR = map.rows.length;
+    const hasTankAtRow = (idx, r) => {
+      if (idx < 0) return map.has(r, map.cols.length - 1);
+      if (idx === 0) return map.has(r, 0);
+      return map.has(r, idx) || map.has(r, idx - 1);
+    };
 
-    // 슬래브 솔리드 면 (음영/은선용: stroke=false, fill=true)
-    poly([
-      toIso(px0, minY, slabTopY),
-      toIso(pxEnd, minY, slabTopY),
-      toIso(pxEnd, minY, slabBotY),
-      toIso(px0, minY, slabBotY)
-    ], 'PAD', false, true, slabFrontDepth);
-
-    poly([
-      toIso(pxEnd, minY, slabTopY),
-      toIso(pxEnd, maxY, slabTopY),
-      toIso(pxEnd, maxY, slabBotY),
-      toIso(pxEnd, minY, slabBotY)
-    ], 'PAD', false, true, slabRightDepth);
-
-    // 슬래브 전면 외곽 테두리선
-    ln(toIso(px0, minY, slabTopY), toIso(pxEnd, minY, slabTopY), 'PAD', slabFrontDepth);
-    ln(toIso(pxEnd, minY, slabTopY), toIso(pxEnd, minY, slabBotY), 'PAD', slabFrontDepth);
-    ln(toIso(pxEnd, minY, slabBotY), toIso(px0, minY, slabBotY), 'PAD', slabFrontDepth);
-    ln(toIso(px0, minY, slabBotY), toIso(px0, minY, slabTopY), 'PAD', slabFrontDepth);
-
-    // 슬래브 전면 45도 콘크리트 사선 해치 (2D 단면도와 100% 일치)
-    const hatchStep = 80;
-    for (let c = -15000; c <= 30000; c += hatchStep) {
-      const z1 = slabBotY, x1 = c;
-      const z2 = slabTopY, x2 = c + slabT;
-      if (x2 >= px0 && x1 <= pxEnd) {
-        const ax = Math.max(px0, x1);
-        const az = slabBotY + (ax - c);
-        const bx = Math.min(pxEnd, x2);
-        const bz = slabBotY + (bx - c);
-        if (bx - ax >= 5 && az >= slabBotY && bz <= slabTopY) {
-          ln(toIso(ax, minY, az), toIso(bx, minY, bz), 'PAD', slabFrontDepth);
+    const runsForStrip = idx => {
+      const out = [];
+      let st = -1;
+      for (let i = 0; i <= nR; i++) {
+        const h = i < nR && hasTankAtRow(idx, i);
+        if (h && st < 0) st = i;
+        if (!h && st >= 0) {
+          out.push([map.ys[st], map.ys[i]]);
+          st = -1;
         }
       }
-    }
+      return out;
+    };
 
-    // 슬래브 우측면 외곽 실루엣선 (X = pxEnd)
-    ln(toIso(pxEnd, minY, slabTopY), toIso(pxEnd, maxY, slabTopY), 'PAD', slabRightDepth);
-    ln(toIso(pxEnd, minY, slabBotY), toIso(pxEnd, maxY, slabBotY), 'PAD', slabRightDepth);
+    // 각 스트립별 실제 유효 구간(piece) 산출 (이형물탱크 완벽 대응)
+    const pieces = [];   // { lx, rx, cx, w, yStart, yEnd, sIdx, stripIdx }
+    strips.forEach(([x, w, idx], sIdx) => {
+      const runs = runsForStrip(idx);
+      runs.forEach(([y0, y1]) => {
+        pieces.push({
+          lx: x,
+          rx: x + w,
+          cx: x + w / 2,
+          w,
+          yStart: y0 - padOv,
+          yEnd: y1 + padOv,
+          sIdx: idx,
+          stripIdx: sIdx
+        });
+      });
+    });
 
-    // 슬래브 좌측 바닥 GL 실루엣선 (X = px0, West)
-    ln(toIso(px0, minY, slabBotY), toIso(px0, maxY, slabBotY), 'PAD', slabFrontDepth);
+    const hatchStep = 80;
 
-    // (B) 콘크리트 패드 기둥 (Plinth Beams: 2D 규격 및 위치 100% 일치, 완전 폐합 캐슬 솔리드)
-    strips.forEach(([lx, w, sIdx], idx) => {
-      const rx = lx + w, cx = lx + w / 2;
-      const midY = (minY + maxY) / 2;
-      const frontDepth = getDepth(cx, minY, (slabTopY - th) / 2);
+    // (A) 각 패드 보 기둥 (Plinth Beams) 및 하부 슬래브 전면 렌더링
+    pieces.forEach(p => {
+      const { lx, rx, cx, yStart, yEnd, w } = p;
+      const midY = (yStart + yEnd) / 2;
+      const frontDepth = getDepth(cx, yStart, (slabTopY - th) / 2);
       const topDepth = getDepth(cx, midY, -th);
       const rightDepth = getDepth(rx, midY, (slabTopY - th) / 2);
+      const rearDepth = getDepth(cx, yEnd, (slabTopY - th) / 2);
 
       // 1) 기둥 솔리드 면 (음영/은선용: stroke=false, fill=true)
       poly([
-        toIso(lx, minY, -th),
-        toIso(rx, minY, -th),
-        toIso(rx, minY, slabTopY),
-        toIso(lx, minY, slabTopY)
+        toIso(lx, yStart, -th),
+        toIso(rx, yStart, -th),
+        toIso(rx, yStart, slabTopY),
+        toIso(lx, yStart, slabTopY)
       ], 'PAD', false, true, frontDepth);
 
       poly([
-        toIso(lx, minY, -th),
-        toIso(rx, minY, -th),
-        toIso(rx, maxY, -th),
-        toIso(lx, maxY, -th)
+        toIso(lx, yStart, -th),
+        toIso(rx, yStart, -th),
+        toIso(rx, yEnd, -th),
+        toIso(lx, yEnd, -th)
       ], 'PAD', false, true, topDepth);
 
       poly([
-        toIso(rx, minY, -th),
-        toIso(rx, maxY, -th),
-        toIso(rx, maxY, slabTopY),
-        toIso(rx, minY, slabTopY)
+        toIso(rx, yStart, -th),
+        toIso(rx, yEnd, -th),
+        toIso(rx, yEnd, slabTopY),
+        toIso(rx, yStart, slabTopY)
       ], 'PAD', false, true, rightDepth);
 
-      // 2) 기둥 전면 외곽선 (Front Face at Y = minY)
-      ln(toIso(lx, minY, -th), toIso(rx, minY, -th), 'PAD', frontDepth);
-      ln(toIso(rx, minY, -th), toIso(rx, minY, slabTopY), 'PAD', frontDepth);
-      ln(toIso(rx, minY, slabTopY), toIso(lx, minY, slabTopY), 'PAD', frontDepth);
-      ln(toIso(lx, minY, slabTopY), toIso(lx, minY, -th), 'PAD', frontDepth);
+      // 2) 기둥 전면 외곽선 (Front Face at Y = yStart)
+      ln(toIso(lx, yStart, -th), toIso(rx, yStart, -th), 'PAD', frontDepth);
+      ln(toIso(rx, yStart, -th), toIso(rx, yStart, slabTopY), 'PAD', frontDepth);
+      ln(toIso(rx, yStart, slabTopY), toIso(lx, yStart, slabTopY), 'PAD', frontDepth);
+      ln(toIso(lx, yStart, slabTopY), toIso(lx, yStart, -th), 'PAD', frontDepth);
 
-      // 기둥 전면 45도 콘크리트 사선 해치 (2D 단면도와 100% 일치)
+      // 3) 기둥 전면 45도 콘크리트 사선 해치 (2D 단면도와 100% 일치)
       for (let c = -15000; c <= 30000; c += hatchStep) {
         const z1 = slabTopY, x1 = c;
         const z2 = -th, x2 = c + padH;
@@ -6783,33 +6993,23 @@ canvas.drag{cursor:grabbing}
           const bx = Math.min(rx, x2);
           const bz = slabTopY + (bx - c);
           if (bx - ax >= 5 && az >= slabTopY && bz <= -th) {
-            ln(toIso(ax, minY, az), toIso(bx, minY, bz), 'PAD', frontDepth);
+            ln(toIso(ax, yStart, az), toIso(bx, yStart, bz), 'PAD', frontDepth);
           }
         }
       }
 
-      // 3) 기둥 상면 및 측면 종방향 모서리선 (Y = minY ~ maxY)
-      ln(toIso(lx, minY, -th), toIso(lx, maxY, -th), 'PAD', topDepth);
-      ln(toIso(rx, minY, -th), toIso(rx, maxY, -th), 'PAD', topDepth);
-      ln(toIso(rx, minY, slabTopY), toIso(rx, maxY, slabTopY), 'PAD', rightDepth);
+      // 4) 기둥 상면 및 측면 종방향 모서리선 (Y = yStart ~ yEnd)
+      ln(toIso(lx, yStart, -th), toIso(lx, yEnd, -th), 'PAD', topDepth);
+      ln(toIso(rx, yStart, -th), toIso(rx, yEnd, -th), 'PAD', topDepth);
+      ln(toIso(rx, yStart, slabTopY), toIso(rx, yEnd, slabTopY), 'PAD', rightDepth);
 
-      // 4) 기둥 간 캐비티 바닥 (Slab Top Cavity Floor: rx ~ nextLx)
-      if (idx < strips.length - 1) {
-        const nextLx = strips[idx + 1][0];
-        const fDepth = getDepth((rx + nextLx) / 2, midY, slabTopY);
-        poly([
-          toIso(rx, minY, slabTopY),
-          toIso(nextLx, minY, slabTopY),
-          toIso(nextLx, maxY, slabTopY),
-          toIso(rx, maxY, slabTopY)
-        ], 'PAD', false, true, fDepth);
-        // 캐비티 바닥과 다음 기둥 좌측면 접합 종방향선
-        ln(toIso(nextLx, minY, slabTopY), toIso(nextLx, maxY, slabTopY), 'PAD', fDepth);
-      }
+      // 5) 기둥 후면 모서리선 (Y = yEnd)
+      ln(toIso(lx, yEnd, -th), toIso(rx, yEnd, -th), 'PAD', rearDepth);
+      ln(toIso(rx, yEnd, -th), toIso(rx, yEnd, slabTopY), 'PAD', rearDepth);
 
-      // 5) 기초 앵커 베이스 플레이트 & 앵커 볼트 (전면 및 후면)
+      // 6) 기초 앙카 베이스 플레이트 & 앙카 볼트 (전면 및 후면)
       const acW = Math.min(45, w / 4);
-      [minY + 110, maxY - 110].forEach(ay => {
+      [yStart + 110, yEnd - 110].forEach(ay => {
         poly([
           toIso(cx - acW, ay - 40, -th),
           toIso(cx + acW, ay - 40, -th),
@@ -6820,31 +7020,128 @@ canvas.drag{cursor:grabbing}
         ln(toIso(cx, ay - 10, -th), toIso(cx, ay + 10, -th), 'PAD', topDepth);
         ln(toIso(cx, ay, -th), toIso(cx, ay, -th + 30), 'PAD', topDepth);
       });
+
+      // 7) 기둥 직하부 바닥 매트 슬래브 전면 (Z = slabBotY ~ slabTopY, Y = yStart)
+      const slabFDepth = getDepth(cx, yStart, (slabBotY + slabTopY) / 2);
+      poly([
+        toIso(lx, yStart, slabTopY),
+        toIso(rx, yStart, slabTopY),
+        toIso(rx, yStart, slabBotY),
+        toIso(lx, yStart, slabBotY)
+      ], 'PAD', false, true, slabFDepth);
+
+      ln(toIso(lx, yStart, slabTopY), toIso(rx, yStart, slabTopY), 'PAD', slabFDepth);
+      ln(toIso(rx, yStart, slabTopY), toIso(rx, yStart, slabBotY), 'PAD', slabFDepth);
+      ln(toIso(rx, yStart, slabBotY), toIso(lx, yStart, slabBotY), 'PAD', slabFDepth);
+      ln(toIso(lx, yStart, slabBotY), toIso(lx, yStart, slabTopY), 'PAD', slabFDepth);
+
+      // 슬래브 전면 45도 해치
+      for (let c = -15000; c <= 30000; c += hatchStep) {
+        const z1 = slabBotY, x1 = c;
+        const z2 = slabTopY, x2 = c + slabT;
+        if (x2 >= lx && x1 <= rx) {
+          const ax = Math.max(lx, x1);
+          const az = slabBotY + (ax - c);
+          const bx = Math.min(rx, x2);
+          const bz = slabBotY + (bx - c);
+          if (bx - ax >= 5 && az >= slabBotY && bz <= slabTopY) {
+            ln(toIso(ax, yStart, az), toIso(bx, yStart, bz), 'PAD', slabFDepth);
+          }
+        }
+      }
     });
 
-    // (C) 후면 연속 캐슬 실루엣 (Continuous Rear Silhouette at Y = maxY)
-    // 1. 최좌측 수직선: (px0, maxY, slabBotY) -> (px0, maxY, -th) - 일체형 수직선
-    const rearDepth = getDepth((px0 + pxEnd) / 2, maxY, (slabBotY + -th) / 2);
-    ln(toIso(px0, maxY, slabBotY), toIso(px0, maxY, -th), 'PAD', rearDepth);
+    // (B) 인접 패드 보 사이 캐비티 바닥 (Slab Top Cavity Floor: rx ~ nextLx) 및 하부 슬래브 전면
+    for (let s = 0; s < strips.length - 1; s++) {
+      const rx = strips[s][0] + strips[s][1];
+      const nextLx = strips[s + 1][0];
+      const p1List = pieces.filter(p => p.stripIdx === s);
+      const p2List = pieces.filter(p => p.stripIdx === s + 1);
 
-    // 2. 패드 기둥 및 캐비티 연속 요철 실루엣
-    strips.forEach(([lx, w, sIdx], idx) => {
-      const rx = lx + w;
-      // 기둥 상단 후면 수평선
-      ln(toIso(lx, maxY, -th), toIso(rx, maxY, -th), 'PAD', rearDepth);
-      // 기둥 우측 후면 수직 하강선
-      ln(toIso(rx, maxY, -th), toIso(rx, maxY, slabTopY), 'PAD', rearDepth);
+      p1List.forEach(p1 => {
+        p2List.forEach(p2 => {
+          const cavY0 = Math.max(p1.yStart, p2.yStart);
+          const cavY1 = Math.min(p1.yEnd, p2.yEnd);
+          if (cavY1 > cavY0 + 10) {
+            const fDepth = getDepth((rx + nextLx) / 2, (cavY0 + cavY1) / 2, slabTopY);
+            poly([
+              toIso(rx, cavY0, slabTopY),
+              toIso(nextLx, cavY0, slabTopY),
+              toIso(nextLx, cavY1, slabTopY),
+              toIso(rx, cavY1, slabTopY)
+            ], 'PAD', false, true, fDepth);
 
-      if (idx < strips.length - 1) {
-        const nextLx = strips[idx + 1][0];
-        // 캐비티 바닥 후면 수평선
-        ln(toIso(rx, maxY, slabTopY), toIso(nextLx, maxY, slabTopY), 'PAD', rearDepth);
-        // 다음 기둥 좌측 후면 수직 상승선
-        ln(toIso(nextLx, maxY, slabTopY), toIso(nextLx, maxY, -th), 'PAD', rearDepth);
-      } else {
-        // 최우측 슬래브 후면 수직 하강선
-        ln(toIso(rx, maxY, slabTopY), toIso(rx, maxY, slabBotY), 'PAD', rearDepth);
+            // 캐비티 바닥과 다음 기둥 접합 종방향선
+            ln(toIso(nextLx, cavY0, slabTopY), toIso(nextLx, cavY1, slabTopY), 'PAD', fDepth);
+            ln(toIso(rx, cavY0, slabTopY), toIso(nextLx, cavY0, slabTopY), 'PAD', fDepth);
+            ln(toIso(rx, cavY1, slabTopY), toIso(nextLx, cavY1, slabTopY), 'PAD', fDepth);
+
+            // 캐비티 하부 슬래브 전면 (Y = cavY0)
+            const cavSlabDepth = getDepth((rx + nextLx) / 2, cavY0, (slabBotY + slabTopY) / 2);
+            poly([
+              toIso(rx, cavY0, slabTopY),
+              toIso(nextLx, cavY0, slabTopY),
+              toIso(nextLx, cavY0, slabBotY),
+              toIso(rx, cavY0, slabBotY)
+            ], 'PAD', false, true, cavSlabDepth);
+
+            ln(toIso(rx, cavY0, slabTopY), toIso(nextLx, cavY0, slabTopY), 'PAD', cavSlabDepth);
+            ln(toIso(nextLx, cavY0, slabTopY), toIso(nextLx, cavY0, slabBotY), 'PAD', cavSlabDepth);
+            ln(toIso(nextLx, cavY0, slabBotY), toIso(rx, cavY0, slabBotY), 'PAD', cavSlabDepth);
+            ln(toIso(rx, cavY0, slabBotY), toIso(rx, cavY0, slabTopY), 'PAD', cavSlabDepth);
+
+            // 캐비티 슬래브 전면 45도 해치
+            for (let c = -15000; c <= 30000; c += hatchStep) {
+              const z1 = slabBotY, x1 = c;
+              const z2 = slabTopY, x2 = c + slabT;
+              if (x2 >= rx && x1 <= nextLx) {
+                const ax = Math.max(rx, x1);
+                const az = slabBotY + (ax - c);
+                const bx = Math.min(nextLx, x2);
+                const bz = slabBotY + (bx - c);
+                if (bx - ax >= 5 && az >= slabBotY && bz <= slabTopY) {
+                  ln(toIso(ax, cavY0, az), toIso(bx, cavY0, bz), 'PAD', cavSlabDepth);
+                }
+              }
+            }
+          }
+        });
+      });
+    }
+
+    // (C) 최우측 및 외곽 노출면 슬래브 우측 실루엣 (X = rx)
+    pieces.forEach(p => {
+      const hasRightNeighbor = pieces.some(other => other.stripIdx === p.stripIdx + 1 && Math.max(p.yStart, other.yStart) < Math.min(p.yEnd, other.yEnd));
+      if (!hasRightNeighbor) {
+        const rDepth = getDepth(p.rx, (p.yStart + p.yEnd) / 2, (slabBotY + slabTopY) / 2);
+        poly([
+          toIso(p.rx, p.yStart, slabTopY),
+          toIso(p.rx, p.yEnd, slabTopY),
+          toIso(p.rx, p.yEnd, slabBotY),
+          toIso(p.rx, p.yStart, slabBotY)
+        ], 'PAD', false, true, rDepth);
+
+        ln(toIso(p.rx, p.yStart, slabTopY), toIso(p.rx, p.yEnd, slabTopY), 'PAD', rDepth);
+        ln(toIso(p.rx, p.yEnd, slabTopY), toIso(p.rx, p.yEnd, slabBotY), 'PAD', rDepth);
+        ln(toIso(p.rx, p.yStart, slabBotY), toIso(p.rx, p.yEnd, slabBotY), 'PAD', rDepth);
+        ln(toIso(p.rx, p.yStart, slabTopY), toIso(p.rx, p.yStart, slabBotY), 'PAD', rDepth);
       }
+    });
+
+    // (D) 최좌측 슬래브 바닥 GL 실루엣선 (X = px0, West)
+    const p0List = pieces.filter(p => p.stripIdx === 0);
+    p0List.forEach(p0 => {
+      const glDepth = getDepth(p0.lx, (p0.yStart + p0.yEnd) / 2, slabBotY);
+      ln(toIso(p0.lx, p0.yStart, slabBotY), toIso(p0.lx, p0.yEnd, slabBotY), 'PAD', glDepth);
+      ln(toIso(p0.lx, p0.yStart, slabTopY), toIso(p0.lx, p0.yStart, slabBotY), 'PAD', glDepth);
+      ln(toIso(p0.lx, p0.yEnd, slabTopY), toIso(p0.lx, p0.yEnd, slabBotY), 'PAD', glDepth);
+    });
+
+    // (E) 후면 슬래브 바닥선
+    pieces.forEach(p => {
+      const rearDepth = getDepth(p.cx, p.yEnd, slabBotY);
+      ln(toIso(p.lx, p.yEnd, slabBotY), toIso(p.rx, p.yEnd, slabBotY), 'PAD', rearDepth);
+      ln(toIso(p.lx, p.yEnd, slabTopY), toIso(p.rx, p.yEnd, slabTopY), 'PAD', rearDepth);
     });
 
     inFoundation = false;
@@ -9787,7 +10084,7 @@ canvas.drag{cursor:grabbing}
     return o.join('\r\n') + '\r\n';
   }
 
-  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, getFoundationDesign, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, getSkidDimensions, getSkidSpec, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType, getDefaultPanelPattern };
+  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, getFoundationDesign, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, getSkidDimensions, getSkidSpec, DEFAULT_SKID_RULES, getDefaultSkidRules, setCustomSkidRules, getCustomSkidRules, getActiveSkidRules, getFrameForHeight, formatSkidRuleSummary, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType, getDefaultPanelPattern };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TankCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -9891,6 +10188,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           loadDbPanels();
         } else if (sId === 'subtab-heights') {
           renderHeightTable();
+        } else if (sId === 'subtab-skid') {
+          if (typeof renderSkidRulesUI === 'function') renderSkidRulesUI();
         }
       }
     });
@@ -10001,6 +10300,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       subtabBOM: '📋 BOM / Item List',
       subtabCadParts: '🧩 CAD Parts (DWG/DXF)',
       subtabPad: '🏗️ 기초패드',
+      subtabSkid: '📐 스틸스키드',
       subtabHeights: '📏 단별구성',
       subtabTitle: '📋 표제란',
       subtabPanels: '🗄️ 판넬 DB',
@@ -10110,6 +10410,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       subtabBOM: '📋 BOM / Item List',
       subtabCadParts: '🧩 CAD Parts (DWG/DXF)',
       subtabPad: '🏗️ Concrete Pad',
+      subtabSkid: '📐 Steel Skid',
       subtabHeights: '📏 Height & Tiers',
       subtabTitle: '📝 Title Block',
       subtabPanels: '🗄️ Panel DB',
@@ -10341,6 +10642,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if (cadPartsSubBtn) cadPartsSubBtn.textContent = t.subtabCadParts || t.tabCadParts;
     const padSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-pad"]');
     if (padSubBtn) padSubBtn.textContent = t.subtabPad;
+    const skidSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-skid"]');
+    if (skidSubBtn) skidSubBtn.textContent = t.subtabSkid || '📐 스틸스키드';
     const heightSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-heights"]');
     if (heightSubBtn) heightSubBtn.textContent = t.subtabHeights;
     const titleSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-title"]');
@@ -11165,8 +11468,309 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     });
   }
   renderHeightTable();
+
+  /* ---------- 높이별 스틸 스키드 (Base Frame) 자동 선택 규칙 관리 ---------- */
+  let activeSkidRules = C.getDefaultSkidRules();
+  try {
+    const savedRules = localStorage.getItem('tankcad_skid_rules');
+    if (savedRules) {
+      const parsed = JSON.parse(savedRules);
+      if (Array.isArray(parsed) && parsed.length > 0) activeSkidRules = parsed;
+    }
+  } catch (e) {
+    console.error('Failed to load saved skid rules:', e);
+  }
+  if (C.setCustomSkidRules) C.setCustomSkidRules(activeSkidRules);
+
+  let autoSelectFrameEnabled = true;
+  try {
+    const savedAuto = localStorage.getItem('tankcad_auto_frame');
+    if (savedAuto !== null) {
+      autoSelectFrameEnabled = savedAuto === '1' || savedAuto === 'true';
+    }
+  } catch (e) {}
+
+  function syncAutoFrameCheckboxes(val) {
+    autoSelectFrameEnabled = !!val;
+    try {
+      localStorage.setItem('tankcad_auto_frame', autoSelectFrameEnabled ? '1' : '0');
+    } catch (e) {}
+    if ($('chkAutoFrame')) $('chkAutoFrame').checked = autoSelectFrameEnabled;
+    if ($('chkAutoFrameSettings')) $('chkAutoFrameSettings').checked = autoSelectFrameEnabled;
+    if ($('chkAutoFrameModal')) $('chkAutoFrameModal').checked = autoSelectFrameEnabled;
+  }
+
+  function getFrameSpecLabel(frm) {
+    const num = Number(frm) || 75;
+    if (num === 50) return currentLang === 'en' ? '50 (SHS 50x50x3.2t)' : '50 (각파이프 50×50×3.2t)';
+    if (num === 75) return currentLang === 'en' ? '75 (Angle 75x75x6t)' : '75 (앵글 75×75×6t)';
+    if (num === 125) return currentLang === 'en' ? '125 (Channel 125x65x6t)' : '125 (채널 125×65×6t)';
+    if (num === 150) return currentLang === 'en' ? '150 (Channel 150x75x6.5t)' : '150 (채널 150×75×6.5t)';
+    return `${num} Frame`;
+  }
+
+  function applyAutoSkidFrame(force = false) {
+    const hVal = Number($('H') ? $('H').value : 3000) / 1000;
+    const recFrame = C.getFrameForHeight ? C.getFrameForHeight(hVal, activeSkidRules) : 75;
+
+    if ($('skidRuleSummaryShort') && C.formatSkidRuleSummary) {
+      $('skidRuleSummaryShort').textContent = C.formatSkidRuleSummary(activeSkidRules);
+    }
+    if ($('skidCurrentTankH')) $('skidCurrentTankH').textContent = `${hVal.toFixed(1)}m`;
+    if ($('modalSkidCurrentH')) $('modalSkidCurrentH').textContent = `${hVal.toFixed(1)}m`;
+
+    const curFrm = $('frm') ? $('frm').value : '75';
+    if ($('skidCurrentFrameBadge')) {
+      const parts = getFrameSpecLabel(curFrm).split(' ');
+      $('skidCurrentFrameBadge').textContent = `${curFrm} (${parts[1] || '프레임'})`;
+    }
+    if ($('modalSkidRecFrame')) {
+      const parts = getFrameSpecLabel(recFrame).split(' ');
+      $('modalSkidRecFrame').textContent = `${recFrame} (${parts[1] || '프레임'})`;
+    }
+
+    if (autoSelectFrameEnabled || force) {
+      if ($('frm') && $('frm').value !== String(recFrame)) {
+        $('frm').value = String(recFrame);
+        if ($('skidCurrentFrameBadge')) {
+          const parts = getFrameSpecLabel(recFrame).split(' ');
+          $('skidCurrentFrameBadge').textContent = `${recFrame} (${parts[1] || '프레임'})`;
+        }
+      }
+    }
+  }
+
+  function renderSkidRulesTab() {
+    const cont = $('skidRulesContainerTab');
+    if (!cont) return;
+    cont.innerHTML = '';
+    const isEn = currentLang === 'en';
+
+    activeSkidRules.forEach((rule, idx) => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px';
+
+      const maxStr = (rule.maxH && rule.maxH < 90) ? `${rule.maxH}m` : (isEn ? 'Above' : '이상');
+      const rangeText = `${rule.minH}m ~ ${maxStr}`;
+      const specLabel = getFrameSpecLabel(rule.frame);
+      const isAngle = rule.frame === 75 || rule.frame === '75';
+      const badgeColor = isAngle ? '#10b981' : (rule.frame === 150 ? '#8b5cf6' : '#0284c7');
+
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;flex:1">
+          <span style="font-size:11px;font-weight:700;color:var(--muted);width:20px;text-align:center">#${idx + 1}</span>
+          <span style="font-size:12px;font-weight:700;min-width:110px">${rangeText}</span>
+          <span style="font-size:11px;font-weight:700;background:${badgeColor}22;color:${badgeColor};border:1px solid ${badgeColor}44;border-radius:4px;padding:2px 6px">${rule.frame}</span>
+          <span style="font-size:11.5px;color:var(--muted)">${specLabel}</span>
+        </div>
+        <button type="button" class="btn-sm btn-del-skid-rule" data-idx="${idx}" style="color:#ef4444;border-color:rgba(239,68,68,0.3);padding:3px 7px;font-size:11px;cursor:pointer" title="${isEn ? 'Delete Rule' : '규칙 삭제'}">✕</button>
+      `;
+      cont.appendChild(card);
+    });
+
+    cont.querySelectorAll('.btn-del-skid-rule').forEach(b => {
+      b.addEventListener('click', (e) => {
+        const i = Number(e.currentTarget.getAttribute('data-idx'));
+        if (activeSkidRules.length <= 1) {
+          alert(isEn ? 'At least one rule must be maintained.' : '최소 1개 이상의 규칙이 유지되어야 합니다.');
+          return;
+        }
+        activeSkidRules.splice(i, 1);
+        renderSkidRulesUI();
+      });
+    });
+  }
+
+  function renderSkidRulesModalTable() {
+    const tbody = $('skidRulesModalTbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const isEn = currentLang === 'en';
+
+    activeSkidRules.forEach((rule, idx) => {
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid var(--line)';
+      const maxStr = (rule.maxH && rule.maxH < 90) ? `${rule.maxH}m` : (isEn ? 'Above' : '이상');
+      const specLabel = getFrameSpecLabel(rule.frame);
+      const isAngle = rule.frame === 75 || rule.frame === '75';
+      const badgeColor = isAngle ? '#10b981' : (rule.frame === 150 ? '#8b5cf6' : '#0284c7');
+
+      tr.innerHTML = `
+        <td style="padding:6px 4px;font-size:11px;color:var(--muted)">${idx + 1}</td>
+        <td style="padding:6px 4px;font-size:11.5px;font-weight:700">${rule.minH}m ~ ${maxStr}</td>
+        <td style="padding:6px 4px">
+          <span style="font-size:11px;font-weight:700;background:${badgeColor}22;color:${badgeColor};border:1px solid ${badgeColor}44;border-radius:4px;padding:2px 8px">${rule.frame}</span>
+        </td>
+        <td style="padding:6px 4px;font-size:11px;color:var(--muted);text-align:left">${specLabel}</td>
+        <td style="padding:6px 4px">
+          <button type="button" class="btn-sm btn-modal-del-skid-rule" data-idx="${idx}" style="color:#ef4444;border-color:rgba(239,68,68,0.3);padding:2px 6px;font-size:10px;cursor:pointer" title="${isEn ? 'Delete' : '삭제'}">✕</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.btn-modal-del-skid-rule').forEach(b => {
+      b.addEventListener('click', (e) => {
+        const i = Number(e.currentTarget.getAttribute('data-idx'));
+        if (activeSkidRules.length <= 1) {
+          alert(isEn ? 'At least one rule must be maintained.' : '최소 1개 이상의 규칙이 유지되어야 합니다.');
+          return;
+        }
+        activeSkidRules.splice(i, 1);
+        renderSkidRulesUI();
+      });
+    });
+  }
+
+  function renderSkidRulesUI() {
+    renderSkidRulesTab();
+    renderSkidRulesModalTable();
+    applyAutoSkidFrame();
+  }
+
+  function saveSkidRulesData(btnTrigger) {
+    try {
+      localStorage.setItem('tankcad_skid_rules', JSON.stringify(activeSkidRules));
+    } catch (e) {}
+    if (C.setCustomSkidRules) C.setCustomSkidRules(activeSkidRules);
+    applyAutoSkidFrame(true);
+    schedule();
+
+    if (btnTrigger) {
+      const origText = btnTrigger.textContent;
+      btnTrigger.textContent = currentLang === 'en' ? '✅ Saved!' : '✅ 저장 완료';
+      btnTrigger.style.background = '#16a34a';
+      setTimeout(() => {
+        btnTrigger.textContent = origText;
+        btnTrigger.style.background = '';
+      }, 1500);
+    }
+  }
+
+  function resetSkidRulesData() {
+    const isEn = currentLang === 'en';
+    if (confirm(isEn ? 'Reset steel skid selection rules to factory defaults?' : '스틸 스키드 규칙을 초기 기본값(1~2.5m: 75앵글, 3~4m: 125채널, 4.5m+: 150채널)으로 복원하시겠습니까?')) {
+      activeSkidRules = C.getDefaultSkidRules();
+      try {
+        localStorage.removeItem('tankcad_skid_rules');
+      } catch (e) {}
+      if (C.setCustomSkidRules) C.setCustomSkidRules(activeSkidRules);
+      renderSkidRulesUI();
+      applyAutoSkidFrame(true);
+      schedule();
+    }
+  }
+
+  function addSkidRuleFromInputs(minEl, maxEl, frmEl) {
+    if (!minEl || !maxEl || !frmEl) return;
+    const minH = parseFloat(minEl.value);
+    const maxH = parseFloat(maxEl.value);
+    const frame = parseInt(frmEl.value, 10);
+    if (isNaN(minH) || isNaN(maxH) || minH >= maxH) {
+      alert(currentLang === 'en' ? 'Please enter a valid height range (Min < Max).' : '올바른 높이 범위(최소높이 < 최대높이)를 입력하세요.');
+      return;
+    }
+    activeSkidRules.push({
+      id: `skid_rule_${Date.now()}`,
+      minH,
+      maxH,
+      frame,
+      desc: `${minH}m ~ ${maxH}mH`
+    });
+    activeSkidRules.sort((a, b) => a.minH - b.minH);
+    renderSkidRulesUI();
+  }
+
+  // Modal handlers
+  function openSkidRulesModal() {
+    if ($('skidRulesModal')) $('skidRulesModal').style.display = 'flex';
+    renderSkidRulesUI();
+  }
+  window.openSkidRulesModal = openSkidRulesModal;
+  function closeSkidRulesModal() {
+    if ($('skidRulesModal')) $('skidRulesModal').style.display = 'none';
+  }
+  window.closeSkidRulesModal = closeSkidRulesModal;
+
+  window.switchToSkidTab = () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const setBtn = document.querySelector('.tab-btn[data-tab="tab-settings"]');
+    if (setBtn) setBtn.classList.add('active');
+    const setContent = $('tab-settings');
+    if (setContent) setContent.classList.add('active');
+
+    document.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.subtab-content').forEach(c => c.classList.remove('active'));
+    const skidSubBtn = document.querySelector('.subtab-btn[data-subtab="subtab-skid"]');
+    if (skidSubBtn) skidSubBtn.classList.add('active');
+    const skidSubContent = $('subtab-skid');
+    if (skidSubContent) skidSubContent.classList.add('active');
+    renderSkidRulesUI();
+  };
+
+  // Wire skid rule UI elements
+  if ($('btnOpenSkidModal')) $('btnOpenSkidModal').addEventListener('click', openSkidRulesModal);
+  if ($('btnOpenSkidModalFromTab')) $('btnOpenSkidModalFromTab').addEventListener('click', openSkidRulesModal);
+  if ($('btnCloseSkidModal')) $('btnCloseSkidModal').addEventListener('click', closeSkidRulesModal);
+  if ($('btnModalCloseSkidBottom')) $('btnModalCloseSkidBottom').addEventListener('click', closeSkidRulesModal);
+  if ($('skidRulesModal')) {
+    $('skidRulesModal').addEventListener('click', (e) => {
+      if (e.target === $('skidRulesModal')) closeSkidRulesModal();
+    });
+  }
+  if ($('linkGoToSkidSettings')) {
+    $('linkGoToSkidSettings').addEventListener('click', (e) => {
+      e.preventDefault();
+      switchToSkidTab();
+    });
+  }
+
+  // Checkbox sync
+  ['chkAutoFrame', 'chkAutoFrameSettings', 'chkAutoFrameModal'].forEach(id => {
+    const el = $(id);
+    if (el) {
+      el.addEventListener('change', () => {
+        syncAutoFrameCheckboxes(el.checked);
+        applyAutoSkidFrame(true);
+        schedule();
+      });
+    }
+  });
+
+  // Add rule buttons
+  if ($('btnAddNewSkidRuleTab')) {
+    $('btnAddNewSkidRuleTab').addEventListener('click', () => {
+      addSkidRuleFromInputs($('newRuleMinHTab'), $('newRuleMaxHTab'), $('newRuleFrameTab'));
+    });
+  }
+  if ($('btnModalAddNewRule')) {
+    $('btnModalAddNewRule').addEventListener('click', () => {
+      addSkidRuleFromInputs($('modalNewRuleMinH'), $('modalNewRuleMaxH'), $('modalNewRuleFrame'));
+    });
+  }
+
+  // Save / Reset buttons
+  if ($('btnSaveSkidRulesTab')) $('btnSaveSkidRulesTab').addEventListener('click', (e) => saveSkidRulesData(e.target));
+  if ($('btnModalSaveSkidRules')) $('btnModalSaveSkidRules').addEventListener('click', (e) => saveSkidRulesData(e.target));
+  if ($('btnResetSkidRulesTab')) $('btnResetSkidRulesTab').addEventListener('click', resetSkidRulesData);
+  if ($('btnResetSkidRulesModal')) $('btnResetSkidRulesModal').addEventListener('click', resetSkidRulesData);
+
+  // Initialize UI & initial state
+  syncAutoFrameCheckboxes(autoSelectFrameEnabled);
+  renderSkidRulesUI();
+
+  // Listen to frame select change
+  if ($('frm')) {
+    $('frm').addEventListener('change', () => {
+      applyAutoSkidFrame(false);
+      schedule();
+    });
+  }
+
   $('H').addEventListener('change', () => {
     const newH = Number($('H').value) || 3000;
+    applyAutoSkidFrame();
     nozzleData.forEach(n => {
       const isOverflow = n.name === 'OVERFLOW' || (n.desc && n.desc.includes('월류'));
       const isInlet = n.name === 'INLET' || (n.desc && (n.desc.includes('유입') || n.desc.includes('급수')));
@@ -13730,7 +14334,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.40</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.41</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
@@ -13999,6 +14603,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     }
     return true;
   }
+  window.applyAppState = applyAppState;
 
   function syncStateToStorageAndUrl() {
     if (isRestoringState) return;

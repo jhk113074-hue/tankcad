@@ -1062,18 +1062,23 @@
     // 단부 점 (Terminal dot)
     ents.push({ t: 'circle', c: [...startPt], r: Math.max(3, Math.round(scaleN * 0.2)), layer, balloonNo: str, balloonId: bId, balloonRole: 'dot' });
 
-    // 지시선 (Leader line)
-    if (elbowPt && (elbowPt[0] !== startPt[0] || elbowPt[1] !== startPt[1])) {
+    // 지시선 (Leader line) - 사용자 권장: 안꺾어도 되고 직선 사용, 꺾더라도 풍선 내부에서 꺾지 않도록 원천 차단
+    const dxFull = balloonCenter[0] - startPt[0], dyFull = balloonCenter[1] - startPt[1];
+    const distFull = Math.hypot(dxFull, dyFull) || 1;
+    const directEndPt = [balloonCenter[0] - (dxFull / distFull) * balloonR, balloonCenter[1] - (dyFull / distFull) * balloonR];
+
+    const dElbow = elbowPt ? Math.hypot(balloonCenter[0] - elbowPt[0], balloonCenter[1] - elbowPt[1]) : 0;
+    // 꺾임점(elbowPt)이 풍선 원 외부(최소 balloonR + 12 이상 이격)에 충분히 떨어져 있을 때만 꺾임 허용
+    // 풍선 원 내부나 경계 근처에서는 절대 꺾지 않고 직접 직선 연결
+    if (elbowPt && dElbow > balloonR + 12 && (elbowPt[0] !== startPt[0] || elbowPt[1] !== startPt[1])) {
       const dx = balloonCenter[0] - elbowPt[0], dy = balloonCenter[1] - elbowPt[1];
       const dist = Math.hypot(dx, dy) || 1;
       const endPt = [balloonCenter[0] - (dx / dist) * balloonR, balloonCenter[1] - (dy / dist) * balloonR];
       ents.push({ t: 'line', a: [...startPt], b: [...elbowPt], layer, balloonNo: str, balloonId: bId, balloonRole: 'slant' });
       ents.push({ t: 'line', a: [...elbowPt], b: endPt, layer, balloonNo: str, balloonId: bId, balloonRole: 'shelf' });
     } else {
-      const dx = balloonCenter[0] - startPt[0], dy = balloonCenter[1] - startPt[1];
-      const dist = Math.hypot(dx, dy) || 1;
-      const endPt = [balloonCenter[0] - (dx / dist) * balloonR, balloonCenter[1] - (dy / dist) * balloonR];
-      ents.push({ t: 'line', a: [...startPt], b: endPt, layer, balloonNo: str, balloonId: bId, balloonRole: 'shelf' });
+      // 사용자 권장 기본: 부품 시작점에서 풍선 원 외곽 접점까지 깔끔한 단일 직선
+      ents.push({ t: 'line', a: [...startPt], b: directEndPt, layer, balloonNo: str, balloonId: bId, balloonRole: 'shelf' });
     }
 
     // 원형 풍선 (Circular balloon)
@@ -1128,14 +1133,21 @@
 
     if (bubble && shelfLine) {
       if (slantLine) {
-        const origDx = Math.abs(shelfLine.b[0] - shelfLine.a[0]);
-        const origDy = Math.abs(shelfLine.b[1] - shelfLine.a[1]);
-        if (origDx >= origDy) {
-          shelfLine.a[1] += dy;
-          slantLine.b[1] += dy;
+        // 풍선 이동 후 꺾임점(slantLine.b)이 풍선 원 내부 또는 너무 가까워지면 단일 직선으로 자동 전환하여 내부 꺾임 원천 차단
+        const dElbow = Math.hypot(bubble.c[0] - slantLine.b[0], bubble.c[1] - slantLine.b[1]);
+        if (dElbow <= radius + 12) {
+          shelfLine.a = [...slantLine.a];
+          slantLine.b = [...slantLine.a];
         } else {
-          shelfLine.a[0] += dx;
-          slantLine.b[0] += dx;
+          const origDx = Math.abs(shelfLine.b[0] - shelfLine.a[0]);
+          const origDy = Math.abs(shelfLine.b[1] - shelfLine.a[1]);
+          if (origDx >= origDy) {
+            shelfLine.a[1] += dy;
+            slantLine.b[1] += dy;
+          } else {
+            shelfLine.a[0] += dx;
+            slantLine.b[0] += dx;
+          }
         }
       }
       const origin = shelfLine.a;
@@ -1514,6 +1526,62 @@
       return `주부재: ${d.mainSpec}, 종부재: ${d.subSpec}`;
     }
     return `Main: ${d.mainSpec}, Sub: ${d.subSpec}`;
+  }
+
+  /* ---------- 높이별 스틸 스키드 프레임 기본 선정 규칙 (Skid Frame Rules by Height) ---------- */
+  const DEFAULT_SKID_RULES = [
+    { id: 'skid_rule_1', minH: 1.0, maxH: 2.5, frame: 75, desc: '1.0m ~ 2.5mH' },
+    { id: 'skid_rule_2', minH: 3.0, maxH: 4.0, frame: 125, desc: '3.0m ~ 4.0mH' },
+    { id: 'skid_rule_3', minH: 4.5, maxH: 10.0, frame: 150, desc: '4.5m ~ 5.0m+H' }
+  ];
+
+  let activeCustomSkidRules = null;
+
+  function getDefaultSkidRules() {
+    return JSON.parse(JSON.stringify(DEFAULT_SKID_RULES));
+  }
+
+  function setCustomSkidRules(rules) {
+    if (Array.isArray(rules) && rules.length > 0) {
+      activeCustomSkidRules = JSON.parse(JSON.stringify(rules));
+    } else {
+      activeCustomSkidRules = null;
+    }
+  }
+
+  function getCustomSkidRules() {
+    return activeCustomSkidRules ? JSON.parse(JSON.stringify(activeCustomSkidRules)) : null;
+  }
+
+  function getActiveSkidRules() {
+    return activeCustomSkidRules ? JSON.parse(JSON.stringify(activeCustomSkidRules)) : getDefaultSkidRules();
+  }
+
+  function getFrameForHeight(hInM, rules = null) {
+    const rList = rules || getActiveSkidRules();
+    const h = Number(hInM) || 3.0;
+    for (const r of rList) {
+      const min = Number(r.minH) || 0;
+      const max = Number(r.maxH) || 999;
+      if (h >= min - 0.001 && h <= max + 0.001) {
+        return Number(r.frame) || 75;
+      }
+    }
+    // 기본 범위 외 안전 기본값 (1-2.5: 75, 3-4: 125, 4.5-5+: 150)
+    if (h <= 2.5) return 75;
+    if (h <= 4.0) return 125;
+    return 150;
+  }
+
+  function formatSkidRuleSummary(rules = null) {
+    const rList = rules || getActiveSkidRules();
+    if (!rList || !rList.length) return '규칙 없음';
+    return rList.map(r => {
+      const minStr = (r.minH !== undefined && r.minH !== null) ? `${r.minH}` : '0';
+      const maxStr = (r.maxH && r.maxH < 90) ? `~${r.maxH}m` : 'm+';
+      const fName = (r.frame === 75 || r.frame === '75') ? '75앵글' : (r.frame === 50 || r.frame === '50' ? '50각관' : `${r.frame}채널`);
+      return `${minStr}${maxStr}: ${fName}`;
+    }).join(' / ');
   }
 
   /* ---------- 기본 부품 사양 명세표 생성 (Default Item List / BOM) ---------- */
@@ -2049,44 +2117,38 @@
 
           // 맨홀 풍선 (NO. 6): 우측 기준선에 수직 정렬
           const b6Center = [rightBaseX, mhCenterY + (ladderCount > 0 ? sepY : 0)];
-          const b6Elbow = [rightBaseX - shelfL - balloonR, b6Center[1]];
           const b6Start = [mPos[0] + 120, mhCenterY + 80];
-          drawBalloonCallout(ents, b6Start, b6Elbow, b6Center, no6, N, 'BALLOON', usedSet);
+          drawBalloonCallout(ents, b6Start, null, b6Center, no6, N, 'BALLOON', usedSet);
 
           // 내부사다리 풍선 (NO. 7): 맨홀 바로 아래 동일 X좌표(rightBaseX)에 수직 정렬
           if (ladderCount > 0) {
             const b7Center = [rightBaseX, mhCenterY - sepY];
-            const b7Elbow = [rightBaseX - shelfL - balloonR, b7Center[1]];
             const b7Start = [mPos[0] + 120, mhCenterY - 80];
-            drawBalloonCallout(ents, b7Start, b7Elbow, b7Center, no7, N, 'BALLOON', usedSet);
+            drawBalloonCallout(ents, b7Start, null, b7Center, no7, N, 'BALLOON', usedSet);
           }
         } else if (mPos[1] > W * 0.5) {
           // 맨홀이 상반부에 위치할 경우: 상단 기준선(topBaseY)에 수평 정렬
           const sepX = Math.round(6.5 * N);
           const b6Center = [mPos[0] - (ladderCount > 0 ? sepX : 0), topBaseY];
-          const b6Elbow = [b6Center[0] - shelfL - balloonR, topBaseY];
           const b6Start = [mPos[0] - 80, mPos[1] + 120];
-          drawBalloonCallout(ents, b6Start, b6Elbow, b6Center, no6, N, 'BALLOON', usedSet);
+          drawBalloonCallout(ents, b6Start, null, b6Center, no6, N, 'BALLOON', usedSet);
 
           if (ladderCount > 0) {
             const b7Center = [mPos[0] + sepX, topBaseY];
-            const b7Elbow = [b7Center[0] - shelfL - balloonR, topBaseY];
             const b7Start = [mPos[0] + 80, mPos[1] + 120];
-            drawBalloonCallout(ents, b7Start, b7Elbow, b7Center, no7, N, 'BALLOON', usedSet);
+            drawBalloonCallout(ents, b7Start, null, b7Center, no7, N, 'BALLOON', usedSet);
           }
         } else {
           // 좌하단에 위치할 경우: 좌측 기준선(leftClearX)에 수직 정렬
           const sepY = Math.round(6.5 * N);
           const b6Center = [leftClearX, mPos[1] + (ladderCount > 0 ? sepY : 0)];
-          const b6Elbow = [leftClearX + shelfL + balloonR, b6Center[1]];
           const b6Start = [mPos[0] - 120, mPos[1] + 80];
-          drawBalloonCallout(ents, b6Start, b6Elbow, b6Center, no6, N, 'BALLOON', usedSet);
+          drawBalloonCallout(ents, b6Start, null, b6Center, no6, N, 'BALLOON', usedSet);
 
           if (ladderCount > 0) {
             const b7Center = [leftClearX, mPos[1] - sepY];
-            const b7Elbow = [leftClearX + shelfL + balloonR, b7Center[1]];
             const b7Start = [mPos[0] - 120, mPos[1] - 80];
-            drawBalloonCallout(ents, b7Start, b7Elbow, b7Center, no7, N, 'BALLOON', usedSet);
+            drawBalloonCallout(ents, b7Start, null, b7Center, no7, N, 'BALLOON', usedSet);
           }
         }
       }
@@ -2128,8 +2190,7 @@
         panelBalloonY = Math.min(W - Math.round(3.0 * N), mPos[1] + Math.round(14.0 * N));
       }
       const b3Center = [rightBaseX, panelBalloonY];
-      const b3Elbow = [rightBaseX - shelfL - balloonR, panelBalloonY];
-      drawBalloonCallout(ents, [pcx, pcy], b3Elbow, b3Center, getItemNo('panel') || 3, N, 'BALLOON');
+      drawBalloonCallout(ents, [pcx, pcy], null, b3Center, getItemNo('panel') || 3, N, 'BALLOON');
 
       // ==========================================
       // [3] 코너 프레임 (Corner Frame - NO. 4)
@@ -2148,8 +2209,7 @@
       if (!cornerPt) cornerPt = [0, W];
       const b4X = cornerPt[0] - F - Math.round(6.0 * N);
       const b4Center = [b4X, topBaseY];
-      const b4Elbow = [b4X + shelfL + balloonR, topBaseY];
-      drawBalloonCallout(ents, [cornerPt[0] - F, cornerPt[1] + F], b4Elbow, b4Center, getItemNo('corner') || 4, N, 'BALLOON');
+      drawBalloonCallout(ents, [cornerPt[0] - F, cornerPt[1] + F], null, b4Center, getItemNo('corner') || 4, N, 'BALLOON');
 
       // ==========================================
       // [4] 내부 스테이 / 보강재 (Internal Stay - NO. 10)
@@ -2178,8 +2238,7 @@
       }
       const b10X = Math.max(b4X + Math.round(9.0 * N), stayPt[0] + Math.round(3.0 * N));
       const b10Center = [b10X, topBaseY];
-      const b10Elbow = [b10X - shelfL - balloonR, topBaseY];
-      drawBalloonCallout(ents, stayPt, b10Elbow, b10Center, getItemNo('stay') || 10, N, 'BALLOON');
+      drawBalloonCallout(ents, stayPt, null, b10Center, getItemNo('stay') || 10, N, 'BALLOON');
 
       // ==========================================
       // [5] 플랜지 바 (Flange Bar - NO. 9)
@@ -2199,8 +2258,7 @@
       let b9X = seamPt[0] + Math.round(2.0 * N);
       if (b9X < b10X + Math.round(8.0 * N)) b9X = b10X + Math.round(8.0 * N);
       const b9Center = [b9X, topBaseY];
-      const b9Elbow = [b9X - shelfL - balloonR, topBaseY];
-      drawBalloonCallout(ents, [seamPt[0], seamPt[1] + F], b9Elbow, b9Center, getItemNo('flangebar') || 9, N, 'BALLOON');
+      drawBalloonCallout(ents, [seamPt[0], seamPt[1] + F], null, b9Center, getItemNo('flangebar') || 9, N, 'BALLOON');
 
       // ==========================================
       // [6] 에어벤트 (Air Vent - NO. 5)
@@ -2230,12 +2288,11 @@
       let b5X = vPos[0] + Math.round(2.0 * N);
       if (b5X < b9X + Math.round(8.0 * N)) b5X = b9X + Math.round(8.0 * N);
       const b5Center = [b5X, topBaseY];
-      const b5Elbow = [b5X - shelfL - balloonR, topBaseY];
-      drawBalloonCallout(ents, [vPos[0], vPos[1] + 100], b5Elbow, b5Center, getItemNo('airvent') || 5, N, 'BALLOON');
+      drawBalloonCallout(ents, [vPos[0], vPos[1] + 100], null, b5Center, getItemNo('airvent') || 5, N, 'BALLOON');
 
       // ==========================================
       // [7] 외부 사다리 (External Ladder - NO. 8)
-      // 방향별 깔끔한 단일 경사선 + 수평 선반 연결 (제목 및 치수선 비간섭)
+      // 방향별 깔끔한 단일 직선 연결 (제목 및 치수선 비간섭, 꺾임 없는 깔끔한 표준)
       // ==========================================
       const lList = ladderList(opt, map);
       if (lList.length > 0) {
@@ -2243,29 +2300,20 @@
         const no8 = String(getItemNo('exladder') || 8).trim();
         if (!usedSet || !usedSet.has(no8)) {
           if (l.sd === 'D') {
-            // 하단 사다리: 치수선 아래로 단일 경사선 + 수평 선반 인출
-            // 중앙 '평면도' 표제 버블과의 간섭을 피해 외곽 쪽으로 배치
             const toRight = (l.x < L * 0.4);
             const bx8 = l.x + (toRight ? Math.round(6.0 * N) : -Math.round(6.0 * N));
             const b8Center = [bx8, botBaseY];
-            const b8Elbow = [bx8 - (toRight ? 1 : -1) * (shelfL + balloonR), botBaseY];
             const pStart = [l.x, l.y - F - 180];
-            drawBalloonCallout(ents, pStart, b8Elbow, b8Center, no8, N, 'BALLOON', usedSet);
+            drawBalloonCallout(ents, pStart, null, b8Center, no8, N, 'BALLOON', usedSet);
           } else if (l.sd === 'R') {
-            // 우측 사다리: 우측 기준선(rightBaseX)에 수직 정렬
             const b8Center = [rightBaseX, l.y];
-            const b8Elbow = [rightBaseX - shelfL - balloonR, l.y];
-            drawBalloonCallout(ents, [l.x + F + 20, l.y], b8Elbow, b8Center, no8, N, 'BALLOON', usedSet);
+            drawBalloonCallout(ents, [l.x + F + 20, l.y], null, b8Center, no8, N, 'BALLOON', usedSet);
           } else if (l.sd === 'U') {
-            // 상단 사다리: 상단 기준선(topBaseY)에 수평 정렬
             const b8Center = [l.x + Math.round(6.0 * N), topBaseY];
-            const b8Elbow = [b8Center[0] - shelfL - balloonR, topBaseY];
-            drawBalloonCallout(ents, [l.x, l.y + F + 20], b8Elbow, b8Center, no8, N, 'BALLOON', usedSet);
+            drawBalloonCallout(ents, [l.x, l.y + F + 20], null, b8Center, no8, N, 'BALLOON', usedSet);
           } else {
-            // 좌측 사다리: 좌측 기준선(leftClearX)에 수직 정렬
             const b8Center = [leftClearX, l.y];
-            const b8Elbow = [leftClearX + shelfL + balloonR, l.y];
-            drawBalloonCallout(ents, [l.x - F - 20, l.y], b8Elbow, b8Center, no8, N, 'BALLOON', usedSet);
+            drawBalloonCallout(ents, [l.x - F - 20, l.y], null, b8Center, no8, N, 'BALLOON', usedSet);
           }
         }
       }
@@ -4532,100 +4580,92 @@
     const slabT = fDesign.slabT || 150;
     const slabBotY = slabTopY - slabT;
 
-    // 2D concStrips와 100% 동일한 패드 보 목록 및 외곽 산출
+    // 2D concStrips 및 runsForStrip과 100% 동일한 실제 패드 보 유효 구간(piece) 산출 (이형물탱크 완벽 대응)
     const strips = concStrips(map.cols, opt);
     const firstW = Number(opt && opt.padFirstW) || (strips[0] ? strips[0][1] : 400);
     const padOv = (opt && opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : Math.round(firstW / 2);
     const px0 = strips[0][0];
     const pxEnd = strips[strips.length - 1][0] + strips[strips.length - 1][1];
-    const minY = -padOv;
-    const maxY = totalW + padOv;
 
-    // (A) 하부 150mm 연속 바닥 매트 슬래브 (Continuous Mat Slab)
-    const slabFrontDepth = getDepth((px0 + pxEnd) / 2, minY, (slabBotY + slabTopY) / 2);
-    const slabRightDepth = getDepth(pxEnd, (minY + maxY) / 2, (slabBotY + slabTopY) / 2);
+    const nR = map.rows.length;
+    const hasTankAtRow = (idx, r) => {
+      if (idx < 0) return map.has(r, map.cols.length - 1);
+      if (idx === 0) return map.has(r, 0);
+      return map.has(r, idx) || map.has(r, idx - 1);
+    };
 
-    // 슬래브 솔리드 면 (음영/은선용: stroke=false, fill=true)
-    poly([
-      toIso(px0, minY, slabTopY),
-      toIso(pxEnd, minY, slabTopY),
-      toIso(pxEnd, minY, slabBotY),
-      toIso(px0, minY, slabBotY)
-    ], 'PAD', false, true, slabFrontDepth);
-
-    poly([
-      toIso(pxEnd, minY, slabTopY),
-      toIso(pxEnd, maxY, slabTopY),
-      toIso(pxEnd, maxY, slabBotY),
-      toIso(pxEnd, minY, slabBotY)
-    ], 'PAD', false, true, slabRightDepth);
-
-    // 슬래브 전면 외곽 테두리선
-    ln(toIso(px0, minY, slabTopY), toIso(pxEnd, minY, slabTopY), 'PAD', slabFrontDepth);
-    ln(toIso(pxEnd, minY, slabTopY), toIso(pxEnd, minY, slabBotY), 'PAD', slabFrontDepth);
-    ln(toIso(pxEnd, minY, slabBotY), toIso(px0, minY, slabBotY), 'PAD', slabFrontDepth);
-    ln(toIso(px0, minY, slabBotY), toIso(px0, minY, slabTopY), 'PAD', slabFrontDepth);
-
-    // 슬래브 전면 45도 콘크리트 사선 해치 (2D 단면도와 100% 일치)
-    const hatchStep = 80;
-    for (let c = -15000; c <= 30000; c += hatchStep) {
-      const z1 = slabBotY, x1 = c;
-      const z2 = slabTopY, x2 = c + slabT;
-      if (x2 >= px0 && x1 <= pxEnd) {
-        const ax = Math.max(px0, x1);
-        const az = slabBotY + (ax - c);
-        const bx = Math.min(pxEnd, x2);
-        const bz = slabBotY + (bx - c);
-        if (bx - ax >= 5 && az >= slabBotY && bz <= slabTopY) {
-          ln(toIso(ax, minY, az), toIso(bx, minY, bz), 'PAD', slabFrontDepth);
+    const runsForStrip = idx => {
+      const out = [];
+      let st = -1;
+      for (let i = 0; i <= nR; i++) {
+        const h = i < nR && hasTankAtRow(idx, i);
+        if (h && st < 0) st = i;
+        if (!h && st >= 0) {
+          out.push([map.ys[st], map.ys[i]]);
+          st = -1;
         }
       }
-    }
+      return out;
+    };
 
-    // 슬래브 우측면 외곽 실루엣선 (X = pxEnd)
-    ln(toIso(pxEnd, minY, slabTopY), toIso(pxEnd, maxY, slabTopY), 'PAD', slabRightDepth);
-    ln(toIso(pxEnd, minY, slabBotY), toIso(pxEnd, maxY, slabBotY), 'PAD', slabRightDepth);
+    // 각 스트립별 실제 유효 구간(piece) 산출 (이형물탱크 완벽 대응)
+    const pieces = [];   // { lx, rx, cx, w, yStart, yEnd, sIdx, stripIdx }
+    strips.forEach(([x, w, idx], sIdx) => {
+      const runs = runsForStrip(idx);
+      runs.forEach(([y0, y1]) => {
+        pieces.push({
+          lx: x,
+          rx: x + w,
+          cx: x + w / 2,
+          w,
+          yStart: y0 - padOv,
+          yEnd: y1 + padOv,
+          sIdx: idx,
+          stripIdx: sIdx
+        });
+      });
+    });
 
-    // 슬래브 좌측 바닥 GL 실루엣선 (X = px0, West)
-    ln(toIso(px0, minY, slabBotY), toIso(px0, maxY, slabBotY), 'PAD', slabFrontDepth);
+    const hatchStep = 80;
 
-    // (B) 콘크리트 패드 기둥 (Plinth Beams: 2D 규격 및 위치 100% 일치, 완전 폐합 캐슬 솔리드)
-    strips.forEach(([lx, w, sIdx], idx) => {
-      const rx = lx + w, cx = lx + w / 2;
-      const midY = (minY + maxY) / 2;
-      const frontDepth = getDepth(cx, minY, (slabTopY - th) / 2);
+    // (A) 각 패드 보 기둥 (Plinth Beams) 및 하부 슬래브 전면 렌더링
+    pieces.forEach(p => {
+      const { lx, rx, cx, yStart, yEnd, w } = p;
+      const midY = (yStart + yEnd) / 2;
+      const frontDepth = getDepth(cx, yStart, (slabTopY - th) / 2);
       const topDepth = getDepth(cx, midY, -th);
       const rightDepth = getDepth(rx, midY, (slabTopY - th) / 2);
+      const rearDepth = getDepth(cx, yEnd, (slabTopY - th) / 2);
 
       // 1) 기둥 솔리드 면 (음영/은선용: stroke=false, fill=true)
       poly([
-        toIso(lx, minY, -th),
-        toIso(rx, minY, -th),
-        toIso(rx, minY, slabTopY),
-        toIso(lx, minY, slabTopY)
+        toIso(lx, yStart, -th),
+        toIso(rx, yStart, -th),
+        toIso(rx, yStart, slabTopY),
+        toIso(lx, yStart, slabTopY)
       ], 'PAD', false, true, frontDepth);
 
       poly([
-        toIso(lx, minY, -th),
-        toIso(rx, minY, -th),
-        toIso(rx, maxY, -th),
-        toIso(lx, maxY, -th)
+        toIso(lx, yStart, -th),
+        toIso(rx, yStart, -th),
+        toIso(rx, yEnd, -th),
+        toIso(lx, yEnd, -th)
       ], 'PAD', false, true, topDepth);
 
       poly([
-        toIso(rx, minY, -th),
-        toIso(rx, maxY, -th),
-        toIso(rx, maxY, slabTopY),
-        toIso(rx, minY, slabTopY)
+        toIso(rx, yStart, -th),
+        toIso(rx, yEnd, -th),
+        toIso(rx, yEnd, slabTopY),
+        toIso(rx, yStart, slabTopY)
       ], 'PAD', false, true, rightDepth);
 
-      // 2) 기둥 전면 외곽선 (Front Face at Y = minY)
-      ln(toIso(lx, minY, -th), toIso(rx, minY, -th), 'PAD', frontDepth);
-      ln(toIso(rx, minY, -th), toIso(rx, minY, slabTopY), 'PAD', frontDepth);
-      ln(toIso(rx, minY, slabTopY), toIso(lx, minY, slabTopY), 'PAD', frontDepth);
-      ln(toIso(lx, minY, slabTopY), toIso(lx, minY, -th), 'PAD', frontDepth);
+      // 2) 기둥 전면 외곽선 (Front Face at Y = yStart)
+      ln(toIso(lx, yStart, -th), toIso(rx, yStart, -th), 'PAD', frontDepth);
+      ln(toIso(rx, yStart, -th), toIso(rx, yStart, slabTopY), 'PAD', frontDepth);
+      ln(toIso(rx, yStart, slabTopY), toIso(lx, yStart, slabTopY), 'PAD', frontDepth);
+      ln(toIso(lx, yStart, slabTopY), toIso(lx, yStart, -th), 'PAD', frontDepth);
 
-      // 기둥 전면 45도 콘크리트 사선 해치 (2D 단면도와 100% 일치)
+      // 3) 기둥 전면 45도 콘크리트 사선 해치 (2D 단면도와 100% 일치)
       for (let c = -15000; c <= 30000; c += hatchStep) {
         const z1 = slabTopY, x1 = c;
         const z2 = -th, x2 = c + padH;
@@ -4635,33 +4675,23 @@
           const bx = Math.min(rx, x2);
           const bz = slabTopY + (bx - c);
           if (bx - ax >= 5 && az >= slabTopY && bz <= -th) {
-            ln(toIso(ax, minY, az), toIso(bx, minY, bz), 'PAD', frontDepth);
+            ln(toIso(ax, yStart, az), toIso(bx, yStart, bz), 'PAD', frontDepth);
           }
         }
       }
 
-      // 3) 기둥 상면 및 측면 종방향 모서리선 (Y = minY ~ maxY)
-      ln(toIso(lx, minY, -th), toIso(lx, maxY, -th), 'PAD', topDepth);
-      ln(toIso(rx, minY, -th), toIso(rx, maxY, -th), 'PAD', topDepth);
-      ln(toIso(rx, minY, slabTopY), toIso(rx, maxY, slabTopY), 'PAD', rightDepth);
+      // 4) 기둥 상면 및 측면 종방향 모서리선 (Y = yStart ~ yEnd)
+      ln(toIso(lx, yStart, -th), toIso(lx, yEnd, -th), 'PAD', topDepth);
+      ln(toIso(rx, yStart, -th), toIso(rx, yEnd, -th), 'PAD', topDepth);
+      ln(toIso(rx, yStart, slabTopY), toIso(rx, yEnd, slabTopY), 'PAD', rightDepth);
 
-      // 4) 기둥 간 캐비티 바닥 (Slab Top Cavity Floor: rx ~ nextLx)
-      if (idx < strips.length - 1) {
-        const nextLx = strips[idx + 1][0];
-        const fDepth = getDepth((rx + nextLx) / 2, midY, slabTopY);
-        poly([
-          toIso(rx, minY, slabTopY),
-          toIso(nextLx, minY, slabTopY),
-          toIso(nextLx, maxY, slabTopY),
-          toIso(rx, maxY, slabTopY)
-        ], 'PAD', false, true, fDepth);
-        // 캐비티 바닥과 다음 기둥 좌측면 접합 종방향선
-        ln(toIso(nextLx, minY, slabTopY), toIso(nextLx, maxY, slabTopY), 'PAD', fDepth);
-      }
+      // 5) 기둥 후면 모서리선 (Y = yEnd)
+      ln(toIso(lx, yEnd, -th), toIso(rx, yEnd, -th), 'PAD', rearDepth);
+      ln(toIso(rx, yEnd, -th), toIso(rx, yEnd, slabTopY), 'PAD', rearDepth);
 
-      // 5) 기초 앵커 베이스 플레이트 & 앵커 볼트 (전면 및 후면)
+      // 6) 기초 앙카 베이스 플레이트 & 앙카 볼트 (전면 및 후면)
       const acW = Math.min(45, w / 4);
-      [minY + 110, maxY - 110].forEach(ay => {
+      [yStart + 110, yEnd - 110].forEach(ay => {
         poly([
           toIso(cx - acW, ay - 40, -th),
           toIso(cx + acW, ay - 40, -th),
@@ -4672,31 +4702,128 @@
         ln(toIso(cx, ay - 10, -th), toIso(cx, ay + 10, -th), 'PAD', topDepth);
         ln(toIso(cx, ay, -th), toIso(cx, ay, -th + 30), 'PAD', topDepth);
       });
+
+      // 7) 기둥 직하부 바닥 매트 슬래브 전면 (Z = slabBotY ~ slabTopY, Y = yStart)
+      const slabFDepth = getDepth(cx, yStart, (slabBotY + slabTopY) / 2);
+      poly([
+        toIso(lx, yStart, slabTopY),
+        toIso(rx, yStart, slabTopY),
+        toIso(rx, yStart, slabBotY),
+        toIso(lx, yStart, slabBotY)
+      ], 'PAD', false, true, slabFDepth);
+
+      ln(toIso(lx, yStart, slabTopY), toIso(rx, yStart, slabTopY), 'PAD', slabFDepth);
+      ln(toIso(rx, yStart, slabTopY), toIso(rx, yStart, slabBotY), 'PAD', slabFDepth);
+      ln(toIso(rx, yStart, slabBotY), toIso(lx, yStart, slabBotY), 'PAD', slabFDepth);
+      ln(toIso(lx, yStart, slabBotY), toIso(lx, yStart, slabTopY), 'PAD', slabFDepth);
+
+      // 슬래브 전면 45도 해치
+      for (let c = -15000; c <= 30000; c += hatchStep) {
+        const z1 = slabBotY, x1 = c;
+        const z2 = slabTopY, x2 = c + slabT;
+        if (x2 >= lx && x1 <= rx) {
+          const ax = Math.max(lx, x1);
+          const az = slabBotY + (ax - c);
+          const bx = Math.min(rx, x2);
+          const bz = slabBotY + (bx - c);
+          if (bx - ax >= 5 && az >= slabBotY && bz <= slabTopY) {
+            ln(toIso(ax, yStart, az), toIso(bx, yStart, bz), 'PAD', slabFDepth);
+          }
+        }
+      }
     });
 
-    // (C) 후면 연속 캐슬 실루엣 (Continuous Rear Silhouette at Y = maxY)
-    // 1. 최좌측 수직선: (px0, maxY, slabBotY) -> (px0, maxY, -th) - 일체형 수직선
-    const rearDepth = getDepth((px0 + pxEnd) / 2, maxY, (slabBotY + -th) / 2);
-    ln(toIso(px0, maxY, slabBotY), toIso(px0, maxY, -th), 'PAD', rearDepth);
+    // (B) 인접 패드 보 사이 캐비티 바닥 (Slab Top Cavity Floor: rx ~ nextLx) 및 하부 슬래브 전면
+    for (let s = 0; s < strips.length - 1; s++) {
+      const rx = strips[s][0] + strips[s][1];
+      const nextLx = strips[s + 1][0];
+      const p1List = pieces.filter(p => p.stripIdx === s);
+      const p2List = pieces.filter(p => p.stripIdx === s + 1);
 
-    // 2. 패드 기둥 및 캐비티 연속 요철 실루엣
-    strips.forEach(([lx, w, sIdx], idx) => {
-      const rx = lx + w;
-      // 기둥 상단 후면 수평선
-      ln(toIso(lx, maxY, -th), toIso(rx, maxY, -th), 'PAD', rearDepth);
-      // 기둥 우측 후면 수직 하강선
-      ln(toIso(rx, maxY, -th), toIso(rx, maxY, slabTopY), 'PAD', rearDepth);
+      p1List.forEach(p1 => {
+        p2List.forEach(p2 => {
+          const cavY0 = Math.max(p1.yStart, p2.yStart);
+          const cavY1 = Math.min(p1.yEnd, p2.yEnd);
+          if (cavY1 > cavY0 + 10) {
+            const fDepth = getDepth((rx + nextLx) / 2, (cavY0 + cavY1) / 2, slabTopY);
+            poly([
+              toIso(rx, cavY0, slabTopY),
+              toIso(nextLx, cavY0, slabTopY),
+              toIso(nextLx, cavY1, slabTopY),
+              toIso(rx, cavY1, slabTopY)
+            ], 'PAD', false, true, fDepth);
 
-      if (idx < strips.length - 1) {
-        const nextLx = strips[idx + 1][0];
-        // 캐비티 바닥 후면 수평선
-        ln(toIso(rx, maxY, slabTopY), toIso(nextLx, maxY, slabTopY), 'PAD', rearDepth);
-        // 다음 기둥 좌측 후면 수직 상승선
-        ln(toIso(nextLx, maxY, slabTopY), toIso(nextLx, maxY, -th), 'PAD', rearDepth);
-      } else {
-        // 최우측 슬래브 후면 수직 하강선
-        ln(toIso(rx, maxY, slabTopY), toIso(rx, maxY, slabBotY), 'PAD', rearDepth);
+            // 캐비티 바닥과 다음 기둥 접합 종방향선
+            ln(toIso(nextLx, cavY0, slabTopY), toIso(nextLx, cavY1, slabTopY), 'PAD', fDepth);
+            ln(toIso(rx, cavY0, slabTopY), toIso(nextLx, cavY0, slabTopY), 'PAD', fDepth);
+            ln(toIso(rx, cavY1, slabTopY), toIso(nextLx, cavY1, slabTopY), 'PAD', fDepth);
+
+            // 캐비티 하부 슬래브 전면 (Y = cavY0)
+            const cavSlabDepth = getDepth((rx + nextLx) / 2, cavY0, (slabBotY + slabTopY) / 2);
+            poly([
+              toIso(rx, cavY0, slabTopY),
+              toIso(nextLx, cavY0, slabTopY),
+              toIso(nextLx, cavY0, slabBotY),
+              toIso(rx, cavY0, slabBotY)
+            ], 'PAD', false, true, cavSlabDepth);
+
+            ln(toIso(rx, cavY0, slabTopY), toIso(nextLx, cavY0, slabTopY), 'PAD', cavSlabDepth);
+            ln(toIso(nextLx, cavY0, slabTopY), toIso(nextLx, cavY0, slabBotY), 'PAD', cavSlabDepth);
+            ln(toIso(nextLx, cavY0, slabBotY), toIso(rx, cavY0, slabBotY), 'PAD', cavSlabDepth);
+            ln(toIso(rx, cavY0, slabBotY), toIso(rx, cavY0, slabTopY), 'PAD', cavSlabDepth);
+
+            // 캐비티 슬래브 전면 45도 해치
+            for (let c = -15000; c <= 30000; c += hatchStep) {
+              const z1 = slabBotY, x1 = c;
+              const z2 = slabTopY, x2 = c + slabT;
+              if (x2 >= rx && x1 <= nextLx) {
+                const ax = Math.max(rx, x1);
+                const az = slabBotY + (ax - c);
+                const bx = Math.min(nextLx, x2);
+                const bz = slabBotY + (bx - c);
+                if (bx - ax >= 5 && az >= slabBotY && bz <= slabTopY) {
+                  ln(toIso(ax, cavY0, az), toIso(bx, cavY0, bz), 'PAD', cavSlabDepth);
+                }
+              }
+            }
+          }
+        });
+      });
+    }
+
+    // (C) 최우측 및 외곽 노출면 슬래브 우측 실루엣 (X = rx)
+    pieces.forEach(p => {
+      const hasRightNeighbor = pieces.some(other => other.stripIdx === p.stripIdx + 1 && Math.max(p.yStart, other.yStart) < Math.min(p.yEnd, other.yEnd));
+      if (!hasRightNeighbor) {
+        const rDepth = getDepth(p.rx, (p.yStart + p.yEnd) / 2, (slabBotY + slabTopY) / 2);
+        poly([
+          toIso(p.rx, p.yStart, slabTopY),
+          toIso(p.rx, p.yEnd, slabTopY),
+          toIso(p.rx, p.yEnd, slabBotY),
+          toIso(p.rx, p.yStart, slabBotY)
+        ], 'PAD', false, true, rDepth);
+
+        ln(toIso(p.rx, p.yStart, slabTopY), toIso(p.rx, p.yEnd, slabTopY), 'PAD', rDepth);
+        ln(toIso(p.rx, p.yEnd, slabTopY), toIso(p.rx, p.yEnd, slabBotY), 'PAD', rDepth);
+        ln(toIso(p.rx, p.yStart, slabBotY), toIso(p.rx, p.yEnd, slabBotY), 'PAD', rDepth);
+        ln(toIso(p.rx, p.yStart, slabTopY), toIso(p.rx, p.yStart, slabBotY), 'PAD', rDepth);
       }
+    });
+
+    // (D) 최좌측 슬래브 바닥 GL 실루엣선 (X = px0, West)
+    const p0List = pieces.filter(p => p.stripIdx === 0);
+    p0List.forEach(p0 => {
+      const glDepth = getDepth(p0.lx, (p0.yStart + p0.yEnd) / 2, slabBotY);
+      ln(toIso(p0.lx, p0.yStart, slabBotY), toIso(p0.lx, p0.yEnd, slabBotY), 'PAD', glDepth);
+      ln(toIso(p0.lx, p0.yStart, slabTopY), toIso(p0.lx, p0.yStart, slabBotY), 'PAD', glDepth);
+      ln(toIso(p0.lx, p0.yEnd, slabTopY), toIso(p0.lx, p0.yEnd, slabBotY), 'PAD', glDepth);
+    });
+
+    // (E) 후면 슬래브 바닥선
+    pieces.forEach(p => {
+      const rearDepth = getDepth(p.cx, p.yEnd, slabBotY);
+      ln(toIso(p.lx, p.yEnd, slabBotY), toIso(p.rx, p.yEnd, slabBotY), 'PAD', rearDepth);
+      ln(toIso(p.lx, p.yEnd, slabTopY), toIso(p.rx, p.yEnd, slabTopY), 'PAD', rearDepth);
     });
 
     inFoundation = false;
@@ -7639,6 +7766,6 @@
     return o.join('\r\n') + '\r\n';
   }
 
-  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, getFoundationDesign, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, getSkidDimensions, getSkidSpec, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType, getDefaultPanelPattern };
+  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, getFoundationDesign, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, getSkidDimensions, getSkidSpec, DEFAULT_SKID_RULES, getDefaultSkidRules, setCustomSkidRules, getCustomSkidRules, getActiveSkidRules, getFrameForHeight, formatSkidRuleSummary, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType, getDefaultPanelPattern };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TankCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

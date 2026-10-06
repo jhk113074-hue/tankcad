@@ -27,6 +27,7 @@ wheels/
 *.log
 scratch/
 temp/
+.chrome_cdp_*/
 
 # IDE & OS
 .vscode/
