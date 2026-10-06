@@ -5,6 +5,25 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.32] - 2026-10-06
+
+### Changed & Fixed (실제 사용 6종 판넬 규격 한정 등록/관리 및 2D/3D 도면 즉각 반영 최적화)
+- **📐 실제 도면 사용 6종 표준 판넬만 등록/수정/관리하도록 전면 개편**:
+  - 사용자 요구사항에 따라 실제 도면에 사용되는 6종 판넬 규격 외 불필요한 규격 전면 정리:
+    1. **측판 1×1M** (`1000×1000`, `category: 'side'`)
+    2. **측판 1×1.5M** (`1000×1500`, `category: 'side'`)
+    3. **측판 1×2M** (`1000×2000`, `category: 'side'`)
+    4. **공통판넬 0.5×1M** (`500×1000`, `category: 'common'`)
+    5. **공통판넬 0.5×0.5M** (`500×500`, `category: 'common'`)
+    6. **천정판넬 1×1M** (`1000×1000`, `category: 'top'`)
+  - CAD 부품 관리자 위치 탭을 `측판`, `공통판넬`, `천정판넬` 3개로 단순화하고, 상단 퀵 프리셋 버튼을 6종 표준 버튼으로 일원화.
+  - 판넬 DB 필터 드롭다운 및 블록 일괄 등록 마법사에서도 해당 6종 표준 규격만 노출되도록 정리.
+- **🔄 판넬 수정/등록 시 2D(정면도/측면도/평면도) 및 3D 등각도 즉각 반영 (1×2M 등 미반영 버그 완치)**:
+  - `applyActiveTemplates`에서 평면도 탭 활성 시 측판 반영이 누락되던 예외 조건(`if (v !== 'plan')`) 제거.
+  - `tank.js`의 `buildElevation`(정면/측면 입면도) 및 `buildIsometric`(3D 등각도)에서 등록된 사용자 커스텀 판넬(`opt.customPanels`)을 조회하여 즉각 도면에 주입되도록 보강.
+  - 가로/세로 방향(`500×1000` ↔ `1000×500`) 회전 호환 및 `SMC`, `STS` 등 재질 간 템플릿 즉각 동기화 지원.
+  - 판넬 CAD 부품 뷰어에서 평면도 탭 선택 시 두께(50mm) 슬라이스 대신 판넬 면 형상이 정확히 렌더링되도록 개선.
+
 ## [1.6.31] - 2026-10-06
 
 ### Fixed (3D 등각도 내부 기둥 접합부 보강재 브라켓 4구 홀 일치화)

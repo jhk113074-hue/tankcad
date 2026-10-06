@@ -194,9 +194,25 @@
   }
 
   /* ---------- 패널 내부 도형 (CeilLT) ---------- */
-  function panelShapes(templates, mat, x, y, w, h) {
+  function panelShapes(templates, mat, x, y, w, h, opt) {
     const key = w + 'x' + h;
-    const t = ((templates && (templates[mat] || templates.SMC)) || {})[key] || [];
+    let t = ((templates && (templates[mat] || templates.SMC)) || {})[key];
+    if (!t || !t.length) {
+      if ((w === 500 && h === 1000) || (w === 1000 && h === 500)) {
+        const dict = (templates && (templates[mat] || templates.SMC)) || {};
+        t = dict['500x1000'] || dict['1000x500'];
+      }
+    }
+    if ((!t || !t.length) && opt && opt.customPanels && Array.isArray(opt.customPanels)) {
+      const matched = opt.customPanels.find(p =>
+        (p.category === 'top' || p.category === 'top_bottom' || p.category === 'common' || p.category === 'all' || !p.category) &&
+        (p.size_key === key || (p.width === w && p.height === h) ||
+         (((w === 500 && h === 1000) || (w === 1000 && h === 500)) && (p.size_key === '500x1000' || p.size_key === '1000x500'))) &&
+        p.entities && p.entities.length
+      );
+      if (matched) t = matched.entities;
+    }
+    if (!t) t = [];
     const out = [];
     t.forEach(s => {
       if (!s) return;
@@ -1532,7 +1548,7 @@
           { t: 'line', a: [w, 0], b: [w, h], layer: 'PANEL' },
           { t: 'line', a: [w, h], b: [0, h], layer: 'PANEL' },
           { t: 'line', a: [0, h], b: [0, 0], layer: 'PANEL' },
-          ...panelShapes(templates, mat, 0, 0, w, h)
+          ...panelShapes(templates, mat, 0, 0, w, h, opt)
         ];
         blocks[blkName] = bEnts;
       }
@@ -2950,7 +2966,20 @@
           }
         } else {
           const mTemplates = (sideT && (sideT[mat] || sideT.SMC)) || {};
-          const t = mTemplates[w + 'x' + h] || [];
+          let t = mTemplates[w + 'x' + h];
+          if ((!t || !t.length) && ((w === 500 && h === 1000) || (w === 1000 && h === 500))) {
+            t = mTemplates['500x1000'] || mTemplates['1000x500'];
+          }
+          if ((!t || !t.length) && opt && opt.customPanels && Array.isArray(opt.customPanels)) {
+            const matched = opt.customPanels.find(p =>
+              (p.category === 'side' || p.category === 'common' || p.category === 'all' || !p.category) &&
+              (p.size_key === `${w}x${h}` || (p.width === w && p.height === h) ||
+               (((w === 500 && h === 1000) || (w === 1000 && h === 500)) && (p.size_key === '500x1000' || p.size_key === '1000x500'))) &&
+              p.entities && p.entities.length
+            );
+            if (matched) t = matched.entities;
+          }
+          if (!t) t = [];
           t.forEach(s => {
             if (!s) return;
             const k = s.k || s.t || s.type;
@@ -4259,7 +4288,21 @@
           }
         }
       } else {
-        const rawT = sideTemplates[w + 'x' + h];
+        let rawT = sideTemplates[w + 'x' + h];
+        if (!rawT || !rawT.length) {
+          if ((w === 500 && h === 1000) || (w === 1000 && h === 500)) {
+            rawT = sideTemplates['500x1000'] || sideTemplates['1000x500'];
+          }
+        }
+        if ((!rawT || !rawT.length) && opt && opt.customPanels && Array.isArray(opt.customPanels)) {
+          const matched = opt.customPanels.find(p =>
+            (p.category === 'side' || p.category === 'common' || p.category === 'all' || !p.category) &&
+            (p.size_key === `${w}x${h}` || (p.width === w && p.height === h) ||
+             (((w === 500 && h === 1000) || (w === 1000 && h === 500)) && (p.size_key === '500x1000' || p.size_key === '1000x500'))) &&
+            p.entities && p.entities.length
+          );
+          if (matched) rawT = matched.entities;
+        }
         if (rawT && rawT.length > 0) {
           const fm = 75;
           if (plane === 'XZ') {
@@ -4545,7 +4588,21 @@
         poly([p1, p2, p3, p4], 'PANEL', true, true, depth);
 
         // Project CeilLT roof template geometry
-        const rawT = ceilTemplates[w + 'x' + h];
+        let rawT = ceilTemplates[w + 'x' + h];
+        if (!rawT || !rawT.length) {
+          if ((w === 500 && h === 1000) || (w === 1000 && h === 500)) {
+            rawT = ceilTemplates['500x1000'] || ceilTemplates['1000x500'];
+          }
+        }
+        if ((!rawT || !rawT.length) && opt && opt.customPanels && Array.isArray(opt.customPanels)) {
+          const matched = opt.customPanels.find(p =>
+            (p.category === 'top' || p.category === 'top_bottom' || p.category === 'common' || p.category === 'all' || !p.category) &&
+            (p.size_key === `${w}x${h}` || (p.width === w && p.height === h) ||
+             (((w === 500 && h === 1000) || (w === 1000 && h === 500)) && (p.size_key === '500x1000' || p.size_key === '1000x500'))) &&
+            p.entities && p.entities.length
+          );
+          if (matched) rawT = matched.entities;
+        }
         const fm = 60; // 천정판넬 플랜지 길이 60mm (내측 절곡)
         if (rawT && rawT.length > 0) {
           poly([toIso(x0 + fm, y0 + fm, H), toIso(x0 + w - fm, y0 + fm, H), toIso(x0 + w - fm, y0 + h - fm, H), toIso(x0 + fm, y0 + h - fm, H)], 'PANEL_DETAIL', true, false, depth);
