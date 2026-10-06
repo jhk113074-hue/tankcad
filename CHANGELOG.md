@@ -5,6 +5,13 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.36] - 2026-10-06
+
+### Fixed (초기 로딩 시 구문 오류 및 캔버스 먹통 현상 긴급 패치)
+- **🚨 `setCadCurrentView` 중복 괄호 및 호출문 구문 오류 긴급 수정**:
+  - v1.6.35 탭 정리 과정에서 `setCadCurrentView` 함수 끝부분에 `loadPartForCategory` 및 닫는 중괄호(`}`)가 중복 삽입되어 발생한 `SyntaxError: Unexpected token 'function'` 수정.
+  - 이로 인해 스크립트 실행이 중단되어 좌측 탱크 치수 입력폼 및 캔버스 도면이 렌더링되지 않던 "탱크 규격 로딩 중..." 먹통 현상 완전 해결.
+
 ## [1.6.35] - 2026-10-06
 
 ### Refactored & Cleaned Up (천정판넬과 맨홀의 등록 탭 중복 정리 및 독립 분리)
