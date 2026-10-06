@@ -5,6 +5,23 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.35] - 2026-10-06
+
+### Refactored & Cleaned Up (천정판넬과 맨홀의 등록 탭 중복 정리 및 독립 분리)
+- **🧱 [탱크 판넬 등록 & 관리] (Tab 1) 판넬 고유 기능으로 전면 일원화**:
+  - 도면에 사용되는 6대 공식 판넬(`측판 1×1M, 1×1.5M, 1×2M`, `공통판넬 0.5×1M, 0.5×0.5M`, `천정판넬 1×1M`) 전용으로 정리.
+  - Tab 1 내 잔재하던 맨홀 관련 UI 및 속성(`cadPanelPlanDirSection`: 평면도 맨홀 입구 방향 설정 등)을 완전 제거.
+  - 신규 판넬 등록 팝업(`modalCat`)의 불필요한 선택 옵션(`manhole`, `fitting`, `bottom`, `drain`)을 정리하고 `side`, `top`, `common`으로 단일화.
+- **⚙️ [탱크 부품·의장품 등록 관리] (Tab 2) 8대 의장품 전용으로 개편**:
+  - Tab 2에 불필요하게 중복 노출되던 `🏠 천정판넬` 라디오 칩 및 데이터 카테고리를 완전히 제거하여 Tab 1과의 혼선 원천 차단.
+  - 부품 칩 레이아웃을 8대 의장품 규격(4+4 깔끔한 2열 그리드)으로 재정비:
+    - 1열: 🪜 외부사다리, 🪜 내부사다리, 🔘 맨홀, 💨 에어벤트
+    - 2열: 🏛️ 외부보강, 💧 배관노즐, 🏗️ 스키드, 🧱 기초패드
+  - 부품 현황표(`renderRegisteredPartsTable`) 및 방향 설정 조건에서 `top`과 `panel`을 분리 제거하여 의장품 등록 상태만 직관적으로 표시.
+- **🎯 판넬(천정판넬)과 의장품(맨홀)의 역할 경계 100% 명확화**:
+  - `천정판넬` ➜ **탱크 판넬 등록 & 관리**에서만 등록/관리
+  - `맨홀` ➜ **탱크 부품·의장품 등록 관리**에서만 등록/관리
+
 ## [1.6.34] - 2026-10-06
 
 ### Fixed (노즐 체크 시 입면도 치수 위치 완전 고정 및 노즐 지시선만 외부로 인출)

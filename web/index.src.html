@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.6.34</title>
+<title>YSACC TANK CAD v1.6.35</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -420,7 +420,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.34</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.35</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1262,12 +1262,8 @@ canvas.drag{cursor:grabbing}
             <label id="lblModalCat" style="font-size:11px;font-weight:600">판넬 종류 / 부위</label>
             <select id="modalCat" style="width:100%;padding:5px;font-size:12px">
               <option value="side">🏢 측면판넬 (Side Panel)</option>
-              <option value="fitting">🔧 피팅판넬 (Fitting Panel)</option>
               <option value="top">🏠 천정판넬 (Roof Panel)</option>
-              <option value="manhole">🔘 맨홀판넬 (Manhole Panel)</option>
-              <option value="bottom">⚓ 저판판넬 (Bottom Panel)</option>
-              <option value="drain">💧 드레인판넬 (Drain Panel)</option>
-              <option value="common">🌟 공통판넬 (모든 부위 공통 사용)</option>
+              <option value="common">🌟 공통판넬 (Common Panel)</option>
             </select>
           </div>
           <div>
@@ -1436,10 +1432,10 @@ canvas.drag{cursor:grabbing}
 
             <!-- MODE 1: 판넬 모드 컨트롤 섹션 -->
             <div id="cadPanelControlSection" style="display:block">
-              <!-- 1. 판넬 설치 위치 선택 (6대 부위) -->
+              <!-- 1. 판넬 설치 위치 선택 (측판·공통·천정) -->
               <div style="background:var(--surface-sub);padding:10px 12px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                  <label style="font-size:11.5px;font-weight:700">1. 판넬 설치 위치 및 종류 (7대 부위)</label>
+                  <label style="font-size:11.5px;font-weight:700">1. 판넬 설치 위치 및 종류 (측판·공통·천정)</label>
                   <span id="curPanelPosBadge" style="font-size:11px;color:var(--accent);font-weight:700">🏢 측면판넬 선택됨</span>
                 </div>
                 <div class="cad-panel-pos-nav" id="cadPanelPosNav" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:4px">
@@ -1492,28 +1488,6 @@ canvas.drag{cursor:grabbing}
                     <span class="v-stat" id="statBadgePanelLeft">⚪ 기본</span>
                   </button>
                 </div>
-                <!-- 평면도 외벽 방향성 설정 (맨홀 & 천정 전용 4방향) -->
-                <div id="cadPanelPlanDirSection" style="display:none;background:rgba(2,132,199,0.06);border:1px dashed var(--accent);border-radius:6px;padding:7px 10px;margin-top:6px">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                    <span id="lblPanelPlanDirTitle" style="font-size:11px;font-weight:700;color:var(--accent)">🧭 평면도 맨홀 입구(걸쇠) 방향 (탱크 외벽 기준):</span>
-                    <span id="curPanelPlanDirBadge" style="font-size:10px;font-weight:700;color:var(--accent)">🌟 자동 회전 (Auto)</span>
-                  </div>
-                  <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:4px">
-                    <button type="button" class="btn-sm cad-dir-btn active" data-dir="auto" style="padding:4px 2px;font-size:10px;font-weight:700" title="외벽 위치에 맞춰 입구가 탱크 밖으로 자동 정렬됩니다">🌟 자동</button>
-                    <button type="button" class="btn-sm cad-dir-btn" data-dir="south" style="padding:4px 2px;font-size:10px" title="입구가 남측(하단)을 향함: 정면도(정면) / 우측면도(측면 좌향) 투영">⬇️ 남(하)</button>
-                    <button type="button" class="btn-sm cad-dir-btn" data-dir="east" style="padding:4px 2px;font-size:10px" title="입구가 동측(우측)을 향함: 정면도(측면 우향) / 우측면도(정면) 투영">➡️ 동(우)</button>
-                    <button type="button" class="btn-sm cad-dir-btn" data-dir="north" style="padding:4px 2px;font-size:10px" title="입구가 북측(상단)을 향함: 정면도(배면) / 우측면도(측면 우향) 투영">⬆️ 북(상)</button>
-                    <button type="button" class="btn-sm cad-dir-btn" data-dir="west" style="padding:4px 2px;font-size:10px" title="입구가 서측(좌측)을 향함: 정면도(측면 좌향) / 우측면도(배면) 투영">⬅️ 서(좌)</button>
-                  </div>
-                  <!-- 맨홀 입구 방향별 투영 연동 안내 가이드 박스 -->
-                  <div id="cadPanelManholeProjectionGuideBox" style="display:none;margin-top:6px;padding:6px 8px;background:rgba(2,132,199,0.08);border-radius:4px;font-size:10px;line-height:1.45;color:var(--fg);border:1px solid rgba(2,132,199,0.2)">
-                    <div style="font-weight:700;color:var(--accent);margin-bottom:3px">🔗 입구 방향에 따른 정면도·우측면도 투영 연동:</div>
-                    <div id="cadPanelManholeProjectionGuideText">• <b>🌟 자동</b>: 외벽 방향에 맞춰 입구가 자동 회전되며 입면도 형상이 자동 연동 투영됩니다.</div>
-                  </div>
-                  <div style="font-size:9.5px;color:var(--muted);margin-top:4px">
-                    💡 <b>자동</b> 선택 시 외벽 위치에 맞춰 탱크 밖을 향하도록 자동 회전됩니다. 특정 방향만 따로 등록하려면 해당 버튼을 누르세요.
-                  </div>
-                </div>
               </div>
 
               <!-- 3. 판넬 규격 설정 (500mm 단위 증감) -->
@@ -1555,16 +1529,15 @@ canvas.drag{cursor:grabbing}
 
             <!-- MODE 2: 부품 모드 컨트롤 섹션 -->
             <div id="cadPartControlSection" style="display:none">
-              <!-- 1. 등록 대상 부품 선택 (9개 부품 칩) -->
+              <!-- 1. 등록 대상 부품 선택 (8대 의장품 칩) -->
               <div style="background:var(--surface-sub);padding:10px 12px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                  <label id="lblCadPartCat" style="font-size:11.5px;font-weight:700">1. 등록 대상 부품 선택</label>
+                  <label id="lblCadPartCat" style="font-size:11.5px;font-weight:700">1. 등록 대상 부품·의장품 선택 (8종)</label>
                   <span id="lblPartCatHint" style="font-size:10.5px;color:var(--muted)">선택 시 4방향 뷰 자동 연결</span>
                 </div>
-                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:5px">
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:5px">
                   <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="ladder" checked><span>🪜 외부사다리</span></label>
                   <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="inladder"><span>🪜 내부사다리</span></label>
-                  <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="top"><span>🏠 천정판넬</span></label>
                   <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="manhole"><span>🔘 맨홀</span></label>
                   <label class="side-tool-chip"><input type="radio" name="cadPartCategory" value="airvent"><span>💨 에어벤트</span></label>
                 </div>
@@ -2160,7 +2133,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.34</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.35</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -2170,7 +2143,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.34</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.35</span></div>
     </div>
   </main>
 </div>
@@ -8922,9 +8895,6 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     const curVBadge = $('curPanelViewBadge');
     if (curVBadge) curVBadge.textContent = `${getViewIcon(cadCurrentView)} ${getViewLabel(cadCurrentView)} 선택됨`;
 
-    const panelPlanDirSec = $('cadPanelPlanDirSection');
-    if (panelPlanDirSec) panelPlanDirSec.style.display = 'none';
-
     if (pos === 'top') {
       if ($('cadPartW')) $('cadPartW').value = 1000;
       if ($('cadPartH')) $('cadPartH').value = 1000;
@@ -8948,7 +8918,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       b.classList.toggle('active', b.dataset.dir === dir);
     });
     const curCat = getSelectedCadCategory();
-    const isMh = (curCat === 'manhole' || cadCurrentPanelPos === 'manhole');
+    const isMh = (curCat === 'manhole');
     const mhLabels = {
       auto: '🌟 자동 (외벽 입구)',
       south: '⬇️ 남(하) ➜ 정면[정면]·우측[좌향]',
@@ -8966,8 +8936,6 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     const labels = isMh ? mhLabels : stdLabels;
     const curBadge = $('curPlanDirBadge');
     if (curBadge) curBadge.textContent = labels[dir] || dir;
-    const curPanelBadge = $('curPanelPlanDirBadge');
-    if (curPanelBadge) curPanelBadge.textContent = labels[dir] || dir;
 
     const mhGuideTexts = {
       auto: '• <b>🌟 자동</b>: 외벽 방향에 맞춰 입구가 자동 회전되며 정면도/우측면도 형상이 자동 연동 투영됩니다.',
@@ -8978,7 +8946,6 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     };
     const gText = mhGuideTexts[dir] || mhGuideTexts.auto;
     if ($('cadManholeProjectionGuideText')) $('cadManholeProjectionGuideText').innerHTML = gText;
-    if ($('cadPanelManholeProjectionGuideText')) $('cadPanelManholeProjectionGuideText').innerHTML = gText;
 
     const isPanel = $('cadPanelControlSection') && $('cadPanelControlSection').style.display !== 'none';
     if (isPanel) {
@@ -9005,16 +8972,12 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
     const isPlan = (view === 'plan');
     const planDirSec = $('cadPlanDirSection');
-    const panelPlanDirSec = $('cadPanelPlanDirSection');
     const curCat = getSelectedCadCategory();
-    const isMh = (curCat === 'manhole' || cadCurrentPanelPos === 'manhole');
-    if (planDirSec) planDirSec.style.display = (isPlan && (curCat === 'ladder' || curCat === 'inladder' || curCat === 'manhole' || curCat === 'top')) ? 'block' : 'none';
-    if (panelPlanDirSec) panelPlanDirSec.style.display = (isPlan && (cadCurrentPanelPos === 'manhole' || cadCurrentPanelPos === 'top')) ? 'block' : 'none';
+    const isMh = (curCat === 'manhole');
+    if (planDirSec) planDirSec.style.display = (isPlan && (curCat === 'ladder' || curCat === 'inladder' || curCat === 'manhole')) ? 'block' : 'none';
 
     const mhGuideBox = $('cadManholeProjectionGuideBox');
-    const panelMhGuideBox = $('cadPanelManholeProjectionGuideBox');
     if (mhGuideBox) mhGuideBox.style.display = (isPlan && isMh) ? 'block' : 'none';
-    if (panelMhGuideBox) panelMhGuideBox.style.display = (isPlan && isMh) ? 'block' : 'none';
 
     const btnRear = $('cadViewBtnRear');
     if (btnRear) btnRear.style.display = isMh ? 'flex' : 'none';
@@ -9025,7 +8988,6 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if (btnAlign) btnAlign.style.display = (isPlan && isMh) ? 'inline-block' : 'none';
 
     if ($('lblPlanDirTitle')) $('lblPlanDirTitle').textContent = isMh ? '🧭 평면도 맨홀 입구(걸쇠) 방향 (탱크 외벽 기준):' : '🧭 평면도 설치 방향 (탱크 외벽 기준):';
-    if ($('lblPanelPlanDirTitle')) $('lblPanelPlanDirTitle').textContent = isMh ? '🧭 평면도 맨홀 입구(걸쇠) 방향 (탱크 외벽 기준):' : '🧭 평면도 설치 방향 (탱크 외벽 기준):';
 
     if ($('vNamePlan')) $('vNamePlan').textContent = '평면도';
     if ($('vNameFront')) $('vNameFront').textContent = isMh ? '정면도 (남향입구)' : '정면도';
@@ -9038,13 +9000,12 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       loadActivePanelToPreview();
     } else {
       const cat = getSelectedCadCategory();
-      if (cat === 'top') {
-        if ($('cadPartW')) $('cadPartW').value = 1000;
-        if ($('cadPartH')) $('cadPartH').value = (view === 'plan') ? 1000 : 100;
-      } else if (cat === 'manhole') {
+      if (cat === 'manhole') {
         if ($('cadPartW')) $('cadPartW').value = 1000;
         if ($('cadPartH')) $('cadPartH').value = (view === 'plan') ? 1000 : 180;
       }
+      loadPartForCategory(cat, cadCurrentView, cadCurrentHeight);
+    }
       loadPartForCategory(cat, cadCurrentView, cadCurrentHeight);
     }
   }
@@ -9295,7 +9256,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     });
 
     // 판넬 부위 뱃지 업데이트
-    const panelPositions = ['side', 'fitting', 'top', 'manhole', 'bottom', 'drain', 'common'];
+    const panelPositions = ['side', 'common', 'top'];
     panelPositions.forEach(pos => {
       const badgeId = 'statBadge' + pos.charAt(0).toUpperCase() + pos.slice(1);
       const badge = $(badgeId);
@@ -11919,7 +11880,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const isPlan = (view === 'plan');
       const planDirSec = $('cadPlanDirSection');
       if (planDirSec) {
-        planDirSec.style.display = (isPlan && (cat === 'ladder' || cat === 'inladder' || cat === 'manhole' || cat === 'top')) ? 'block' : 'none';
+        planDirSec.style.display = (isPlan && (cat === 'ladder' || cat === 'inladder' || cat === 'manhole')) ? 'block' : 'none';
       }
 
       currentCadEntities = getCurrentActivePartEntities(cat, curOpt.id, w, h, view, cadCurrentPlanDir);
@@ -11937,24 +11898,20 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     let customPanels = [];
     try { customPanels = JSON.parse(localStorage.getItem('tankcad_custom_panels') || '[]'); } catch (e) {}
 
-    const cats = ['top', 'manhole', 'ladder', 'inladder', 'ext_reinf', 'airvent', 'nozzle', 'skid', 'foundation', 'panel'];
+    const cats = ['manhole', 'ladder', 'inladder', 'airvent', 'ext_reinf', 'nozzle', 'skid', 'foundation'];
     const catLabels = {
-      top: '천정판넬', manhole: '맨홀판넬', ladder: '외부사다리', inladder: '내부사다리', ext_reinf: '외부보강',
-      airvent: '에어벤트', nozzle: '배관노즐', skid: '스키드', foundation: '기초패드', panel: '판넬 (전체)'
+      manhole: '맨홀 (맨홀판넬)', ladder: '외부사다리', inladder: '내부사다리', airvent: '에어벤트',
+      ext_reinf: '외부보강', nozzle: '배관노즐', skid: '스키드', foundation: '기초패드'
     };
 
     cats.forEach(cat => {
       const views = ['plan', 'front', 'right', 'left'];
       const viewBadges = views.map(v => {
         let isCustom = false;
-        if (cat === 'top' || cat === 'manhole') {
+        if (cat === 'manhole') {
           const p = customPanels.find(x => x.category === cat && (x.view === v || (!x.view && v === 'plan')));
           const hasV = customComp[`${cat}_${v}`] || customComp[`panel_${cat}_${v}`] || (v === 'plan' && customComp[cat]);
           if ((p && p.entities && p.entities.length) || (hasV && hasV.length)) isCustom = true;
-        } else if (cat === 'panel') {
-          const isPlan = (v === 'plan');
-          const p = customPanels.find(x => (x.category === 'side' || x.category === 'bottom' || x.category === 'fitting') && (x.view === v || (!x.view && isPlan)));
-          if (p && p.entities && p.entities.length) isCustom = true;
         } else {
           const hasV = customComp[`${cat}_${v}`] || customComp[`${cat}_${v}_${cadCurrentHeight}`] || (v === 'plan' && customComp[cat]);
           if (hasV && hasV.length) isCustom = true;
