@@ -376,6 +376,11 @@ assert(cornerBotLine, 'WFF-0200ACZ bottom line must be at Y=2962.5 (matching adj
 const cornerTopLine = skidStepped.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'line' && e.a[0] >= 2995 && Math.abs(e.a[1] - 3037.5) < 1e-3);
 assert(cornerTopLine, 'WFF-0200ACZ top line must be at Y=3037.5 (matching adjoining beam Y range)');
 
+// Verify sub-beam at X=3000, Row 2 (between Y=2000 and Y=3000 internal beams) is WFB-0994AMZ (not 0962)
+const subBeam3000Row2 = skidStepped.ents.find(e => e.layer === 'FRAME_SUB' && e.t === 'text' && Math.abs(e.p[0] - 3000) < 5 && Math.abs(e.p[1] - 2500) < 50);
+assert(subBeam3000Row2, 'Sub-beam at X=3000 Row 2 must exist');
+assert.strictEqual(subBeam3000Row2.s, 'WFB-0994AMZ', 'Sub-beam at X=3000 Row 2 must be WFB-0994AMZ (Type B) connecting between two internal beams, not 0962');
+
 // 13. Test 9: Frame Cross Section Shapes (50 SHS -> 50X50 SQ PIPE, 75 Angle -> L)
 console.log('--- Testing Frame Cross Section Shapes (50 SHS -> 50X50 SQ PIPE, 75 Angle -> L) ---');
 const cross50 = TankCore.buildSkidCross({ width: [4000], length: [4000], height: [2000], frame: 50 });

@@ -5116,12 +5116,11 @@
         const colX = map.xs[j];
         for (let i = 0; i < map.rows.length; i++) {
           if (!map.has(i, j - 1) && !map.has(i, j)) continue;
-          const rY0 = map.ys[i];
-          const rY1 = rY0 + map.rows[i];
-          const isFirstRow = (i === 0) || (!map.has(i - 1, j - 1) && !map.has(i - 1, j));
-          const isLastRow = (i === map.rows.length - 1) || (!map.has(i + 1, j - 1) && !map.has(i + 1, j));
-          const yBayBot = isFirstRow ? (rY0 - overY + flgW) : (rY0 + flgW / 2);
-          const yBayTop = isLastRow ? (rY1 + overY - flgW) : (rY1 - flgW / 2);
+          const colIdx = map.has(i, j - 1) ? (j - 1) : j;
+          const specBot = getRowBeamSpec(map, i, colIdx, flgW, overY);
+          const specTop = getRowBeamSpec(map, i + 1, colIdx, flgW, overY);
+          const yBayBot = specBot.yB;
+          const yBayTop = specTop.yA;
           if (yBayTop <= yBayBot + 10) continue;
 
           const subX0 = colX - subW / 2, subX1 = colX + subW / 2;
@@ -6814,12 +6813,11 @@
       for (i = sRow; i <= eRow; i++) {
         const rcL = R(i, j - 1), rcR = R(i, j);
         if (!rcL && !rcR) continue;
-        const rY0 = G.map.ys[i];
-        const rY1 = rY0 + G.map.rows[i];
-        const isFirstRow = (i === sRow) || (!R(i - 1, j - 1) && !R(i - 1, j));
-        const isLastRow = (i === eRow) || (!R(i + 1, j - 1) && !R(i + 1, j));
-        const yBayBot = isFirstRow ? (rY0 - overY + flgW) : (rY0 + flgW / 2);
-        const yBayTop = isLastRow ? (rY1 + overY - flgW) : (rY1 - flgW / 2);
+        const colIdx = rcL ? (j - 1) : j;
+        const specBot = getRowBeamSpec(G.map, i, colIdx, flgW, overY, centerBay);
+        const specTop = getRowBeamSpec(G.map, i + 1, colIdx, flgW, overY, centerBay);
+        const yBayBot = specBot.yB;
+        const yBayTop = specTop.yA;
         const bayH = yBayTop - yBayBot;
         if (bayH > 50) {
           rectEnts(colX - subW / 2, yBayBot, subW, bayH, 'FRAME_SUB', ents);
@@ -6939,10 +6937,12 @@
         const rY0 = G.map.ys[i];
         const rY1 = rY0 + G.map.rows[i];
         const isShort = G.map.rows[i] < 700;
-        const isFirstInCol = !G.map.has(i - 1, c) && !G.map.has(i - 1, c - 1);
-        const isLastInCol = !G.map.has(i + 1, c) && !G.map.has(i + 1, c - 1);
+        const colIdx = G.map.has(i, c - 1) ? (c - 1) : c;
+        const specBot = getRowBeamSpec(G.map, i, colIdx, flgW, overY, centerBay);
+        const specTop = getRowBeamSpec(G.map, i + 1, colIdx, flgW, overY, centerBay);
+        const isOuter = (specBot.cat === 1) || (specTop.cat === 2);
         let subCode;
-        if (isFirstInCol || isLastInCol) {
+        if (isOuter) {
           subCode = isF150 ? (isShort ? 'WFB-0456CMZ' : 'WFB-0956CMZ') : (isShort ? 'WFB-0462AMZ' : 'WFB-0962AMZ');
         } else if (i === centerBay && cnRows >= 3) {
           subCode = isF150 ? (isShort ? 'WFB-0561CMZ' : 'WFB-1061CMZ') : (isShort ? 'WFB-0553AMZ' : 'WFB-1053AMZ');
@@ -9511,6 +9511,6 @@
     return o.join('\r\n') + '\r\n';
   }
 
-  const api = { SKID_PARTS_DATA, NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, computeColSpans, computeMainBeamSpans, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, getFoundationDesign, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, getSkidDimensions, getSkidSpec, DEFAULT_SKID_RULES, getDefaultSkidRules, setCustomSkidRules, getCustomSkidRules, getActiveSkidRules, getFrameForHeight, formatSkidRuleSummary, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType, getDefaultPanelPattern };
+  const api = { getRowBeamSpec, getCenterBay, SKID_PARTS_DATA, NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, computeColSpans, computeMainBeamSpans, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, getFoundationDesign, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, getSkidDimensions, getSkidSpec, DEFAULT_SKID_RULES, getDefaultSkidRules, setCustomSkidRules, getCustomSkidRules, getActiveSkidRules, getFrameForHeight, formatSkidRuleSummary, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType, getDefaultPanelPattern };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TankCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
