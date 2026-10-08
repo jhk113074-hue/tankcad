@@ -6413,7 +6413,7 @@
 
 
 
-    function addMainBeam(x, y, w, h, type, spanW) {
+    function addMainBeam(x, y, w, h, type, spanW, isRightSide) {
       rectEnts(x, y, w, h, 'FRAME', ents);
       // 웨브 두께선 (6mm) - 외곽 Main beam은 탱크 밖으로 보도록 배치
       if (type === 'first') {
@@ -6429,8 +6429,10 @@
       const Wval = spanW || (totalH - overY * 2);
       const spans = computeMainBeamSpans(Wval);
 
-      const sSufL = (fNum === 150) ? 'CSZL' : 'ASZL';
-      const sSufR = (fNum === 150) ? 'CSZR' : 'ASZR';
+      // 한쪽이 ASZL+ASZR이면 반대쪽은 ASZR+ASZL로 대칭 배치
+      const isRight = (isRightSide !== undefined) ? isRightSide : (type === 'last');
+      const startSuf = isRight ? ((fNum === 150) ? 'CSZR' : 'ASZR') : ((fNum === 150) ? 'CSZL' : 'ASZL');
+      const endSuf = isRight ? ((fNum === 150) ? 'CSZL' : 'ASZL') : ((fNum === 150) ? 'CSZR' : 'ASZR');
       const sSufMid = (fNum === 150) ? 'CSZ' : 'ASZ';
       const sSufSingle = (fNum === 150) ? 'CSZ' : 'ASZ';
       const pad4 = n => String(Math.round(n)).padStart(4, '0');
@@ -6452,10 +6454,10 @@
           let segLen = 0, segTxt = '';
           if (seg.type === 'start') {
             segLen = seg.span + overY;
-            segTxt = `WFF-${pad4(segLen)}${sSufL}`;
+            segTxt = `WFF-${pad4(segLen)}${startSuf}`;
           } else if (seg.type === 'end') {
             segLen = seg.span + overY;
-            segTxt = `WFF-${pad4(segLen)}${sSufR}`;
+            segTxt = `WFF-${pad4(segLen)}${endSuf}`;
           } else {
             segLen = seg.span;
             segTxt = `WFF-${pad4(segLen)}${sSufMid}`;
@@ -6491,13 +6493,13 @@
       rc = R(i, sCol);
       if (!rc) {
         if (!nHeight) continue;
-        addMainBeam(nX - overOut, nY - overY, flgW, nHeight + overY * 2, 'first', nHeight);
+        addMainBeam(nX - overOut, nY - overY, flgW, nHeight + overY * 2, 'first', nHeight, false);
         nHeight = 0;
         for (i = i + 1; i <= eRow; i++) { rc = R(i, sCol); if (!rc) continue; nY = rc.t; break; }
       }
       if (rc) { nHeight += rc.h; if (!base) { nY = rc.t; base = true; } }
     }
-    if (nHeight) addMainBeam(nX - overOut, nY - overY, flgW, nHeight + overY * 2, 'first', nHeight);
+    if (nHeight) addMainBeam(nX - overOut, nY - overY, flgW, nHeight + overY * 2, 'first', nHeight, false);
 
     // 2. 마지막 열 Main Beam (외측 60/70mm 돌출, 내측 5mm 걸침, 상하 60/70mm 연장)
     nX = nRight; nY = nTop; nHeight = 0; base = false;
@@ -6505,17 +6507,18 @@
       rc = R(i, eCol);
       if (!rc) {
         if (!nHeight) continue;
-        addMainBeam(nX - lapIn, nY - overY, flgW, nHeight + overY * 2, 'last', nHeight);
+        addMainBeam(nX - lapIn, nY - overY, flgW, nHeight + overY * 2, 'last', nHeight, true);
         nHeight = 0;
         for (i = i + 1; i <= eRow; i++) { rc = R(i, eCol); if (!rc) continue; nY = rc.t; break; }
       }
       if (rc) { nHeight += rc.h; if (!base) { nY = rc.t; base = true; } }
     }
-    if (nHeight) addMainBeam(nX - lapIn, nY - overY, flgW, nHeight + overY * 2, 'last', nHeight);
+    if (nHeight) addMainBeam(nX - lapIn, nY - overY, flgW, nHeight + overY * 2, 'last', nHeight, true);
 
     // 3. 중간에 있는 주재 (Center 판넬과 판넬 Center 이음부에 주재의 Center 배치)
     for (j = sCol + 1; j <= eCol; j++) {
       const colX = G.map.xs[j];
+      const isRightCol = j > (sCol + eCol) / 2;
       let midH = 0, midTop = 0, midBase = false;
       for (i = sRow; i <= eRow; i++) {
         const rcL = R(i, j - 1), rcR = R(i, j);
@@ -6523,12 +6526,12 @@
           midH += (rcL || rcR).h;
           if (!midBase) { midTop = (rcL || rcR).t; midBase = true; }
         } else if (midH) {
-          addMainBeam(colX - flgW / 2, midTop - overY + flgW, flgW, midH + overY * 2 - flgW * 2, 'mid', midH);
+          addMainBeam(colX - flgW / 2, midTop - overY + flgW, flgW, midH + overY * 2 - flgW * 2, 'mid', midH, isRightCol);
           midH = 0; midBase = false;
         }
       }
       if (midH) {
-        addMainBeam(colX - flgW / 2, midTop - overY + flgW, flgW, midH + overY * 2 - flgW * 2, 'mid', midH);
+        addMainBeam(colX - flgW / 2, midTop - overY + flgW, flgW, midH + overY * 2 - flgW * 2, 'mid', midH, isRightCol);
       }
     }
 
@@ -6770,10 +6773,10 @@
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `7. L방향 주재: 500 판넬 배치 시 1.5M(1490${fSuf}) 적용, 양끝단 5mm(총 10mm) 커팅 여유 확보 [2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}]`, rot: 0, align: 'left', layer: 'DIM' });
     noteY -= tH * 1.25;
     const wSpecSummary = (fNum === 75)
-      ? '75Angle: 시작/끝단 1570ASZL/R (1.5M용) 또는 2070ASZL/R (2M용, 70mm 돌출), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1140, 1640, 2140, 2640ASZ'
+      ? '75Angle: 시작/끝단 1570ASZL/R (1.5M) 또는 2070ASZL/R (2M, 70mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1140, 1640, 2140, 2640ASZ'
       : (fNum === 150)
-        ? '150Channel: 시작/끝단 1570CSZL/R (1.5M용) 또는 2070CSZL/R (2M용, 70mm 돌출), 중간 2000CSZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1140, 1640, 2140, 2640CSZ'
-        : '125Channel: 시작/끝단 1560ASZL/R (1.5M용) 또는 2060ASZL/R (2M용, 60mm 돌출), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1120, 1620, 2120, 2640ASZ';
+        ? '150Channel: 시작/끝단 1570CSZL/R (1.5M) 또는 2070CSZL/R (2M, 70mm 돌출) 대칭배치(한쪽 CSZL+CSZR 시 반대쪽 CSZR+CSZL), 중간 2000CSZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1140, 1640, 2140, 2640CSZ'
+        : '125Channel: 시작/끝단 1560ASZL/R (1.5M) 또는 2060ASZL/R (2M, 60mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1120, 1620, 2120, 2640ASZ';
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `8. W방향 주재: ${wSpecSummary}`, rot: 0, align: 'left', layer: 'DIM' });
 
     return { ents, G };

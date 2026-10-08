@@ -111,11 +111,16 @@ assert(has2060ASZR, 'Sheet 1 (Frame 125, W=8000) must have 2060ASZR at end of W-
 
 // Test 125 frame with W=7000 (odd 1000 multiple -> 1560ASZL, 2000ASZ, 1560ASZR)
 const opt1_7000 = { length: [6000], width: [7000], height: [3000], frame: 125, sheetKind: 'frame' };
-const sheet1_7000 = TankCore.buildSheet(opt1_7000, {}, {});
-const has1560ASZL = sheet1_7000.ents.some(e => e.t === 'text' && e.s && e.s.includes('1560ASZL'));
-assert(has1560ASZL, 'Sheet (Frame 125, W=7000) must have 1560ASZL at start of W-direction main beam');
-const has1560ASZR = sheet1_7000.ents.some(e => e.t === 'text' && e.s && e.s.includes('1560ASZR'));
-assert(has1560ASZR, 'Sheet (Frame 125, W=7000) must have 1560ASZR at end of W-direction main beam');
+const skid1_7000 = TankCore.buildSkid(opt1_7000);
+const leftBot = skid1_7000.ents.find(e => e.t === 'text' && e.p && e.p[0] < 500 && e.p[1] < 2000 && e.s && e.s.includes('1560'));
+const leftTop = skid1_7000.ents.find(e => e.t === 'text' && e.p && e.p[0] < 500 && e.p[1] > 5000 && e.s && e.s.includes('1560'));
+const rightBot = skid1_7000.ents.find(e => e.t === 'text' && e.p && e.p[0] > 5500 && e.p[1] < 2000 && e.s && e.s.includes('1560'));
+const rightTop = skid1_7000.ents.find(e => e.t === 'text' && e.p && e.p[0] > 5500 && e.p[1] > 5000 && e.s && e.s.includes('1560'));
+
+assert(leftBot && leftBot.s.includes('1560ASZL'), 'Left side start must be 1560ASZL');
+assert(leftTop && leftTop.s.includes('1560ASZR'), 'Left side end must be 1560ASZR');
+assert(rightBot && rightBot.s.includes('1560ASZR'), 'Right side start must be 1560ASZR');
+assert(rightTop && rightTop.s.includes('1560ASZL'), 'Right side end must be 1560ASZL');
 
 // Sheet 2 (Frame 75, W=3000 -> 1570ASZL, 1570ASZR)
 const has1570ASZL = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('1570ASZL'));
