@@ -6507,23 +6507,25 @@
     }
     if (nHeight) addMainBeam(nX - lapIn, nY - overY, flgW, nHeight + overY * 2, 'last', nHeight, true);
 
-    // 3. 중간에 있는 주재 (Center 판넬과 판넬 Center 이음부에 주재의 Center 배치)
+    // 3. W방향 주재는 테두리(첫번째 및 마지막 열)에만 배치되며, 중간 열에는 배치되지 않음
+    // 중간 열(sCol + 1 ~ eCol)의 각 베이에는 가로 주재 사이를 연결하는 부재(서브빔, FRAME_SUB)를 배치
+    const subW = (fNum === 75) ? 75 : 40; // 부재 플랜지 폭 ([-75x40x5T / L-75x75x6T)
     for (j = sCol + 1; j <= eCol; j++) {
       const colX = G.map.xs[j];
-      const isRightCol = j > (sCol + eCol) / 2;
-      let midH = 0, midTop = 0, midBase = false;
       for (i = sRow; i <= eRow; i++) {
         const rcL = R(i, j - 1), rcR = R(i, j);
-        if (rcL || rcR) {
-          midH += (rcL || rcR).h;
-          if (!midBase) { midTop = (rcL || rcR).t; midBase = true; }
-        } else if (midH) {
-          addMainBeam(colX - flgW / 2, midTop - overY + flgW, flgW, midH + overY * 2 - flgW * 2, 'mid', midH, isRightCol);
-          midH = 0; midBase = false;
+        if (!rcL || !rcR) continue;
+        const rY0 = G.map.ys[i];
+        const rY1 = rY0 + G.map.rows[i];
+        const isFirstRow = (i === sRow) || (!R(i - 1, j - 1) && !R(i - 1, j));
+        const isLastRow = (i === eRow) || (!R(i + 1, j - 1) && !R(i + 1, j));
+        const yBayBot = isFirstRow ? (rY0 - overY + flgW) : (rY0 + flgW / 2);
+        const yBayTop = isLastRow ? (rY1 + overY - flgW) : (rY1 - flgW / 2);
+        const bayH = yBayTop - yBayBot;
+        if (bayH > 50) {
+          rectEnts(colX - subW / 2, yBayBot, subW, bayH, 'FRAME_SUB', ents);
+          ents.push({ t: 'line', a: [colX - subW / 2 + 5, yBayBot], b: [colX - subW / 2 + 5, yBayTop], layer: 'FRAME_SUB' });
         }
-      }
-      if (midH) {
-        addMainBeam(colX - flgW / 2, midTop - overY + flgW, flgW, midH + overY * 2 - flgW * 2, 'mid', midH, isRightCol);
       }
     }
 
@@ -6628,18 +6630,17 @@
       }
     }));
 
-    // 모든 열(Col 0 ~ G.nc - 1)의 모든 베이에 서브빔 명칭 표기 (WFB-0962AMZ, WFB-1053AMZ, WFB-0994AMZ 등)
+    // 모든 중간 열(Col 1 ~ G.nc - 1)의 각 베이에 서브빔 부재 명칭 표기 (WFB-0962AMZ, WFB-1053AMZ, WFB-0994AMZ 등)
     const isF150 = (Number(opt.frame) === 150);
-    for (let c = 0; c < G.nc; c++) {
-      const px0 = G.map.xs[c] || 0;
-      const colX = (c === 0) ? (px0 + lapIn + st * 0.45 + 15) : (px0 + flgW / 2 + st * 0.45);
+    for (let c = 1; c < G.nc; c++) {
+      const colX = G.map.xs[c] || 0;
       for (let i = 0; i < cnRows; i++) {
-        if (!G.map.has(i, c)) continue; // 이형물탱크에서 제거된 셀은 서브빔 명칭 제외
+        if (!G.map.has(i, c) || !G.map.has(i, c - 1)) continue; // 이형물탱크에서 제거된 셀은 서브빔 명칭 제외
         const rY0 = G.map.ys[i];
         const rY1 = rY0 + G.map.rows[i];
         const isShort = G.map.rows[i] < 700;
-        const isFirstInCol = !G.map.has(i - 1, c);
-        const isLastInCol = !G.map.has(i + 1, c);
+        const isFirstInCol = !G.map.has(i - 1, c) && !G.map.has(i - 1, c - 1);
+        const isLastInCol = !G.map.has(i + 1, c) && !G.map.has(i + 1, c - 1);
         let subCode;
         if (isFirstInCol || isLastInCol) {
           subCode = isF150 ? (isShort ? 'WFB-0456CMZ' : 'WFB-0956CMZ') : (isShort ? 'WFB-0462AMZ' : 'WFB-0962AMZ');
@@ -6816,7 +6817,7 @@
       : (fNum === 150)
         ? '150Channel: 시작/끝단 1570CSZL/R (1.5M) 또는 2070CSZL/R (2M, 70mm 돌출) 대칭배치(한쪽 CSZL+CSZR 시 반대쪽 CSZR+CSZL), 중간 2000CSZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1140, 1640, 2140, 2640CSZ'
         : '125Channel: 시작/끝단 1560ASZL/R (1.5M) 또는 2060ASZL/R (2M, 60mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1120, 1620, 2120, 2640ASZ';
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `8. W방향 주재: ${wSpecSummary}`, rot: 0, align: 'left', layer: 'FRAME_MAIN_W' });
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `8. W방향 주재(테두리 전용): 외곽 테두리(시작 열 및 끝 열)에만 배치되며, 내부 중간 열에는 미배치 (부재만 배치). ${wSpecSummary}`, rot: 0, align: 'left', layer: 'FRAME_MAIN_W' });
 
     return { ents, G };
   }
@@ -7940,11 +7941,20 @@
       const areaW = tx0 - x0;
       const areaH = y1 - y0;
 
-      // 1. 좌측 뷰 (~62% 폭): 스틸 스키드 프레임 조립도 (STEEL SKID DRAWING)
+      // 1. 좌측 뷰: 스틸 스키드 프레임 조립도 (STEEL SKID DRAWING)
       // 평면 배치도 + 부재 분할/길이 치수 + PART LIST + 부속철물 + YSACC 표준 제작 NOTE 포함
       const skidRes = buildSkid(opt);
       const bSkid = bb(skidRes.ents);
-      const cx1 = x0 + areaW * 0.38;
+      const crossRes = buildSkidCross(opt);
+      const bCross = bb(crossRes.ents);
+
+      const wSkid = (bSkid[2] - bSkid[0]) / N;
+      const wCross = (bCross[2] - bCross[0]) / N;
+
+      // 좌측에서부터 View 1 (평면도), View 2 (단면도: Y축 1:1 투영), View 3 (3D 등각조감도) 3열 균형 배치
+      const gap12 = Math.max(25, Math.min(50, (areaW - wSkid - wCross - 160) * 0.18));
+      const leftPad = Math.max(15, (areaW - (wSkid + gap12 + wCross + Math.min(240, areaW * 0.38))) * 0.30);
+      const cx1 = x0 + leftPad + wSkid / 2;
       const cy1 = y0 + areaH * 0.52;
       const dx1 = P(cx1) - (bSkid[0] + bSkid[2]) / 2;
       const dy1 = P(cy1) - (bSkid[1] + bSkid[3]) / 2;
@@ -7963,14 +7973,10 @@
         : `스틸 스키드 프레임 조립도 (STEEL SKID DRAWING)  [SCALE 1 : ${N}]`;
       drawViewTitleBubble(cx1, titleSkidY, 1, 1, viewTitleSkid);
 
-      // 2. 우측 뷰 (~38% 폭): 프레임 단면 및 기초 조립 상세도 (FRAME CROSS DWG)
-      // [-125x65x6t / L-75x75x6t 단면 (Z-Z' SECTION)
-      const crossRes = buildSkidCross(opt);
-      const bCross = bb(crossRes.ents);
-      const cx2 = x0 + areaW * 0.81;
-      const dx2 = P(cx2) - (bCross[0] + bCross[2]) / 2;
-      // ★★★ 사용자 요청: "정확하게 Frame cross dwg 위치와 Steel skid 위치와 맞게 올려주세요." ★★★
+      // 2. 중앙-우측 뷰: 프레임 단면 및 기초 조립 상세도 (FRAME CROSS DWG)
       // 단면도(FRAME CROSS DWG)는 평면도(STEEL SKID DRAWING)의 Z-Z' 절단 단면이므로 Y축 투영 높이가 정확히 1:1 일치해야 함
+      const cx2 = cx1 + wSkid / 2 + gap12 + wCross / 2;
+      const dx2 = P(cx2) - (bCross[0] + bCross[2]) / 2;
       const dy2 = dy1;
 
       crossRes.ents.forEach(e => {
@@ -7985,6 +7991,35 @@
         ? `FRAME CROSS DWG  [SCALE 1 : ${N}]`
         : `프레임 단면 및 기초 조립 상세도 (FRAME CROSS DWG)  [SCALE 1 : ${N}]`;
       drawViewTitleBubble(cx2, titleSkidY, 1, 2, viewTitleCross);
+
+      // 3. 우측 뷰: 3D 등각 조감도 (3D ISOMETRIC VIEW)
+      const rightStart = cx2 + wCross / 2 + Math.max(20, gap12 * 0.75);
+      const cx3 = (rightStart + tx0 - 15) / 2;
+      const cy3 = y0 + areaH * 0.54;
+      const isoAvailW = Math.max(80, (tx0 - 15) - rightStart);
+      const isoAvailH = Math.max(80, areaH * 0.70);
+
+      const iso = buildIsometric(opt, templates, sideT);
+      const bIso = bb(iso.ents);
+      const isoW_mm = (bIso[2] - bIso[0]) / N;
+      const isoH_mm = (bIso[3] - bIso[1]) / N;
+      const fitScale = Math.min((isoAvailW * 0.90) / isoW_mm, (isoAvailH * 0.85) / isoH_mm);
+
+      const isoDx = P(cx3) - ((bIso[0] + bIso[2]) / 2) * fitScale;
+      const isoDy = P(cy3) - ((bIso[1] + bIso[3]) / 2) * fitScale;
+
+      iso.ents.forEach(e => {
+        if (e.t === 'poly') ents.push({ ...e, pts: e.pts.map(p => [p[0] * fitScale + isoDx, p[1] * fitScale + isoDy]) });
+        else if (e.t === 'line') ents.push({ ...e, a: [e.a[0] * fitScale + isoDx, e.a[1] * fitScale + isoDy], b: [e.b[0] * fitScale + isoDx, e.b[1] * fitScale + isoDy] });
+        else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] * fitScale + isoDx, e.c[1] * fitScale + isoDy], r: e.r * fitScale });
+        else ents.push({ ...e, p: [e.p[0] * fitScale + isoDx, e.p[1] * fitScale + isoDy], h: e.h * fitScale });
+      });
+
+      const effIsoScale = Math.max(5, Math.round(N / fitScale));
+      const viewTitleIso = lang === 'en'
+        ? `3D ISOMETRIC VIEW  [SCALE 1 : ${effIsoScale}]`
+        : `등각조감도 (3D ISOMETRIC VIEW)  [SCALE 1 : ${effIsoScale}]`;
+      drawViewTitleBubble(cx3, titleSkidY, 1, 3, viewTitleIso);
 
       return { map: mmap, ents, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
     }

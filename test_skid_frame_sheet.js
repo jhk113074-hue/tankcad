@@ -290,5 +290,21 @@ const sheet5_150 = TankCore.buildSheet(opt5_150, {}, {});
 const has1490HCLZ = sheet5_150.ents.some(e => e.t === 'text' && e.s && e.s.includes('1490HCLZ'));
 assert(has1490HCLZ, 'Must have 1490HCLZ for 500mm panel combination with 150 channel frame');
 
+// 10. Test 6: Verify 3D Isometric View (View 3) and Perimeter-Only W-direction Main Beams
+console.log('--- Testing 3D Isometric View and Perimeter-Only W-direction Main Beams ---');
+const hasIsoTitle = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('등각조감도') || e.s.includes('3D ISOMETRIC')));
+assert(hasIsoTitle, 'Sheet 1 must have 3D ISOMETRIC VIEW (View 3) title bubble');
+
+// Verify W-direction main beams (FRAME_MAIN_W) exist ONLY at perimeter (first and last columns)
+const midWBeams = skidRes1.ents.filter(e => e.layer === 'FRAME_MAIN_W' && e.t === 'line' && e.a[0] > 500 && e.a[0] < 9500);
+assert.strictEqual(midWBeams.length, 0, 'W-direction main beams must NOT exist in the middle columns (perimeter only)');
+
+const midWTexts = skidRes1.ents.filter(e => e.layer === 'FRAME_MAIN_W' && e.t === 'text' && e.p[1] >= 0 && e.p[0] > 500 && e.p[0] < 9500);
+assert.strictEqual(midWTexts.length, 0, 'W-direction part names must NOT exist in the middle columns');
+
+// Verify intermediate columns have sub-beams (FRAME_SUB)
+const midSubBeams = skidRes1.ents.filter(e => e.layer === 'FRAME_SUB' && e.t === 'line' && e.a[0] > 500 && e.a[0] < 9500);
+assert(midSubBeams.length > 0, 'Intermediate columns must have sub-beams (FRAME_SUB)');
+
 console.log('✅ ALL STEEL SKID & FOUNDATION TESTS PASSED SUCCESSFULLY!');
 
