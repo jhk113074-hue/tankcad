@@ -6825,8 +6825,17 @@
     const drainNoz = nozzleList.find(n => n.name === 'DRAIN' || (n.desc && n.desc.includes('배수')) || n.key === 'drain');
     const fireNoz = nozzleList.find(n => n.name === 'FIRE' || (n.desc && n.desc.includes('소화')) || n.key === 'fire');
 
+    // 바닥판넬-측면판넬 조립 기준: 바닥으로부터 30~35mm에서 볼트 조립, 저판플랜지 70~80mm 형성
+    const BTM_FLG_H = 75;    // 저판 플랜지 높이 (70~80mm)
+    const BTM_BOLT_H = 35;   // 볼트 체결선 (30~35mm)
+    const MIN_SIDE_FITTING_ELEV = 100; // 측면 피팅 플랜지 취부 최소 표고 (저판 플랜지 상부)
+
     let hwlElev = (overflowNoz && typeof overflowNoz.elev === 'number' && overflowNoz.elev > 0) ? overflowNoz.elev : (overflowNoz && overflowNoz.elev === 'TOP' ? Math.max(100, H - 200) : Math.max(100, H - 300));
     let lwlElev = (outletNoz && typeof outletNoz.elev === 'number' && outletNoz.elev > 0) ? outletNoz.elev : (outletNoz && (outletNoz.elev === 'BOTTOM' || outletNoz.face === 'bottom') ? 100 : 300);
+    // 측면 피팅 노즐인 경우 저판 플랜지(70~80mm) 상단에 부착되도록 최소 100mm 보장
+    if (outletNoz && outletNoz.face !== 'bottom' && lwlElev < MIN_SIDE_FITTING_ELEV) {
+      lwlElev = MIN_SIDE_FITTING_ELEV;
+    }
     let inletElev = (inletNoz && typeof inletNoz.elev === 'number' && inletNoz.elev > 0) ? inletNoz.elev : (inletNoz && inletNoz.elev === 'TOP' ? H : Math.max(100, H - 200));
 
     if (hwlElev > H) hwlElev = H - 200;
@@ -7369,6 +7378,42 @@
       secEnts.push({ t: 'line', a: [-35, H], b: [-35, H + 65], layer: 'PANEL' });
       secEnts.push({ t: 'line', a: [totalL + 35, H], b: [totalL + 35, H + 65], layer: 'PANEL' });
 
+      // 2-1. 바닥판넬-측면판넬 조립부 상세 (저판 플랜지 H=75mm, 볼트선 EL.+35mm)
+      // 좌측 저판 직립 플랜지 (X = 0)
+      secEnts.push({ t: 'line', a: [-25, 0], b: [-25, BTM_FLG_H], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [-25, BTM_FLG_H], b: [0, BTM_FLG_H], layer: 'PANEL' });
+      // 우측 저판 직립 플랜지 (X = totalL)
+      secEnts.push({ t: 'line', a: [totalL + 25, 0], b: [totalL + 25, BTM_FLG_H], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [totalL, BTM_FLG_H], b: [totalL + 25, BTM_FLG_H], layer: 'PANEL' });
+
+      // 볼트 체결 중심선 (EL. +35mm)
+      secEnts.push({ t: 'line', a: [-32, BTM_BOLT_H], b: [18, BTM_BOLT_H], layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'circle', c: [-12.5, BTM_BOLT_H], r: 3.5, layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'line', a: [-12.5, BTM_BOLT_H - 6], b: [-12.5, BTM_BOLT_H + 6], layer: 'PANEL_DETAIL' });
+
+      secEnts.push({ t: 'line', a: [totalL - 18, BTM_BOLT_H], b: [totalL + 32, BTM_BOLT_H], layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'circle', c: [totalL + 12.5, BTM_BOLT_H], r: 3.5, layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'line', a: [totalL + 12.5, BTM_BOLT_H - 6], b: [totalL + 12.5, BTM_BOLT_H + 6], layer: 'PANEL_DETAIL' });
+
+      // 측면 피팅 플랜지 취부 한계선 점선 (EL. +100mm)
+      secEnts.push({ t: 'line', a: [-30, MIN_SIDE_FITTING_ELEV], b: [30, MIN_SIDE_FITTING_ELEV], layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'line', a: [totalL - 30, MIN_SIDE_FITTING_ELEV], b: [totalL + 30, MIN_SIDE_FITTING_ELEV], layer: 'PANEL_DETAIL' });
+
+      // 저판 플랜지 및 볼트선 지시선 (Callout)
+      drawLeader(
+        secEnts,
+        [-12.5, BTM_BOLT_H],
+        [-Math.round(10 * N), -Math.round(6 * N)],
+        [-Math.round(28 * N), -Math.round(6 * N)],
+        [
+          lang === 'ko' ? `저판 플랜지 H=${BTM_FLG_H}mm (볼트선 EL.+${BTM_BOLT_H}mm)` : `Btm Flange H=${BTM_FLG_H}mm (Bolt EL.+${BTM_BOLT_H}mm)`,
+          lang === 'ko' ? `측면 피팅 취부: EL.+${MIN_SIDE_FITTING_ELEV}mm 이상` : `Side Fitting: EL. >= +${MIN_SIDE_FITTING_ELEV}mm`
+        ],
+        Math.round(2.3 * N),
+        'right',
+        'PANEL_DETAIL'
+      );
+
       // 판넬 종방향 분할선 (Col Seams)
       mmap.cols.forEach((cw, j) => {
         if (j > 0) {
@@ -7396,67 +7441,80 @@
         }
       }
 
-      // 3. 수위 음영 및 해치 (Water Shading & Hatches)
+      // 3. 수위 해치 및 안내 (Clean Monochrome CAD Standards - No Colors / No Solid Fill)
       // A. 사수 구역 (하부 0 ~ LWL)
-      secEnts.push({ t: 'solid', p: [[0, 0], [totalL, 0], [0, lwlElev], [totalL, lwlElev]], layer: 'NOZZLE', color: 2 });
-      for (let hy = 150; hy < lwlElev; hy += 150) {
-        secEnts.push({ t: 'line', a: [30, hy], b: [totalL - 30, hy], layer: 'NOZZLE', color: 2 });
+      for (let hy = 100; hy < lwlElev; hy += 100) {
+        secEnts.push({ t: 'line', a: [20, hy], b: [totalL - 20, hy], layer: 'PANEL_DETAIL' });
       }
-      secEnts.push({ t: 'text', p: [totalL / 2, lwlElev / 2], h: Math.round(2.6 * N), s: lang === 'ko' ? `⚠️ 사수 구역 (DEAD WATER ZONE) | H_dead = ${lwlElev} mm [V = ${deadTon.toFixed(1)} Ton]` : `⚠️ DEAD WATER ZONE | H_dead = ${lwlElev} mm [V = ${deadTon.toFixed(1)} Ton]`, align: 'center', valign: 'middle', layer: 'SHEET' });
+      secEnts.push({
+        t: 'text',
+        p: [totalL / 2, Math.max(lwlElev / 2, 45)],
+        h: Math.round(2.5 * N),
+        s: lang === 'ko' ? `[사수 구역 / DEAD WATER] H_dead = ${lwlElev} mm  (V = ${deadTon.toFixed(1)} Ton)` : `[DEAD WATER ZONE] H_dead = ${lwlElev} mm  (V = ${deadTon.toFixed(1)} Ton)`,
+        align: 'center',
+        valign: 'middle',
+        layer: 'SHEET'
+      });
 
       // B. 유효 담수 구역 (LWL ~ HWL)
-      secEnts.push({ t: 'solid', p: [[0, lwlElev], [totalL, lwlElev], [0, hwlElev], [totalL, hwlElev]], layer: 'NOZZLE', color: 4 });
-      for (let hy = lwlElev + 150; hy < hwlElev; hy += 150) {
-        secEnts.push({ t: 'line', a: [30, hy], b: [totalL - 30, hy], layer: 'NOZZLE', color: 4 });
+      for (let hy = lwlElev + 200; hy < hwlElev - 50; hy += 200) {
+        secEnts.push({ t: 'line', a: [20, hy], b: [totalL - 20, hy], layer: 'PANEL_DETAIL' });
       }
 
-      // 중앙 강조 실담수량 뱃지 (Effective Capacity Center Badge)
+      // 중앙 강조 실담수량 뱃지 (Effective Capacity Center Badge - Clean Monochrome Box)
       const badgeW = Math.min(totalL * 0.72, Math.max(2200, 75 * N));
       const badgeH = Math.min(effDepth * 0.65, Math.max(900, 30 * N));
       const bcx = totalL / 2;
       const bcy = lwlElev + effDepth / 2;
       const bx0 = bcx - badgeW / 2, bx1 = bcx + badgeW / 2;
       const by0 = bcy - badgeH / 2, by1 = bcy + badgeH / 2;
+      const pad = Math.round(1.5 * N);
 
-      secEnts.push({ t: 'solid', p: [[bx0, by0], [bx1, by0], [bx0, by1], [bx1, by1]], layer: 'SHEET', color: 7 });
-      secEnts.push({ t: 'line', a: [bx0, by0], b: [bx1, by0], layer: 'SHEET', color: 4 });
-      secEnts.push({ t: 'line', a: [bx1, by0], b: [bx1, by1], layer: 'SHEET', color: 4 });
-      secEnts.push({ t: 'line', a: [bx1, by1], b: [bx0, by1], layer: 'SHEET', color: 4 });
-      secEnts.push({ t: 'line', a: [bx0, by1], b: [bx0, by0], layer: 'SHEET', color: 4 });
+      // Clean double border without solid color fill
+      secEnts.push({ t: 'line', a: [bx0, by0], b: [bx1, by0], layer: 'SHEET' });
+      secEnts.push({ t: 'line', a: [bx1, by0], b: [bx1, by1], layer: 'SHEET' });
+      secEnts.push({ t: 'line', a: [bx1, by1], b: [bx0, by1], layer: 'SHEET' });
+      secEnts.push({ t: 'line', a: [bx0, by1], b: [bx0, by0], layer: 'SHEET' });
+      secEnts.push({ t: 'line', a: [bx0 + pad, by0 + pad], b: [bx1 - pad, by0 + pad], layer: 'SHEET' });
+      secEnts.push({ t: 'line', a: [bx1 - pad, by0 + pad], b: [bx1 - pad, by1 - pad], layer: 'SHEET' });
+      secEnts.push({ t: 'line', a: [bx1 - pad, by1 - pad], b: [bx0 + pad, by1 - pad], layer: 'SHEET' });
+      secEnts.push({ t: 'line', a: [bx0 + pad, by1 - pad], b: [bx0 + pad, by0 + pad], layer: 'SHEET' });
 
-      secEnts.push({ t: 'text', p: [bcx, bcy + badgeH * 0.28], h: Math.round(3.4 * N), s: lang === 'ko' ? '🌊 실담수량 (NET EFFECTIVE WATER CAPACITY)' : '🌊 NET EFFECTIVE WATER CAPACITY', align: 'center', valign: 'middle', layer: 'SHEET' });
+      secEnts.push({ t: 'text', p: [bcx, bcy + badgeH * 0.28], h: Math.round(3.4 * N), s: lang === 'ko' ? '■ 실담수량 (NET EFFECTIVE WATER CAPACITY) ■' : '■ NET EFFECTIVE WATER CAPACITY ■', align: 'center', valign: 'middle', layer: 'SHEET' });
       secEnts.push({ t: 'text', p: [bcx, bcy], h: Math.round(4.8 * N), s: `V_eff = ${effTon.toFixed(1)} Ton (㎥)  [${effRatio.toFixed(1)} %]`, align: 'center', valign: 'middle', layer: 'SHEET' });
       secEnts.push({ t: 'text', p: [bcx, bcy - badgeH * 0.28], h: Math.round(2.8 * N), s: lang === 'ko' ? `유효 수심 H_eff = ${effDepth.toLocaleString()} mm (HWL - LWL)` : `Effective Depth H_eff = ${effDepth.toLocaleString()} mm`, align: 'center', valign: 'middle', layer: 'SHEET' });
 
       // C. 상부 여유고 구역 (HWL ~ H)
       if (freeDepth > 200) {
-        secEnts.push({ t: 'text', p: [totalL / 2, hwlElev + freeDepth / 2], h: Math.round(2.4 * N), s: lang === 'ko' ? `상부 여유고 (FREEBOARD ZONE) | H_free = ${freeDepth} mm [V = ${freeTon.toFixed(1)} Ton]` : `FREEBOARD ZONE | H_free = ${freeDepth} mm [V = ${freeTon.toFixed(1)} Ton]`, align: 'center', valign: 'middle', layer: 'SHEET' });
+        secEnts.push({ t: 'text', p: [totalL / 2, hwlElev + freeDepth / 2], h: Math.round(2.4 * N), s: lang === 'ko' ? `[상부 여유고 / FREEBOARD] H_free = ${freeDepth} mm  (V = ${freeTon.toFixed(1)} Ton)` : `[FREEBOARD ZONE] H_free = ${freeDepth} mm  (V = ${freeTon.toFixed(1)} Ton)`, align: 'center', valign: 'middle', layer: 'SHEET' });
       }
 
-      // 4. 수위 기준선 및 ▽ 레벨 마크
+      // 4. 수위 기준선 및 ▽ 레벨 마크 (Clean Outline Triangles)
       const mkSz = Math.round(2.5 * N);
-      const drawLevelTriangle = (x, y, color) => {
-        secEnts.push({ t: 'solid', p: [[x - mkSz, y + mkSz * 1.2], [x + mkSz, y + mkSz * 1.2], [x, y], [x, y]], layer: 'NOZZLE', color });
-        secEnts.push({ t: 'line', a: [x - mkSz * 1.4, y + mkSz * 1.2], b: [x + mkSz * 1.4, y + mkSz * 1.2], layer: 'NOZZLE', color });
+      const drawLevelTriangle = (x, y) => {
+        secEnts.push({ t: 'line', a: [x - mkSz, y + mkSz * 1.2], b: [x + mkSz, y + mkSz * 1.2], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [x - mkSz, y + mkSz * 1.2], b: [x, y], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [x + mkSz, y + mkSz * 1.2], b: [x, y], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [x - mkSz * 1.5, y + mkSz * 1.2], b: [x + mkSz * 1.5, y + mkSz * 1.2], layer: 'NOZZLE' });
       };
 
-      // HWL 선
-      secEnts.push({ t: 'line', a: [-Math.round(15 * N), hwlElev], b: [totalL + Math.round(15 * N), hwlElev], layer: 'NOZZLE', color: 4 });
-      drawLevelTriangle(-Math.round(8 * N), hwlElev, 4);
-      drawLevelTriangle(totalL + Math.round(8 * N), hwlElev, 4);
+      // HWL 선 (Monochrome)
+      secEnts.push({ t: 'line', a: [-Math.round(15 * N), hwlElev], b: [totalL + Math.round(15 * N), hwlElev], layer: 'NOZZLE' });
+      drawLevelTriangle(-Math.round(8 * N), hwlElev);
+      drawLevelTriangle(totalL + Math.round(8 * N), hwlElev);
       secEnts.push({ t: 'text', p: [-Math.round(8 * N), hwlElev + Math.round(2.5 * N)], h: Math.round(2.8 * N), s: `▽ HWL EL. +${hwlElev.toLocaleString()}`, align: 'right', valign: 'bottom', layer: 'SHEET' });
       secEnts.push({ t: 'text', p: [totalL + Math.round(8 * N), hwlElev + Math.round(2.5 * N)], h: Math.round(2.6 * N), s: lang === 'ko' ? '최고수위 (OVERFLOW Invert)' : 'HWL (OVERFLOW Invert)', align: 'left', valign: 'bottom', layer: 'SHEET' });
 
-      // LWL 선
-      secEnts.push({ t: 'line', a: [-Math.round(15 * N), lwlElev], b: [totalL + Math.round(15 * N), lwlElev], layer: 'NOZZLE', color: 2 });
-      drawLevelTriangle(-Math.round(8 * N), lwlElev, 2);
-      drawLevelTriangle(totalL + Math.round(8 * N), lwlElev, 2);
+      // LWL 선 (Monochrome)
+      secEnts.push({ t: 'line', a: [-Math.round(15 * N), lwlElev], b: [totalL + Math.round(15 * N), lwlElev], layer: 'NOZZLE' });
+      drawLevelTriangle(-Math.round(8 * N), lwlElev);
+      drawLevelTriangle(totalL + Math.round(8 * N), lwlElev);
       secEnts.push({ t: 'text', p: [-Math.round(8 * N), lwlElev + Math.round(2.5 * N)], h: Math.round(2.8 * N), s: `▽ LWL EL. +${lwlElev.toLocaleString()}`, align: 'right', valign: 'bottom', layer: 'SHEET' });
       secEnts.push({ t: 'text', p: [totalL + Math.round(8 * N), lwlElev + Math.round(2.5 * N)], h: Math.round(2.6 * N), s: lang === 'ko' ? '최저수위 (OUTLET Invert)' : 'LWL (OUTLET Invert)', align: 'left', valign: 'bottom', layer: 'SHEET' });
 
       // 5. 노즐 포인터 지시선 (Callouts)
       drawLeader(secEnts, [totalL, hwlElev], [totalL + Math.round(8 * N), hwlElev + Math.round(6 * N)], [totalL + Math.round(22 * N), hwlElev + Math.round(6 * N)], [lang === 'ko' ? `[N3] 월류구 (${overflowNoz ? overflowNoz.size : '100A'})` : `[N3] OVERFLOW (${overflowNoz ? overflowNoz.size : '100A'})`, `EL. +${hwlElev} mm`], Math.round(2.4 * N), 'left', 'NOZZLE');
-      drawLeader(secEnts, [totalL, lwlElev], [totalL + Math.round(8 * N), lwlElev - Math.round(5 * N)], [totalL + Math.round(22 * N), lwlElev - Math.round(5 * N)], [lang === 'ko' ? `[N2] 유출구 (${outletNoz ? outletNoz.size : '100A'})` : `[N2] OUTLET (${outletNoz ? outletNoz.size : '100A'})`, `EL. +${lwlElev} mm`], Math.round(2.4 * N), 'left', 'NOZZLE');
+      drawLeader(secEnts, [totalL, lwlElev], [totalL + Math.round(8 * N), lwlElev - Math.round(5 * N)], [totalL + Math.round(22 * N), lwlElev - Math.round(5 * N)], [lang === 'ko' ? `[N2] 유출구 (${outletNoz ? outletNoz.size : '100A'})` : `[N2] OUTLET (${outletNoz ? outletNoz.size : '100A'})`, `EL. +${lwlElev} mm (플랜지상부 취부)`], Math.round(2.4 * N), 'left', 'NOZZLE');
       drawLeader(secEnts, [0, inletElev], [-Math.round(8 * N), inletElev + Math.round(6 * N)], [-Math.round(22 * N), inletElev + Math.round(6 * N)], [lang === 'ko' ? `[N1] 유입구 (${inletNoz ? inletNoz.size : '100A'})` : `[N1] INLET (${inletNoz ? inletNoz.size : '100A'})`, `EL. +${inletElev} mm`], Math.round(2.4 * N), 'right', 'NOZZLE');
       drawLeader(secEnts, [totalL * 0.15, 0], [totalL * 0.15 - Math.round(8 * N), -Math.round(12 * N)], [totalL * 0.15 - Math.round(20 * N), -Math.round(12 * N)], [lang === 'ko' ? `[N4] 배수구 (${drainNoz ? drainNoz.size : '50A'})` : `[N4] DRAIN (${drainNoz ? drainNoz.size : '50A'})`, `EL. +0 mm (바닥)`], Math.round(2.4 * N), 'right', 'NOZZLE');
 
@@ -7500,26 +7558,26 @@
         else ents.push({ ...e, p: [e.p[0] * fitScale + centerDx, e.p[1] * fitScale + centerDy], h: e.h * fitScale });
       });
 
-      // 3D 수위선 투영 (Z = hwlElev, Z = lwlElev)
+      // 3D 수위선 투영 (Z = hwlElev, Z = lwlElev) - Clean Monochrome
       const toIsoP = (x, y, z) => [
         (x + y - totalL) * 0.8660254037844386 * fitScale + centerDx,
         (((totalL - x) + y) * 0.5 + z) * fitScale + centerDy
       ];
       const p0 = toIsoP(0, 0, hwlElev), p1 = toIsoP(totalL, 0, hwlElev), p2 = toIsoP(totalL, totalW, hwlElev), p3 = toIsoP(0, totalW, hwlElev);
-      ents.push({ t: 'line', a: p0, b: p1, layer: 'NOZZLE', color: 4 });
-      ents.push({ t: 'line', a: p1, b: p2, layer: 'NOZZLE', color: 4 });
-      ents.push({ t: 'line', a: p2, b: p3, layer: 'NOZZLE', color: 4 });
-      ents.push({ t: 'line', a: p3, b: p0, layer: 'NOZZLE', color: 4 });
+      ents.push({ t: 'line', a: p0, b: p1, layer: 'NOZZLE' });
+      ents.push({ t: 'line', a: p1, b: p2, layer: 'NOZZLE' });
+      ents.push({ t: 'line', a: p2, b: p3, layer: 'NOZZLE' });
+      ents.push({ t: 'line', a: p3, b: p0, layer: 'NOZZLE' });
 
       const q0 = toIsoP(0, 0, lwlElev), q1 = toIsoP(totalL, 0, lwlElev), q2 = toIsoP(totalL, totalW, lwlElev), q3 = toIsoP(0, totalW, lwlElev);
-      ents.push({ t: 'line', a: q0, b: q1, layer: 'NOZZLE', color: 2 });
-      ents.push({ t: 'line', a: q1, b: q2, layer: 'NOZZLE', color: 2 });
-      ents.push({ t: 'line', a: q2, b: q3, layer: 'NOZZLE', color: 2 });
-      ents.push({ t: 'line', a: q3, b: q0, layer: 'NOZZLE', color: 2 });
+      ents.push({ t: 'line', a: q0, b: q1, layer: 'NOZZLE' });
+      ents.push({ t: 'line', a: q1, b: q2, layer: 'NOZZLE' });
+      ents.push({ t: 'line', a: q2, b: q3, layer: 'NOZZLE' });
+      ents.push({ t: 'line', a: q3, b: q0, layer: 'NOZZLE' });
 
       // 3D 수위 지시선
-      ents.push({ t: 'line', a: p1, b: [p1[0] + 15 * N * fitScale, p1[1] + 10 * N * fitScale], layer: 'NOZZLE', color: 4 });
-      ents.push({ t: 'line', a: [p1[0] + 15 * N * fitScale, p1[1] + 10 * N * fitScale], b: [p1[0] + 45 * N * fitScale, p1[1] + 10 * N * fitScale], layer: 'NOZZLE', color: 4 });
+      ents.push({ t: 'line', a: p1, b: [p1[0] + 15 * N * fitScale, p1[1] + 10 * N * fitScale], layer: 'NOZZLE' });
+      ents.push({ t: 'line', a: [p1[0] + 15 * N * fitScale, p1[1] + 10 * N * fitScale], b: [p1[0] + 45 * N * fitScale, p1[1] + 10 * N * fitScale], layer: 'NOZZLE' });
       ents.push({ t: 'text', p: [p1[0] + 16 * N * fitScale, p1[1] + 13 * N * fitScale], h: Math.round(2.6 * N * fitScale), s: `▽ HWL EL. +${hwlElev}`, align: 'left', valign: 'bottom', layer: 'SHEET' });
 
       const titleIsoY = y0 + areaH * 0.52 - 8;
@@ -7562,8 +7620,8 @@
       const tbx = tx0 - 325, tby = y0 + 15, tbw = 320, tbh = 250;
       rect(tbx, tby, tbx + tbw, tby + tbh);
       line([tbx, tby + tbh - 14], [tbx + tbw, tby + tbh - 14]);
-      solid([[tbx, tby + tbh - 14], [tbx + tbw, tby + tbh - 14], [tbx, tby + tbh], [tbx + tbw, tby + tbh]], 'SHEET', 4);
-      text(tbx + tbw / 2, tby + tbh - 7, 3.8, lang === 'ko' ? '🌊 실담수량 및 수위 정밀 산출 내역서 (CAPACITY SCHEDULE)' : 'WATER CAPACITY & LEVEL CALCULATION SCHEDULE', 'center', 0, 'middle');
+      line([tbx, tby + tbh - 15.2], [tbx + tbw, tby + tbh - 15.2]);
+      text(tbx + tbw / 2, tby + tbh - 7, 3.8, lang === 'ko' ? '실담수량 및 수위 정밀 산출 내역서 (CAPACITY SCHEDULE)' : 'WATER CAPACITY & LEVEL CALCULATION SCHEDULE', 'center', 0, 'middle');
 
       const colY = tby + tbh - 22;
       line([tbx, colY], [tbx + tbw, colY]);
@@ -7583,9 +7641,12 @@
         [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '총 공칭 용량 (V_gross)' : 'Total Gross Volume', `${grossTon.toFixed(2)} Ton (㎥)`, 'A × H (100%)'],
         [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '수조 구획 구분' : 'Compartment Type', lenSecs.length > 1 ? (lang === 'ko' ? `${lenSecs.length}구획 (${lenSecs.join('+')}mm)` : `${lenSecs.length}-Comp. (${lenSecs.join('+')}mm)`) : (lang === 'ko' ? '단일 구획 (Single)' : 'Single Comp.'), lang === 'ko' ? '격벽 설치' : 'Partition'],
 
+        [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '저판 플랜지 및 볼트선' : 'Btm Flange & Bolt Line', `플랜지 H=${BTM_FLG_H}mm (볼트선 EL.+${BTM_BOLT_H}mm)`, lang === 'ko' ? '바닥-측판 조립' : 'Flange Joint'],
+        [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '측면 피팅 취부 한계' : 'Side Fitting Limit', `EL. +${MIN_SIDE_FITTING_ELEV} mm 이상 (플랜지 상부)`, lang === 'ko' ? '피팅간섭 방지' : 'Fitting Clearance'],
+
         [lang === 'ko' ? '노즐표고' : 'NOZZLE', lang === 'ko' ? '급수 유입구 (INLET)' : 'Inlet Nozzle', `EL. +${inletElev} mm (${inletNoz ? inletNoz.size : '100A'})`, lang === 'ko' ? '급수 인입 표고' : 'Inlet Center'],
         [lang === 'ko' ? '노즐표고' : 'NOZZLE', lang === 'ko' ? '월류관 / 최고수위 (HWL)' : 'Overflow / HWL', `EL. +${hwlElev} mm (${overflowNoz ? overflowNoz.size : '100A'})`, lang === 'ko' ? '월류관 하단(HWL)' : 'Overflow Invert'],
-        [lang === 'ko' ? '노즐표고' : 'NOZZLE', lang === 'ko' ? '유출관 / 최저수위 (LWL)' : 'Outlet / LWL', `EL. +${lwlElev} mm (${outletNoz ? outletNoz.size : '100A'})`, lang === 'ko' ? '유출관 하단(LWL)' : 'Outlet Invert'],
+        [lang === 'ko' ? '노즐표고' : 'NOZZLE', lang === 'ko' ? '유출관 / 최저수위 (LWL)' : 'Outlet / LWL', `EL. +${lwlElev} mm (${outletNoz ? outletNoz.size : '100A'})`, lang === 'ko' ? '플랜지 상부 취부' : 'Above Flange'],
         [lang === 'ko' ? '노즐표고' : 'NOZZLE', lang === 'ko' ? '바닥 배수구 (DRAIN)' : 'Bottom Drain', `EL. +0 mm (${drainNoz ? drainNoz.size : '50A'})`, lang === 'ko' ? '바닥 잔수 배수' : 'Bottom Drain'],
 
         [lang === 'ko' ? '수심분석' : 'DEPTH', lang === 'ko' ? '상부 여유고 (H_free)' : 'Freeboard Height', `${freeDepth.toLocaleString()} mm (H - HWL)`, lang === 'ko' ? '공기층/넘침방지' : 'Air Gap'],
@@ -7594,9 +7655,9 @@
 
         [lang === 'ko' ? '용량산출' : 'VOLUME', lang === 'ko' ? '상부 비유효용적 (V_free)' : 'Freeboard Volume', `${freeTon.toFixed(2)} Ton (㎥)`, 'A × H_free'],
         [lang === 'ko' ? '용량산출' : 'VOLUME', lang === 'ko' ? '하부 사수량 (V_dead)' : 'Dead Water Volume', `${deadTon.toFixed(2)} Ton (㎥)`, 'A × H_dead'],
-        [lang === 'ko' ? '용량산출' : 'VOLUME', lang === 'ko' ? '🌊 ★ 최종 실담수량 (V_eff)' : '🌊 ★ Net Effective Cap.', `★ ${effTon.toFixed(2)} Ton (㎥)`, lang === 'ko' ? '★ 인허가 실용량' : '★ Net Storage'],
+        [lang === 'ko' ? '용량산출' : 'VOLUME', lang === 'ko' ? '★ 최종 실담수량 (V_eff)' : '★ Net Effective Cap.', `★ ${effTon.toFixed(2)} Ton (㎥)`, lang === 'ko' ? '★ 인허가 실용량' : '★ Net Storage'],
         [lang === 'ko' ? '용량산출' : 'VOLUME', lang === 'ko' ? '★ 유효 담수율 (η)' : '★ Storage Efficiency', `★ ${effRatio.toFixed(1)} %`, 'V_eff / V_gross'],
-        [lang === 'ko' ? '구획/판정' : 'CHECK', lang === 'ko' ? (lenSecs.length > 1 ? '구획별 실담수량' : '설계 적합성 판정') : (lenSecs.length > 1 ? 'Comp. Net Storage' : 'Design Criteria Check'), lenSecs.length > 1 ? compTons.map((t, idx) => `${idx + 1}구획: ${t.toFixed(1)}T`).join(' / ') : (lang === 'ko' ? '유효수심 확보 적합 [PASS]' : 'Valid Effective Depth [PASS]'), lang === 'ko' ? '설비설계기준 적합' : 'Code Compliant']
+        [lang === 'ko' ? '구획/판정' : 'CHECK', lang === 'ko' ? (lenSecs.length > 1 ? '구획별 실담수량' : '설계 적합성 판정') : (lenSecs.length > 1 ? 'Comp. Net Storage' : 'Design Criteria Check'), lenSecs.length > 1 ? compTons.map((t, idx) => `${idx + 1}구획: ${t.toFixed(1)}T`).join(' / ') : (lang === 'ko' ? '플랜지간섭회피·유효수심 [PASS]' : 'Flange Clear & Depth [PASS]'), lang === 'ko' ? '설비설계기준 적합' : 'Code Compliant']
       ];
 
       const rowH = (colY - tby) / calcRows.length;
@@ -7604,14 +7665,14 @@
         const ry = colY - (idx + 1) * rowH;
         if (idx > 0) line([tbx, ry + rowH], [tbx + tbw, ry + rowH]);
 
-        const isKey = (idx === 10 || idx === 13 || idx === 14);
+        const isKey = (r[1].includes('실담수량') || r[1].includes('유효 수심') || r[1].includes('Storage Efficiency'));
         if (isKey) {
-          solid([[tbx + c1, ry], [tbx + tbw, ry], [tbx + c1, ry + rowH], [tbx + tbw, ry + rowH]], 'SHEET', 4);
+          line([tbx + c1, ry + 0.6], [tbx + tbw, ry + 0.6]);
         }
-        const fs = isKey ? 2.6 : 2.2;
-        text(tbx + c1 / 2, ry + rowH / 2, 2.1, r[0], 'center', 0, 'middle');
+        const fs = isKey ? 2.5 : 2.1;
+        text(tbx + c1 / 2, ry + rowH / 2, 2.0, r[0], 'center', 0, 'middle');
         text(tbx + c1 + 3, ry + rowH / 2, fs, r[1], 'left', 0, 'middle');
-        text(tbx + c1 + c2 + 3, ry + rowH / 2, isKey ? 2.7 : 2.3, r[2], 'left', 0, 'middle');
+        text(tbx + c1 + c2 + 3, ry + rowH / 2, isKey ? 2.6 : 2.2, r[2], 'left', 0, 'middle');
         text(tbx + c1 + c2 + c3 + 3, ry + rowH / 2, 2.0, r[3], 'left', 0, 'middle');
       });
 

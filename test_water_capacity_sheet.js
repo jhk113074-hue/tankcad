@@ -50,7 +50,22 @@ assert(hasEffTonText, 'Effective ton text must exist in entities');
 const hasScheduleTable = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('정밀 산출 내역서'));
 assert(hasScheduleTable, 'Capacity schedule table must exist');
 
-console.log('Test 1 passed!');
+// Verification of Bottom Flange & Bolt line detail
+const hasBtmFlangeText = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('저판 플랜지 H=75mm'));
+assert(hasBtmFlangeText, 'Bottom flange callout must exist in entities');
+
+const hasSideFittingLimitText = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('EL.+100mm 이상'));
+assert(hasSideFittingLimitText, 'Side fitting elevation limit callout must exist in entities');
+
+// Verification of Monochrome CAD (NO color overrides in 2D capacity sheet)
+const coloredEnts = sheet1.ents.filter(e => e.color !== undefined);
+assert.strictEqual(coloredEnts.length, 0, `There must be NO color overrides in 2D capacity sheet! Found: ${coloredEnts.length}`);
+
+// No colored solids in drawing view
+const coloredSolids = sheet1.ents.filter(e => e.t === 'solid' && e.color !== undefined);
+assert.strictEqual(coloredSolids.length, 0, `There must be NO colored solid fills in 2D capacity sheet! Found: ${coloredSolids.length}`);
+
+console.log('Test 1 passed (Monochrome verified, Flange detail verified)!');
 
 // Test 2: Multi-compartment Tank (2구획: 4000+4000 x 3000 x 3000)
 const opt2 = {
