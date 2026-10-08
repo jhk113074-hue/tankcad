@@ -6194,11 +6194,23 @@
       }
 
       if (lat === 0x20000 || lat === 0x40000) {
-        const up = lat === 0x20000, sg = up ? 1 : -1, y0 = up ? y + h : y;
+        // 첫줄(0x20000): 내부(+Y)로 들어감, 마지막줄(0x40000): 내부(-Y)로 들어감
+        const inFirst = lat === 0x20000;
+        const sg = inFirst ? 1 : -1, y0 = inFirst ? y + h : y;
         [1, -1].forEach(k => {
           const x0 = k > 0 ? x : x + w, s = k;
-          const P = [[x0, y0], [x0, y0 + sg * 100], [x0 + s * 30, y0 + sg * 100], [x0 + s * 30, y0 + sg * 30], [x0 + s * 100, y0 + sg * 30], [x0 + s * 100, y0]];
+          const sz = 75, thk = 6;
+          const P = [
+            [x0, y0],
+            [x0, y0 + sg * sz],
+            [x0 + s * thk, y0 + sg * sz],
+            [x0 + s * thk, y0 + sg * thk],
+            [x0 + s * sz, y0 + sg * thk],
+            [x0 + s * sz, y0]
+          ];
           for (let q = 0; q < 6; q++) ln(P[q], P[(q + 1) % 6]);
+          drawBoltHole(out, x0 + s * (sz * 0.58), y0 + sg * (thk * 0.5), 5.5, 12, L);
+          drawBoltHole(out, x0 + s * (thk * 0.5), y0 + sg * (sz * 0.58), 5.5, 12, L);
         });
       }
     } else if (w < h) {
@@ -6335,14 +6347,10 @@
     nX = nLeft; nY = nTop; let nWidth = 0; base = false;
     const midRow = sRow + Math.floor((eRow - sRow + 1) / 2);
     for (i = sRow; i <= eRow; i++) {
-      // 사용자 지정 방향 규칙: 첫줄과 마지막줄은 밖으로 열리고, 내부는 [[[[]]]] (중앙을 마주보도록)
-      let lat;
+      // 사용자 지정 규칙: L 앵글은 내부로 들어가야 합니다. 첫줄, 마지막줄 (중간줄은 L앵글 없음)
+      let lat = 0;
       if (i === sRow) {
-        lat = 0x40000; // 첫줄: 밖으로 열림 (아래쪽 / -Y)
-      } else if (i < midRow) {
-        lat = 0x20000; // 전반부: 위쪽으로 열림 (중앙 쪽을 향해 [[[[)
-      } else {
-        lat = 0x40000; // 후반부: 아래쪽으로 열림 (중앙 쪽을 향해 ]]]])
+        lat = 0x20000; // 첫줄: L앵글이 내부(+Y)로 들어감
       }
       for (j = sCol; j <= eCol; j++) {
         rc = R(i, j);
@@ -6361,35 +6369,18 @@
       if (nWidth) nX === nLeft ? add(nX, nY, nWidth, 75, lat) : add(nX + 45, nY, nWidth - 45, 75, lat);
       nX = nLeft; nY = G.rowTop(i + 1); nWidth = 0; base = false;
     }
-    // 마지막 행 위쪽 가로 프레임 (마지막줄: 밖으로 열림 -> 위쪽 0x20000)
+    // 마지막 행 위쪽 가로 프레임 (마지막줄: L앵글이 내부(-Y)로 들어감 -> 0x40000)
     nX = nLeft; nY = nBottom; nWidth = 0; base = false;
     for (j = sCol; j <= eCol; j++) {
       rc = R(eRow, j);
       if (!rc) {
-        if (nWidth) { nX === nLeft ? add(nX, nY, nWidth, 75, 0x20000) : add(nX + 45, nY, nWidth - 45, 75, 0x20000); nWidth = 0; }
+        if (nWidth) { nX === nLeft ? add(nX, nY, nWidth, 75, 0x40000) : add(nX + 45, nY, nWidth - 45, 75, 0x40000); nWidth = 0; }
         for (j = j + 1; j <= eCol; j++) { rc = R(eRow, j); if (!rc) continue; nX = rc.l; break; }
       }
       if (rc) { nWidth += rc.w; if (!base) { nX = rc.l; base = true; } }
     }
-    if (nWidth) nX === nLeft ? add(nX, nY, nWidth, 75, 0x20000) : add(nX + 45, nY, nWidth - 45, 75, 0x20000);
-    // 열 사이 세로 프레임 (서브 빔 배치)
-    for (j = sCol; j < eCol; j++) {
-      for (i = sRow; i <= eRow; i++) {
-        let rcL = R(i, j), rcR = R(i, j + 1);
-        if (!rcL && !rcR) continue;
-        if (!rcL) {
-          if (sRow === i) { nX = rcR.l + 45 - 75; nY = rcR.t; nHeight = rcR.h + 75; } else { nX = rcR.l + 45 - 75; nY = rcR.t + 75; nHeight = rcR.h; }
-          for (i = i + 1; i <= eRow; i++) { rcL = R(i, j); if (!rcL) { rcR = R(i, j + 1); if (!rcR) break; nHeight += rcR.h; } else break; }
-          i--; if (i === eRow) nHeight += 75;
-          add(nX, nY, 75, nHeight - 75, 0x20000);
-        } else if (!rcR) {
-          if (sRow === i) { nX = rcL.r; nY = rcL.t; nHeight = rcL.h + 75; } else { nX = rcL.r; nY = rcL.t + 75; nHeight = rcL.h; }
-          for (i = i + 1; i <= eRow; i++) { rcR = R(i, j + 1); if (!rcR) { rcL = R(i, j); if (!rcL) break; nHeight += rcL.h; } else break; }
-          i--; if (i === eRow) nHeight += 75;
-          add(nX, nY, 75, nHeight - 75, 0x20000);
-        } else add(rcL.r, rcL.t + 75, 45, rcL.h - 75, 0x20000);
-      }
-    }
+    if (nWidth) nX === nLeft ? add(nX, nY, nWidth, 75, 0x40000) : add(nX + 45, nY, nWidth - 45, 75, 0x40000);
+
     const tH = frameTextH(G.map, opt), st = tH * 0.8;
     rec.forEach(m => m.segs.forEach((sl, k) => {
       const mid = (m.pts[k] + m.pts[k + 1]) / 2;
@@ -6465,24 +6456,7 @@
       }
     }
 
-    // 코너 브라켓 WBR-7575Z & WBR-0160Z (실제 존재하는 외곽 볼록 코너에만 배치하여 허공 부유 방지)
-    for (let i = 0; i <= G.nr; i++) {
-      for (let j = 0; j <= G.nc; j++) {
-        const cTL = (i > 0 && j > 0) && G.R(i - 1, j - 1);
-        const cTR = (i > 0 && j < G.nc) && G.R(i - 1, j);
-        const cBL = (i < G.nr && j > 0) && G.R(i, j - 1);
-        const cBR = (i < G.nr && j < G.nc) && G.R(i, j);
-        const count = (cTL ? 1 : 0) + (cTR ? 1 : 0) + (cBL ? 1 : 0) + (cBR ? 1 : 0);
-        const vx = G.map.xs[j];
-        const vy = G.map.ys[i];
-        if (count === 1) {
-          if (cBR) drawCornerBracket(ents, vx, vy, 75, 6, 1, 1);
-          else if (cBL) drawCornerBracket(ents, vx, vy, 75, 6, -1, 1);
-          else if (cTR) drawCornerBracket(ents, vx, vy, 75, 6, 1, -1);
-          else if (cTL) drawCornerBracket(ents, vx, vy, 75, 6, -1, -1);
-        }
-      }
-    }
+
 
     // 앙카 클램프 WBR-5010Z (실제 존재하는 외곽 찬넬 둘레에 2m 간격 배치)
     for (let j = 0; j < G.nc; j += 2) {
