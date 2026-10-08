@@ -4953,29 +4953,43 @@
         while (c < map.cols.length) {
           const hasBelow = (i > 0) && map.has(i - 1, c);
           const hasAbove = (i < map.rows.length) && map.has(i, c);
-          let cat = 0;
-          if (!hasBelow && hasAbove) cat = 1;
-          else if (hasBelow && !hasAbove) cat = 2;
-          else if (hasBelow && hasAbove) cat = 3;
-          if (cat === 0) { c++; continue; }
+          if (!hasBelow && !hasAbove) {
+            c++;
+            continue;
+          }
 
           const cStart = c;
-          while (c < map.cols.length) {
-            const b = (i > 0) && map.has(i - 1, c);
-            const a = (i < map.rows.length) && map.has(i, c);
-            let cCat = 0;
-            if (!b && a) cCat = 1;
-            else if (b && !a) cCat = 2;
-            else if (b && a) cCat = 3;
-            if (cCat !== cat) break;
+          while (c < map.cols.length && (((i > 0) && map.has(i - 1, c)) || ((i < map.rows.length) && map.has(i, c)))) {
             c++;
           }
           const cEnd = c - 1;
+
+          let anyBoth = false, allAboveOnly = true, allBelowOnly = true;
+          for (let col = cStart; col <= cEnd; col++) {
+            const b = (i > 0) && map.has(i - 1, col);
+            const a = (i < map.rows.length) && map.has(i, col);
+            if (b && a) anyBoth = true;
+            if (b) allAboveOnly = false;
+            if (a) allBelowOnly = false;
+          }
+
+          let cat = 3;
+          if (anyBoth) cat = 3;
+          else if (allAboveOnly) cat = 1;
+          else if (allBelowOnly) cat = 2;
+          else cat = 3;
+
           const xLeft = map.xs[cStart];
           const xRight = map.xs[cEnd] + map.cols[cEnd];
 
-          const hasTankLeft = (cStart > 0) && ((cat === 1 && map.has(i, cStart - 1)) || (cat === 2 && map.has(i - 1, cStart - 1)) || (cat === 3 && (map.has(i - 1, cStart - 1) || map.has(i, cStart - 1))));
-          const hasTankRight = (cEnd < map.cols.length - 1) && ((cat === 1 && map.has(i, cEnd + 1)) || (cat === 2 && map.has(i - 1, cEnd + 1)) || (cat === 3 && (map.has(i - 1, cEnd + 1) || map.has(i, cEnd + 1))));
+          const hasTankLeft = (cStart > 0) && (
+            (i > 0 && map.has(i - 1, cStart - 1)) ||
+            (i < map.rows.length && map.has(i, cStart - 1))
+          );
+          const hasTankRight = (cEnd < map.cols.length - 1) && (
+            (i > 0 && map.has(i - 1, cEnd + 1)) ||
+            (i < map.rows.length && map.has(i, cEnd + 1))
+          );
 
           const x0 = hasTankLeft ? (xLeft - flgW / 2) : (xLeft + lapIn);
           const x1 = hasTankRight ? (xRight + flgW / 2) : (xRight - lapIn);
@@ -6384,6 +6398,14 @@
   function computeMainBeamSpans(W) {
     if (W <= 2500) return [{ span: W, type: 'single' }];
 
+    // W = 3000: 사용자 요구사항 (2000 + 1000 분할 -> 시작 2070ASZR/L + 끝 1070ASZL/R 신규부품)
+    if (W === 3000) {
+      return [
+        { span: 2000, type: 'start' },
+        { span: 1000, type: 'end' }
+      ];
+    }
+
     let pairs;
     if (W % 2000 === 0) {
       pairs = [
@@ -6662,35 +6684,49 @@
       while (c < G.nc) {
         const hasBelow = (i > 0) && G.map.has(i - 1, c);
         const hasAbove = (i < G.nr) && G.map.has(i, c);
-        let cat = 0;
-        if (!hasBelow && hasAbove) cat = 1; // 하부 외곽
-        else if (hasBelow && !hasAbove) cat = 2; // 상부 외곽
-        else if (hasBelow && hasAbove) cat = 3; // 중간 내부
-
-        if (cat === 0) {
+        if (!hasBelow && !hasAbove) {
           c++;
           continue;
         }
 
         const cStart = c;
-        while (c < G.nc) {
-          const b = (i > 0) && G.map.has(i - 1, c);
-          const a = (i < G.nr) && G.map.has(i, c);
-          let cCat = 0;
-          if (!b && a) cCat = 1;
-          else if (b && !a) cCat = 2;
-          else if (b && a) cCat = 3;
-          if (cCat !== cat) break;
+        while (c < G.nc && (((i > 0) && G.map.has(i - 1, c)) || ((i < G.nr) && G.map.has(i, c)))) {
           c++;
         }
         const cEnd = c - 1;
+
+        let anyBoth = false, allAboveOnly = true, allBelowOnly = true;
+        for (let col = cStart; col <= cEnd; col++) {
+          const b = (i > 0) && G.map.has(i - 1, col);
+          const a = (i < G.nr) && G.map.has(i, col);
+          if (b && a) anyBoth = true;
+          if (b) allAboveOnly = false;
+          if (a) allBelowOnly = false;
+        }
+
+        let cat = 3;
+        if (anyBoth) {
+          cat = 3; // 중간 내부 (관통 라인)
+        } else if (allAboveOnly) {
+          cat = 1; // 하부 외곽
+        } else if (allBelowOnly) {
+          cat = 2; // 상부 외곽
+        } else {
+          cat = 3;
+        }
 
         const xLeft = G.map.xs[cStart];
         const xRight = G.map.xs[cEnd] + G.map.cols[cEnd];
 
         // 좌/우 끝단 lapIn(5mm) 마감 (좌/우측에 인접한 탱크 셀이 없으면 외곽이므로 lapIn)
-        const hasTankLeft = (cStart > 0) && ((cat === 1 && G.map.has(i, cStart - 1)) || (cat === 2 && G.map.has(i - 1, cStart - 1)) || (cat === 3 && (G.map.has(i - 1, cStart - 1) || G.map.has(i, cStart - 1))));
-        const hasTankRight = (cEnd < G.nc - 1) && ((cat === 1 && G.map.has(i, cEnd + 1)) || (cat === 2 && G.map.has(i - 1, cEnd + 1)) || (cat === 3 && (G.map.has(i - 1, cEnd + 1) || G.map.has(i, cEnd + 1))));
+        const hasTankLeft = (cStart > 0) && (
+          (i > 0 && G.map.has(i - 1, cStart - 1)) ||
+          (i < G.nr && G.map.has(i, cStart - 1))
+        );
+        const hasTankRight = (cEnd < G.nc - 1) && (
+          (i > 0 && G.map.has(i - 1, cEnd + 1)) ||
+          (i < G.nr && G.map.has(i, cEnd + 1))
+        );
 
         const x0 = hasTankLeft ? (xLeft - flgW / 2) : (xLeft + lapIn);
         const x1 = hasTankRight ? (xRight + flgW / 2) : (xRight - lapIn);
@@ -6924,10 +6960,10 @@
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `7. L방향 주재: 500 판넬 배치 시 1.5M(1490${fSuf}) 적용, 양끝단 5mm(총 10mm) 커팅 여유 확보 [2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}]`, rot: 0, align: 'left', layer: 'FRAME_MAIN_L' });
     noteY -= tH * 1.25;
     const wSpecSummary = (fNum === 75)
-      ? '75Angle: 시작/끝단 1570ASZL/R (1.5M) 또는 2070ASZL/R (2M, 70mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1140, 1640, 2140, 2640ASZ'
+      ? '75Angle: 시작/끝단 1570ASZL/R (1.5M), 2070ASZL/R (2M), 신규 1070ASZL/R (1M, 70mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1140, 1640, 2140, 2640ASZ'
       : (fNum === 150)
-        ? '150Channel: 시작/끝단 1570CSZL/R (1.5M) 또는 2070CSZL/R (2M, 70mm 돌출) 대칭배치(한쪽 CSZL+CSZR 시 반대쪽 CSZR+CSZL), 중간 2000CSZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1140, 1640, 2140, 2640CSZ'
-        : '125Channel: 시작/끝단 1560ASZL/R (1.5M) 또는 2060ASZL/R (2M, 60mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1120, 1620, 2120, 2640ASZ';
+        ? '150Channel: 시작/끝단 1570CSZL/R (1.5M), 2070CSZL/R (2M), 신규 1070CSZL/R (1M, 70mm 돌출) 대칭배치(한쪽 CSZL+CSZR 시 반대쪽 CSZR+CSZL), 중간 2000CSZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1140, 1640, 2140, 2640CSZ'
+        : '125Channel: 시작/끝단 1560ASZL/R (1.5M), 2060ASZL/R (2M), 신규 1060ASZL/R (1M, 60mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1120, 1620, 2120, 2640ASZ';
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `8. W방향 주재(테두리 전용): 외곽 테두리(시작 열 및 끝 열)에만 배치되며, 내부 중간 열에는 미배치 (부재만 배치). ${wSpecSummary}`, rot: 0, align: 'left', layer: 'FRAME_MAIN_W' });
 
     return { ents, G };

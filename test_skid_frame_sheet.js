@@ -122,11 +122,11 @@ assert(leftTop && leftTop.s.includes('1560ASZR'), 'Left side end must be 1560ASZ
 assert(rightBot && rightBot.s.includes('1560ASZR'), 'Right side start must be 1560ASZR');
 assert(rightTop && rightTop.s.includes('1560ASZL'), 'Right side end must be 1560ASZL');
 
-// Sheet 2 (Frame 75, W=3000 -> 1570ASZL, 1570ASZR)
-const has1570ASZL = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('1570ASZL'));
-assert(has1570ASZL, 'Sheet 2 (Frame 75, W=3000) must have 1570ASZL at start of W-direction main beam');
-const has1570ASZR = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('1570ASZR'));
-assert(has1570ASZR, 'Sheet 2 (Frame 75, W=3000) must have 1570ASZR at end of W-direction main beam');
+// Sheet 2 (Frame 75, W=3000 -> 2000 + 1000 partition with 2070ASZL and new 1070ASZR)
+const has2070_3000 = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('2070ASZL'));
+assert(has2070_3000, 'Sheet 2 (Frame 75, W=3000) must have 2070ASZL for 2000mm span');
+const has1070_3000 = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('1070ASZR'));
+assert(has1070_3000, 'Sheet 2 (Frame 75, W=3000) must have new part 1070ASZR for 1000mm span');
 
 // Test 75 frame with W=6000 (even 2000 multiple -> 2070ASZL, 2000ASZ, 2070ASZR)
 const opt2_6000 = { length: [4000], width: [6000], height: [2000], frame: 75, sheetKind: 'frame' };
@@ -306,5 +306,31 @@ assert.strictEqual(midWTexts.length, 0, 'W-direction part names must NOT exist i
 const midSubBeams = skidRes1.ents.filter(e => e.layer === 'FRAME_SUB' && e.t === 'line' && e.a[0] > 500 && e.a[0] < 9500);
 assert(midSubBeams.length > 0, 'Intermediate columns must have sub-beams (FRAME_SUB)');
 
+// 11. Test 7: Irregular 4000x4000 Tank with removed cell [3, 3] (user screenshot media_1791464487226_3d0f4500.png)
+console.log('--- Testing User Case: 4000x4000 Tank with removed [3, 3] (1990 beam & new 1070ASZL) ---');
+const optUser = {
+  length: [4000],
+  width: [4000],
+  height: [3000],
+  frame: 75,
+  removed: [[3, 3]],
+  sheetKind: 'frame'
+};
+const skidUser = TankCore.buildSkid(optUser);
+// Check horizontal beam at Y=3000 across Col 2..3 has 1990ALZ (not 0990ALZ)
+const hBeamCol23 = skidUser.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'text' && e.p && e.p[0] > 2000 && e.p[0] < 4000 && Math.abs(e.p[1] - 3000) < 50);
+assert(hBeamCol23, 'Horizontal beam at Y=3000 across Col 2..3 must exist');
+assert.strictEqual(hBeamCol23.s, 'WFF-1990ALZ', 'Horizontal beam at Y=3000 across Col 2..3 must be WFF-1990ALZ (not 0990)');
+
+// Check Column 3 (W=3000) has bottom 2070ASZR and top new part 1070ASZL
+const col3Top = skidUser.ents.find(e => e.layer === 'FRAME_MAIN_W' && e.t === 'text' && e.p && e.p[0] > 3900 && e.p[1] > 2000);
+assert(col3Top, 'Column 3 top W-direction part must exist');
+assert.strictEqual(col3Top.s, 'WFF-1070ASZL', 'Column 3 top W-direction part must be new part WFF-1070ASZL (replacing 1570ASZL)');
+
+const col3Bot = skidUser.ents.find(e => e.layer === 'FRAME_MAIN_W' && e.t === 'text' && e.p && e.p[0] > 3900 && e.p[1] < 2000);
+assert(col3Bot, 'Column 3 bottom W-direction part must exist');
+assert.strictEqual(col3Bot.s, 'WFF-2070ASZR', 'Column 3 bottom W-direction part must be WFF-2070ASZR');
+
 console.log('✅ ALL STEEL SKID & FOUNDATION TESTS PASSED SUCCESSFULLY!');
+
 
