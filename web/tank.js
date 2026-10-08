@@ -6153,11 +6153,11 @@
   // 실제 제작 부재 기반 프레임 작도 (주 베이스 프레임 ㄷ-125 / 서브 빔 A·B·C타입 결합부)
   function insideFrm(out, x, y, w, h, lat, rec) {
     const L = 'FRAME', ln = (a, b) => out.push({ t: 'line', a, b, layer: L });
-    const DIV = 2000, MIN = 1000;
+    const DIV = 2000, MIN = 850;
     const cuts = [];
     const divide = (len, at0) => {
       const at = d => { cuts.push(d); at0(d); };
-      const cnt = (len % DIV > MIN) ? Math.trunc(len / DIV) : Math.trunc(len / DIV) - 1;
+      const cnt = (len % DIV >= MIN) ? Math.trunc(len / DIV) : Math.trunc(len / DIV) - 1;
       if (cnt <= 0) return;
       for (let i = 1; i <= cnt; i++) at(DIV * i);
       const r = len % DIV;
@@ -6332,6 +6332,7 @@
     if (nHeight) addMainBeam(nX - lapIn, nY - overY, flgW, nHeight + overY * 2, 'last');
 
     // 3. 중간에 있는 주재 (Center 판넬과 판넬 Center 이음부에 주재의 Center 배치)
+    // 가로 외곽 찬넬 내측선(Y_bot + flgW ~ Y_top - flgW) 사이에 딱 맞추어 외곽으로 튀어나가지 않음
     for (j = sCol + 1; j <= eCol; j++) {
       const colX = G.map.xs[j];
       let midH = 0, midTop = 0, midBase = false;
@@ -6341,51 +6342,30 @@
           midH += (rcL || rcR).h;
           if (!midBase) { midTop = (rcL || rcR).t; midBase = true; }
         } else if (midH) {
-          addMainBeam(colX - flgW / 2, midTop - overY, flgW, midH + overY * 2, 'mid');
+          addMainBeam(colX - flgW / 2, midTop - overY + flgW, flgW, midH + overY * 2 - flgW * 2, 'mid');
           midH = 0; midBase = false;
         }
       }
       if (midH) {
-        addMainBeam(colX - flgW / 2, midTop - overY, flgW, midH + overY * 2, 'mid');
+        addMainBeam(colX - flgW / 2, midTop - overY + flgW, flgW, midH + overY * 2 - flgW * 2, 'mid');
       }
     }
-    // 가로 프레임 (행마다)
-    nX = nLeft; nY = nTop; let nWidth = 0; base = false;
-    const midRow = sRow + Math.floor((eRow - sRow + 1) / 2);
-    for (i = sRow; i <= eRow; i++) {
-      // 사용자 지정 규칙: L 앵글은 내부로 들어가야 합니다. 첫줄, 마지막줄 (중간줄은 L앵글 없음)
-      let lat = 0;
-      if (i === sRow) {
-        lat = 0x20000; // 첫줄: L앵글이 내부(+Y)로 들어감
-      }
-      for (j = sCol; j <= eCol; j++) {
-        rc = R(i, j);
-        if (!rc) {
-          rc = R(i - 1, j);
-          if (!rc) {
-            if (nWidth) {
-              nX === nLeft ? add(nX, nY, nWidth, 75, lat) : add(nX + 45, nY, nWidth - 45, 75, lat);
-              nWidth = 0;
-            }
-            for (j = j + 1; j <= eCol; j++) { rc = R(i, j); if (!rc) continue; nX = rc.l; break; }
-          }
-        }
-        if (rc) { nWidth += rc.w; if (!base) { nX = rc.l; base = true; } }
-      }
-      if (nWidth) nX === nLeft ? add(nX, nY, nWidth, 75, lat) : add(nX + 45, nY, nWidth - 45, 75, lat);
-      nX = nLeft; nY = G.rowTop(i + 1); nWidth = 0; base = false;
+
+    // 4. 가로 프레임 (L방향 주재): W방향 주재와 끝(Y_bot 및 Y_top)이 완벽히 일치하도록 배치
+    const bLeft = nLeft + lapIn, bRight = nRight - lapIn;
+    const bWidth = bRight - bLeft;
+
+    // 4-1. 하단 외곽 가로 프레임 (첫줄, 0x20000): Y_bot = nTop - overY (-60mm)에서 시작하여 flgW(65mm) 높이
+    add(bLeft, nTop - overY, bWidth, flgW, 0x20000);
+
+    // 4-2. 중간 행 가로 프레임들 (각 행 접합선 위치에 flgW 높이로 배치)
+    for (i = sRow + 1; i <= eRow; i++) {
+      const rowY = G.map.ys[i];
+      add(bLeft, rowY - flgW / 2, bWidth, flgW, 0);
     }
-    // 마지막 행 위쪽 가로 프레임 (마지막줄: L앵글이 내부(-Y)로 들어감 -> 0x40000)
-    nX = nLeft; nY = nBottom; nWidth = 0; base = false;
-    for (j = sCol; j <= eCol; j++) {
-      rc = R(eRow, j);
-      if (!rc) {
-        if (nWidth) { nX === nLeft ? add(nX, nY, nWidth, 75, 0x40000) : add(nX + 45, nY, nWidth - 45, 75, 0x40000); nWidth = 0; }
-        for (j = j + 1; j <= eCol; j++) { rc = R(eRow, j); if (!rc) continue; nX = rc.l; break; }
-      }
-      if (rc) { nWidth += rc.w; if (!base) { nX = rc.l; base = true; } }
-    }
-    if (nWidth) nX === nLeft ? add(nX, nY, nWidth, 75, 0x40000) : add(nX + 45, nY, nWidth - 45, 75, 0x40000);
+
+    // 4-3. 상단 외곽 가로 프레임 (마지막줄, 0x40000): Y_top = nBottom + overY (W+60mm)에 상단 끝 일치
+    add(bLeft, nBottom + overY - flgW, bWidth, flgW, 0x40000);
 
     const tH = frameTextH(G.map, opt), st = tH * 0.8;
     rec.forEach(m => m.segs.forEach((sl, k) => {
@@ -6464,18 +6444,18 @@
 
 
 
-    // 앙카 클램프 WBR-5010Z (실제 존재하는 외곽 찬넬 둘레에 2m 간격 배치)
+    // 앙카 클램프 WBR-5010Z (외곽 찬넬 플랜지 바깥 둘레에 2m 간격 배치)
     for (let j = 0; j < G.nc; j += 2) {
       const cx = (G.map.xs[j] + G.map.xs[Math.min(j + 1, G.nc)]) / 2;
       for (let i = 0; i < G.nr; i++) {
         if (G.R(i, j) && !G.R(i - 1, j)) {
-          drawAnchorClamp(ents, cx, G.map.ys[i] - 15);
+          drawAnchorClamp(ents, cx, nTop - overY - 15);
           break;
         }
       }
       for (let i = G.nr - 1; i >= 0; i--) {
         if (G.R(i, j) && !G.R(i + 1, j)) {
-          drawAnchorClamp(ents, cx, G.map.ys[i + 1] + 15);
+          drawAnchorClamp(ents, cx, nBottom + overY + 15);
           break;
         }
       }
@@ -6484,13 +6464,13 @@
       const cy = (G.map.ys[i] + G.map.ys[Math.min(i + 1, G.nr)]) / 2;
       for (let j = 0; j < G.nc; j++) {
         if (G.R(i, j) && !G.R(i, j - 1)) {
-          drawAnchorClamp(ents, G.map.xs[j] - 15, cy);
+          drawAnchorClamp(ents, nLeft - overOut - 15, cy);
           break;
         }
       }
       for (let j = G.nc - 1; j >= 0; j--) {
         if (G.R(i, j) && !G.R(i, j + 1)) {
-          drawAnchorClamp(ents, G.map.xs[j + 1] + 15, cy);
+          drawAnchorClamp(ents, nRight + overOut + 15, cy);
           break;
         }
       }
@@ -6521,7 +6501,7 @@
     noteY -= tH * 1.25;
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '5. 기초고정: 각 코너 및 2m 간격 M12 앙카볼트 & WBR-5010Z 클램프 체결', rot: 0, align: 'left', layer: 'DIM' });
     noteY -= tH * 1.25;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '6. 색상범례: 주황색(ORANGE)=스틸스키드, 붉은색(RED)=1000×1000 저면패널 안착위치', rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '6. 색상범례: 주황색(ORANGE)=스틸스키드, 녹색(GREEN)=1000×1000 저면패널 안착위치', rot: 0, align: 'left', layer: 'DIM' });
 
     return { ents, G };
   }
@@ -8477,7 +8457,7 @@
   }
 
   /* ---------- DXF (AutoCAD R12 ASCII, mm) ---------- */
-  const LAYERS = { PANEL: 7, FLOOR_PANEL: 1, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4, PAD: 8, GUIDE: 3 };
+  const LAYERS = { PANEL: 7, FLOOR_PANEL: 3, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4, PAD: 8, GUIDE: 3 };
   const dxfText = str => Array.from(str).map(ch => { const c = ch.codePointAt(0); return c < 128 ? ch : '\\U+' + c.toString(16).toUpperCase().padStart(4, '0'); }).join('');
 
   function toDxf(ents, blocks, opt = {}) {
