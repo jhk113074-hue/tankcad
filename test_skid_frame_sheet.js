@@ -62,6 +62,19 @@ assert(has150Bracket, 'WBR-0120CZE bracket callout must exist for Frame 150');
 const hasAnchorClamps = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WBR-5010Z'));
 assert(hasAnchorClamps, 'WBR-5010Z skid clamp callout must exist');
 
+// 3-B. Check Skid BOM List & Exact Quantities
+const skidBOM1 = TankCore.buildSkidBOM(opt1);
+assert(Array.isArray(skidBOM1) && skidBOM1.length > 0, 'buildSkidBOM must return an array of BOM items');
+const hasMainWBOM = skidBOM1.some(b => b.key === 'main_w' && b.qty);
+const hasMainLBOM = skidBOM1.some(b => b.key === 'main_l' && b.qty);
+const hasSubABOM = skidBOM1.some(b => b.key === 'sub_a' && b.qty);
+const hasBracketBOM = skidBOM1.some(b => b.key === 'bracket' && b.qty);
+assert(hasMainWBOM && hasMainLBOM && hasSubABOM && hasBracketBOM, 'All key skid members must exist in Skid BOM with quantities');
+
+// Check sheet1 has Skid BOM in the right-side BOM table
+const sheetHasSkidBOMText = sheet1.ents.some(e => e.t === 'text' && e.layer === 'SHEET' && e.s && (e.s.includes('WFF-') || e.s.includes('WFB-')));
+assert(sheetHasSkidBOMText, 'Sheet 1 right-side BOM table must contain Skid Frame member codes');
+
 // 4. Check Fabrication NOTE block
 const hasNoteHeader = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('< N O T E >'));
 assert(hasNoteHeader, 'NOTE header must exist');
