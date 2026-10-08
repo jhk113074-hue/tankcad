@@ -209,6 +209,56 @@ const sheet4 = TankCore.buildSheet(opt4, {}, {});
 assert(sheet4 && sheet4.ents.length > 500, 'Sheet 4 (irregular skid) should be created without crashing');
 console.log('Sheet 4 entities count:', sheet4.ents.length);
 
+// 8-1. Test L-shaped 4000x4000 tank matching user screenshot (media_1791461996268_1951140e.png)
+const optL = {
+  length: [4000],
+  width: [4000],
+  height: [3000],
+  frame: 125,
+  removed: [[2, 2], [2, 3], [3, 2], [3, 3]],
+  sheetKind: 'frame'
+};
+const concL = TankCore.buildConcrete(optL);
+const skidL = TankCore.buildSkid(optL);
+
+// Verify concrete pad geometry matches buildConcrete 100%
+const concLBoxes = concL.ents.filter(e => e.t === 'insert' && e.layer === 'PAD').map(e => ({
+  x0: e.p[0],
+  x1: e.p[0] + e.w,
+  y0: e.p[1],
+  y1: e.p[1] + e.h
+})).sort((a, b) => a.x0 - b.x0);
+
+const skidLPadLines = skidL.ents.filter(e => e.layer === 'PAD');
+const vLinesL = skidLPadLines.filter(l => l.a[0] === l.b[0]);
+const skidLBoxes = [];
+const stripsL = TankCore.concStrips(TankCore.createMap(optL).cols, optL);
+stripsL.forEach(([x, w, idx]) => {
+  const linesAtX = vLinesL.filter(l => Math.abs(l.a[0] - x) < 1e-3);
+  linesAtX.forEach(l => {
+    const yMin = Math.min(l.a[1], l.b[1]);
+    const yMax = Math.max(l.a[1], l.b[1]);
+    skidLBoxes.push({ x0: x, x1: x + w, y0: yMin, y1: yMax });
+  });
+});
+skidLBoxes.sort((a, b) => a.x0 - b.x0);
+
+assert.strictEqual(concLBoxes.length, skidLBoxes.length, 'Pad strip count must match buildConcrete');
+for (let i = 0; i < concLBoxes.length; i++) {
+  assert.deepStrictEqual(skidLBoxes[i], concLBoxes[i], `Skid pad strip ${i} must match buildConcrete pad strip ${i} exactly`);
+}
+// Strip 3 and Strip 4 must terminate at Y = 2200 (not extending to Y = 4200)
+assert.strictEqual(skidLBoxes[3].y1, 2200, 'Strip 3 must terminate at Y=2200');
+assert.strictEqual(skidLBoxes[4].y1, 2200, 'Strip 4 must terminate at Y=2200 (not full length)');
+
+// Verify no horizontal beams in removed cell area (X > 2005, Y > 2100)
+const wrongHBeams = skidL.ents.filter(e => e.layer === 'FRAME' && e.t === 'line' && e.a[0] > 2005 && e.a[1] > 2100 && e.b[0] > 2005 && e.b[1] > 2100);
+assert.strictEqual(wrongHBeams.length, 0, 'No horizontal beams should exist in removed tank cells');
+
+// Verify top-outer edge beam exists at Y=2000 step
+const stepBeam = skidL.ents.find(e => e.layer === 'FRAME' && e.t === 'line' && Math.abs(e.a[1] - 2060) < 1e-3 && Math.abs(e.b[1] - 2060) < 1e-3);
+assert(stepBeam, 'Top-outer edge beam must exist at step Y=2000');
+
 // 9. Test 5: 500mm Panel combination -> 1.5M member (1490CLZ / 1490ALZ / 1490HCLZ)
 console.log('--- Testing 500mm Panel Combination with 1.5M Members (1490CLZ / 1490ALZ / 1490HCLZ) ---');
 const opt5_125 = { length: [5500], width: [4000], height: [3000], frame: 125, sheetKind: 'frame' };

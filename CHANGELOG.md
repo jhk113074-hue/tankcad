@@ -5,6 +5,23 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.71] - 2026-10-08
+
+### Fixed & Enhanced (스틸 스키드 프레임 기초 콘크리트 패드와 기본도면 완벽 일치화)
+- **📐 기본도면(`buildConcrete`)과 스틸 스키드 도면(`buildSkid`)의 콘크리트 패드 100% 정합성 구현**:
+  - `buildSkid`의 기초 콘크리트 패드 생성을 기본도면(`buildConcrete`)과 동일한 `concStrips(cols, opt)` 및 `runsForStrip(idx)` 엔진으로 전면 통일.
+  - 패드 폭(1,000mm 인접 패널 간 350mm 폭, 외곽 400mm 폭), 돌출 길이(`padOverhang`), 중심선 좌표 및 행별 존재 구간이 두 도면 간에 0.001mm 오차 없이 일치.
+  - 이형(L자형 등) 물탱크에서 삭제된 패널 구역의 우측 최외곽 패드(Line 4)가 반대편 전체 길이로 연장되던 문제를 해결하여 기본도면과 동일하게 유효 패널 영역에만 패드가 정확히 생성.
+  - 이형 물탱크 삭제 구역 내 수평 찬넬, 수직 보조보 및 텍스트 부재가 완벽히 소거되고 단차부 외곽 찬넬(`lat: 0x40000`)이 완벽히 마감.
+
+## [1.6.70] - 2026-10-08
+
+### Added & Enhanced (스틸 스키드 W방향 대칭 배치 및 2M 주재 카탈로그 규격 반영)
+- **↔️ W방향 주재 대칭(대면) 배치 구현**:
+  - 좌측 열 `1570ASZL + ... + 1570ASZR` 배치 시 우측 열은 `1570ASZR + ... + 1570ASZL`로 상호 대칭 마주보도록 배치.
+- **🔩 2M 주재 부재명 반영**:
+  - 2,000mm 단일/분할 부재에 `2070ASZL/R` (75 Angle), `2060ASZL/R` (125 Channel), `2070CSZL/R` (150 Channel) 카탈로그 규격 부재 기호 적용.
+
 ## [1.6.40] - 2026-10-06
 
 ### Added & Enhanced (스틸 스키드 프레임 규격 전면 업데이트 및 실시간 도면·BOM 연동)
