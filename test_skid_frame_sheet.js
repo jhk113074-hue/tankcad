@@ -98,6 +98,39 @@ assert(hasEnSkidTitle, 'English view title STEEL SKID DRAWING must exist');
 const hasEnCrossTitle = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('FRAME CROSS DWG'));
 assert(hasEnCrossTitle, 'English view title FRAME CROSS DWG must exist');
 
+// 6-1. Check W-direction catalog members for Frame 125, 75, 150
+console.log('--- Testing W-direction Catalog Standard Members (ASZL/ASZR/CSZL/CSZR/ASZ/CSZ) ---');
+const has1560ASZL = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('1560ASZL'));
+assert(has1560ASZL, 'Sheet 1 (Frame 125) must have 1560ASZL at start of W-direction main beam');
+const has2000ASZ = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('2000ASZ'));
+assert(has2000ASZ, 'Sheet 1 (Frame 125) must have 2000ASZ in middle of W-direction main beam');
+const has1560ASZR = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('1560ASZR'));
+assert(has1560ASZR, 'Sheet 1 (Frame 125) must have 1560ASZR at end of W-direction main beam');
+
+const has1570ASZL = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('1570ASZL'));
+assert(has1570ASZL, 'Sheet 2 (Frame 75) must have 1570ASZL at start of W-direction main beam');
+const has1570ASZR = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('1570ASZR'));
+assert(has1570ASZR, 'Sheet 2 (Frame 75) must have 1570ASZR at end of W-direction main beam');
+
+const opt150 = { length: [6000], width: [7000], height: [4000], frame: 150, sheetKind: 'frame' };
+const sheet150 = TankCore.buildSheet(opt150, {}, {});
+const has1570CSZL = sheet150.ents.some(e => e.t === 'text' && e.s && e.s.includes('1570CSZL'));
+assert(has1570CSZL, 'Frame 150 must have 1570CSZL at start of W-direction main beam');
+const has2000CSZ = sheet150.ents.some(e => e.t === 'text' && e.s && e.s.includes('2000CSZ'));
+assert(has2000CSZ, 'Frame 150 must have 2000CSZ in middle of W-direction main beam');
+const has1570CSZR = sheet150.ents.some(e => e.t === 'text' && e.s && e.s.includes('1570CSZR'));
+assert(has1570CSZR, 'Frame 150 must have 1570CSZR at end of W-direction main beam');
+
+// Verify computeMainBeamSpans
+const spans7000 = TankCore.computeMainBeamSpans(7000);
+assert.deepStrictEqual(spans7000.map(s => s.span), [1500, 2000, 2000, 1500], '7000mm width should partition into [1500, 2000, 2000, 1500]');
+const spans2000 = TankCore.computeMainBeamSpans(2000);
+assert.deepStrictEqual(spans2000, [{ span: 2000, type: 'single' }], '2000mm width should be single piece');
+
+// 6-2. Verify hardware leader callouts removed from skid frame layout
+const hasOldLeader = skidRes1.ents.some(e => e.t === 'text' && (e.s === 'WBR-5010Z' || e.s === 'WBR-0120Z' || e.s === 'WBR-9021CZ') && e.p && e.p[0] < -200);
+assert(!hasOldLeader, 'Old hardware leader balloons must be removed from the frame layout');
+
 // 7. Test 3: Skid Component Fabrication Sheet (sheetKind: 'skid_parts')
 console.log('--- Testing Skid Parts Fabrication DWG Sheet (sheetKind: "skid_parts") ---');
 const opt3 = {
