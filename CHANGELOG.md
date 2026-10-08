@@ -5,6 +5,19 @@ All notable changes to the **YSACC TANK CAD** project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.72] - 2026-10-08
+
+### Added & Enhanced (W방향 주재·L방향 주재·부재 색상 분리 및 부품명 색상 완벽 일치화)
+- **🎨 주재 및 부재별 전용 레이어 및 색상 구별 체계 구축**:
+  - **W방향 주재 (`FRAME_MAIN_W`)**: 열(Column) 방향 수직 주 찬넬 및 부품명(`WFF-xxxxASZL/R`)을 **주황색 (Orange / ACI 30)**으로 통일.
+  - **L방향 주재 (`FRAME_MAIN_L`)**: 행(Row) 방향 수평 주 찬넬 및 부품명(`WFF-xxxxCLZ/ALZ/HCLZ`)을 **보라/자홍색 (Purple / ACI 6)**으로 분리.
+  - **부재 (`FRAME_SUB`)**: 단면도 및 각 베이의 보조 서브빔 및 부품명(`WFB-xxxxAMZ/CMZ`, Type A·B·C)을 **청록색 (Teal / ACI 4)**으로 분리.
+- **🏷️ 부품명 텍스트와 부재 선 색상 1:1 일치**:
+  - 각 부재에 각인되는 품번(WFF/WFB) 텍스트를 치수선 레이어(DIM)에서 해당 부재 레이어로 변경하여 도면 상에서 부재와 품번 텍스트가 동일한 고유 색상으로 표시되도록 개선.
+- **🖥️ 웹 캔버스, SVG, DXF 전체 출력 파이프라인 동기화**:
+  - 다크/라이트 테마 CSS 변수(`--cv-frame-w`, `--cv-frame-l`, `--cv-frame-sub`), 벡터 SVG 출력, AutoCAD DXF 레이어 테이블에 완벽 반영.
+  - 도면 하단 특기사항(NOTE 6)의 색상 범례 최신화.
+
 ## [1.6.71] - 2026-10-08
 
 ### Fixed & Enhanced (스틸 스키드 프레임 기초 콘크리트 패드와 기본도면 완벽 일치화)
