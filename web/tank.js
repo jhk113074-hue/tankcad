@@ -6174,7 +6174,11 @@
       } else if (lat === 0x40000) {
         // 마지막줄(상부): 탱크 외측(상부, +Y)으로 열림 -> 웨브는 하단(내측)인 y + 6
         ln([x, y + 6], [x + w, y + 6]);
+      } else if (lat === 0x10000) {
+        // 중간행 하향 개구(toes down): 웨브는 상단인 y + h - 6
+        ln([x, y + h - 6], [x + w, y + h - 6]);
       } else {
+        // 중간행 상향 개구(toes up): 웨브는 하단인 y + 6
         ln([x, y + 6], [x + w, y + 6]);
       }
 
@@ -6362,7 +6366,8 @@
     // 4-2. 중간 행 가로 프레임들 (각 행 접합선 위치에 flgW 높이로 배치)
     for (i = sRow + 1; i <= eRow; i++) {
       const rowY = G.map.ys[i];
-      add(bLeft, rowY - flgW / 2, bWidth, flgW, 0);
+      const isUp = (i === sRow + 1); // 081031 PDF: 1행만 상향 개구, 2행 이상은 하향 개구
+      add(bLeft, rowY - flgW / 2, bWidth, flgW, isUp ? 0 : 0x10000);
     }
 
     // 4-3. 상단 외곽 가로 프레임 (마지막줄, 0x40000): Y_top = nBottom + overY (W+60mm)에 상단 끝 일치
@@ -6393,11 +6398,13 @@
     if (G.nc >= 1) {
       const col1X = (G.map.xs[1] || 1000) + flgW / 2 + st * 0.45;
       const cn = G.map.rows.length;
-      const subCodes = ['WFF-0962 AMZ', 'WFF-1053 AMZ', 'WFF-0994 AMZ', 'WFF-0962 AMZ'];
       for (let i = 0; i < cn; i++) {
         const rY0 = G.map.ys[i];
         const rY1 = rY0 + G.map.rows[i];
-        const subCode = subCodes[i % subCodes.length];
+        let subCode;
+        if (i === 0 || i === cn - 1) subCode = 'WFF-0962 AMZ';
+        else if (i === 1 && cn >= 3) subCode = 'WFF-1053 AMZ';
+        else subCode = 'WFF-0994 AMZ';
         ents.push({ t: 'text', p: [col1X, (rY0 + rY1) / 2], h: st * 0.65, s: subCode, rot: 90, align: 'center', layer: 'DIM' });
       }
     }
@@ -6599,16 +6606,16 @@
     function getSubBeamInfo(k, pitch) {
       const f = Number(opt.frame) || 125;
       const isOuter = (k === 0 || k === cn - 1);
-      const isCenter = (k === div - 1);
+      const isTypeC = (k === 1 && cn >= 3);
       const isShort = pitch < 700;
 
       if (f === 125) {
         if (isOuter) return { code: isShort ? 'WFF-0462AMZ' : 'WFF-0962AMZ', type: 'A타입', len: isShort ? 462 : 962, subSpec: '[-75x40x5T' };
-        if (isCenter) return { code: isShort ? 'WFF-0553AMZ' : 'WFF-1053AMZ', type: 'C타입', len: isShort ? 553 : 1053, subSpec: '[-75x40x5T' };
+        if (isTypeC) return { code: isShort ? 'WFF-0553AMZ' : 'WFF-1053AMZ', type: 'C타입', len: isShort ? 553 : 1053, subSpec: '[-75x40x5T' };
         return { code: isShort ? 'WFF-0494AMZ' : 'WFF-0994AMZ', type: 'B타입', len: isShort ? 494 : 994, subSpec: '[-75x40x5T' };
       } else if (f === 150) {
         if (isOuter) return { code: isShort ? 'WFF-0456CMZ' : 'WFF-0956CMZ', type: 'A타입', len: isShort ? 456 : 956, subSpec: '[-75x40x5T' };
-        if (isCenter) return { code: isShort ? 'WFF-0561CMZ' : 'WFF-1061CMZ', type: 'C타입', len: isShort ? 561 : 1061, subSpec: '[-75x40x5T' };
+        if (isTypeC) return { code: isShort ? 'WFF-0561CMZ' : 'WFF-1061CMZ', type: 'C타입', len: isShort ? 561 : 1061, subSpec: '[-75x40x5T' };
         return { code: isShort ? 'WFF-0493CMZ' : 'WFF-0993CMZ', type: 'B타입', len: isShort ? 493 : 993, subSpec: '[-75x40x5T' };
       } else {
         if (isOuter) return { code: isShort ? 'WFF-0457AMZ' : 'WFF-0957AMZ', type: 'A타입', len: isShort ? 457 : 957, subSpec: 'L-75x75x6T' };
@@ -6636,41 +6643,57 @@
       }
     };
 
-    // 1. 하단 외곽 찬넬: y = -overY ~ 5 (web at 5, toes at -overY, open downwards)
-    drawChannelSection(lapIn, -overY);
+    // 각 찬넬 정보: k = 0 (하단 외곽) ~ k = cn (상단 외곽)
+    // 081031 PDF Z-Z' SECTION 실물 기준:
+    // - k = 0 (하단 외곽): 하향 개구(toes down, -overY 방향)
+    // - k = 1: 상향 개구(toes up, +Y 방향)
+    // - k = 2 ~ cn-1: 하향 개구(toes down, -Y 방향)
+    // - k = cn (상단 외곽): 상향 개구(toes up, +overY 방향)
+    const chanGeom = [];
 
-    // 2. 중간 찬넬들: rowY - mx ~ rowY + mx (전반부 위로 열림, 후반부 아래로 열림)
+    // k = 0 (하단 외곽 찬넬: y = -overY ~ lapIn)
+    chanGeom[0] = {
+      yWeb: lapIn,
+      yToe: -overY,
+      topFace: lapIn,      // 상부 서브빔이 닿는 외측 웨브면 (y = 5)
+      botFace: -overY
+    };
+
+    // k = 1 .. cn - 1 (중간 찬넬들)
     for (let k = 1; k < cn; k++) {
       const rowY = ys[k];
-      const facesUp = (k <= Math.floor(cn / 2));
-      const yWeb = facesUp ? rowY - mx : rowY + mx;
-      const yToe = facesUp ? rowY + mx : rowY - mx;
-      drawChannelSection(yWeb, yToe);
+      const isUp = (k === 1); // 1행 찬넬만 상향 개구, 2행 이상은 하향 개구
+      const yWeb = isUp ? (rowY - mx) : (rowY + mx);
+      const yToe = isUp ? (rowY + mx) : (rowY - mx);
+      const botFace = isUp ? yWeb : (yWeb - tw); // 아래쪽 서브빔이 닿는 면
+      const topFace = isUp ? (yWeb + tw) : yWeb; // 위쪽 서브빔이 닿는 면
+      chanGeom[k] = { yWeb, yToe, botFace, topFace };
     }
 
-    // 3. 상단 외곽 찬넬: y = totalW - lapIn ~ totalW + overY (web at totalW - lapIn, toes at totalW + overY, open upwards)
-    drawChannelSection(totalW - lapIn, totalW + overY);
+    // k = cn (상단 외곽 찬넬: y = totalW - lapIn ~ totalW + overY)
+    chanGeom[cn] = {
+      yWeb: totalW - lapIn,
+      yToe: totalW + overY,
+      botFace: totalW - lapIn, // 하부 서브빔이 닿는 외측 웨브면 (y = totalW - 5)
+      topFace: totalW + overY
+    };
+
+    // 1~3. 찬넬 단면 그리기 (0 ~ cn)
+    for (let k = 0; k <= cn; k++) {
+      drawChannelSection(chanGeom[k].yWeb, chanGeom[k].yToe);
+    }
 
     const tH = Math.max(60, Math.round(totalW / 100), Math.round(2.4 * (opt._N || 0)));
 
     // 4. 인접 찬넬 사이 수직 서브빔 연결 상세
     for (let k = 0; k < cn; k++) {
       const sub = getSubBeamInfo(k, wl[k]);
-      let yBot, yTop;
-      if (k === 0) {
-        yBot = lapIn;
-        yTop = yBot + sub.len;
-      } else if (k === cn - 1) {
-        yTop = totalW - lapIn;
-        yBot = yTop - sub.len;
-      } else {
-        const yMid = (ys[k] + ys[k + 1]) / 2;
-        yBot = yMid - sub.len / 2;
-        yTop = yMid + sub.len / 2;
-      }
+      // 찬넬 웨브 두께를 완벽히 반영: 서브빔 수직 라인은 찬넬 웨브 면에서 시작하여 찬넬 웨브 면에서 종료
+      const yBot = chanGeom[k].topFace;
+      const yTop = chanGeom[k + 1].botFace;
       const yMid = (yBot + yTop) / 2;
 
-      // 서브빔 단면 높이 75mm
+      // 서브빔 단면 높이 75mm (가로 75mm)
       const subH = 75, subX0 = (th - subH) / 2, subX1 = subX0 + subH;
       ents.push({ t: 'line', a: [subX0, yBot], b: [subX0, yTop], layer: 'FRAME' });
       ents.push({ t: 'line', a: [subX1, yBot], b: [subX1, yTop], layer: 'FRAME' });
@@ -6678,7 +6701,7 @@
       ents.push({ t: 'line', a: [subX0, yTop], b: [subX1, yTop], layer: 'FRAME' });
       ents.push({ t: 'line', a: [subX0 + 5, yBot], b: [subX0 + 5, yTop], layer: 'FRAME' });
 
-      // 결합 탭 & 볼트 홀 M12
+      // 결합 탭 & 볼트 홀 M12 (서브빔 양단 안쪽 14mm 위치에 배치하여 찬넬 웨브와 간섭 방지)
       ents.push({ t: 'line', a: [subX0 - 8, yBot + 14], b: [subX1 + 8, yBot + 14], layer: 'FRAME' });
       drawBoltHole(ents, th / 2, yBot + 14, 6.0, 14, 'FRAME');
 
