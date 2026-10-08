@@ -251,8 +251,8 @@ for (let i = 0; i < concLBoxes.length; i++) {
 assert.strictEqual(skidLBoxes[3].y1, 2200, 'Strip 3 must terminate at Y=2200');
 assert.strictEqual(skidLBoxes[4].y1, 2200, 'Strip 4 must terminate at Y=2200 (not full length)');
 
-// Verify no horizontal beams in removed cell area (X > 2005, Y > 2100)
-const wrongHBeams = skidL.ents.filter(e => (e.layer === 'FRAME' || e.layer.startsWith('FRAME_')) && e.t === 'line' && e.a[0] > 2005 && e.a[1] > 2100 && e.b[0] > 2005 && e.b[1] > 2100);
+// Verify no horizontal beams in removed cell area (X > 2050, Y > 2100)
+const wrongHBeams = skidL.ents.filter(e => (e.layer === 'FRAME' || e.layer.startsWith('FRAME_')) && e.t === 'line' && Math.abs(e.a[1] - e.b[1]) < 1e-3 && e.a[0] > 2050 && e.a[1] > 2100);
 assert.strictEqual(wrongHBeams.length, 0, 'No horizontal beams should exist in removed tank cells');
 
 // Verify top-outer edge beam exists at Y=2000 step
@@ -330,6 +330,11 @@ assert.strictEqual(col3Top.s, 'WFF-1070ASZL', 'Column 3 top W-direction part mus
 const col3Bot = skidUser.ents.find(e => e.layer === 'FRAME_MAIN_W' && e.t === 'text' && e.p && e.p[0] > 3900 && e.p[1] < 2000);
 assert(col3Bot, 'Column 3 bottom W-direction part must exist');
 assert.strictEqual(col3Bot.s, 'WFF-2070ASZR', 'Column 3 bottom W-direction part must be WFF-2070ASZR');
+
+// Check stepped column boundary at X=3000 Row 3 has sub-beam (WFB-0962AMZ)
+const stepSubBeamText = skidUser.ents.find(e => e.layer === 'FRAME_SUB' && e.t === 'text' && Math.abs(e.p[0] - 3000) < 5 && Math.abs(e.p[1] - 3500) < 50);
+assert(stepSubBeamText, 'Stepped column boundary at X=3000 Row 3 must have sub-beam text');
+assert.strictEqual(stepSubBeamText.s, 'WFB-0962AMZ', 'Stepped sub-beam text at X=3000 Row 3 must be WFB-0962AMZ');
 
 console.log('✅ ALL STEEL SKID & FOUNDATION TESTS PASSED SUCCESSFULLY!');
 

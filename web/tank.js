@@ -5013,7 +5013,7 @@
       for (let j = 1; j < map.cols.length; j++) {
         const colX = map.xs[j];
         for (let i = 0; i < map.rows.length; i++) {
-          if (!map.has(i, j - 1) || !map.has(i, j)) continue;
+          if (!map.has(i, j - 1) && !map.has(i, j)) continue;
           const rY0 = map.ys[i];
           const rY1 = rY0 + map.rows[i];
           const isFirstRow = (i === 0) || (!map.has(i - 1, j - 1) && !map.has(i - 1, j));
@@ -6647,7 +6647,7 @@
       const colX = G.map.xs[j];
       for (i = sRow; i <= eRow; i++) {
         const rcL = R(i, j - 1), rcR = R(i, j);
-        if (!rcL || !rcR) continue;
+        if (!rcL && !rcR) continue;
         const rY0 = G.map.ys[i];
         const rY1 = rY0 + G.map.rows[i];
         const isFirstRow = (i === sRow) || (!R(i - 1, j - 1) && !R(i - 1, j));
@@ -6782,7 +6782,7 @@
     for (let c = 1; c < G.nc; c++) {
       const colX = G.map.xs[c] || 0;
       for (let i = 0; i < cnRows; i++) {
-        if (!G.map.has(i, c) || !G.map.has(i, c - 1)) continue; // 이형물탱크에서 제거된 셀은 서브빔 명칭 제외
+        if (!G.map.has(i, c) && !G.map.has(i, c - 1)) continue; // 이형물탱크에서 인접 셀이 둘 다 없는 경우만 제외
         const rY0 = G.map.ys[i];
         const rY1 = rY0 + G.map.rows[i];
         const isShort = G.map.rows[i] < 700;
