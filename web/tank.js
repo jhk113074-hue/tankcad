@@ -6341,7 +6341,7 @@
     out.push({ t: 'line', a: [cx, cy - clen / 2], b: [cx, cy + clen / 2], layer });
   };
 
-  // 코너 브라켓 WBR-7575Z & WBR-0160Z (75x75x6T 코너 앵글 접합부)
+  // 연결 브라켓 WBR-7575Z (75Angle/125Channel) & WBR-0120CZE (150Channel)
   const drawCornerBracket = (out, x, y, size = 75, thk = 6, dirX = 1, dirY = 1, layer = 'FRAME') => {
     const pts = [
       [x, y],
@@ -6354,8 +6354,18 @@
     for (let k = 0; k < pts.length; k++) {
       out.push({ t: 'line', a: pts[k], b: pts[(k + 1) % pts.length], layer });
     }
-    drawBoltHole(out, x + dirX * (size * 0.58), y + dirY * (thk * 0.5), 5.5, 12, layer);
-    drawBoltHole(out, x + dirX * (thk * 0.5), y + dirY * (size * 0.58), 5.5, 12, layer);
+    // 볼트 홀 (Ø17 볼트 체결용 - 도면 기준 코너/힐에서 50mm, 토우에서 25mm 위치)
+    // 1. 수평 레그 (X방향) 관통 볼트선 (폭 17mm) 및 중심선
+    const hx = x + dirX * 50;
+    out.push({ t: 'line', a: [hx - 8.5, y], b: [hx - 8.5, y + dirY * thk], layer });
+    out.push({ t: 'line', a: [hx + 8.5, y], b: [hx + 8.5, y + dirY * thk], layer });
+    out.push({ t: 'line', a: [hx, y - dirY * 3], b: [hx, y + dirY * (thk + 3)], layer });
+
+    // 2. 수직 레그 (Y방향) 관통 볼트선 (폭 17mm) 및 중심선
+    const hy = y + dirY * 50;
+    out.push({ t: 'line', a: [x, hy - 8.5], b: [x + dirX * thk, hy - 8.5], layer });
+    out.push({ t: 'line', a: [x, hy + 8.5], b: [x + dirX * thk, hy + 8.5], layer });
+    out.push({ t: 'line', a: [x - dirX * 3, hy], b: [x + dirX * (thk + 3), hy], layer });
   };
 
   // 앙카 클램프 WBR-5010Z (M12 앙카 체결용 플레이트)
@@ -6880,6 +6890,39 @@
         const segCols = G.map.cols.slice(cStart, cEnd + 1);
         const segColSpans = computeColSpans(segCols);
         add(x0, segY, segW, flgW, segLat, segColSpans, xLeft);
+
+        // 4-B. W방향 외곽 주재(ASZ-FRAME / CSZ-FRAME)와 L방향 수평 주재 연결 브라켓
+        // 75Angle & 125Channel: WBR-7575Z (또는 WBR-7575)
+        // 150Channel: WBR-0120CZE
+        if (!hasTankLeft && cStart === 0) {
+          let bY = segY, dirY = 1;
+          if (cat === 1) {
+            bY = segY + flgW;
+            dirY = 1;
+          } else if (cat === 2) {
+            bY = segY;
+            dirY = -1;
+          } else {
+            dirY = (segLat === 0) ? -1 : 1;
+            bY = (dirY === -1) ? segY : (segY + flgW);
+          }
+          drawCornerBracket(ents, x0, bY, 75, 6, 1, dirY, 'FRAME');
+        }
+
+        if (!hasTankRight && cEnd === G.nc - 1) {
+          let bY = segY, dirY = 1;
+          if (cat === 1) {
+            bY = segY + flgW;
+            dirY = 1;
+          } else if (cat === 2) {
+            bY = segY;
+            dirY = -1;
+          } else {
+            dirY = (segLat === 0) ? -1 : 1;
+            bY = (dirY === -1) ? segY : (segY + flgW);
+          }
+          drawCornerBracket(ents, x1, bY, 75, 6, -1, dirY, 'FRAME');
+        }
       }
     }
 
@@ -7068,7 +7111,8 @@
     ents.push({ t: 'text', p: [lx, ly0 - tH * 3.85], h: tH * 0.78, s: `SUB-BEAM TYPE B : ${subB}`, rot: 0, align: 'left', layer: 'FRAME_SUB' });
     ents.push({ t: 'text', p: [lx, ly0 - tH * 5.1], h: tH * 0.78, s: `SUB-BEAM TYPE C : ${subC}`, rot: 0, align: 'left', layer: 'FRAME_SUB' });
     ents.push({ t: 'text', p: [lx, ly0 - tH * 6.35], h: tH * 0.78, s: `FOUNDATION PAD : ${firstW}mm / ${midW}mm CONCRETE STRIP (OVERHANG ${padOv}mm)`, rot: 0, align: 'left', layer: 'DIM' });
-    ents.push({ t: 'text', p: [lx, ly0 - tH * 7.60], h: tH * 0.78, s: `HARDWARE : WBR-7575Z & WBR-0160Z 코너 브라켓 / WBR-5010Z 클램프 / WBR-0120Z`, rot: 0, align: 'left', layer: 'DIM' });
+    const bracketCode = isFrame150 ? 'WBR-0120CZE' : 'WBR-7575Z';
+    ents.push({ t: 'text', p: [lx, ly0 - tH * 7.60], h: tH * 0.78, s: `HARDWARE : ${bracketCode} 연결 브라켓 / WBR-5010Z 클램프`, rot: 0, align: 'left', layer: 'DIM' });
 
     // 표준 제작 가공 시방 NOTE (YSACC Foundation Standard - 기초.zip & Steel Skid.dwg)
     const noteX = Math.max(lx + 3200, G.map.length * 0.52);

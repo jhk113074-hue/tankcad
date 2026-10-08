@@ -44,8 +44,20 @@ const hasYSACCPartCodeC = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.in
 assert(hasYSACCPartCodeC, 'YSACC Part Code WFB-1053AMZ (C타입) must exist on sub-beams');
 
 // 3. Check Standard Hardware Callouts & Real CAD Details
-const hasCornerBrackets = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WBR-7575Z & WBR-0160Z'));
-assert(hasCornerBrackets, 'WBR-7575Z & WBR-0160Z corner bracket callout must exist');
+const hasCornerBrackets = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WBR-7575Z') && e.s.includes('연결 브라켓'));
+assert(hasCornerBrackets, 'WBR-7575Z corner bracket callout must exist for Frame 125');
+
+// Check Frame 75 (Angle) uses WBR-7575Z
+const optFrame75 = { ...opt1, frame: 75 };
+const skid75 = TankCore.buildSkid(optFrame75);
+const has75Bracket = skid75.ents.some(e => e.t === 'text' && e.s && e.s.includes('WBR-7575Z') && e.s.includes('연결 브라켓'));
+assert(has75Bracket, 'WBR-7575Z bracket callout must exist for Frame 75');
+
+// Check Frame 150 (Channel) uses WBR-0120CZE
+const optFrame150 = { ...opt1, frame: 150 };
+const skid150 = TankCore.buildSkid(optFrame150);
+const has150Bracket = skid150.ents.some(e => e.t === 'text' && e.s && e.s.includes('WBR-0120CZE') && e.s.includes('연결 브라켓'));
+assert(has150Bracket, 'WBR-0120CZE bracket callout must exist for Frame 150');
 
 const hasAnchorClamps = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WBR-5010Z'));
 assert(hasAnchorClamps, 'WBR-5010Z skid clamp callout must exist');
