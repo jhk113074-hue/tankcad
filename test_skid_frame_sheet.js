@@ -342,16 +342,10 @@ console.log('--- Testing Stepped Corner Bracket Parts and HIDDEN Line Treatment 
 const corner75Text = skidUser.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'text' && e.s === 'WFF-0200ACZ');
 assert(corner75Text, 'Stepped corner bracket WFF-0200ACZ text must exist at (3000, 4000)');
 assert.strictEqual(corner75Text.rot, 0, 'WFF-0200ACZ must be horizontal (rot: 0)');
-assert(Math.abs(corner75Text.p[0] - 2970) < 5, 'WFF-0200ACZ must be centered in X around 2970');
+assert(Math.abs(corner75Text.p[0] - 3095) < 5, 'WFF-0200ACZ must be centered in X around 3095 (starting from where 0990 ends)');
 
-const hiddenLines75 = skidUser.ents.filter(e => e.layer === 'HIDDEN' && e.t === 'line');
-assert(hiddenLines75.length > 0, 'Hidden lines must exist for unseen portions under tank panel/beam');
-
-const hiddenHoles75 = skidUser.ents.filter(e => e.layer === 'HIDDEN' && e.t === 'circle');
-assert(hiddenHoles75.length >= 3, 'Hidden circles (Ø17 holes under panel) must exist for WFF-0200ACZ');
-
-const solidHole75 = skidUser.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'circle' && e.c[0] > 3000);
-assert(solidHole75, 'Solid circle (Ø17 hole in outer overhang X>3000) must exist for WFF-0200ACZ');
+const holes75 = skidUser.ents.filter(e => e.layer === 'FRAME_MAIN_L' && e.t === 'circle' && e.c[0] >= 2995);
+assert.strictEqual(holes75.length, 4, '4 solid holes (Ø17 holes) must exist for WFF-0200ACZ');
 
 // Frame 125: WFF-0150CCZ
 const optUser125 = { length: [4000], width: [4000], height: [3000], frame: 125, removed: [[3, 3]], sheetKind: 'frame' };
