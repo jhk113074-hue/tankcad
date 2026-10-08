@@ -338,10 +338,11 @@ assert.strictEqual(stepSubBeamText.s, 'WFB-0962AMZ', 'Stepped sub-beam text at X
 
 // 12. Test 8: Stepped Corner Bracket Parts (WFF-0200ACZ / WFF-0150CCZ / WFF-0150HCCZ) with HIDDEN Line Treatment
 console.log('--- Testing Stepped Corner Bracket Parts and HIDDEN Line Treatment ---');
-// Frame 75: WFF-0200ACZ
-const corner75Text = skidUser.ents.find(e => e.layer === 'FRAME_MAIN_W' && e.t === 'text' && e.s === 'WFF-0200ACZ');
+// Frame 75: WFF-0200ACZ (horizontal, same direction as L-beam)
+const corner75Text = skidUser.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'text' && e.s === 'WFF-0200ACZ');
 assert(corner75Text, 'Stepped corner bracket WFF-0200ACZ text must exist at (3000, 4000)');
-assert(Math.abs(corner75Text.p[0] - 3032.5) < 5, 'WFF-0200ACZ must be centered in X around 3032.5');
+assert.strictEqual(corner75Text.rot, 0, 'WFF-0200ACZ must be horizontal (rot: 0)');
+assert(Math.abs(corner75Text.p[0] - 2970) < 5, 'WFF-0200ACZ must be centered in X around 2970');
 
 const hiddenLines75 = skidUser.ents.filter(e => e.layer === 'HIDDEN' && e.t === 'line');
 assert(hiddenLines75.length > 0, 'Hidden lines must exist for unseen portions under tank panel/beam');
@@ -349,19 +350,22 @@ assert(hiddenLines75.length > 0, 'Hidden lines must exist for unseen portions un
 const hiddenHoles75 = skidUser.ents.filter(e => e.layer === 'HIDDEN' && e.t === 'circle');
 assert(hiddenHoles75.length >= 3, 'Hidden circles (Ø17 holes under panel) must exist for WFF-0200ACZ');
 
-const solidHole75 = skidUser.ents.find(e => e.layer === 'FRAME_MAIN_W' && e.t === 'circle' && e.c[1] > 4000);
-assert(solidHole75, 'Solid circle (Ø17 hole in outer overhang) must exist for WFF-0200ACZ');
+const solidHole75 = skidUser.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'circle' && e.c[0] > 3000);
+assert(solidHole75, 'Solid circle (Ø17 hole in outer overhang X>3000) must exist for WFF-0200ACZ');
 
 // Frame 125: WFF-0150CCZ
 const optUser125 = { length: [4000], width: [4000], height: [3000], frame: 125, removed: [[3, 3]], sheetKind: 'frame' };
 const skidUser125 = TankCore.buildSkid(optUser125);
-const corner125Text = skidUser125.ents.find(e => e.layer === 'FRAME_MAIN_W' && e.t === 'text' && e.s === 'WFF-0150CCZ');
+const corner125Text = skidUser125.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'text' && e.s === 'WFF-0150CCZ');
 assert(corner125Text, 'Stepped corner bracket WFF-0150CCZ text must exist for Frame 125');
+assert.strictEqual(corner125Text.rot, 0, 'WFF-0150CCZ must be horizontal (rot: 0)');
 
 // Frame 150: WFF-0150HCCZ
 const optUser150 = { length: [4000], width: [4000], height: [3000], frame: 150, removed: [[3, 3]], sheetKind: 'frame' };
 const skidUser150 = TankCore.buildSkid(optUser150);
-const corner150Text = skidUser150.ents.find(e => e.layer === 'FRAME_MAIN_W' && e.t === 'text' && e.s === 'WFF-0150HCCZ');
+const corner150Text = skidUser150.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'text' && e.s === 'WFF-0150HCCZ');
+assert(corner150Text, 'Stepped corner bracket WFF-0150HCCZ text must exist for Frame 150');
+assert.strictEqual(corner150Text.rot, 0, 'WFF-0150HCCZ must be horizontal (rot: 0)');
 // 13. Test 9: Frame Cross Section Shapes (50 SHS -> 50X50 SQ PIPE, 75 Angle -> L)
 console.log('--- Testing Frame Cross Section Shapes (50 SHS -> 50X50 SQ PIPE, 75 Angle -> L) ---');
 const cross50 = TankCore.buildSkidCross({ width: [4000], length: [4000], height: [2000], frame: 50 });
