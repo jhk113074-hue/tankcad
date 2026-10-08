@@ -6394,17 +6394,18 @@
       }
     }));
 
-    // 첫번째 내부 열(Col 1)에 서브빔 명칭 표기 (WFF-0962 AMZ, WFF-1053 AMZ, WFF-0994 AMZ, WFF-0962 AMZ)
+    // 첫번째 내부 열(Col 1)에 서브빔 명칭 표기 (WFB-0962AMZ, WFB-1053AMZ, WFB-0994AMZ 등)
     if (G.nc >= 1) {
       const col1X = (G.map.xs[1] || 1000) + flgW / 2 + st * 0.45;
       const cn = G.map.rows.length;
+      const isF150 = (Number(opt.frame) === 150);
       for (let i = 0; i < cn; i++) {
         const rY0 = G.map.ys[i];
         const rY1 = rY0 + G.map.rows[i];
         let subCode;
-        if (i === 0 || i === cn - 1) subCode = 'WFF-0962 AMZ';
-        else if (i === 1 && cn >= 3) subCode = 'WFF-1053 AMZ';
-        else subCode = 'WFF-0994 AMZ';
+        if (i === 0 || i === cn - 1) subCode = isF150 ? 'WFB-0956CMZ' : 'WFB-0962AMZ';
+        else if (i === 1 && cn >= 3) subCode = isF150 ? 'WFB-1061CMZ' : 'WFB-1053AMZ';
+        else subCode = isF150 ? 'WFB-0993CMZ' : 'WFB-0994AMZ';
         ents.push({ t: 'text', p: [col1X, (rY0 + rY1) / 2], h: st * 0.65, s: subCode, rot: 90, align: 'center', layer: 'DIM' });
       }
     }
@@ -6559,9 +6560,13 @@
     const ly0 = yb3 - tH * 2.8;
     ents.push({ t: 'text', p: [lx, ly0], h: tH * 1.05, s: `MEMBER SPECIFICATIONS - FRAME ${opt.frame || 125} (${dSkid.name})`, rot: 0, align: 'left', layer: 'DIM' });
     ents.push({ t: 'text', p: [lx, ly0 - tH * 1.35], h: tH * 0.78, s: `MAIN BEAM : ${dSkid.mainSpec} (SS41 + 용융아연도금 HDG)`, rot: 0, align: 'left', layer: 'DIM' });
-    ents.push({ t: 'text', p: [lx, ly0 - tH * 2.6], h: tH * 0.78, s: `SUB-BEAM TYPE A : WFF-0962AMZ (L=962, 외곽 배치용)`, rot: 0, align: 'left', layer: 'DIM' });
-    ents.push({ t: 'text', p: [lx, ly0 - tH * 3.85], h: tH * 0.78, s: `SUB-BEAM TYPE B : WFF-0994AMZ (L=994, 중간 배치용)`, rot: 0, align: 'left', layer: 'DIM' });
-    ents.push({ t: 'text', p: [lx, ly0 - tH * 5.1], h: tH * 0.78, s: `SUB-BEAM TYPE C : WFF-1053AMZ (L=1053, 중앙 마주보는 열)`, rot: 0, align: 'left', layer: 'DIM' });
+    const isFrame150 = (Number(opt.frame) === 150);
+    const subA = isFrame150 ? 'WFB-0956CMZ (L=956, 외곽 배치용)' : 'WFB-0962AMZ (L=962, 외곽 배치용)';
+    const subB = isFrame150 ? 'WFB-0993CMZ (L=993, 중간 배치용)' : 'WFB-0994AMZ (L=994, 중간 배치용)';
+    const subC = isFrame150 ? 'WFB-1061CMZ (L=1061, 중앙 마주보는 열)' : 'WFB-1053AMZ (L=1053, 중앙 마주보는 열)';
+    ents.push({ t: 'text', p: [lx, ly0 - tH * 2.6], h: tH * 0.78, s: `SUB-BEAM TYPE A : ${subA}`, rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [lx, ly0 - tH * 3.85], h: tH * 0.78, s: `SUB-BEAM TYPE B : ${subB}`, rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [lx, ly0 - tH * 5.1], h: tH * 0.78, s: `SUB-BEAM TYPE C : ${subC}`, rot: 0, align: 'left', layer: 'DIM' });
     ents.push({ t: 'text', p: [lx, ly0 - tH * 6.35], h: tH * 0.78, s: `HARDWARE : WBR-7575Z & WBR-0160Z 코너 브라켓 / WBR-5010Z 클램프 / WBR-0120Z`, rot: 0, align: 'left', layer: 'DIM' });
 
     // 표준 제작 가공 시방 NOTE (YSACC Foundation Standard - 기초.zip & Steel Skid.dwg)
@@ -6609,17 +6614,21 @@
       const isTypeC = (k === 1 && cn >= 3);
       const isShort = pitch < 700;
 
-      if (f === 125) {
-        if (isOuter) return { code: isShort ? 'WFF-0462AMZ' : 'WFF-0962AMZ', type: 'A타입', len: isShort ? 462 : 962, subSpec: '[-75x40x5T' };
-        if (isTypeC) return { code: isShort ? 'WFF-0553AMZ' : 'WFF-1053AMZ', type: 'C타입', len: isShort ? 553 : 1053, subSpec: '[-75x40x5T' };
-        return { code: isShort ? 'WFF-0494AMZ' : 'WFF-0994AMZ', type: 'B타입', len: isShort ? 494 : 994, subSpec: '[-75x40x5T' };
-      } else if (f === 150) {
-        if (isOuter) return { code: isShort ? 'WFF-0456CMZ' : 'WFF-0956CMZ', type: 'A타입', len: isShort ? 456 : 956, subSpec: '[-75x40x5T' };
-        if (isTypeC) return { code: isShort ? 'WFF-0561CMZ' : 'WFF-1061CMZ', type: 'C타입', len: isShort ? 561 : 1061, subSpec: '[-75x40x5T' };
-        return { code: isShort ? 'WFF-0493CMZ' : 'WFF-0993CMZ', type: 'B타입', len: isShort ? 493 : 993, subSpec: '[-75x40x5T' };
+      if (f === 150) {
+        // Base Frame 150 Channel
+        if (isOuter) return { code: isShort ? 'WFB-0456CMZ' : 'WFB-0956CMZ', type: 'A타입', len: isShort ? 456 : 956, subSpec: '[-75x40x5T' };
+        if (isTypeC) return { code: isShort ? 'WFB-0561CMZ' : 'WFB-1061CMZ', type: 'C타입', len: isShort ? 561 : 1061, subSpec: '[-75x40x5T' };
+        return { code: isShort ? 'WFB-0493CMZ' : 'WFB-0993CMZ', type: 'B타입', len: isShort ? 493 : 993, subSpec: '[-75x40x5T' };
+      } else if (f === 75) {
+        // Base Frame 75 Angle
+        if (isOuter) return { code: isShort ? 'WFB-0462AMZ' : 'WFB-0962AMZ', type: 'A타입', len: isShort ? 462 : 962, subSpec: 'L-75x75x6T' };
+        if (isTypeC) return { code: isShort ? 'WFB-0553AMZ' : 'WFB-1053AMZ', type: 'C타입', len: isShort ? 553 : 1053, subSpec: 'L-75x75x6T' };
+        return { code: isShort ? 'WFB-0494AMZ' : 'WFB-0994AMZ', type: 'B타입', len: isShort ? 494 : 994, subSpec: 'L-75x75x6T' };
       } else {
-        if (isOuter) return { code: isShort ? 'WFF-0457AMZ' : 'WFF-0957AMZ', type: 'A타입', len: isShort ? 457 : 957, subSpec: 'L-75x75x6T' };
-        return { code: isShort ? 'WFF-0493AMZ' : 'WFF-0993AMZ', type: 'B타입', len: isShort ? 493 : 993, subSpec: 'L-75x75x6T' };
+        // Base Frame 125 Channel (기본)
+        if (isOuter) return { code: isShort ? 'WFB-0462AMZ' : 'WFB-0962AMZ', type: 'A타입', len: isShort ? 462 : 962, subSpec: '[-75x40x5T' };
+        if (isTypeC) return { code: isShort ? 'WFB-0553AMZ' : 'WFB-1053AMZ', type: 'C타입', len: isShort ? 553 : 1053, subSpec: '[-75x40x5T' };
+        return { code: isShort ? 'WFB-0494AMZ' : 'WFB-0994AMZ', type: 'B타입', len: isShort ? 494 : 994, subSpec: '[-75x40x5T' };
       }
     }
 

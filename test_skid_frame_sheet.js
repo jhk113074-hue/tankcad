@@ -34,14 +34,14 @@ assert(hasMemberSpecs, 'MEMBER SPECIFICATIONS - FRAME 125 must exist in Skid dra
 const hasMainSubSpec = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.toUpperCase().includes('125X65X6'));
 assert(hasMainSubSpec, 'Main channel spec 125x65x6 must exist');
 
-const hasYSACCPartCodeA = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('WFF-0961AMZ') || e.s.includes('WFF-0962AMZ') || e.s.includes('WFF-0962 AMZ')));
-assert(hasYSACCPartCodeA, 'YSACC Part Code WFF-0962AMZ (A타입) must exist on sub-beams');
+const hasYSACCPartCodeA = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('WFB-0962AMZ') || e.s.includes('WFF-0962AMZ') || e.s.includes('WFF-0962 AMZ')));
+assert(hasYSACCPartCodeA, 'YSACC Part Code WFB-0962AMZ (A타입) must exist on sub-beams');
 
-const hasYSACCPartCodeB = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('WFF-0993AMZ') || e.s.includes('WFF-0994AMZ') || e.s.includes('WFF-0994 AMZ')));
-assert(hasYSACCPartCodeB, 'YSACC Part Code WFF-0994AMZ (B타입) must exist on sub-beams');
+const hasYSACCPartCodeB = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('WFB-0994AMZ') || e.s.includes('WFF-0994AMZ') || e.s.includes('WFF-0994 AMZ')));
+assert(hasYSACCPartCodeB, 'YSACC Part Code WFB-0994AMZ (B타입) must exist on sub-beams');
 
-const hasYSACCPartCodeC = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('WFF-1051AMZ') || e.s.includes('WFF-1053AMZ') || e.s.includes('WFF-1053 AMZ')));
-assert(hasYSACCPartCodeC, 'YSACC Part Code WFF-1053AMZ (C타입) must exist on sub-beams');
+const hasYSACCPartCodeC = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('WFB-1053AMZ') || e.s.includes('WFF-1053AMZ') || e.s.includes('WFF-1053 AMZ')));
+assert(hasYSACCPartCodeC, 'YSACC Part Code WFB-1053AMZ (C타입) must exist on sub-beams');
 
 // 3. Check Standard Hardware Callouts & Real CAD Details
 const hasCornerBrackets = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WBR-7575Z & WBR-0160Z'));
