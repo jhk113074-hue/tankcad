@@ -6273,12 +6273,15 @@
 
     function addMainBeam(x, y, w, h, type) {
       rectEnts(x, y, w, h, 'FRAME', ents);
-      // 웨브 두께선 (6mm)
+      // 웨브 두께선 (6mm) - 외곽 Main beam은 탱크 밖으로 보도록 배치
       if (type === 'first') {
-        ents.push({ t: 'line', a: [x + 6, y], b: [x + 6, y + h], layer: 'FRAME' });
-      } else if (type === 'last') {
+        // 첫번째 열: 외측(좌측)으로 열림 -> 웨브는 내측(우측, x + w - 6)
         ents.push({ t: 'line', a: [x + w - 6, y], b: [x + w - 6, y + h], layer: 'FRAME' });
+      } else if (type === 'last') {
+        // 마지막 열: 외측(우측)으로 열림 -> 웨브는 내측(좌측, x + 6)
+        ents.push({ t: 'line', a: [x + 6, y], b: [x + 6, y + h], layer: 'FRAME' });
       } else {
+        // 중간 주재: 판넬 센터 중심선 배치
         ents.push({ t: 'line', a: [x + 6, y], b: [x + 6, y + h], layer: 'FRAME' });
       }
       // 메인 빔 품번 및 실측 규격 텍스트 (예: 2120CSZ (65 x 125 x 6t))
