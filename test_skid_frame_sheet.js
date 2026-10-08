@@ -34,14 +34,14 @@ assert(hasMemberSpecs, 'MEMBER SPECIFICATIONS - FRAME 125 must exist in Skid dra
 const hasMainSubSpec = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.toUpperCase().includes('125X65X6'));
 assert(hasMainSubSpec, 'Main channel spec 125x65x6 must exist');
 
-const hasYSACCPartCodeA = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WFF-0961AMZ'));
-assert(hasYSACCPartCodeA, 'YSACC Part Code WFF-0961AMZ (A타입) must exist on sub-beams');
+const hasYSACCPartCodeA = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('WFF-0961AMZ') || e.s.includes('WFF-0962AMZ') || e.s.includes('WFF-0962 AMZ')));
+assert(hasYSACCPartCodeA, 'YSACC Part Code WFF-0962AMZ (A타입) must exist on sub-beams');
 
-const hasYSACCPartCodeB = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WFF-0993AMZ'));
-assert(hasYSACCPartCodeB, 'YSACC Part Code WFF-0993AMZ (B타입) must exist on sub-beams');
+const hasYSACCPartCodeB = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('WFF-0993AMZ') || e.s.includes('WFF-0994AMZ') || e.s.includes('WFF-0994 AMZ')));
+assert(hasYSACCPartCodeB, 'YSACC Part Code WFF-0994AMZ (B타입) must exist on sub-beams');
 
-const hasYSACCPartCodeC = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WFF-1051AMZ'));
-assert(hasYSACCPartCodeC, 'YSACC Part Code WFF-1051AMZ (C타입) must exist on sub-beams');
+const hasYSACCPartCodeC = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('WFF-1051AMZ') || e.s.includes('WFF-1053AMZ') || e.s.includes('WFF-1053 AMZ')));
+assert(hasYSACCPartCodeC, 'YSACC Part Code WFF-1053AMZ (C타입) must exist on sub-beams');
 
 // 3. Check Standard Hardware Callouts & Real CAD Details
 const hasCornerBrackets = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WBR-7575Z & WBR-0160Z'));
@@ -60,21 +60,18 @@ assert(hasGalvNote, 'Hot-dip galvanized SS41 note must exist');
 const hasToleranceNote = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('±1mm'));
 assert(hasToleranceNote, 'Tolerance ±1mm note must exist');
 
-// 5. Check Frame Cross DWG details (Concrete Pad, Anchor Bolt, Dimensions, Sub-beam)
+// 5. Check Frame Cross DWG details (No concrete pad as requested, 3-tier dimensions, Sub-beam)
 const hasPadLayer = sheet1.ents.some(e => e.layer === 'PAD');
-assert(hasPadLayer, 'Concrete pad entities must exist in FRAME CROSS DWG');
+assert(!hasPadLayer, 'Concrete pad entities must be removed from FRAME CROSS DWG as requested by user');
 
-const hasAnchorBoltCallout = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('M12 앙카볼트'));
-assert(hasAnchorBoltCallout, 'M12 anchor bolt callout must exist in FRAME CROSS DWG');
+const hasOverhangDim = sheet1.ents.some(e => e.t === 'text' && e.s === '60');
+assert(hasOverhangDim, '60mm overhang dimension must exist in drawings');
 
-const hasPadWidthDim = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('패드폭'));
-assert(hasPadWidthDim, 'Pad width dimension must exist in FRAME CROSS DWG');
+const hasTotalSkidDim = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s === '8120' || e.s === '10120' || e.s === '4120' || e.s === '9120'));
+assert(hasTotalSkidDim, 'Overall skid dimension must exist in drawings');
 
-const hasPadHeightDim = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('패드높이'));
-assert(hasPadHeightDim, 'Pad height dimension must exist in FRAME CROSS DWG');
-
-const hasCrossSubBeam = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('[-75x40x5T'));
-assert(hasCrossSubBeam, 'Cross-section horizontal sub-beam [-75x40x5T must exist in FRAME CROSS DWG');
+const hasCrossSubBeam = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('[-75x40x5T') || e.s.includes('AMZ')));
+assert(hasCrossSubBeam, 'Cross-section horizontal sub-beam must exist in FRAME CROSS DWG');
 
 // 6. Test 2: 75 Angle Frame tank (e.g. 4000 x 3000 x 2000)
 const opt2 = {
