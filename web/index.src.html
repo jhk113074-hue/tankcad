@@ -437,8 +437,48 @@ canvas.drag{cursor:grabbing}
 .manual-tip{background:var(--surface-sub);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;padding:8px 12px;font-size:11.5px;color:var(--fg);display:flex;align-items:flex-start;gap:6px;margin-top:4px}
 .manual-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:6px}
 .manual-table th{background:var(--surface-sub);padding:6px 8px;border:1px solid var(--line);text-align:left;font-weight:700}
-.manual-table td{padding:6px 8px;border:1px solid var(--line);color:var(--fg)}
 .manual-step-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;flex-shrink:0}
+
+/* Manual Bilingual Display */
+[data-manual-lang="ko"] .txt-en { display: none !important; }
+[data-manual-lang="en"] .txt-ko { display: none !important; }
+
+.manual-diagram-box {
+  background: #0b1120;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 6px 0 10px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+.manual-diagram-box svg {
+  width: 100%;
+  max-width: 840px;
+  height: auto;
+  display: block;
+}
+.manual-diagram-caption {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  border-top: 1px dashed rgba(255,255,255,0.08);
+  padding-top: 6px;
+  text-align: center;
+}
+.manual-diagram-caption b {
+  color: #38bdf8;
+}
 </style>
 </head>
 <body>
@@ -1478,20 +1518,30 @@ canvas.drag{cursor:grabbing}
       </div>
     </div>
 
-    <!-- User Manual Modeless Dialog (사용 매뉴얼 모달리스 대화상자) -->
-    <div id="manualModelessDialog" class="modeless-dialog" data-role="modeless" style="width:min(1080px, 94vw);height:min(780px, 88vh);z-index:3000">
+                <!-- User Manual Modeless Dialog (사용 매뉴얼 모달리스 대화상자) -->
+    <div id="manualModelessDialog" class="modeless-dialog" data-role="modeless" data-manual-lang="ko" style="width:min(1100px, 95vw);height:min(800px, 90vh);z-index:3000">
       
       <!-- Draggable Header -->
       <div class="modeless-header" id="manualDialogHeader">
         <div class="modeless-title">
           <span style="font-size:16px">📖</span>
           <h3 id="manualDialogTitle" style="margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">
-            <span id="lblManualTitleMain">YSACC TANK CAD 사용자 가이드 &amp; 사용 매뉴얼</span>
+            <span class="txt-ko">YSACC TANK CAD 사용자 가이드 &amp; 사용 매뉴얼</span>
+            <span class="txt-en">YSACC TANK CAD User Guide &amp; Operation Manual</span>
             <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.6.43</span>
           </h3>
-          <span class="modeless-drag-hint">✥ 상단바를 잡고 자유롭게 이동 가능</span>
+          <span class="modeless-drag-hint">
+            <span class="txt-ko">✥ 상단바를 잡고 자유롭게 이동 가능</span>
+            <span class="txt-en">✥ Drag header bar to move freely</span>
+          </span>
         </div>
         <div class="modeless-actions">
+          <!-- Manual Language Switcher -->
+          <div class="lang-switch-box" id="manualLangSwitchBox" style="display:inline-flex;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:2px;gap:2px">
+            <button type="button" class="lang-btn active" id="btnManualLangKo" title="매뉴얼 언어: 한국어" style="border:none;border-radius:3px;padding:3px 7px;font-size:10.5px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;transition:all .15s">🇰🇷 국문</button>
+            <button type="button" class="lang-btn" id="btnManualLangEn" title="Manual Language: English" style="border:none;border-radius:3px;padding:3px 7px;font-size:10.5px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted);transition:all .15s">🇺🇸 EN</button>
+          </div>
+
           <input type="text" id="manualSearchInput" placeholder="🔍 매뉴얼 검색 (드레인, 스키드, 이형, 평면...)" style="padding:4px 8px;font-size:11px;border-radius:4px;border:1px solid var(--line);background:var(--surface);color:var(--fg);width:210px;outline:none">
           <button type="button" id="btnManualDialogMinimize" class="modeless-btn" title="창 최소화 (바텀 플로팅 독으로 접기)" onclick="minimizeUserManualModal()">🗕</button>
           <button type="button" id="btnManualDialogMaximize" class="modeless-btn" title="창 최대화 / 복원" onclick="toggleMaximizeUserManualModal()">🗖</button>
@@ -1499,323 +1549,1028 @@ canvas.drag{cursor:grabbing}
         </div>
       </div>
 
-        <!-- Category Nav Pills Bar -->
-        <div style="display:flex;gap:5px;padding:8px 16px;background:var(--surface-sub);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap" id="manualNavTabs">
-          <button type="button" class="manual-nav-pill active" data-sec="sec-quick">🚀 빠른 시작</button>
-          <button type="button" class="manual-nav-pill" data-sec="sec-dims">📐 1. 치수·기초·스키드</button>
-          <button type="button" class="manual-nav-pill" data-sec="sec-plan">✏️ 2. 평면·이형탱크</button>
-          <button type="button" class="manual-nav-pill" data-sec="sec-nozzle">💧 3. 측면·배관·하부드레인</button>
-          <button type="button" class="manual-nav-pill" data-sec="sec-bom">📋 4. 부품표(BOM)·풍선기호</button>
-          <button type="button" class="manual-nav-pill" data-sec="sec-dwg">🖨️ 5. 도면·CAD내보내기</button>
-          <button type="button" class="manual-nav-pill" data-sec="sec-faq">💡 6. 팁 &amp; FAQ</button>
-        </div>
+      <!-- Category Nav Pills Bar -->
+      <div style="display:flex;gap:5px;padding:8px 16px;background:var(--surface-sub);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap" id="manualNavTabs">
+        <button type="button" class="manual-nav-pill active" data-sec="sec-quick">
+          <span class="txt-ko">🚀 빠른 시작</span>
+          <span class="txt-en">🚀 Quick Start</span>
+        </button>
+        <button type="button" class="manual-nav-pill" data-sec="sec-dims">
+          <span class="txt-ko">📐 1. 치수·기초·스키드</span>
+          <span class="txt-en">📐 1. Dims·Skid·Pad</span>
+        </button>
+        <button type="button" class="manual-nav-pill" data-sec="sec-plan">
+          <span class="txt-ko">✏️ 2. 평면·이형탱크</span>
+          <span class="txt-en">✏️ 2. Plan·Cutout</span>
+        </button>
+        <button type="button" class="manual-nav-pill" data-sec="sec-nozzle">
+          <span class="txt-ko">💧 3. 측면·배관·하부드레인</span>
+          <span class="txt-en">💧 3. Nozzle·Bottom Drain</span>
+        </button>
+        <button type="button" class="manual-nav-pill" data-sec="sec-bom">
+          <span class="txt-ko">📋 4. 부품표·풍선기호</span>
+          <span class="txt-en">📋 4. BOM &amp; Balloons</span>
+        </button>
+        <button type="button" class="manual-nav-pill" data-sec="sec-dwg">
+          <span class="txt-ko">🖨️ 5. 도면·CAD내보내기</span>
+          <span class="txt-en">🖨️ 5. Sheet·CAD Export</span>
+        </button>
+        <button type="button" class="manual-nav-pill" data-sec="sec-faq">
+          <span class="txt-ko">💡 6. 팁 &amp; FAQ</span>
+          <span class="txt-en">💡 6. Tips &amp; FAQ</span>
+        </button>
+      </div>
 
-        <!-- Manual Body Content (Scrollable) -->
-        <div id="manualBodyContent" style="flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:18px;scroll-behavior:smooth">
+      <!-- Manual Body Content (Scrollable) -->
+      <div id="manualBodyContent" style="flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:18px;scroll-behavior:smooth">
+        
+        <!-- Section 0: 빠른 시작 (Quick Start) -->
+        <div id="sec-quick" class="manual-sec-group" style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--accent);padding-bottom:6px">
+            <span style="font-size:16px">🚀</span>
+            <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--fg)">
+              <span class="txt-ko">빠른 시작 가이드 (Quick Start - 4단계 완성 워크플로우)</span>
+              <span class="txt-en">Quick Start Guide (4-Step Tank CAD Workflow)</span>
+            </h3>
+            <span class="manual-badge tip"><span class="txt-ko">초보자 추천</span><span class="txt-en">Recommended</span></span>
+          </div>
+
+          <!-- Technical SVG Diagram 0 -->
           
-          <!-- Section 0: 빠른 시작 (Quick Start) -->
-          <div id="sec-quick" class="manual-sec-group" style="display:flex;flex-direction:column;gap:10px">
-            <div style="display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--accent);padding-bottom:6px">
-              <span style="font-size:16px">🚀</span>
-              <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--fg)">빠른 시작 가이드 (Quick Start - 4단계 완성)</h3>
-              <span class="manual-badge tip">초보자 추천</span>
-            </div>
+    <div class="manual-diagram-box">
+      <svg viewBox="0 0 860 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background grid pattern -->
+        <defs>
+          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+          </pattern>
+          <linearGradient id="stepGrad1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0284c7" stop-opacity="0.25"/><stop offset="100%" stop-color="#0284c7" stop-opacity="0.05"/></linearGradient>
+          <linearGradient id="stepGrad2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ea580c" stop-opacity="0.25"/><stop offset="100%" stop-color="#ea580c" stop-opacity="0.05"/></linearGradient>
+          <linearGradient id="stepGrad3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#059669" stop-opacity="0.25"/><stop offset="100%" stop-color="#059669" stop-opacity="0.05"/></linearGradient>
+          <linearGradient id="stepGrad4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.25"/><stop offset="100%" stop-color="#7c3aed" stop-opacity="0.05"/></linearGradient>
+        </defs>
+        <rect width="860" height="170" fill="url(#grid)"/>
 
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:10px">
-              <div class="manual-card">
-                <h4><span class="manual-step-num">1</span> 기본 사양·치수 입력</h4>
-                <p><b>[입력] 탭</b>에서 탱크의 길이(L), 폭(W), 높이(H)를 입력합니다. 다구획 탱크는 길이에 <code>3000 + 3000</code> 형태로 입력하여 중간 칸막이(Baffle)를 자동 생성합니다.</p>
-                <div class="manual-tip">💡 높이(H)를 입력하면 안전 기준에 맞춘 <b>스틸 스키드 프레임</b>(75앵글/125채널/150채널)이 자동 지정됩니다.</div>
+        <!-- Step 1 Card -->
+        <g transform="translate(15, 12)">
+          <rect width="185" height="146" rx="8" fill="url(#stepGrad1)" stroke="#0284c7" stroke-width="1.5"/>
+          <circle cx="24" cy="24" r="14" fill="#0284c7"/>
+          <text x="24" y="29" fill="#fff" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">1</text>
+          <text class="txt-ko" x="46" y="24" fill="#38bdf8" font-family="sans-serif" font-size="12" font-weight="bold">치수·사양 입력</text>
+          <text class="txt-en" x="46" y="24" fill="#38bdf8" font-family="sans-serif" font-size="12" font-weight="bold">Specs &amp; Dims</text>
+          <text class="txt-ko" x="46" y="38" fill="#94a3b8" font-family="sans-serif" font-size="10">길이·폭·높이 설정</text>
+          <text class="txt-en" x="46" y="38" fill="#94a3b8" font-family="sans-serif" font-size="10">L × W × H Input</text>
+
+          <!-- Mini graphic: tank box -->
+          <rect x="25" y="55" width="135" height="60" rx="3" fill="#1e293b" stroke="#38bdf8" stroke-width="1.2"/>
+          <line x1="92" y1="55" x2="92" y2="115" stroke="#38bdf8" stroke-dasharray="3,3"/>
+          <rect x="25" y="117" width="135" height="8" rx="1" fill="#f59e0b" opacity="0.8"/>
+          <text x="58" y="88" fill="#94a3b8" font-family="sans-serif" font-size="9" text-anchor="middle">3000</text>
+          <text x="125" y="88" fill="#94a3b8" font-family="sans-serif" font-size="9" text-anchor="middle">3000</text>
+          <text class="txt-ko" x="92" y="140" fill="#f59e0b" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">스틸 스키드 자동지정</text>
+          <text class="txt-en" x="92" y="140" fill="#f59e0b" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">Auto Skid Rules</text>
+        </g>
+
+        <!-- Arrow 1->2 -->
+        <g transform="translate(206, 75)">
+          <path d="M 0 0 L 14 0 M 9 -5 L 14 0 L 9 5" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+        </g>
+
+        <!-- Step 2 Card -->
+        <g transform="translate(228, 12)">
+          <rect width="185" height="146" rx="8" fill="url(#stepGrad2)" stroke="#ea580c" stroke-width="1.5"/>
+          <circle cx="24" cy="24" r="14" fill="#ea580c"/>
+          <text x="24" y="29" fill="#fff" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">2</text>
+          <text class="txt-ko" x="46" y="24" fill="#fb923c" font-family="sans-serif" font-size="12" font-weight="bold">평면·이형 편집</text>
+          <text class="txt-en" x="46" y="24" fill="#fb923c" font-family="sans-serif" font-size="12" font-weight="bold">Plan &amp; Cutout</text>
+          <text class="txt-ko" x="46" y="38" fill="#94a3b8" font-family="sans-serif" font-size="10">패널 삭제 &amp; 맨홀/사다리</text>
+          <text class="txt-en" x="46" y="38" fill="#94a3b8" font-family="sans-serif" font-size="10">Cutout &amp; Manhole</text>
+
+          <!-- Mini graphic: grid with cut cell -->
+          <g transform="translate(28, 55)">
+            <rect x="0" y="0" width="38" height="28" fill="#1e293b" stroke="#64748b"/>
+            <rect x="42" y="0" width="38" height="28" fill="#1e293b" stroke="#64748b"/>
+            <rect x="84" y="0" width="42" height="28" fill="rgba(239,68,68,0.15)" stroke="#ef4444" stroke-dasharray="2,2"/>
+            <text x="105" y="18" fill="#ef4444" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">✕</text>
+
+            <rect x="0" y="32" width="38" height="28" fill="#1e293b" stroke="#64748b"/>
+            <rect x="42" y="32" width="38" height="28" fill="#1e293b" stroke="#64748b"/>
+            <rect x="84" y="32" width="42" height="28" fill="#1e293b" stroke="#64748b"/>
+            <circle cx="19" cy="14" r="8" fill="#ea580c"/>
+            <text x="19" y="17" fill="#fff" font-family="sans-serif" font-size="7" font-weight="bold" text-anchor="middle">MH</text>
+          </g>
+          <text class="txt-ko" x="92" y="140" fill="#fb923c" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">3D 기초 패드 자동 절단</text>
+          <text class="txt-en" x="92" y="140" fill="#fb923c" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">3D Foundation Cut</text>
+        </g>
+
+        <!-- Arrow 2->3 -->
+        <g transform="translate(419, 75)">
+          <path d="M 0 0 L 14 0 M 9 -5 L 14 0 L 9 5" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+        </g>
+
+        <!-- Step 3 Card -->
+        <g transform="translate(441, 12)">
+          <rect width="185" height="146" rx="8" fill="url(#stepGrad3)" stroke="#059669" stroke-width="1.5"/>
+          <circle cx="24" cy="24" r="14" fill="#059669"/>
+          <text x="24" y="29" fill="#fff" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">3</text>
+          <text class="txt-ko" x="46" y="24" fill="#34d399" font-family="sans-serif" font-size="12" font-weight="bold">배관·하부드레인</text>
+          <text class="txt-en" x="46" y="24" fill="#34d399" font-family="sans-serif" font-size="12" font-weight="bold">Nozzle &amp; Drain</text>
+          <text class="txt-ko" x="46" y="38" fill="#94a3b8" font-family="sans-serif" font-size="10">원클릭 프리셋 &amp; EL.+0</text>
+          <text class="txt-en" x="46" y="38" fill="#94a3b8" font-family="sans-serif" font-size="10">Piping &amp; EL.+0 Floor</text>
+
+          <!-- Mini graphic: side view with bottom drain -->
+          <g transform="translate(25, 52)">
+            <rect x="10" y="5" width="115" height="50" fill="#1e293b" stroke="#34d399" stroke-width="1.2"/>
+            <!-- inlet -->
+            <rect x="0" y="10" width="10" height="8" fill="#0284c7"/>
+            <text x="5" y="8" fill="#38bdf8" font-family="sans-serif" font-size="7" text-anchor="middle">IN</text>
+            <!-- overflow -->
+            <rect x="125" y="10" width="10" height="8" fill="#f59e0b"/>
+            <!-- bottom drain -->
+            <path d="M 60 55 L 60 67 L 72 67" stroke="#34d399" stroke-width="3" fill="none"/>
+            <rect x="54" y="54" width="12" height="3" fill="#34d399"/>
+            <text x="80" y="67" fill="#34d399" font-family="sans-serif" font-size="8" font-weight="bold">EL.+0</text>
+          </g>
+          <text class="txt-ko" x="92" y="140" fill="#34d399" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">바닥 하향 드레인 표준</text>
+          <text class="txt-en" x="92" y="140" fill="#34d399" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">Bottom Floor Drain</text>
+        </g>
+
+        <!-- Arrow 3->4 -->
+        <g transform="translate(632, 75)">
+          <path d="M 0 0 L 14 0 M 9 -5 L 14 0 L 9 5" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+        </g>
+
+        <!-- Step 4 Card -->
+        <g transform="translate(654, 12)">
+          <rect width="190" height="146" rx="8" fill="url(#stepGrad4)" stroke="#7c3aed" stroke-width="1.5"/>
+          <circle cx="24" cy="24" r="14" fill="#7c3aed"/>
+          <text x="24" y="29" fill="#fff" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">4</text>
+          <text class="txt-ko" x="46" y="24" fill="#a78bfa" font-family="sans-serif" font-size="12" font-weight="bold">A1 조립도·CAD저장</text>
+          <text class="txt-en" x="46" y="24" fill="#a78bfa" font-family="sans-serif" font-size="12" font-weight="bold">A1 Sheet &amp; Export</text>
+          <text class="txt-ko" x="46" y="38" fill="#94a3b8" font-family="sans-serif" font-size="10">DXF / DWG / SVG / PNG</text>
+          <text class="txt-en" x="46" y="38" fill="#94a3b8" font-family="sans-serif" font-size="10">AutoCAD Ready</text>
+
+          <!-- Mini graphic: blueprint & export badges -->
+          <g transform="translate(20, 52)">
+            <rect x="0" y="0" width="85" height="58" fill="#0f172a" stroke="#a78bfa" stroke-width="1"/>
+            <line x1="50" y1="35" x2="85" y2="35" stroke="#a78bfa" stroke-width="0.8"/>
+            <line x1="50" y1="0" x2="50" y2="58" stroke="#a78bfa" stroke-dasharray="1,1" stroke-width="0.5"/>
+            <!-- mini export badges -->
+            <rect x="94" y="2" width="50" height="15" rx="3" fill="#0284c7"/>
+            <text x="119" y="13" fill="#fff" font-family="sans-serif" font-size="8" font-weight="bold" text-anchor="middle">.DWG</text>
+            <rect x="94" y="21" width="50" height="15" rx="3" fill="#059669"/>
+            <text x="119" y="32" fill="#fff" font-family="sans-serif" font-size="8" font-weight="bold" text-anchor="middle">.DXF</text>
+            <rect x="94" y="40" width="50" height="15" rx="3" fill="#d97706"/>
+            <text x="119" y="51" fill="#fff" font-family="sans-serif" font-size="8" font-weight="bold" text-anchor="middle">BOM</text>
+          </g>
+          <text class="txt-ko" x="95" y="140" fill="#a78bfa" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">AutoCAD 호환 표준 도면</text>
+          <text class="txt-en" x="95" y="140" fill="#a78bfa" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">Industry Ready DWG</text>
+        </g>
+      </svg>
+      <div class="manual-diagram-caption">
+        <span>⚡</span>
+        <span class="txt-ko"><b>워크플로우 개요:</b> 치수 입력 ➔ 평면 편집 ➔ 배관/하부드레인 배치 ➔ A1 도면 생성 및 CAD 파일 다운로드 (4단계 완성)</span>
+        <span class="txt-en"><b>Workflow Overview:</b> Specs &amp; Dims ➔ Plan Edit ➔ Nozzle &amp; Drain ➔ A1 Assembly &amp; CAD Export (4 Easy Steps)</span>
+      </div>
+    </div>
+  
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:10px">
+            <div class="manual-card">
+              <h4>
+                <span class="manual-step-num">1</span>
+                <span class="txt-ko">기본 사양·치수 입력</span>
+                <span class="txt-en">Input Specs &amp; Dims</span>
+              </h4>
+              <p>
+                <span class="txt-ko"><b>[입력] 탭</b>에서 탱크의 길이(L), 폭(W), 높이(H)를 입력합니다. 다구획 탱크는 길이에 <code>3000 + 3000</code> 형태로 입력하여 중간 칸막이(Baffle)를 자동 생성합니다.</span>
+                <span class="txt-en">In the <b>[Specs] Tab</b>, enter Length (L), Width (W), and Height (H). For multi-compartment tanks, enter length like <code>3000 + 3000</code> to automatically generate an internal baffle partition wall.</span>
+              </p>
+              <div class="manual-tip">
+                <span>💡</span>
+                <span class="txt-ko">높이(H)를 입력하면 안전 기준에 맞춘 <b>스틸 스키드 베이스</b>(75앵글/125채널/150채널)가 자동 지정됩니다.</span>
+                <span class="txt-en">Skid steel base frames (75 Angle / 125 Channel / 150 Channel) are automatically selected based on tank height for structural safety.</span>
               </div>
+            </div>
 
-              <div class="manual-card">
-                <h4><span class="manual-step-num">2</span> 평면 및 이형탱크 편집</h4>
-                <p><b>[평면 편집] 탭</b>에서 'ㄱ'자, 'ㄷ'자 등 기둥이나 보 간섭 구간의 패널을 <b>❌ 삭제</b>하여 이형 탱크를 자유롭게 구성하고, <b>맨홀·사다리·벤트</b> 위치를 지정합니다.</p>
-                <div class="manual-tip">💡 이형 탱크 절단 시 3D 등각 콘크리트 기초 패드도 계단형으로 자동 절단 연동됩니다.</div>
+            <div class="manual-card">
+              <h4>
+                <span class="manual-step-num">2</span>
+                <span class="txt-ko">평면 및 이형탱크 편집</span>
+                <span class="txt-en">Plan &amp; Irregular Tanks</span>
+              </h4>
+              <p>
+                <span class="txt-ko"><b>[평면 편집] 탭</b>에서 'ㄱ'자, 'ㄷ'자 등 기둥이나 보 간섭 구간의 패널을 <b>❌ 삭제</b>하여 이형 탱크를 자유롭게 구성하고, <b>맨홀·사다리·벤트</b> 위치를 지정합니다.</span>
+                <span class="txt-en">In the <b>[Plan Edit] Tab</b>, easily delete panels (❌) around structural pillars or beams to model L-shaped or U-shaped tanks, and position manholes, ladders, and air vents.</span>
+              </p>
+              <div class="manual-tip">
+                <span>💡</span>
+                <span class="txt-ko">이형 탱크 절단 시 3D 등각 콘크리트 기초 패드도 계단형으로 자동 연동 절단됩니다.</span>
+                <span class="txt-en">When panels are cut, 3D isometric concrete foundation pads automatically adapt with stepped cutting.</span>
               </div>
+            </div>
 
-              <div class="manual-card">
-                <h4><span class="manual-step-num">3</span> 배관 노즐 및 하부 드레인</h4>
-                <p><b>[측면편집] 탭</b>에서 <b>⚡ 1구획 기본배관</b>을 클릭하면 모든 필수 노즐이 자동 배치됩니다. 특히 <b>드레인(DRAIN)</b>은 <b>⚓ 하부 바닥</b>에 <code>EL.+0 (하부)</code>로 기본 설치됩니다.</p>
-                <div class="manual-tip">💡 6면(정면/우측/배면/좌측/상부/<b>하부</b>)을 선택하여 노즐 위치 및 구경(50A~300A)을 미세 조정할 수 있습니다.</div>
+            <div class="manual-card">
+              <h4>
+                <span class="manual-step-num">3</span>
+                <span class="txt-ko">배관 노즐 및 하부 드레인</span>
+                <span class="txt-en">Piping &amp; Bottom Drain</span>
+              </h4>
+              <p>
+                <span class="txt-ko"><b>[측면편집] 탭</b>에서 <b>⚡ 1구획 기본배관</b>을 클릭하면 모든 필수 노즐이 자동 배치됩니다. 특히 <b>드레인(DRAIN)</b>은 <b>⚓ 하부 바닥</b>에 <code>EL.+0 (하부)</code>로 기본 설치됩니다.</span>
+                <span class="txt-en">In the <b>[Side Edit] Tab</b>, click <b>⚡ 1-Click Preset Piping</b> to auto-place all standard nozzles. Notice that <b>DRAIN</b> is installed on the <b>Bottom Floor</b> at <code>EL.+0 (Bottom)</code>.</span>
+              </p>
+              <div class="manual-tip">
+                <span>💡</span>
+                <span class="txt-ko">6면(정면/우측/배면/좌측/상부/<b>하부</b>)을 선택하여 노즐 위치 및 구경(50A~300A)을 미세 조정할 수 있습니다.</span>
+                <span class="txt-en">Select any of 6 faces (Front/Right/Rear/Left/Top/<b>Bottom</b>) to fine-tune nozzle diameters (50A~300A) and types.</span>
               </div>
+            </div>
 
-              <div class="manual-card">
-                <h4><span class="manual-step-num">4</span> 도면 확인 &amp; CAD 내보내기</h4>
-                <p>우측 뷰포트에서 완성된 <b>A1 표준 조립도</b>(평면도, 입면도, 3D 등각도, 노즐일람표, 부품표)를 실시간 확인하고, <b>DXF / DWG / PNG / SVG</b>로 바로 저장합니다.</p>
-                <div class="manual-tip">💡 마우스 좌클릭 드래그로 화면 이동(Pan), 휠 스크롤로 확대/축소(Zoom)가 가능합니다.</div>
+            <div class="manual-card">
+              <h4>
+                <span class="manual-step-num">4</span>
+                <span class="txt-ko">도면 확인 &amp; CAD 내보내기</span>
+                <span class="txt-en">A1 Drawing &amp; CAD Export</span>
+              </h4>
+              <p>
+                <span class="txt-ko">우측 뷰포트에서 완성된 <b>A1 표준 조립도</b>(평면도, 입면도, 3D 등각도, 노즐일람표, 부품표)를 실시간 확인하고, <b>DXF / DWG / PNG / SVG</b>로 바로 저장합니다.</span>
+                <span class="txt-en">Inspect the complete <b>A1 Standard Assembly Drawing</b> (Plan, Elevation, 3D Iso, Nozzle Schedule, BOM) in the live viewport, and export to <b>DXF / DWG / PNG / SVG</b> with one click.</span>
+              </p>
+              <div class="manual-tip">
+                <span>💡</span>
+                <span class="txt-ko">마우스 좌클릭 드래그로 화면 이동(Pan), 휠 스크롤로 확대/축소(Zoom)가 가능합니다.</span>
+                <span class="txt-en">Left-click drag to Pan, mouse wheel to Zoom, and double-click to Auto Fit the sheet.</span>
               </div>
             </div>
           </div>
-
-          <!-- Section 1: 탱크 치수, 구조, 기초 및 스키드 -->
-          <div id="sec-dims" class="manual-sec-group" style="display:flex;flex-direction:column;gap:10px">
-            <div style="display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--accent);padding-bottom:6px">
-              <span style="font-size:16px">📐</span>
-              <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--fg)">1. 탱크 기본 치수, 기초 패드 및 스키드 베이스 (Tab 1: 사양·치수)</h3>
-              <span class="manual-badge">Tab 1</span>
-            </div>
-
-            <div class="manual-card">
-              <h4>📏 탱크 치수(L, W, H) 입력 및 구획(Compartment) 분할</h4>
-              <p><b>길이 (LENGTH):</b> 단일 입력(예: <code>4000</code>) 또는 <code>+</code> 기호로 구분하여 여러 칸에 입력(예: <code>3000 + 3000</code>)할 수 있습니다. 복수 입력 시 해당 경계면에 <b>내부 격벽(Baffle 칸막이)</b>이 자동 생성되며 2구획/다구획 탱크로 도면화됩니다.<br>
-              <b>폭 (WIDTH):</b> 단일 치수(m 단위 또는 mm 단위)를 입력합니다.<br>
-              <b>높이 (HEIGHT):</b> 총 높이(예: <code>3000</code>)에 따라 1단부터 5단까지 규격 세그먼트가 자동 분할됩니다.<br>
-              <b>1×1 패널 모듈:</b> 체크 시 1000×1000 및 1000×500 판넬 조합 모듈로 구성됩니다.</p>
-            </div>
-
-            <div class="manual-card">
-              <h4>📑 높이별·단별 판넬크기 지정 (와이드 표 편집창)</h4>
-              <p>높이 입력란 우측의 <b>[와이드 표]</b> 버튼을 누르면 높이(1.0m~5.0m)별로 1단(하단)부터 5단(상단)까지 판넬의 높이 분할(예: 1000, 1500, 2000mm 등)을 사용자가 직접 커스텀으로 설정하고 영구 저장할 수 있습니다.</p>
-            </div>
-
-            <div class="manual-card">
-              <h4>🏗️ 스틸 스키드 프레임 (Base Frame) 자동 선택 규칙</h4>
-              <p>수조 내 수압과 하중에 대응하여 구조적 안전성을 확보하기 위해 탱크 높이에 따라 스키드 형강 규격이 자동 선택됩니다:</p>
-              <table class="manual-table">
-                <thead>
-                  <tr>
-                    <th>탱크 높이 (H)</th>
-                    <th>적용 형강</th>
-                    <th>상세 규격</th>
-                    <th>비고</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><b>1.0m ~ 2.5mH</b></td>
-                    <td><span class="manual-badge">75 앵글 (Angle)</span></td>
-                    <td>L 75×75×6t</td>
-                    <td>소형·저수위 탱크 경량화</td>
-                  </tr>
-                  <tr>
-                    <td><b>3.0m ~ 4.0mH</b></td>
-                    <td><span class="manual-badge">125 채널 (Channel)</span></td>
-                    <td>[-125×65×6/8t</td>
-                    <td>중형 표준 물탱크 구조 기본값</td>
-                  </tr>
-                  <tr>
-                    <td><b>4.5m ~ 10.0mH</b></td>
-                    <td><span class="manual-badge">150 채널 (Channel)</span></td>
-                    <td>[-150×75×6.5/10t</td>
-                    <td>대형·고수압 탱크 고강도 보강</td>
-                  </tr>
-                </tbody>
-              </table>
-              <div class="manual-tip">💡 <b>[규칙 설정]</b> 버튼을 누르면 높이 구간별 적용 프레임을 원하는 조건으로 자유롭게 추가·수정할 수 있으며, 수동 라디오 버튼으로 고정할 수도 있습니다.</div>
-            </div>
-
-            <div class="manual-card">
-              <h4>🧱 콘크리트 기초 패드 (Foundation Pad) 연동</h4>
-              <p>탱크 하부를 지지하는 콘크리트 기초 패드의 상단폭(400mm), 하단폭(300mm), 높이(475mm 또는 600mm), 피치(1000mm) 및 앵커볼트가 자동으로 배치되며, 평면도와 기초콘크리트도에 상세 치수선이 자동 인출됩니다.</p>
-            </div>
-          </div>
-
-          <!-- Section 2: 평면 및 이형 탱크 편집 -->
-          <div id="sec-plan" class="manual-sec-group" style="display:flex;flex-direction:column;gap:10px">
-            <div style="display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--accent);padding-bottom:6px">
-              <span style="font-size:16px">✏️</span>
-              <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--fg)">2. 평면 및 이형(Irregular) 물탱크 편집 (Tab 2: 평면 편집)</h3>
-              <span class="manual-badge">Tab 2</span>
-            </div>
-
-            <div class="manual-card">
-              <h4>🛠️ 평면 격자 편집 도구</h4>
-              <p>격자의 상단은 <b>탱크 배면(Rear)</b>, 하단은 <b>정면(Front)</b>, 좌측은 <b>좌측면(Left)</b>, 우측은 <b>우측면(Right)</b>입니다:</p>
-              <ul style="margin:6px 0;padding-left:20px;font-size:12px;line-height:1.7;color:var(--fg)">
-                <li><b>❌ 패널 삭제 (Delete):</b> 클릭한 칸의 패널을 제거합니다. 기계실 기둥이나 배관 샤프트를 피하는 'ㄱ'자, 'ㄷ'자, 'T'자형 등 자유로운 이형 탱크를 설계합니다.</li>
-                <li><b>🏛️ 기둥 (Pillar):</b> 삭제된 공간에 건축 기둥이 관통함을 도면에 사선 기호로 명시합니다.</li>
-                <li><b>🔘 맨홀 (Manhole):</b> 작업자가 수조 내부로 진입하는 점검용 맨홀 위치를 클릭하여 이동 배치합니다.</li>
-                <li><b>💨 에어벤트 (Air Vent):</b> 수조 내 통풍 및 공기 배출용 에어벤트 위치를 지정합니다.</li>
-                <li><b>🪜 사다리 (Ladder):</b> 외부 점검 사다리 및 내부 승강 사다리의 설치 위치를 클릭 지정합니다.</li>
-              </ul>
-            </div>
-
-            <div class="manual-card">
-              <h4>🧩 이형 물탱크 3D 등각 콘크리트 패드 자동 절단 연동</h4>
-              <p>평면에서 패널을 삭제하여 이형 물탱크를 만들면, <b>3D 등각 조감도 및 기초콘크리트도</b>의 콘크리트 스트립 패드 또한 삭제된 패널 형상에 맞추어 계단형으로 정확하게 자동 절단되어 렌더링됩니다.</p>
-            </div>
-
-            <div class="manual-card">
-              <h4>🗖 대형 탱크 전용 모달리스 편집창 (Modeless Large Editor)</h4>
-              <p>패널 수가 많은 대형 탱크의 경우 상단의 <b>[🗖 대형창 열기]</b> 버튼을 누르면 넓은 팝업창에서 마우스 드래그 및 한눈에 보기 기능으로 편안하게 평면을 편집할 수 있습니다.</p>
-            </div>
-          </div>
-
-          <!-- Section 3: 측면 판넬 및 배관 노즐 편집 -->
-          <div id="sec-nozzle" class="manual-sec-group" style="display:flex;flex-direction:column;gap:10px">
-            <div style="display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--accent);padding-bottom:6px">
-              <span style="font-size:16px">💧</span>
-              <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--fg)">3. 측면 판넬 및 배관 노즐 편집 (Tab 3: 측면/배관 편집)</h3>
-              <span class="manual-badge">Tab 3</span>
-              <span class="manual-badge new">하부 드레인 신규</span>
-            </div>
-
-            <div class="manual-card">
-              <h4>🏢 6개 면 뷰 전환 &amp; ⚓ 하부 바닥 (Bottom Floor) 뷰</h4>
-              <p>상단 선택 바에서 편집하고자 하는 면을 클릭합니다:</p>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:6px;margin:6px 0">
-                <div style="padding:6px 10px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;font-size:11.5px"><b>🏢 정면 (Front)</b></div>
-                <div style="padding:6px 10px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;font-size:11.5px"><b>🏢 우측면 (Right)</b></div>
-                <div style="padding:6px 10px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;font-size:11.5px"><b>🏢 배면 (Rear)</b></div>
-                <div style="padding:6px 10px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;font-size:11.5px"><b>🏢 좌측면 (Left)</b></div>
-                <div style="padding:6px 10px;background:var(--surface-sub);border:1px solid var(--line);border-radius:6px;font-size:11.5px"><b>🏢 상부 (Top Roof)</b></div>
-                <div style="padding:6px 10px;background:rgba(2,132,199,0.12);border:1.5px solid var(--accent);border-radius:6px;font-size:11.5px;color:var(--accent)"><b>⚓ 하부 (Bottom Floor)</b></div>
-              </div>
-              <p><b>⚓ 하부 (바닥) 선택 시:</b> 물탱크 바닥 판넬 격자(1행, 2행... / 1열, 2열...)가 표시되며, 이형 절단 구간은 자동 비활성화됩니다. 바닥 판넬 칸을 클릭하여 원하는 위치에 <b>드레인(DRAIN)</b>을 자유롭게 배치할 수 있습니다.</p>
-            </div>
-
-            <div class="manual-card">
-              <h4>🚰 드레인(DRAIN) 배수구 하부 기본 설치 및 도면화 원칙</h4>
-              <p><b>배수구(DRAIN)</b>는 물탱크 청소 및 완전 퇴수를 위해 <b>바닥판 최하단</b>에 설치되어야 합니다:</p>
-              <ul style="margin:6px 0;padding-left:20px;font-size:12px;line-height:1.7;color:var(--fg)">
-                <li><b>기본 배관 프리셋 클릭 시:</b> 드레인(DRAIN)은 자동으로 <b>배치 면: `하부 (바닥)`</b>, <b>설치 높이: `EL.+0 (하부)`</b>, <b>구경: `50A`</b>, <b>타입: `SOCKET`</b>으로 등록됩니다.</li>
-                <li><b>평면도(Plan View) 표기:</b> 상부 노즐과 명확히 구분되도록 <b><code>[N4] DR 50A (하부)</code></b>로 심볼 및 지시선이 자동 인출됩니다.</li>
-                <li><b>정면/측면 입면도(Elevation View):</b> 탱크 바닥판(y=0) 아래 기초 패드 공간으로 <b>하향 돌출 연장되는 배관 파이프 스터브</b>와 함께 <b><code>EL.+0 (하부)</code></b> 지시선이 도면화됩니다.</li>
-                <li><b>노즐 일람표(Nozzle Schedule):</b> 설치 위치에 <code>BOTTOM (하부)</code>, 설치 높이에 <code>하부 (EL.+0)</code>로 정규 등록됩니다.</li>
-              </ul>
-            </div>
-
-            <div class="manual-card">
-              <h4>🔲 판넬 종류 변경</h4>
-              <p><b>[기본]</b> 표준 프레스 판넬 / <b>[1×1 평판]</b> 노즐 피팅 가공용 민판 / <b>[0.5×1 (2장)]</b> 500mm 분할 패널 / <b>[피팅]</b> 150A 이상 대형 노즐용 보강 패널.<br>
-              도구 선택 후 격자 칸을 클릭하면 즉시 해당 판넬 형상으로 교체됩니다.</p>
-            </div>
-
-            <div class="manual-card">
-              <h4>🎯 배관 노즐 배치 및 하단 인스펙터 상세 조작</h4>
-              <p><b>노즐 도구:</b> 💧 IN (유입구 100A), ↗ OUT (유출구 150A), 🌊 O/F (월류관 100A), ⬇ DR (드레인 50A), 🚒 FF (소화용수 150A), ❌ DEL (삭제).<br>
-              <b>동일 칸 2개 노즐 배치:</b> 이미 노즐이 있는 칸을 다시 클릭하면 좌측(-250mm), 우측(+250mm)으로 자동 오프셋되어 2개의 노즐이 하나의 패널에 안전하게 배치됩니다.<br>
-              <b>하단 인스펙터 바:</b> 노즐을 클릭하여 선택한 후 구경(50A~300A), 타입(FLANGE 10K / SOCKET), 설치 높이(EL mm), 수평 위치(Offset)를 자유롭게 변경할 수 있습니다.</p>
-            </div>
-          </div>
-
-          <!-- Section 4: 부품 사양 명세표 (BOM) & 풍선 기호 -->
-          <div id="sec-bom" class="manual-sec-group" style="display:flex;flex-direction:column;gap:10px">
-            <div style="display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--accent);padding-bottom:6px">
-              <span style="font-size:16px">📋</span>
-              <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--fg)">4. 부품 사양 명세표 (BOM) &amp; 부품 기호 풍선 (Ballon Callout)</h3>
-              <span class="manual-badge">BOM &amp; Balloon</span>
-            </div>
-
-            <div class="manual-card">
-              <h4>📋 A1 표준 조립도 부품 사양 명세표 (AutoCAD Standard BOM)</h4>
-              <p>A1 표준 조립도 우측 하단에 수록되는 공사 및 견적용 정규 부품 명세표입니다. 기초 패드, 스키드 베이스 프레임, 외부/내부 사다리, 내부 보강 앵글 및 환봉, 고장력 볼트/너트, 점검용 맨홀, 에어벤트, 드레인 노즐 등의 수량과 규격이 실시간 자동 집계됩니다.<br>
-              <b>[⚙️ 사양 편집 / BOM 모달창]:</b> 사용자가 직접 부품 행을 추가, 수정, 삭제할 수 있습니다.</p>
-            </div>
-
-            <div class="manual-card">
-              <h4>🎈 부품 번호 풍선 기호 (Circular Balloon Callout)</h4>
-              <p>도면 내 주요 부품의 위치를 가리키는 원형 번호 풍선 기호(① 기초 패드, ② 스키드 베이스, ③ 사다리, ④ 보강재, ⑤ 맨홀, ⑥ 에어벤트, ⑦ 드레인 등)가 자동 인출됩니다.<br>
-              <b>직선 인출선 원칙:</b> 불필요한 꺾임선 없이 부품 원둘레(Circumference) 접점까지 반듯한 직선 지시선으로 깔끔하게 연결되어 치수선과의 간섭을 방지합니다.</p>
-            </div>
-          </div>
-
-          <!-- Section 5: 도면 뷰, 뷰포트 조작 & CAD 내보내기 -->
-          <div id="sec-dwg" class="manual-sec-group" style="display:flex;flex-direction:column;gap:10px">
-            <div style="display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--accent);padding-bottom:6px">
-              <span style="font-size:16px">🖨️</span>
-              <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--fg)">5. 도면 뷰, 뷰포트 조작 &amp; CAD 파일 내보내기 (Export &amp; Controls)</h3>
-              <span class="manual-badge">View &amp; Export</span>
-            </div>
-
-            <div class="manual-card">
-              <h4>💾 2D CAD 파일 및 이미지 내보내기 (DXF / DWG / PNG / SVG)</h4>
-              <ul style="margin:6px 0;padding-left:20px;font-size:12px;line-height:1.7;color:var(--fg)">
-                <li><b>💾 DXF (.dxf):</b> AutoCAD, ZWCAD, BricsCAD, 캐디안 등 모든 CAD 프로그램과 100% 호환되는 표준 2D CAD 파일입니다. WALL(벽체), NOZZLE(배관), DIM(치수), TEXT(문자), PAD(기초), FRAME(스키드), BOM(부품표), BALLOON(풍선기호) 레이어가 완벽 분리되어 있습니다.</li>
-                <li><b>📁 DWG 저장 (.dwg):</b> 실무용 DWG CAD 도면 파일 다운로드.</li>
-                <li><b>📷 PNG / SVG:</b> 승인 제출용 보고서나 문서에 첨부할 수 있는 고해상도 그래픽 이미지 및 벡터 도면 내보내기.</li>
-              </ul>
-            </div>
-
-            <div class="manual-card">
-              <h4>🖱️ 뷰포트 마우스 조작법 및 단축키</h4>
-              <table class="manual-table">
-                <thead>
-                  <tr>
-                    <th>동작</th>
-                    <th>조작 방법</th>
-                    <th>설명</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><b>화면 이동 (Pan)</b></td>
-                    <td>마우스 좌클릭 후 드래그</td>
-                    <td>도면 캔버스를 상하좌우로 자유롭게 이동합니다.</td>
-                  </tr>
-                  <tr>
-                    <td><b>확대 / 축소 (Zoom)</b></td>
-                    <td>마우스 휠 스크롤 위/아래</td>
-                    <td>마우스 커서 위치를 중심으로 도면을 확대 및 축소합니다.</td>
-                  </tr>
-                  <tr>
-                    <td><b>화면 자동 맞춤 (Fit)</b></td>
-                    <td>상단 <code>⚡ 자동 맞춤 (Auto)</code> 또는 빈 화면 더블클릭</td>
-                    <td>도면 전체가 화면 뷰포트에 꼭 맞도록 축척과 중심을 자동 재정렬합니다.</td>
-                  </tr>
-                  <tr>
-                    <td><b>창 닫기 (Close)</b></td>
-                    <td>키보드 <kbd style="background:var(--surface);border:1px solid var(--line);padding:1px 5px;border-radius:3px">ESC</kbd> 키</td>
-                    <td>열려 있는 모든 모달창 및 팝업 대화상자를 즉시 닫습니다.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div class="manual-card">
-              <h4>🌐 도면 언어 및 다국어 지원</h4>
-              <p>상단 도면 옵션 바에서 <b>🇰🇷 한글 (Korean)</b>, <b>🇺🇸 영문 (English)</b>, <b>🌐 한·영 병기 (Bilingual)</b>를 선택하면 도면 타이틀 블록, 주기사항, 노즐 일람표, 치수선 라벨이 해당 언어로 실시간 전환됩니다.</p>
-            </div>
-          </div>
-
-          <!-- Section 6: 팁 & FAQ -->
-          <div id="sec-faq" class="manual-sec-group" style="display:flex;flex-direction:column;gap:10px">
-            <div style="display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--accent);padding-bottom:6px">
-              <span style="font-size:16px">💡</span>
-              <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--fg)">6. 유용한 팁 &amp; 자주 묻는 질문 (Tips &amp; FAQ)</h3>
-              <span class="manual-badge tip">FAQ</span>
-            </div>
-
-            <div class="manual-card">
-              <h4>Q. 물탱크 바닥 드레인(배수구) 위치를 원하는 칸으로 바꾸려면 어떻게 하나요?</h4>
-              <p><b>A.</b> [측면편집] 탭에서 상단 뷰 선택 버튼 중 <b>`⚓ 하부 (바닥)`</b>를 클릭하면 바닥 평면 격자가 나타납니다. 배관 노즐 도구에서 <b>`DR`</b>을 선택한 후 원하는 바닥 판넬 칸을 클릭하면 즉시 해당 위치로 드레인 노즐이 이동 배치됩니다.</p>
-            </div>
-
-            <div class="manual-card">
-              <h4>Q. 스키드 베이스 프레임을 125 채널에서 75 앵글로 강제 변경할 수 있나요?</h4>
-              <p><b>A.</b> [입력] 탭의 '하부 프레임' 항목에서 원하는 라디오 버튼(50 SHS, 75 앵글, 125 채널, 150 채널)을 직접 선택하시면 수동 지정되며, 옆의 [규칙] 버튼을 눌러 높이별 자동 선택 규칙을 수정하실 수도 있습니다.</p>
-            </div>
-
-            <div class="manual-card">
-              <h4>Q. 이형 물탱크의 유효 저수량(용량 Ton)은 어떻게 계산되나요?</h4>
-              <p><b>A.</b> 상단 헤더의 용량 배지(예: <code>60.0 Ton</code>)는 평면에서 삭제된 패널 칸의 체적을 자동으로 제외하고 실제 설치되는 패널의 순 체적을 기준으로 정확하게 산출됩니다.</p>
-            </div>
-
-            <div class="manual-card">
-              <h4>Q. CAD 프로그램에서 치수 문자나 폰트가 깨지면 어떻게 하나요?</h4>
-              <p><b>A.</b> 상단 폰트 선택 바에서 <b>`Romans.shx`</b> 또는 <b>`Malgun Gothic`</b>을 선택하여 DXF를 내보내시면 국내 모든 CAD 환경에서 글꼴 깨짐 없이 완벽하게 열립니다.</p>
-            </div>
-          </div>
-
-          <!-- 검색 결과 없음 안내 -->
-          <div id="manualNoResult" style="display:none;text-align:center;padding:40px 20px;color:var(--muted)">
-            <div style="font-size:28px;margin-bottom:8px">🔍</div>
-            <p style="font-size:14px;font-weight:600">입력하신 검색어와 일치하는 매뉴얼 내용이 없습니다.</p>
-            <p style="font-size:12px">다른 검색어(예: 드레인, 스키드, 이형, 평면, BOM, 패드, DXF)를 입력해 보세요.</p>
-          </div>
-
         </div>
 
-        <!-- Modal Footer -->
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 18px;border-top:1px solid var(--line);background:var(--surface-sub);font-size:11.5px;color:var(--muted)">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span>⌨️ 단축키: <kbd style="background:var(--surface);border:1px solid var(--line);padding:2px 5px;border-radius:3px">ESC</kbd> 닫기</span>
-            <span>|</span>
-            <span>🖱️ 휠 스크롤: 줌 / 좌클릭 드래그: 화면 이동</span>
+        <!-- Section 1: 탱크 치수, 구조, 기초 및 스키드 -->
+        <div id="sec-dims" class="manual-sec-group" style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--accent);padding-bottom:6px">
+            <span style="font-size:16px">📐</span>
+            <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--fg)">
+              <span class="txt-ko">1. 탱크 치수, 내부 격벽, 콘크리트 패드 및 스키드 (Tab 1: 사양·치수)</span>
+              <span class="txt-en">1. Dimensions, Partition Wall, Concrete Pad &amp; Skid Frame</span>
+            </h3>
+            <span class="manual-badge">Tab 1</span>
           </div>
+
+          <!-- Technical SVG Diagram 1 -->
+          
+    <div class="manual-diagram-box">
+      <svg viewBox="0 0 860 210" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="concGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#475569"/><stop offset="100%" stop-color="#334155"/></linearGradient>
+          <linearGradient id="skidGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/></linearGradient>
+        </defs>
+
+        <!-- Top Dimension: L = 3000 + 3000 -->
+        <line x1="70" y1="20" x2="790" y2="20" stroke="#38bdf8" stroke-width="1.5"/>
+        <line x1="70" y1="12" x2="70" y2="28" stroke="#38bdf8" stroke-width="1.5"/>
+        <line x1="430" y1="12" x2="430" y2="28" stroke="#38bdf8" stroke-width="1.5"/>
+        <line x1="790" y1="12" x2="790" y2="28" stroke="#38bdf8" stroke-width="1.5"/>
+        <text class="txt-ko" x="250" y="16" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">1구획: L1 = 3000 mm</text>
+        <text class="txt-en" x="250" y="16" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Comp 1: L1 = 3000 mm</text>
+        <text class="txt-ko" x="610" y="16" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">2구획: L2 = 3000 mm</text>
+        <text class="txt-en" x="610" y="16" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Comp 2: L2 = 3000 mm</text>
+
+        <!-- Tank Shell Left & Right -->
+        <rect x="70" y="32" width="356" height="88" fill="rgba(2,132,199,0.08)" stroke="#0284c7" stroke-width="1.5"/>
+        <rect x="434" y="32" width="356" height="88" fill="rgba(2,132,199,0.08)" stroke="#0284c7" stroke-width="1.5"/>
+
+        <!-- Internal Baffle Wall -->
+        <rect x="426" y="30" width="8" height="92" fill="#ef4444" stroke="#f87171" stroke-width="1"/>
+        <circle cx="430" cy="50" r="12" fill="#ef4444"/>
+        <text x="430" y="54" fill="#fff" font-family="sans-serif" font-size="9" font-weight="bold" text-anchor="middle">BW</text>
+        <line x1="430" y1="62" x2="430" y2="100" stroke="#f87171" stroke-width="2"/>
+        <text class="txt-ko" x="430" y="112" fill="#f87171" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">내부 격벽 (Baffle)</text>
+        <text class="txt-en" x="430" y="112" fill="#f87171" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">Internal Baffle Wall</text>
+
+        <!-- Water tank height H -->
+        <line x1="808" y1="32" x2="808" y2="120" stroke="#38bdf8" stroke-width="1.5"/>
+        <line x1="802" y1="32" x2="814" y2="32" stroke="#38bdf8" stroke-width="1.5"/>
+        <line x1="802" y1="120" x2="814" y2="120" stroke="#38bdf8" stroke-width="1.5"/>
+        <text x="832" y="80" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold">H=3m</text>
+
+        <!-- Steel Skid Beam (H or Channel) -->
+        <rect x="60" y="122" width="740" height="16" rx="2" fill="url(#skidGrad)" stroke="#b45309" stroke-width="1.2"/>
+        <text class="txt-ko" x="160" y="134" fill="#fff" font-family="sans-serif" font-size="10" font-weight="bold">스틸 스키드 베이스: [-125×65×6/8t (자동 규칙 선정)</text>
+        <text class="txt-en" x="160" y="134" fill="#fff" font-family="sans-serif" font-size="10" font-weight="bold">Steel Skid Frame: [-125×65×6/8t (Auto Selected)</text>
+
+        <!-- Concrete Foundation Piers (4 strips) -->
+        <!-- Strip 1 -->
+        <polygon points="100,140 180,140 170,188 110,188" fill="url(#concGrad)" stroke="#64748b" stroke-width="1.5"/>
+        <circle cx="140" cy="144" r="3.5" fill="#f59e0b"/>
+        <!-- Strip 2 -->
+        <polygon points="300,140 380,140 370,188 310,188" fill="url(#concGrad)" stroke="#64748b" stroke-width="1.5"/>
+        <circle cx="340" cy="144" r="3.5" fill="#f59e0b"/>
+        <!-- Strip 3 -->
+        <polygon points="500,140 580,140 570,188 510,188" fill="url(#concGrad)" stroke="#64748b" stroke-width="1.5"/>
+        <circle cx="540" cy="144" r="3.5" fill="#f59e0b"/>
+        <!-- Strip 4 -->
+        <polygon points="700,140 780,140 770,188 710,188" fill="url(#concGrad)" stroke="#64748b" stroke-width="1.5"/>
+        <circle cx="740" cy="144" r="3.5" fill="#f59e0b"/>
+
+        <!-- Pitch Dimension -->
+        <line x1="140" y1="198" x2="340" y2="198" stroke="#94a3b8" stroke-width="1.2"/>
+        <line x1="140" y1="193" x2="140" y2="203" stroke="#94a3b8" stroke-width="1.2"/>
+        <line x1="340" y1="193" x2="340" y2="203" stroke="#94a3b8" stroke-width="1.2"/>
+        <text class="txt-ko" x="240" y="202" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">피치: @1000 mm</text>
+        <text class="txt-en" x="240" y="202" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">Pitch: @1000 mm</text>
+
+        <!-- Foundation Callout -->
+        <line x1="580" y1="165" x2="630" y2="165" stroke="#94a3b8" stroke-width="1"/>
+        <text class="txt-ko" x="635" y="168" fill="#94a3b8" font-family="sans-serif" font-size="10">콘크리트 패드 (W400/300×H475) &amp; 앵커볼트</text>
+        <text class="txt-en" x="635" y="168" fill="#94a3b8" font-family="sans-serif" font-size="10">Concrete Pad (W400/300×H475) &amp; Anchor</text>
+      </svg>
+      <div class="manual-diagram-caption">
+        <span>📐</span>
+        <span class="txt-ko"><b>구조 상세도:</b> 길이 다구획 분할(격벽 생성), 탱크 높이에 따른 스틸 스키드 자동 선정(75A/125C/150C), 1000mm 피치 콘크리트 기초 연동</span>
+        <span class="txt-en"><b>Structural Detail:</b> Compartment Partitioning (Baffle Wall), Height-based Skid Frame Selection (75A/125C/150C), 1000mm Pitch Concrete Pads</span>
+      </div>
+    </div>
+  
+
+          <div class="manual-card">
+            <h4>
+              <span>📏</span>
+              <span class="txt-ko">탱크 치수(L, W, H) 입력 및 구획(Compartment) 분할</span>
+              <span class="txt-en">Dimensions (L, W, H) &amp; Compartment Partitioning</span>
+            </h4>
+            <p>
+              <span class="txt-ko">
+                <b>길이 (LENGTH):</b> 단일 치수(예: <code>4000</code>) 또는 <code>+</code> 기호로 구분하여 여러 칸에 입력(예: <code>3000 + 3000</code>)할 수 있습니다. 복수 입력 시 해당 경계면에 <b>내부 격벽(Baffle 칸막이)</b>이 자동 생성되며 2구획/다구획 탱크로 도면화됩니다.<br>
+                <b>폭 (WIDTH):</b> 단일 치수(m 단위 또는 mm 단위)를 입력합니다.<br>
+                <b>높이 (HEIGHT):</b> 총 높이(예: <code>3000</code>)에 따라 1단부터 5단까지 규격 세그먼트가 자동 분할됩니다.<br>
+                <b>1×1 패널 모듈:</b> 체크 시 1000×1000 및 1000×500 판넬 조합 모듈로 구성됩니다.
+              </span>
+              <span class="txt-en">
+                <b>Length (L):</b> Enter a single dimension (e.g., <code>4000</code>) or split with <code>+</code> (e.g., <code>3000 + 3000</code>). Multiple entries automatically create an <b>Internal Baffle Partition Wall</b> for multi-compartment tanks.<br>
+                <b>Width (W):</b> Enter overall width in meters or millimeters.<br>
+                <b>Height (H):</b> Automatically segmented into 1 to 5 panel tiers.<br>
+                <b>1×1 Panel Module:</b> Combines 1000×1000 and 1000×500 standard panel modules.
+              </span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>📑</span>
+              <span class="txt-ko">높이별·단별 판넬크기 지정 (와이드 표 편집창)</span>
+              <span class="txt-en">Tier Panel Heights Customization (Wide Table)</span>
+            </h4>
+            <p>
+              <span class="txt-ko">높이 입력란 우측의 <b>[와이드 표]</b> 버튼을 누르면 높이(1.0m~5.0m)별로 1단(하단)부터 5단(상단)까지 판넬의 높이 분할(예: 1000, 1500, 2000mm 등)을 사용자가 직접 커스텀으로 설정하고 영구 저장할 수 있습니다.</span>
+              <span class="txt-en">Click the <b>[Wide Table]</b> button next to Height to customize and permanently save specific tier panel heights (1000, 1500, 2000mm) for each tank height from 1.0m to 5.0m.</span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>🏗️</span>
+              <span class="txt-ko">스틸 스키드 프레임 (Base Frame) 자동 선택 규칙</span>
+              <span class="txt-en">Steel Skid Base Frame Auto-Selection Rules</span>
+            </h4>
+            <p>
+              <span class="txt-ko">수조 내 수압과 하중에 대응하여 구조적 안전성을 확보하기 위해 탱크 높이에 따라 스키드 형강 규격이 자동 선택됩니다:</span>
+              <span class="txt-en">To ensure structural safety against hydrostatic pressure, skid frame steel profiles are automatically selected based on height:</span>
+            </p>
+            <table class="manual-table">
+              <thead>
+                <tr>
+                  <th><span class="txt-ko">탱크 높이 (H)</span><span class="txt-en">Tank Height (H)</span></th>
+                  <th><span class="txt-ko">적용 형강</span><span class="txt-en">Applied Steel</span></th>
+                  <th><span class="txt-ko">상세 규격</span><span class="txt-en">Specification</span></th>
+                  <th><span class="txt-ko">비고</span><span class="txt-en">Remarks</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>1.0m ~ 2.5mH</b></td>
+                  <td><span class="manual-badge">75 앵글 (Angle)</span></td>
+                  <td>L 75×75×6t</td>
+                  <td><span class="txt-ko">소형·저수위 탱크 경량화</span><span class="txt-en">Lightweight for low tanks</span></td>
+                </tr>
+                <tr>
+                  <td><b>3.0m ~ 4.0mH</b></td>
+                  <td><span class="manual-badge">125 채널 (Channel)</span></td>
+                  <td>[-125×65×6/8t</td>
+                  <td><span class="txt-ko">중형 표준 물탱크 구조 기본값</span><span class="txt-en">Industry standard default</span></td>
+                </tr>
+                <tr>
+                  <td><b>4.5m ~ 10.0mH</b></td>
+                  <td><span class="manual-badge">150 채널 (Channel)</span></td>
+                  <td>[-150×75×6.5/10t</td>
+                  <td><span class="txt-ko">대형·고수압 탱크 고강도 보강</span><span class="txt-en">Heavy-duty for high pressure</span></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="manual-tip">
+              <span>💡</span>
+              <span class="txt-ko"><b>[규칙 설정]</b> 버튼을 누르면 높이 구간별 적용 프레임을 원하는 조건으로 자유롭게 추가·수정할 수 있으며, 수동 라디오 버튼으로 고정할 수도 있습니다.</span>
+              <span class="txt-en">Click <b>[Frame Rules]</b> to edit custom height thresholds and profile mappings, or manually override using radio buttons.</span>
+            </div>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>🧱</span>
+              <span class="txt-ko">콘크리트 기초 패드 (Foundation Pad) 연동</span>
+              <span class="txt-en">Concrete Foundation Pad Sync</span>
+            </h4>
+            <p>
+              <span class="txt-ko">탱크 하부를 지지하는 콘크리트 기초 패드의 상단폭(400mm), 하단폭(300mm), 높이(475mm 또는 600mm), 피치(1000mm) 및 앵커볼트가 자동으로 배치되며, 평면도와 기초콘크리트도에 상세 치수선이 자동 인출됩니다.</span>
+              <span class="txt-en">Supports concrete foundation piers with 400mm top width, 300mm bottom width, 475/600mm height, 1000mm pitch spacing, and anchor bolts, automatically dimensioned in Plan and Foundation drawings.</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Section 2: 평면 및 이형 탱크 편집 -->
+        <div id="sec-plan" class="manual-sec-group" style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--accent);padding-bottom:6px">
+            <span style="font-size:16px">✏️</span>
+            <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--fg)">
+              <span class="txt-ko">2. 평면 및 이형(Irregular) 물탱크 편집 (Tab 2: 평면 편집)</span>
+              <span class="txt-en">2. Plan Layout &amp; Irregular Tank Design (Tab 2: Plan Edit)</span>
+            </h3>
+            <span class="manual-badge">Tab 2</span>
+          </div>
+
+          <!-- Technical SVG Diagram 2 -->
+          
+    <div class="manual-diagram-box">
+      <svg viewBox="0 0 860 210" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="concIso" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#475569"/><stop offset="100%" stop-color="#1e293b"/></linearGradient>
+        </defs>
+
+        <!-- Left: 2D Plan Grid with Cutout -->
+        <g transform="translate(30, 20)">
+          <text class="txt-ko" x="120" y="0" fill="#38bdf8" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">평면도 패널 삭제 (ㄱ자/이형)</text>
+          <text class="txt-en" x="120" y="0" fill="#38bdf8" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Plan View Cutout (L-Shape)</text>
+          
+          <!-- Grid 4 cols x 3 rows -->
+          <!-- Row 1 -->
+          <rect x="0" y="15" width="55" height="45" fill="#1e293b" stroke="#0284c7" stroke-width="1.2"/>
+          <rect x="58" y="15" width="55" height="45" fill="#1e293b" stroke="#0284c7" stroke-width="1.2"/>
+          <rect x="116" y="15" width="55" height="45" fill="rgba(239,68,68,0.12)" stroke="#ef4444" stroke-dasharray="3,3" stroke-width="1.5"/>
+          <rect x="174" y="15" width="55" height="45" fill="rgba(239,68,68,0.12)" stroke="#ef4444" stroke-dasharray="3,3" stroke-width="1.5"/>
+          <text x="143" y="42" fill="#ef4444" font-family="sans-serif" font-size="16" font-weight="bold" text-anchor="middle">✕</text>
+          <text x="201" y="42" fill="#ef4444" font-family="sans-serif" font-size="16" font-weight="bold" text-anchor="middle">✕</text>
+
+          <!-- Row 2 -->
+          <rect x="0" y="63" width="55" height="45" fill="#1e293b" stroke="#0284c7" stroke-width="1.2"/>
+          <rect x="58" y="63" width="55" height="45" fill="#1e293b" stroke="#0284c7" stroke-width="1.2"/>
+          <rect x="116" y="63" width="55" height="45" fill="#1e293b" stroke="#0284c7" stroke-width="1.2"/>
+          <rect x="174" y="63" width="55" height="45" fill="#1e293b" stroke="#0284c7" stroke-width="1.2"/>
+
+          <!-- Row 3 -->
+          <rect x="0" y="111" width="55" height="45" fill="#1e293b" stroke="#0284c7" stroke-width="1.2"/>
+          <rect x="58" y="111" width="55" height="45" fill="#1e293b" stroke="#0284c7" stroke-width="1.2"/>
+          <rect x="116" y="111" width="55" height="45" fill="#1e293b" stroke="#0284c7" stroke-width="1.2"/>
+          <rect x="174" y="111" width="55" height="45" fill="#1e293b" stroke="#0284c7" stroke-width="1.2"/>
+
+          <!-- Manhole & Ladder -->
+          <circle cx="28" cy="38" r="10" fill="#ea580c"/>
+          <text x="28" y="42" fill="#fff" font-family="sans-serif" font-size="8" font-weight="bold" text-anchor="middle">MH</text>
+          <rect x="2" y="152" width="20" height="5" fill="#16a34a"/>
+          <text x="12" y="148" fill="#16a34a" font-family="sans-serif" font-size="7" font-weight="bold" text-anchor="middle">LAD</text>
+
+          <text class="txt-ko" x="174" y="172" fill="#ef4444" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">간섭 구간 패널 ❌ 삭제</text>
+          <text class="txt-en" x="174" y="172" fill="#ef4444" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">Pillar Cutout ❌ Deleted</text>
+        </g>
+
+        <!-- Center arrow: Auto Sync -->
+        <g transform="translate(290, 95)">
+          <path d="M 0 0 L 50 0 M 40 -8 L 50 0 L 40 8" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+          <text class="txt-ko" x="25" y="-14" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">3D 자동 절단</text>
+          <text class="txt-en" x="25" y="-14" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Auto-Cut Sync</text>
+          <text class="txt-ko" x="25" y="24" fill="#94a3b8" font-family="sans-serif" font-size="9" text-anchor="middle">계단형 패드</text>
+          <text class="txt-en" x="25" y="24" fill="#94a3b8" font-family="sans-serif" font-size="9" text-anchor="middle">Stepped Pads</text>
+        </g>
+
+        <!-- Right: 3D Axonometric Foundation Stepped Cutting -->
+        <g transform="translate(370, 20)">
+          <text class="txt-ko" x="240" y="0" fill="#10b981" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">3D 등각도 기초 패드 단차 자동 반영</text>
+          <text class="txt-en" x="240" y="0" fill="#10b981" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">3D Isometric Stepped Foundation Pads</text>
+
+          <!-- 3D Foundation Isometric projection: 4 strips -->
+          <!-- Strip 1 (Left - Full length) -->
+          <polygon points="50,110 220,50 240,60 70,120" fill="#64748b" stroke="#94a3b8" stroke-width="1"/>
+          <polygon points="50,110 70,120 70,135 50,125" fill="#334155" stroke="#94a3b8" stroke-width="1"/>
+          <polygon points="70,120 240,60 240,75 70,135" fill="#475569" stroke="#94a3b8" stroke-width="1"/>
+
+          <!-- Strip 2 (Full length) -->
+          <polygon points="100,125 270,65 290,75 120,135" fill="#64748b" stroke="#94a3b8" stroke-width="1"/>
+          <polygon points="100,125 120,135 120,150 100,140" fill="#334155" stroke="#94a3b8" stroke-width="1"/>
+          <polygon points="120,135 270,65 270,80 120,150" fill="#475569" stroke="#94a3b8" stroke-width="1"/>
+
+          <!-- Strip 3 (Stepped Cut - Half length) -->
+          <polygon points="150,140 240,110 260,120 170,150" fill="#10b981" fill-opacity="0.8" stroke="#34d399" stroke-width="1.2"/>
+          <polygon points="150,140 170,150 170,165 150,155" fill="#047857" stroke="#34d399" stroke-width="1.2"/>
+          <polygon points="170,150 260,120 260,135 170,165" fill="#059669" stroke="#34d399" stroke-width="1.2"/>
+
+          <!-- Strip 4 (Stepped Cut - Half length) -->
+          <polygon points="200,155 290,125 310,135 220,165" fill="#10b981" fill-opacity="0.8" stroke="#34d399" stroke-width="1.2"/>
+          <polygon points="200,155 220,165 220,180 200,170" fill="#047857" stroke="#34d399" stroke-width="1.2"/>
+          <polygon points="220,165 290,125 290,140 220,180" fill="#059669" stroke="#34d399" stroke-width="1.2"/>
+
+          <!-- Dashed cutoff indicator for removed section -->
+          <line x1="240" y1="110" x2="330" y2="78" stroke="#ef4444" stroke-dasharray="3,3" stroke-width="1.5"/>
+          <line x1="290" y1="125" x2="380" y2="93" stroke="#ef4444" stroke-dasharray="3,3" stroke-width="1.5"/>
+
+          <!-- Callout tags -->
+          <text class="txt-ko" x="320" y="160" fill="#34d399" font-family="sans-serif" font-size="10" font-weight="bold">계단형 패드 자동 절단</text>
+          <text class="txt-en" x="320" y="160" fill="#34d399" font-family="sans-serif" font-size="10" font-weight="bold">Stepped Pad Auto-Cut</text>
+          <text class="txt-ko" x="350" y="85" fill="#ef4444" font-family="sans-serif" font-size="9">절단된 기초 영역</text>
+          <text class="txt-en" x="350" y="85" fill="#ef4444" font-family="sans-serif" font-size="9">Cut Foundation Zone</text>
+        </g>
+      </svg>
+      <div class="manual-diagram-caption">
+        <span>✏️</span>
+        <span class="txt-ko"><b>이형 탱크 &amp; 3D 기초 패드 연동:</b> 평면에서 건물 기둥/보 간섭 패널을 삭제하면, 3D 등각도 콘크리트 패드가 계단형으로 자동 절단되어 도면화됩니다.</span>
+        <span class="txt-en"><b>Irregular Tank &amp; Foundation Sync:</b> Deleting pillar-interfered panels in plan view automatically cuts the 3D concrete foundation pad in a matching stepped shape.</span>
+      </div>
+    </div>
+  
+
+          <div class="manual-card">
+            <h4>
+              <span>❌</span>
+              <span class="txt-ko">이형 패널 절단 (기둥/보 간섭 제외)</span>
+              <span class="txt-en">Panel Cutout for Structural Obstacles</span>
+            </h4>
+            <p>
+              <span class="txt-ko">건물 기계실 기둥(Pillar)이나 배관 비트 간섭으로 인해 직사각형이 아닌 'ㄱ'자, 'ㄷ'자 형태의 수조가 필요할 때 사용합니다. <b>[삭제(Del)]</b> 도구를 선택한 후 평면 격자에서 해당 위치의 셀을 클릭하면 즉시 삭제되며, 외벽 패널과 스키드 프레임이 새로운 경계면에 맞춰 실시간 재구성됩니다.</span>
+              <span class="txt-en">When dealing with mechanical room columns or structural obstacles, select the <b>[Delete (Del)]</b> tool and click grid cells to carve out L-shaped or U-shaped irregular tanks. Perimeter walls and skid beams automatically re-route.</span>
+            </p>
+            <div class="manual-tip">
+              <span>💡</span>
+              <span class="txt-ko"><b>3D 기초 패드 자동 연동:</b> 삭제된 구간 아래의 콘크리트 기초 패드는 3D 등각도에서 계단형(Stepped)으로 자동 절단되어 실제 시공과 100% 일치합니다.</span>
+              <span class="txt-en"><b>3D Foundation Sync:</b> Concrete foundation strips beneath cutout cells are automatically trimmed into stepped profiles in 3D isometric view.</span>
+            </div>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>🚪</span>
+              <span class="txt-ko">맨홀(MH), 사다리(LAD), 통기관(VENT) 배치 및 방향 제어</span>
+              <span class="txt-en">Manhole, Ladder &amp; Air Vent Direction Controls</span>
+            </h4>
+            <p>
+              <span class="txt-ko">
+                ● <b>맨홀 (Manhole):</b> 천장 상부 점검용 맨홀 위치를 클릭하여 배치합니다. 하단 방향 버튼(상/하/좌/우/자동)으로 열림 및 접근 방향을 지정할 수 있습니다.<br>
+                ● <b>내/외부 사다리 (Ladder):</b> 맨홀 위치에 맞춰 외벽 접근용 사다리 심볼이 평면도 및 입면도에 정확한 방향으로 투영됩니다.<br>
+                ● <b>통기관 (Air Vent):</b> 공기 순환 및 수압 평형을 위한 벤트 심볼을 원하는 상부 칸에 자유롭게 설치합니다.
+              </span>
+              <span class="txt-en">
+                ● <b>Manhole (MH):</b> Click roof cells to place maintenance manholes. Direction radios (Top/Bottom/Left/Right/Auto) control hatch access.<br>
+                ● <b>Ladder (LAD):</b> Automatically projects internal and external ladders in Plan and Elevation views aligned with manholes.<br>
+                ● <b>Air Vent (VENT):</b> Click roof cells to position air vents for pressure equalization.
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Section 3: 측면 판넬 및 배관 노즐 편집 -->
+        <div id="sec-nozzle" class="manual-sec-group" style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--accent);padding-bottom:6px">
+            <span style="font-size:16px">💧</span>
+            <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--fg)">
+              <span class="txt-ko">3. 측면 판넬 및 배관 노즐 편집 (Tab 3: 측면/배관 편집)</span>
+              <span class="txt-en">3. Panel Faces &amp; Nozzle Piping (Tab 3: Side/Piping)</span>
+            </h3>
+            <span class="manual-badge">Tab 3</span>
+            <span class="manual-badge new"><span class="txt-ko">하부 드레인 신규</span><span class="txt-en">Bottom Drain</span></span>
+          </div>
+
+          <!-- Technical SVG Diagram 3 -->
+          
+    <div class="manual-diagram-box">
+      <svg viewBox="0 0 860 210" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="pipeGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#0284c7"/></linearGradient>
+          <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(2,132,199,0.25)"/><stop offset="100%" stop-color="rgba(2,132,199,0.05)"/></linearGradient>
+        </defs>
+
+        <!-- Tank Cross-Section -->
+        <rect x="60" y="20" width="340" height="90" fill="url(#waterGrad)" stroke="#0284c7" stroke-width="1.5"/>
+        <text class="txt-ko" x="230" y="60" fill="rgba(56,189,248,0.5)" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle">물탱크 내부 (Water Reservoir)</text>
+        <text class="txt-en" x="230" y="60" fill="rgba(56,189,248,0.5)" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle">Inside Water Reservoir</text>
+
+        <!-- Tank Bottom Floor Line -->
+        <line x1="50" y1="110" x2="410" y2="110" stroke="#f59e0b" stroke-width="3"/>
+        <text class="txt-ko" x="120" y="104" fill="#f59e0b" font-family="sans-serif" font-size="10" font-weight="bold">탱크 바닥 판넬 (EL.+0)</text>
+        <text class="txt-en" x="120" y="104" fill="#f59e0b" font-family="sans-serif" font-size="10" font-weight="bold">Tank Floor Panel (EL.+0)</text>
+
+        <!-- Skid Frame Beams -->
+        <rect x="70" y="112" width="24" height="24" fill="#64748b" stroke="#cbd5e1" stroke-width="1"/>
+        <rect x="200" y="112" width="24" height="24" fill="#64748b" stroke="#cbd5e1" stroke-width="1"/>
+        <rect x="340" y="112" width="24" height="24" fill="#64748b" stroke="#cbd5e1" stroke-width="1"/>
+        <text class="txt-ko" x="212" y="128" fill="#fff" font-family="sans-serif" font-size="8" text-anchor="middle">스키드</text>
+        <text class="txt-en" x="212" y="128" fill="#fff" font-family="sans-serif" font-size="8" text-anchor="middle">Skid</text>
+
+        <!-- Bottom Drain Socket & Downward Pipe -->
+        <rect x="270" y="107" width="30" height="6" fill="#10b981" stroke="#34d399" stroke-width="1"/>
+        <!-- Downward Spool Pipe -->
+        <path d="M 280 113 L 280 160 L 320 160" stroke="#10b981" stroke-width="6" stroke-linecap="round" fill="none"/>
+        <circle cx="285" cy="110" r="14" fill="rgba(16,185,129,0.2)" stroke="#10b981" stroke-width="1.5" stroke-dasharray="2,2"/>
+
+        <!-- Concrete Pier Under Skid -->
+        <polygon points="60,140 104,140 100,185 64,185" fill="#334155" stroke="#64748b"/>
+        <polygon points="190,140 234,140 230,185 194,185" fill="#334155" stroke="#64748b"/>
+        <polygon points="330,140 374,140 370,185 334,185" fill="#334155" stroke="#64748b"/>
+
+        <!-- Leader Line & Callout for Drain -->
+        <line x1="285" y1="135" x2="440" y2="135" stroke="#34d399" stroke-width="1.5"/>
+        <circle cx="285" cy="135" r="3" fill="#10b981"/>
+
+        <!-- Callout Box -->
+        <g transform="translate(450, 65)">
+          <rect width="360" height="95" rx="6" fill="#1e293b" stroke="#10b981" stroke-width="1.5"/>
+          <text class="txt-ko" x="16" y="24" fill="#34d399" font-family="sans-serif" font-size="12" font-weight="bold">⚓ DRAIN (드레인) 하부 설치 표준 규격</text>
+          <text class="txt-en" x="16" y="24" fill="#34d399" font-family="sans-serif" font-size="12" font-weight="bold">⚓ DRAIN Bottom Floor Standard Spec</text>
+          
+          <text class="txt-ko" x="16" y="44" fill="#e2e8f0" font-family="sans-serif" font-size="11">● <tspan font-weight="bold" fill="#38bdf8">설치 위치:</tspan> 바닥 판넬 최하단면 (EL.+0 mm)</text>
+          <text class="txt-en" x="16" y="44" fill="#e2e8f0" font-family="sans-serif" font-size="11">● <tspan font-weight="bold" fill="#38bdf8">Location:</tspan> Tank Bottom Floor Panel (EL.+0 mm)</text>
+          
+          <text class="txt-ko" x="16" y="62" fill="#e2e8f0" font-family="sans-serif" font-size="11">● <tspan font-weight="bold" fill="#38bdf8">도면 표기:</tspan> [N4] DRAIN 100A (SOCKET) EL.+0 (하부)</text>
+          <text class="txt-en" x="16" y="62" fill="#e2e8f0" font-family="sans-serif" font-size="11">● <tspan font-weight="bold" fill="#38bdf8">Drawing Callout:</tspan> [N4] DRAIN 100A EL.+0 (Bottom)</text>
+
+          <text class="txt-ko" x="16" y="80" fill="#94a3b8" font-family="sans-serif" font-size="10.5">● <tspan font-weight="bold" fill="#38bdf8">배관 간섭 방지:</tspan> 스키드 형강 사이 하향 토출 파이프 자동 설계</text>
+          <text class="txt-en" x="16" y="80" fill="#94a3b8" font-family="sans-serif" font-size="10.5">● <tspan font-weight="bold" fill="#38bdf8">Clearance:</tspan> Downward spool clearance between skid beams</text>
+        </g>
+      </svg>
+      <div class="manual-diagram-caption">
+        <span>💧</span>
+        <span class="txt-ko"><b>하부 드레인 배관 원칙:</b> 드레인(DRAIN)은 잔수 배출을 위해 탱크 바닥에 EL.+0으로 설치되며, 평면·입면·노즐일람표에 [하부]로 자동 정합 표기됩니다.</span>
+        <span class="txt-en"><b>Bottom Drain Rule:</b> DRAIN nozzle is positioned at bottom floor EL.+0 for full drainage, automatically reflected across Plan, Elevation, and Nozzle Schedule.</span>
+      </div>
+    </div>
+  
+
+          <div class="manual-card">
+            <h4>
+              <span>⚓</span>
+              <span class="txt-ko">6개 면 뷰 전환 &amp; 하부 바닥(Bottom Floor) 뷰</span>
+              <span class="txt-en">6-Face View Switching &amp; Bottom Floor View</span>
+            </h4>
+            <p>
+              <span class="txt-ko">상단 선택 바에서 편집하고자 하는 면을 클릭합니다: <b>[정면], [우측면], [배면], [좌측면], [상부(천장)], [⚓ 하부(바닥)]</b>. 특히 <b>하부(바닥)</b> 선택 시 물탱크 바닥 판넬 격자가 표시되어 원하는 위치에 드레인을 정확하게 배치할 수 있습니다.</span>
+              <span class="txt-en">Switch between 6 editable faces: <b>Front, Right, Rear, Left, Top Roof, and Bottom Floor (⚓)</b>. The Bottom Floor view displays the reservoir floor grid for precise drain placement.</span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>🎯</span>
+              <span class="txt-ko">드레인(DRAIN) 배수구 하부 기본 설치 및 도면화 원칙</span>
+              <span class="txt-en">DRAIN Bottom Floor Standards &amp; Elevation Sync</span>
+            </h4>
+            <p>
+              <span class="txt-ko">
+                배수구(DRAIN)는 물탱크 청소 및 완전 퇴수를 위해 바닥판 최하단에 설치되어야 합니다:<br>
+                ● <b>기본 배관 프리셋 클릭 시:</b> 드레인(DRAIN)은 자동으로 배치 면: <code>하부 (바닥)</code>, 설치 높이: <code>EL.+0 (하부)</code>, 구경: <code>50A</code>, 타입: <code>SOCKET</code>으로 등록됩니다.<br>
+                ● <b>평면도(Plan View) 표기:</b> 상부 노즐과 명확히 구분되도록 <b>[N4] DR 50A (하부)</b>로 심볼 및 지시선이 자동 인출됩니다.<br>
+                ● <b>정면/측면 입면도(Elevation View):</b> 탱크 바닥단(y=0) 아래 기초 패드 공간으로 하향 돌출 연장되는 배관 파이프 스터브와 함께 <b>EL.+0 (하부)</b> 지시선이 도면화됩니다.<br>
+                ● <b>노즐 일람표(Nozzle Schedule):</b> 설치 위치에 BOTTOM (하부), 설치 높이에 하부 (EL.+0)로 정규 등록됩니다.
+              </span>
+              <span class="txt-en">
+                The DRAIN nozzle must be located at the lowest bottom floor for total drainage:<br>
+                ● <b>Preset Piping:</b> DRAIN defaults to Face: <code>Bottom Floor</code>, Elevation: <code>EL.+0 (Bottom)</code>, Size: <code>50A</code>, Type: <code>SOCKET</code>.<br>
+                ● <b>Plan View:</b> Clearly annotated as <b>[N4] DR 50A (Bottom)</b> to distinguish from roof penetrations.<br>
+                ● <b>Elevation View:</b> Draws a downward discharge spool extending below the floor line into the foundation clearance with <b>EL.+0 (Bottom)</b> callout.<br>
+                ● <b>Nozzle Schedule:</b> Lists Location: BOTTOM, Elevation: EL.+0.
+              </span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>⚡</span>
+              <span class="txt-ko">원클릭 기본 배관 프리셋 &amp; 동일 칸 2개 노즐 배치</span>
+              <span class="txt-en">1-Click Preset Piping &amp; Dual Nozzles in Same Cell</span>
+            </h4>
+            <p>
+              <span class="txt-ko">
+                ● <b>⚡ 1구획 기본배관:</b> IN(유입 100A), OUT(유출 150A), OVERFLOW(오버플로우 100A), DRAIN(하부 드레인 50A)을 최적 위치에 원클릭으로 일괄 자동 배치합니다.<br>
+                ● <b>동일 칸 2개 노즐 배치:</b> 이미 노즐이 있는 칸을 다시 클릭하면 좌측(-250mm)과 우측(+250mm)으로 자동 이격되어 1개 판넬에 2개의 배관이 간섭 없이 깔끔하게 도면화됩니다.
+              </span>
+              <span class="txt-en">
+                ● <b>⚡ 1-Click Preset Piping:</b> Automatically installs IN (100A), OUT (150A), OVERFLOW (100A), and DRAIN (50A) at optimal positions.<br>
+                ● <b>Dual Nozzles per Cell:</b> Clicking an already occupied cell places a secondary nozzle with automated horizontal offset (-250mm / +250mm) without overlap.
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Section 4: 부품 사양 명세표 (BOM) & 풍선 기호 -->
+        <div id="sec-bom" class="manual-sec-group" style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--accent);padding-bottom:6px">
+            <span style="font-size:16px">📋</span>
+            <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--fg)">
+              <span class="txt-ko">4. 부품 사양 명세표 (BOM) &amp; 풍선 기호 (Balloon Callouts)</span>
+              <span class="txt-en">4. Bill of Materials (BOM) &amp; Balloon Callouts</span>
+            </h3>
+            <span class="manual-badge">BOM &amp; Balloon</span>
+          </div>
+
+          <!-- Technical SVG Diagram 4 -->
+          
+    <div class="manual-diagram-box">
+      <svg viewBox="0 0 860 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Bad Practice Left -->
+        <g transform="translate(30, 20)">
+          <rect width="360" height="145" rx="8" fill="rgba(239,68,68,0.06)" stroke="#ef4444" stroke-width="1.2"/>
+          <text class="txt-ko" x="20" y="24" fill="#f87171" font-family="sans-serif" font-size="12" font-weight="bold">❌ 개선 전 (Before: 불필요한 꺾임선 및 침범)</text>
+          <text class="txt-en" x="20" y="24" fill="#f87171" font-family="sans-serif" font-size="12" font-weight="bold">❌ Before: Bent / Internal Elbow Leaders</text>
+
+          <!-- Bad Balloon 1 -->
+          <circle cx="80" cy="80" r="16" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="80" y="86" fill="#fff" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle">1</text>
+          <!-- bad zig-zag leader line crossing inside -->
+          <path d="M 68 76 L 140 115 L 180 100 L 220 120" stroke="#ef4444" stroke-width="2" stroke-dasharray="2,2"/>
+          <circle cx="220" cy="120" r="3" fill="#ef4444"/>
+
+          <text class="txt-ko" x="180" y="65" fill="#f87171" font-family="sans-serif" font-size="11">원 안쪽까지 지시선 침범</text>
+          <text class="txt-en" x="180" y="65" fill="#f87171" font-family="sans-serif" font-size="11">Line enters inside circle</text>
+          <text class="txt-ko" x="180" y="82" fill="#94a3b8" font-family="sans-serif" font-size="10">부품 문자 가림 &amp; 꺾임 난잡</text>
+          <text class="txt-en" x="180" y="82" fill="#94a3b8" font-family="sans-serif" font-size="10">Obscures number text</text>
+        </g>
+
+        <!-- Good Practice Right -->
+        <g transform="translate(430, 20)">
+          <rect width="400" height="145" rx="8" fill="rgba(16,185,129,0.06)" stroke="#10b981" stroke-width="1.5"/>
+          <text class="txt-ko" x="20" y="24" fill="#34d399" font-family="sans-serif" font-size="12" font-weight="bold">✅ 현재 표준 (Now: AutoCAD 표준 방사형 직선 인출)</text>
+          <text class="txt-en" x="20" y="24" fill="#34d399" font-family="sans-serif" font-size="12" font-weight="bold">✅ AutoCAD Standard: Clean Straight Radial Leader</text>
+
+          <!-- Good Balloon 1 -->
+          <circle cx="70" cy="80" r="16" fill="#0284c7" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="70" y="86" fill="#fff" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle">1</text>
+          <!-- Clean straight leader starting directly from circumference -->
+          <line x1="84" y1="88" x2="160" y2="125" stroke="#38bdf8" stroke-width="2"/>
+          <circle cx="160" cy="125" r="3.5" fill="#38bdf8"/>
+
+          <!-- Good Balloon 2 -->
+          <circle cx="210" cy="80" r="16" fill="#059669" stroke="#34d399" stroke-width="1.5"/>
+          <text x="210" y="86" fill="#fff" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle">2</text>
+          <line x1="224" y1="88" x2="280" y2="125" stroke="#34d399" stroke-width="2"/>
+          <circle cx="280" cy="125" r="3.5" fill="#34d399"/>
+
+          <!-- Features -->
+          <g transform="translate(290, 55)">
+            <text class="txt-ko" x="0" y="15" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold">● 원주 접선에서 직선 출발</text>
+            <text class="txt-en" x="0" y="15" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold">● Starts at Circumference</text>
+
+            <text class="txt-ko" x="0" y="32" fill="#cbd5e1" font-family="sans-serif" font-size="10.5">● 번호 텍스트 완전 보호</text>
+            <text class="txt-en" x="0" y="32" fill="#cbd5e1" font-family="sans-serif" font-size="10.5">● Crisp Number Legibility</text>
+
+            <text class="txt-ko" x="0" y="49" fill="#cbd5e1" font-family="sans-serif" font-size="10.5">● 부품까지 꺾임 없이 직결</text>
+            <text class="txt-en" x="0" y="49" fill="#cbd5e1" font-family="sans-serif" font-size="10.5">● Direct Unbroken Leader</text>
+          </g>
+        </g>
+      </svg>
+      <div class="manual-diagram-caption">
+        <span>🎈</span>
+        <span class="txt-ko"><b>풍선 기호 지시선 표준:</b> 번호 원 내부를 가로지르거나 꺾이지 않고, 원주(Circumference) 접점에서 부품까지 직선으로 깔끔하게 도면화됩니다.</span>
+        <span class="txt-en"><b>Balloon Leader Line Standard:</b> Originates cleanly at circle circumference and points directly to tank components without internal bends or crossing.</span>
+      </div>
+    </div>
+  
+
+          <div class="manual-card">
+            <h4>
+              <span>🎈</span>
+              <span class="txt-ko">부품 번호 풍선 기호 (Circular Balloon Callout)</span>
+              <span class="txt-en">Circular Balloon Callout Leaders</span>
+            </h4>
+            <p>
+              <span class="txt-ko">도면 내 주요 부품의 위치를 가리키는 원형 번호 풍선 기호(① 기초 패드, ② 스키드 프레임, ③ 측면 판넬, ④ 보강재, ⑤ 노즐 등)가 자동으로 배치됩니다. <b>직선 인출선 원칙:</b> 불필요한 꺾임선이나 원 내부 침범 없이 부품 원둘레(Circumference) 접점에서 부품까지 직선으로 깔끔하게 연결되어 도면 가독성을 극대화합니다.</span>
+              <span class="txt-en">Numbered circular balloons (① Foundation, ② Skid Frame, ③ Side Panels, ④ Reinforcements, ⑤ Nozzles) annotate key tank components. Leaders originate cleanly from the outer circle circumference without ugly internal bends, ensuring maximum drawing legibility.</span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>📋</span>
+              <span class="txt-ko">A1 표준 조립도 부품 사양 명세표 (AutoCAD Standard BOM)</span>
+              <span class="txt-en">AutoCAD Standard BOM Integration</span>
+            </h4>
+            <p>
+              <span class="txt-ko">A1 표준 조립도 우측 하단에 수록되는 공사 및 견적용 정규 부품 명세표입니다. 기초 패드, 스키드 베이스, 바닥/측면/천장 판넬, 내부 환봉 스테이, 외부 보강 프레임, 볼트/너트류가 규격 및 수량과 함께 자동 집계됩니다. 상단 툴바의 <b>[📋 부품표]</b> 모달창에서 직접 항목을 추가, 수정, 삭제할 수 있습니다.</span>
+              <span class="txt-en">Standard bill of materials positioned at the lower right of the A1 assembly drawing. Summarizes foundation piers, skid beams, panels, stay rods, exterior frames, and hardware. Click <b>[📋 BOM]</b> in the toolbar to edit rows, specs, and quantities.</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Section 5: 도면 뷰, 뷰포트 조작 & CAD 내보내기 -->
+        <div id="sec-dwg" class="manual-sec-group" style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--accent);padding-bottom:6px">
+            <span style="font-size:16px">🖨️</span>
+            <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--fg)">
+              <span class="txt-ko">5. 도면 시트 구성, 뷰포트 조작 &amp; CAD 내보내기 (DWG/DXF)</span>
+              <span class="txt-en">5. A1 Sheet Anatomy, Viewport Controls &amp; CAD Export</span>
+            </h3>
+            <span class="manual-badge">View &amp; Export</span>
+          </div>
+
+          <!-- Technical SVG Diagram 5 -->
+          
+    <div class="manual-diagram-box">
+      <svg viewBox="0 0 860 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Blueprint A1 Sheet Border -->
+        <rect x="20" y="10" width="560" height="200" fill="#0b1120" stroke="#0284c7" stroke-width="2"/>
+        <rect x="26" y="16" width="548" height="188" fill="none" stroke="#0284c7" stroke-width="0.8"/>
+
+        <!-- Quadrant 1: Plan View (Top-Left) -->
+        <rect x="36" y="24" width="250" height="85" fill="#1e293b" stroke="#38bdf8" stroke-width="1"/>
+        <text class="txt-ko" x="46" y="42" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold">① 평면도 (PLAN VIEW)</text>
+        <text class="txt-en" x="46" y="42" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold">① PLAN VIEW</text>
+        <text class="txt-ko" x="46" y="58" fill="#94a3b8" font-family="sans-serif" font-size="9">판넬 격자, 맨홀, 사다리, 배관 노즐 및 풍선기호</text>
+        <text class="txt-en" x="46" y="58" fill="#94a3b8" font-family="sans-serif" font-size="9">Panels, Manhole, Ladder, Nozzles &amp; Balloons</text>
+
+        <!-- Quadrant 2: 3D Isometric View (Top-Right) -->
+        <rect x="296" y="24" width="268" height="85" fill="#1e293b" stroke="#10b981" stroke-width="1"/>
+        <text class="txt-ko" x="306" y="42" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold">② 등각 조감도 (3D ISOMETRIC)</text>
+        <text class="txt-en" x="306" y="42" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold">② 3D ISOMETRIC VIEW</text>
+        <text class="txt-ko" x="306" y="58" fill="#94a3b8" font-family="sans-serif" font-size="9">3D 프레임, 보강재, 단차 콘크리트 패드 일체 표현</text>
+        <text class="txt-en" x="306" y="58" fill="#94a3b8" font-family="sans-serif" font-size="9">3D Structure, Reinforcements, Stepped Pads</text>
+
+        <!-- Quadrant 3: Elevations (Bottom-Left) -->
+        <rect x="36" y="115" width="250" height="80" fill="#1e293b" stroke="#f59e0b" stroke-width="1"/>
+        <text class="txt-ko" x="46" y="133" fill="#fb923c" font-family="sans-serif" font-size="11" font-weight="bold">③ 정면도·측면도 (ELEVATIONS)</text>
+        <text class="txt-en" x="46" y="133" fill="#fb923c" font-family="sans-serif" font-size="11" font-weight="bold">③ ELEVATION VIEWS</text>
+        <text class="txt-ko" x="46" y="149" fill="#94a3b8" font-family="sans-serif" font-size="9">단별 판넬 높이, 하부 스키드, EL.+0 바닥 드레인</text>
+        <text class="txt-en" x="46" y="149" fill="#94a3b8" font-family="sans-serif" font-size="9">Tiers Height, Skid Frame, Bottom EL.+0 Drain</text>
+
+        <!-- Quadrant 4: BOM & Title Block (Bottom-Right) -->
+        <rect x="296" y="115" width="268" height="80" fill="#0f172a" stroke="#a78bfa" stroke-width="1"/>
+        <rect x="296" y="115" width="268" height="28" fill="#1e293b" stroke="#a78bfa" stroke-width="0.8"/>
+        <text class="txt-ko" x="306" y="133" fill="#c4b5fd" font-family="sans-serif" font-size="10" font-weight="bold">④ 부품표 (BOM) &amp; 노즐일람표</text>
+        <text class="txt-en" x="306" y="133" fill="#c4b5fd" font-family="sans-serif" font-size="10" font-weight="bold">④ BOM &amp; Nozzle Schedule</text>
+
+        <rect x="296" y="147" width="268" height="48" fill="#1e293b" stroke="#a78bfa" stroke-width="0.8"/>
+        <text class="txt-ko" x="306" y="165" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold">⑤ 일반시방사항 &amp; 정규 표제란</text>
+        <text class="txt-en" x="306" y="165" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold">⑤ Notes &amp; Title Block</text>
+        <text class="txt-ko" x="306" y="181" fill="#94a3b8" font-family="sans-serif" font-size="8.5">프로젝트명, 도면번호, 고객사, 설계사, 축척(Scale)</text>
+        <text class="txt-en" x="306" y="181" fill="#94a3b8" font-family="sans-serif" font-size="8.5">Project, DWG No., Customer, Scale, Date</text>
+
+        <!-- Right Side: Viewport Controls Cheat Sheet -->
+        <g transform="translate(600, 15)">
+          <rect width="240" height="190" rx="8" fill="#1e293b" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+          <text class="txt-ko" x="120" y="24" fill="#38bdf8" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">🖱️ 뷰포트 마우스 조작 단축키</text>
+          <text class="txt-en" x="120" y="24" fill="#38bdf8" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">🖱️ Viewport Controls</text>
+
+          <g transform="translate(15, 42)">
+            <circle cx="12" cy="12" r="10" fill="#0284c7"/>
+            <text x="12" y="16" fill="#fff" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">L</text>
+            <text class="txt-ko" x="30" y="12" fill="#fff" font-family="sans-serif" font-size="11" font-weight="bold">좌클릭 드래그</text>
+            <text class="txt-en" x="30" y="12" fill="#fff" font-family="sans-serif" font-size="11" font-weight="bold">Left Click Drag</text>
+            <text class="txt-ko" x="30" y="25" fill="#94a3b8" font-family="sans-serif" font-size="10">화면 이동 (Pan)</text>
+            <text class="txt-en" x="30" y="25" fill="#94a3b8" font-family="sans-serif" font-size="10">Pan Drawing</text>
+          </g>
+
+          <g transform="translate(15, 80)">
+            <circle cx="12" cy="12" r="10" fill="#059669"/>
+            <text x="12" y="16" fill="#fff" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">W</text>
+            <text class="txt-ko" x="30" y="12" fill="#fff" font-family="sans-serif" font-size="11" font-weight="bold">휠 스크롤</text>
+            <text class="txt-en" x="30" y="12" fill="#fff" font-family="sans-serif" font-size="11" font-weight="bold">Wheel Scroll</text>
+            <text class="txt-ko" x="30" y="25" fill="#94a3b8" font-family="sans-serif" font-size="10">확대 / 축소 (Zoom)</text>
+            <text class="txt-en" x="30" y="25" fill="#94a3b8" font-family="sans-serif" font-size="10">Zoom In / Out</text>
+          </g>
+
+          <g transform="translate(15, 118)">
+            <circle cx="12" cy="12" r="10" fill="#ea580c"/>
+            <text x="12" y="16" fill="#fff" font-family="sans-serif" font-size="9" font-weight="bold" text-anchor="middle">2x</text>
+            <text class="txt-ko" x="30" y="12" fill="#fff" font-family="sans-serif" font-size="11" font-weight="bold">더블클릭</text>
+            <text class="txt-en" x="30" y="12" fill="#fff" font-family="sans-serif" font-size="11" font-weight="bold">Double Click</text>
+            <text class="txt-ko" x="30" y="25" fill="#94a3b8" font-family="sans-serif" font-size="10">화면 맞춤 (Auto Fit)</text>
+            <text class="txt-en" x="30" y="25" fill="#94a3b8" font-family="sans-serif" font-size="10">Zoom Fit Sheet</text>
+          </g>
+
+          <g transform="translate(15, 156)">
+            <rect x="2" y="2" width="20" height="18" rx="3" fill="#64748b"/>
+            <text x="12" y="15" fill="#fff" font-family="sans-serif" font-size="8" font-weight="bold" text-anchor="middle">ESC</text>
+            <text class="txt-ko" x="30" y="14" fill="#cbd5e1" font-family="sans-serif" font-size="10.5">모달창 닫기 (Close Dialog)</text>
+            <text class="txt-en" x="30" y="14" fill="#cbd5e1" font-family="sans-serif" font-size="10.5">Close Dialog (ESC)</text>
+          </g>
+        </g>
+      </svg>
+      <div class="manual-diagram-caption">
+        <span>🖨️</span>
+        <span class="txt-ko"><b>A1 표준 조립도 시트 구조:</b> 4개 뷰(평면, 3D등각, 입면, 기초)와 정규 표제란/부품표가 하나의 도면에 완벽하게 배치됩니다.</span>
+        <span class="txt-en"><b>A1 Standard Assembly Sheet Map:</b> 4 Primary Views (Plan, 3D Iso, Elevation, Foundation) with Title Block &amp; BOM perfectly arranged on A1 Sheet.</span>
+      </div>
+    </div>
+  
+
+          <div class="manual-card">
+            <h4>
+              <span>💾</span>
+              <span class="txt-ko">2D CAD 파일 및 고해상도 이미지 내보내기</span>
+              <span class="txt-en">2D CAD Export &amp; High-Resolution Images</span>
+            </h4>
+            <p>
+              <span class="txt-ko">
+                ● <b>💾 DXF (.dxf):</b> AutoCAD, ZWCAD, BricsCAD, CADian 등 모든 CAD 프로그램에서 레이어별(PANEL, NOZZLE, DIM, BOM 등)로 완벽하게 호환되는 표준 벡터 파일입니다.<br>
+                ● <b>📁 DWG 저장 (.dwg):</b> 실무용 DWG CAD 도면 파일 다운로드 (ODA Converter 연동).<br>
+                ● <b>📷 PNG / SVG:</b> 승인 제출용 보고서나 제안서 문서에 첨부할 수 있는 초고해상도 이미지 및 무손실 벡터 도면입니다.
+              </span>
+              <span class="txt-en">
+                ● <b>💾 DXF (.dxf):</b> Universal CAD vector file with layered entities (PANEL, NOZZLE, DIM, BOM) fully compatible with AutoCAD, ZWCAD, CADian, etc.<br>
+                ● <b>📁 DWG (.dwg):</b> Native AutoCAD binary DWG file format via ODA Converter integration.<br>
+                ● <b>📷 PNG / SVG:</b> Ultra-high-resolution raster and lossless vector graphics for submittal reports and engineering proposals.
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Section 6: 팁 & FAQ -->
+        <div id="sec-faq" class="manual-sec-group" style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--accent);padding-bottom:6px">
+            <span style="font-size:16px">💡</span>
+            <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--fg)">
+              <span class="txt-ko">6. 자주 묻는 질문 (FAQ) &amp; 실무 팁</span>
+              <span class="txt-en">6. Frequently Asked Questions (FAQ) &amp; Engineering Tips</span>
+            </h3>
+            <span class="manual-badge tip">FAQ</span>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>❓</span>
+              <span class="txt-ko">Q. 물탱크 바닥 드레인(배수구) 위치를 원하는 칸으로 바꾸려면 어떻게 하나요?</span>
+              <span class="txt-en">Q. How do I change the bottom floor drain location?</span>
+            </h4>
+            <p>
+              <span class="txt-ko"><b>A.</b> [측면편집] 탭에서 상단 뷰 선택 버튼 중 <b>⚓ 하부 (바닥)</b>를 클릭합니다. 바닥 판넬 격자에서 이동하고 싶은 원하는 칸을 마우스로 클릭하면 기존 드레인이 새 칸으로 즉시 이동되며, 평면도와 입면도에 실시간 재배치됩니다.</span>
+              <span class="txt-en"><b>A.</b> In the [Side Edit] tab, click <b>⚓ Bottom Floor</b>. Simply click any floor panel cell to move the drain nozzle to that exact location. Plan and Elevation drawings update in real time.</span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>❓</span>
+              <span class="txt-ko">Q. 스키드 베이스 프레임을 125 채널에서 75 앵글로 강제 변경할 수 있나요?</span>
+              <span class="txt-en">Q. Can I override the skid frame from 125 Channel to 75 Angle?</span>
+            </h4>
+            <p>
+              <span class="txt-ko"><b>A.</b> [입력] 탭의 '하부 프레임' 항목에서 자동 선택 버튼을 해제하고 원하는 드롭다운 옵션(50 SHS, 75 앵글, 125 채널, 150 채널)을 선택하시면 즉시 고정됩니다. [규칙 설정] 창에서 높이 구간별 기본 규칙을 변경할 수도 있습니다.</span>
+              <span class="txt-en"><b>A.</b> Yes, uncheck the Auto toggle in [Specs] tab and manually select 75 Angle from the dropdown menu. You can also customize threshold rules in [Frame Rules].</span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>❓</span>
+              <span class="txt-ko">Q. 이형 물탱크의 유효 저수량(용량 Ton)은 어떻게 계산되나요?</span>
+              <span class="txt-en">Q. How is effective water capacity (Tons) calculated for irregular tanks?</span>
+            </h4>
+            <p>
+              <span class="txt-ko"><b>A.</b> 상단 헤더의 용량 배지(예: <code>60.0 Ton</code>)는 평면 편집에서 삭제된 패널 개수와 내부 격벽(Baffle) 두께를 정밀하게 차감하여 실제 유효 용적(Effective Volume)을 실시간 자동 산출합니다.</span>
+              <span class="txt-en"><b>A.</b> Header capacity badge automatically deducts deleted corner cells and baffle wall volumes, computing exact real-time effective capacity.</span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>❓</span>
+              <span class="txt-ko">Q. CAD 프로그램에서 치수 문자나 폰트가 깨지면 어떻게 하나요?</span>
+              <span class="txt-en">Q. What if CAD fonts or text appear corrupt in AutoCAD?</span>
+            </h4>
+            <p>
+              <span class="txt-ko"><b>A.</b> 상단 폰트 선택 바에서 <b>RomanS.shx</b> 또는 <b>Arial.ttf</b>를 선택한 후 내보내기 하시면 표준 AutoCAD 환경에서 글꼴 깨짐 없이 완벽하게 표시됩니다.</span>
+              <span class="txt-en"><b>A.</b> Select <b>RomanS.shx</b> or <b>Arial.ttf</b> in the drawing options bar before exporting to ensure 100% font compatibility in AutoCAD.</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- 검색 결과 없음 안내 -->
+        <div id="manualNoResult" style="display:none;text-align:center;padding:40px 20px;color:var(--muted)">
+          <div style="font-size:28px;margin-bottom:8px">🔍</div>
+          <p style="font-size:14px;font-weight:600">
+            <span class="txt-ko">입력하신 검색어와 일치하는 매뉴얼 내용이 없습니다.</span>
+            <span class="txt-en">No manual contents match your search keyword.</span>
+          </p>
+          <p style="font-size:12px">
+            <span class="txt-ko">다른 검색어(예: 드레인, 스키드, 이형, 평면, BOM, 패드, DXF)를 입력해 보세요.</span>
+            <span class="txt-en">Try searching with other terms (e.g. drain, skid, irregular, plan, BOM, pad, DXF).</span>
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 18px;border-top:1px solid var(--line);background:var(--surface-sub);font-size:11.5px;color:var(--muted)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span>⌨️ <span class="txt-ko">단축키:</span><span class="txt-en">Shortcuts:</span> <kbd style="background:var(--surface);border:1px solid var(--line);padding:2px 5px;border-radius:3px">ESC</kbd> <span class="txt-ko">닫기</span><span class="txt-en">Close</span></span>
+          <span>|</span>
+          <span>🖱️ <span class="txt-ko">휠 스크롤: 줌 / 좌클릭 드래그: 화면 이동</span><span class="txt-en">Wheel: Zoom / Left Drag: Pan</span></span>
         </div>
       </div>
+    </div>
 
     <!-- Minimized Floating Pill for User Manual -->
     <div id="manualMinPill" class="modeless-min-pill" style="bottom:216px" title="클릭하여 사용 매뉴얼 창 복원" onclick="openUserManualModal()">
@@ -3092,6 +3847,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if ($('lblUserManual')) $('lblUserManual').textContent = currentLang === 'en' ? 'User Manual' : '사용 매뉴얼';
     if ($('lblManualTitleMain')) $('lblManualTitleMain').textContent = currentLang === 'en' ? 'YSACC TANK CAD User Guide & Manual' : 'YSACC TANK CAD 사용자 가이드 & 사용 매뉴얼';
     if ($('lblManualSubtitle')) $('lblManualSubtitle').textContent = currentLang === 'en' ? 'Water Tank 2D CAD Drawing Generator & BOM Integration Guide' : '물탱크 2D CAD 자동 도면 생성 및 부품 사양 명세(BOM) 통합 가이드';
+    try { if (window.setManualLanguage) setManualLanguage(currentLang); } catch (e) {}
 
     const curTheme = document.documentElement.getAttribute('data-theme') || 'dark';
     if ($('themeBtn')) {
@@ -4746,12 +5502,43 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   window.toggleMaximizePlanEditModal = toggleMaximizePlanEditModal;
 
   /* ---------- User Manual Modeless Dialog System ---------- */
+  function setManualLanguage(lang) {
+    lang = (lang === 'en') ? 'en' : 'ko';
+    const dlg = $('manualModelessDialog');
+    if (dlg) dlg.setAttribute('data-manual-lang', lang);
+    const btnKo = $('btnManualLangKo');
+    const btnEn = $('btnManualLangEn');
+    if (btnKo && btnEn) {
+      if (lang === 'ko') {
+        btnKo.style.background = 'var(--accent)';
+        btnKo.style.color = '#fff';
+        btnKo.style.fontWeight = '700';
+        btnEn.style.background = 'transparent';
+        btnEn.style.color = 'var(--muted)';
+        btnEn.style.fontWeight = '600';
+      } else {
+        btnEn.style.background = 'var(--accent)';
+        btnEn.style.color = '#fff';
+        btnEn.style.fontWeight = '700';
+        btnKo.style.background = 'transparent';
+        btnKo.style.color = 'var(--muted)';
+        btnKo.style.fontWeight = '600';
+      }
+    }
+    const search = $('manualSearchInput');
+    if (search) {
+      search.placeholder = lang === 'en' ? '🔍 Search Manual (drain, skid, irregular, plan...)' : '🔍 매뉴얼 검색 (드레인, 스키드, 이형, 평면...)';
+    }
+  }
+  window.setManualLanguage = setManualLanguage;
+
   function openUserManualModal() {
     const dlg = $('manualModelessDialog');
     const pill = $('manualMinPill');
     if (!dlg) return;
     if (pill) pill.style.display = 'none';
 
+    setManualLanguage(currentLang || 'ko');
     dlg.style.display = 'flex';
     if (!dlg.dataset.moved) {
       const w = Math.min(1080, Math.floor(window.innerWidth * 0.92));
@@ -4921,6 +5708,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   $('btnUserManual')?.addEventListener('click', openUserManualModal);
   $('manualMinPill')?.addEventListener('click', openUserManualModal);
   $('manualSearchInput')?.addEventListener('input', (e) => filterManualContent(e.target.value));
+  $('btnManualLangKo')?.addEventListener('click', () => setManualLanguage('ko'));
+  $('btnManualLangEn')?.addEventListener('click', () => setManualLanguage('en'));
 
   document.querySelectorAll('#manualNavTabs .manual-nav-pill').forEach(btn => {
     btn.addEventListener('click', () => {
