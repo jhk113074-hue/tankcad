@@ -9091,11 +9091,110 @@
       secEnts.push({ t: 'text', p: [-Math.round(8 * N), lwlElev + Math.round(2.5 * N)], h: Math.round(2.8 * N), s: `▽ LWL EL. +${lwlElev.toLocaleString()}`, align: 'right', valign: 'bottom', layer: 'SHEET' });
       secEnts.push({ t: 'text', p: [totalL + Math.round(8 * N), lwlElev + Math.round(2.5 * N)], h: Math.round(2.6 * N), s: lang === 'ko' ? '최저수위 (OUTLET Invert)' : 'LWL (OUTLET Invert)', align: 'left', valign: 'bottom', layer: 'SHEET' });
 
-      // 5. 노즐 포인터 지시선 (Callouts)
-      drawLeader(secEnts, [totalL, hwlElev], [totalL + Math.round(8 * N), hwlElev + Math.round(6 * N)], [totalL + Math.round(22 * N), hwlElev + Math.round(6 * N)], [lang === 'ko' ? `[N3] 월류구 (${overflowNoz ? overflowNoz.size : '100A'})` : `[N3] OVERFLOW (${overflowNoz ? overflowNoz.size : '100A'})`, `EL. +${hwlElev} mm`], Math.round(2.4 * N), 'left', 'NOZZLE');
-      drawLeader(secEnts, [totalL, lwlElev], [totalL + Math.round(8 * N), lwlElev - Math.round(5 * N)], [totalL + Math.round(22 * N), lwlElev - Math.round(5 * N)], [lang === 'ko' ? `[N2] 유출구 (${outletNoz ? outletNoz.size : '100A'})` : `[N2] OUTLET (${outletNoz ? outletNoz.size : '100A'})`, `EL. +${lwlElev} mm (플랜지상부 취부)`], Math.round(2.4 * N), 'left', 'NOZZLE');
-      drawLeader(secEnts, [0, inletElev], [-Math.round(8 * N), inletElev + Math.round(6 * N)], [-Math.round(22 * N), inletElev + Math.round(6 * N)], [lang === 'ko' ? `[N1] 유입구 (${inletNoz ? inletNoz.size : '100A'})` : `[N1] INLET (${inletNoz ? inletNoz.size : '100A'})`, `EL. +${inletElev} mm`], Math.round(2.4 * N), 'right', 'NOZZLE');
-      drawLeader(secEnts, [totalL * 0.15, 0], [totalL * 0.15 - Math.round(8 * N), -Math.round(12 * N)], [totalL * 0.15 - Math.round(20 * N), -Math.round(12 * N)], [lang === 'ko' ? `[N4] 배수구 (${drainNoz ? drainNoz.size : '50A'})` : `[N4] DRAIN (${drainNoz ? drainNoz.size : '50A'})`, `EL. +0 mm (바닥)`], Math.round(2.4 * N), 'right', 'NOZZLE');
+      // 5. 배관 노즐 실물 형상 제도 (Side Stubs with Flanges & Tapered Gussets)
+      const drawCapSideNozzle = (xWall, elev, noz, dir) => {
+        const size = noz ? noz.size : '100A';
+        const spec = getNozzleSpec(size);
+        const r = spec.r || 55;
+        const rf = spec.rf || 105;
+        const neckLen = Math.max(140, spec.neckLen || 150);
+        const flgThick = spec.flgThick || 20;
+
+        if (dir === 'left') {
+          const xBase = xWall;
+          const xFlgOuter = xBase - neckLen;
+          const xFlgInner = xFlgOuter + flgThick;
+
+          // 파이프 배럴 (수평 원통 배관)
+          secEnts.push({ t: 'line', a: [xBase, elev + r], b: [xFlgInner, elev + r], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBase, elev - r], b: [xFlgInner, elev - r], layer: 'NOZZLE' });
+
+          // 플랜지 플레이트 (외측 직사각형)
+          secEnts.push({ t: 'line', a: [xFlgOuter, elev - rf], b: [xFlgInner, elev - rf], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xFlgInner, elev - rf], b: [xFlgInner, elev + rf], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xFlgInner, elev + rf], b: [xFlgOuter, elev + rf], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xFlgOuter, elev + rf], b: [xFlgOuter, elev - rf], layer: 'NOZZLE' });
+
+          // 볼트선
+          secEnts.push({ t: 'line', a: [xFlgOuter - 4, elev - rf * 0.75], b: [xFlgInner + 4, elev - rf * 0.75], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xFlgOuter - 4, elev + rf * 0.75], b: [xFlgInner + 4, elev + rf * 0.75], layer: 'NOZZLE' });
+
+          // 벽체 접합 테이퍼 가셋 (Gusset Fillets)
+          const gL = Math.round(neckLen * 0.45);
+          secEnts.push({ t: 'line', a: [xBase, elev + rf * 0.85], b: [xBase - gL, elev + r], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBase, elev - rf * 0.85], b: [xBase - gL, elev - r], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBase, elev - rf * 0.85], b: [xBase, elev + rf * 0.85], layer: 'NOZZLE' });
+
+          return [xFlgOuter, elev];
+        } else {
+          const xBase = xWall;
+          const xFlgOuter = xBase + neckLen;
+          const xFlgInner = xFlgOuter - flgThick;
+
+          // 파이프 배럴
+          secEnts.push({ t: 'line', a: [xBase, elev + r], b: [xFlgInner, elev + r], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBase, elev - r], b: [xFlgInner, elev - r], layer: 'NOZZLE' });
+
+          // 플랜지 플레이트
+          secEnts.push({ t: 'line', a: [xFlgInner, elev - rf], b: [xFlgOuter, elev - rf], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xFlgOuter, elev - rf], b: [xFlgOuter, elev + rf], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xFlgOuter, elev + rf], b: [xFlgInner, elev + rf], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xFlgInner, elev + rf], b: [xFlgInner, elev - rf], layer: 'NOZZLE' });
+
+          // 볼트선
+          secEnts.push({ t: 'line', a: [xFlgInner - 4, elev - rf * 0.75], b: [xFlgOuter + 4, elev - rf * 0.75], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xFlgInner - 4, elev + rf * 0.75], b: [xFlgOuter + 4, elev + rf * 0.75], layer: 'NOZZLE' });
+
+          // 벽체 접합 테이퍼 가셋 (Gusset Fillets)
+          const gL = Math.round(neckLen * 0.45);
+          secEnts.push({ t: 'line', a: [xBase, elev + rf * 0.85], b: [xBase + gL, elev + r], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBase, elev - rf * 0.85], b: [xBase + gL, elev - r], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBase, elev - rf * 0.85], b: [xBase, elev + rf * 0.85], layer: 'NOZZLE' });
+
+          return [xFlgOuter, elev];
+        }
+      };
+
+      const drawCapBottomNozzle = (cx, noz) => {
+        const size = noz ? noz.size : '50A';
+        const spec = getNozzleSpec(size);
+        const r = spec.r || 35;
+        const rf = spec.rf || 65;
+        const dropLen = 120;
+        const flgThick = spec.flgThick || 18;
+        const yFlgOuter = -dropLen;
+        const yFlgInner = yFlgOuter + flgThick;
+
+        secEnts.push({ t: 'line', a: [cx - r, 0], b: [cx - r, yFlgInner], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx + r, 0], b: [cx + r, yFlgInner], layer: 'NOZZLE' });
+
+        secEnts.push({ t: 'line', a: [cx - rf, yFlgOuter], b: [cx + rf, yFlgOuter], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx + rf, yFlgOuter], b: [cx + rf, yFlgInner], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx + rf, yFlgInner], b: [cx - rf, yFlgInner], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx - rf, yFlgInner], b: [cx - rf, yFlgOuter], layer: 'NOZZLE' });
+
+        secEnts.push({ t: 'line', a: [cx - rf * 0.75, yFlgOuter - 4], b: [cx - rf * 0.75, yFlgInner + 4], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx + rf * 0.75, yFlgOuter - 4], b: [cx + rf * 0.75, yFlgInner + 4], layer: 'NOZZLE' });
+
+        return [cx, yFlgOuter];
+      };
+
+      // 1. 좌측 유입구 (INLET) 노즐
+      const pInletTip = drawCapSideNozzle(0, inletElev, inletNoz, 'left');
+      drawLeader(secEnts, pInletTip, [pInletTip[0] - Math.round(6 * N), inletElev + Math.round(6 * N)], [pInletTip[0] - Math.round(20 * N), inletElev + Math.round(6 * N)], [lang === 'ko' ? `[N1] 유입구 (${inletNoz ? inletNoz.size : '100A'})` : `[N1] INLET (${inletNoz ? inletNoz.size : '100A'})`, `EL. +${inletElev} mm`], Math.round(2.4 * N), 'right', 'NOZZLE');
+
+      // 2. 우측 월류관 (OVERFLOW) 노즐
+      const pOfTip = drawCapSideNozzle(totalL, hwlElev, overflowNoz, 'right');
+      drawLeader(secEnts, pOfTip, [pOfTip[0] + Math.round(6 * N), hwlElev + Math.round(6 * N)], [pOfTip[0] + Math.round(20 * N), hwlElev + Math.round(6 * N)], [lang === 'ko' ? `[N3] 월류구 (${overflowNoz ? overflowNoz.size : '100A'})` : `[N3] OVERFLOW (${overflowNoz ? overflowNoz.size : '100A'})`, `EL. +${hwlElev} mm`], Math.round(2.4 * N), 'left', 'NOZZLE');
+
+      // 3. 우측 유출구 (OUTLET) 노즐
+      const pOutTip = drawCapSideNozzle(totalL, lwlElev, outletNoz, 'right');
+      drawLeader(secEnts, pOutTip, [pOutTip[0] + Math.round(6 * N), lwlElev - Math.round(5 * N)], [pOutTip[0] + Math.round(20 * N), lwlElev - Math.round(5 * N)], [lang === 'ko' ? `[N2] 유출구 (${outletNoz ? outletNoz.size : '100A'})` : `[N2] OUTLET (${outletNoz ? outletNoz.size : '100A'})`, `EL. +${lwlElev} mm (플랜지상부 취부)`], Math.round(2.4 * N), 'left', 'NOZZLE');
+
+      // 4. 하부 배수구 (DRAIN) 노즐
+      const drainX = totalL * 0.15;
+      const pDrainTip = drawCapBottomNozzle(drainX, drainNoz);
+      drawLeader(secEnts, pDrainTip, [pDrainTip[0] - Math.round(6 * N), pDrainTip[1] - Math.round(6 * N)], [pDrainTip[0] - Math.round(18 * N), pDrainTip[1] - Math.round(6 * N)], [lang === 'ko' ? `[N4] 배수구 (${drainNoz ? drainNoz.size : '50A'})` : `[N4] DRAIN (${drainNoz ? drainNoz.size : '50A'})`, `EL. +0 mm (바닥)`], Math.round(2.4 * N), 'right', 'NOZZLE');
 
       // 6. 수직 및 수평 치수선 (Dimensions)
       dimLinear(secEnts, [0, 0], [0, lwlElev], -Math.round(22 * N), true, String(lwlElev), Math.round(2.5 * N), 'DIM');

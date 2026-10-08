@@ -313,24 +313,41 @@ tr:last-child td{border-bottom:0}
 .badge-noz-custom{background:#7c3aed;top:2px;left:2px}
 
 /* Modern Side Elevation Edit UI */
-.face-seg-control{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:3px;gap:4px;margin-bottom:10px}
-.face-seg-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:5px 2px;font-size:11px;font-weight:700;color:var(--muted);border-radius:6px;cursor:pointer;user-select:none;transition:all .15s ease}
-.face-seg-btn span.face-sub{font-size:9px;font-weight:500;opacity:0.75}
+.side-header-wrap{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px}
+.pipe-master-toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:4px 10px;border-radius:20px;border:1px solid var(--line);background:var(--surface-sub);font-size:11px;font-weight:700;color:var(--muted);user-select:none;transition:all .2s ease;box-shadow:var(--shadow-sm);white-space:nowrap}
+.pipe-master-toggle:hover{border-color:var(--accent);color:var(--fg)}
+.pipe-master-toggle:has(input:checked){background:#e0f2fe;color:#0369a1;border-color:#38bdf8}
+.pipe-master-toggle input{margin:0;accent-color:var(--accent);cursor:pointer}
+
+/* Modern Capacity Action Card Banner */
+.cap-action-card{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,rgba(2,132,199,0.08) 0%,rgba(14,165,233,0.16) 100%);border:1px solid rgba(2,132,199,0.35);border-radius:8px;padding:8px 12px;margin-bottom:10px;cursor:pointer;transition:all .2s ease}
+.cap-action-card:hover{background:linear-gradient(135deg,rgba(2,132,199,0.14) 0%,rgba(14,165,233,0.22) 100%);border-color:#0284c7;box-shadow:0 2px 8px rgba(2,132,199,0.2);transform:translateY(-1px)}
+.cap-action-left{display:flex;align-items:center;gap:10px}
+.cap-action-icon{font-size:18px;display:flex;align-items:center;justify-content:center;width:30px;height:30px;background:rgba(2,132,199,0.15);border-radius:6px;line-height:1}
+.cap-action-title{font-size:11.5px;font-weight:700;color:var(--accent);line-height:1.25}
+.cap-action-sub{font-size:10px;color:var(--muted);line-height:1.2}
+.cap-action-arrow{display:flex;align-items:center;gap:3px;padding:3px 8px;background:var(--accent);color:#fff;border-radius:5px;font-size:10.5px;font-weight:700;box-shadow:0 1px 3px rgba(2,132,199,0.3);white-space:nowrap}
+
+/* Segmented Face Control */
+.face-seg-control{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface-sub);border:1px solid var(--line);border-radius:8px;padding:4px;gap:4px;margin-bottom:10px}
+.face-seg-btn{display:flex;align-items:center;justify-content:center;padding:7px 4px;font-size:11.5px;font-weight:600;color:var(--muted);border-radius:6px;cursor:pointer;user-select:none;transition:all .15s ease}
 .face-seg-btn input{display:none}
 .face-seg-btn:hover{color:var(--fg);background:rgba(255,255,255,0.06)}
-.face-seg-btn:has(input:checked){background:var(--accent);color:#fff !important;font-weight:700;box-shadow:0 1px 4px rgba(2,132,199,0.35)}
+.face-seg-btn:has(input:checked){background:var(--accent);color:#fff !important;font-weight:700;box-shadow:0 2px 6px rgba(2,132,199,0.35)}
+.face-seg-btn span.face-sub{font-size:9.5px;font-weight:500;opacity:0.75;margin-left:3px}
 .face-seg-btn:has(input:checked) span.face-sub{color:rgba(255,255,255,0.9) !important}
 
 /* Sectional Tool Palette */
-.side-tool-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow-sm)}
-.side-tool-sec-title{font-size:11px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:4px;margin-bottom:5px}
-.side-panel-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
-.side-nozzle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.side-tool-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:10px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow-sm)}
+.side-tool-sec-title{font-size:11px;font-weight:700;color:var(--fg);display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.side-tool-sec-title .sec-badge{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--accent);color:#fff;font-size:9px;font-weight:800}
+.side-panel-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.side-nozzle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 
-.side-tool-btn, .side-tool-chip{display:flex;align-items:center;justify-content:center;gap:3px;padding:6px 2px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid var(--line);background:var(--surface-sub);color:var(--fg);cursor:pointer;user-select:none;transition:all .15s ease;text-align:center;white-space:nowrap}
+.side-tool-btn, .side-tool-chip{display:flex;align-items:center;justify-content:center;gap:4px;padding:7px 3px;border-radius:6px;font-size:11.5px;font-weight:600;border:1px solid var(--line);background:var(--surface-sub);color:var(--fg);cursor:pointer;user-select:none;transition:all .15s ease;text-align:center;white-space:nowrap}
 .side-tool-btn input, .side-tool-chip input{display:none}
-.side-tool-btn:hover, .side-tool-chip:hover{border-color:var(--accent);color:var(--accent)}
-.side-tool-btn:has(input:checked), .side-tool-chip:has(input:checked){background:var(--accent) !important;border-color:var(--accent) !important;color:#fff !important;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,0.25)}
+.side-tool-btn:hover, .side-tool-chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(2,132,199,0.05)}
+.side-tool-btn:has(input:checked), .side-tool-chip:has(input:checked){background:var(--accent) !important;border-color:var(--accent) !important;color:#fff !important;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.2);transform:translateY(-1px)}
 
 /* Active colors */
 .side-tool-btn:has(input[value="panel-std"]:checked), .side-tool-chip:has(input[value="panel-std"]:checked){background:var(--accent) !important;border-color:var(--accent) !important}
@@ -343,50 +360,50 @@ tr:last-child td{border-bottom:0}
 .side-tool-btn:has(input[value="INLET"]:checked), .side-tool-chip:has(input[value="INLET"]:checked){background:#0284c7 !important;border-color:#0284c7 !important}
 .side-tool-btn:has(input[value="OUTLET"]:checked), .side-tool-chip:has(input[value="OUTLET"]:checked){background:#059669 !important;border-color:#059669 !important}
 .side-tool-btn:has(input[value="OVERFLOW"]:checked), .side-tool-chip:has(input[value="OVERFLOW"]:checked){background:#d97706 !important;border-color:#d97706 !important}
-.side-tool-btn:has(input[value="DRAIN"]:checked), .side-tool-chip:has(input[value="DRAIN"]:checked){background:#64748b !important;border-color:#64748b !important}
+.side-tool-btn:has(input[value="DRAIN"]:checked), .side-tool-chip:has(input[value="DRAIN"]:checked){background:#475569 !important;border-color:#475569 !important}
 .side-tool-btn:has(input[value="FIRE"]:checked), .side-tool-chip:has(input[value="FIRE"]:checked){background:#dc2626 !important;border-color:#dc2626 !important}
 .side-tool-btn:has(input[value="del"]:checked), .side-tool-chip:has(input[value="del"]:checked){background:#ef4444 !important;border-color:#ef4444 !important}
 
-.preset-action-bar{display:flex;gap:5px;align-items:center;justify-content:space-between;margin-bottom:10px}
-.preset-action-bar .btn-group{display:flex;gap:4px}
-.btn-preset{padding:4px 9px;font-size:11px;font-weight:600;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;transition:all .15s ease}
+.preset-action-bar{display:flex;gap:6px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.preset-action-bar .btn-group{display:flex;gap:6px}
+.btn-preset{padding:5px 12px;font-size:11.5px;font-weight:700;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;transition:all .15s ease;display:inline-flex;align-items:center;gap:4px}
 .btn-preset:hover{border-color:var(--accent);color:var(--accent)}
 .btn-preset.primary{background:rgba(2,132,199,0.1);border-color:#0284c7;color:#0284c7}
-.btn-preset.primary:hover{background:#0284c7;color:#fff}
-.btn-preset.danger{color:#ef4444}
-.btn-preset.danger:hover{background:rgba(239,68,68,0.1);border-color:#ef4444}
+.btn-preset.primary:hover{background:#0284c7;color:#fff;box-shadow:0 2px 6px rgba(2,132,199,0.3)}
+.btn-preset.danger{color:#ef4444;background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.3)}
+.btn-preset.danger:hover{background:#ef4444;color:#fff;border-color:#ef4444;box-shadow:0 2px 6px rgba(239,68,68,0.3)}
 
-.elev-grid-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+.elev-grid-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
 .elev-grid-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid var(--line-sub)}
+.grid-hint-badge{font-size:10.5px;color:var(--muted);background:var(--surface-sub);padding:3px 8px;border-radius:4px;border:1px solid var(--line)}
 
-.noz-inspector-card{background:var(--surface);border:1.5px solid var(--accent);border-radius:8px;padding:10px;margin-bottom:10px;box-shadow:0 2px 8px rgba(2,132,199,0.15);display:flex;flex-direction:column;gap:8px}
-.noz-insp-header{display:flex;justify-content:space-between;align-items:center}
-.noz-insp-badge{display:flex;align-items:center;gap:6px}
-.noz-mark-tag{font-size:11px;font-weight:800;color:#fff;background:var(--accent);padding:2px 7px;border-radius:4px}
-.noz-insp-fields{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.noz-inspector-card{background:var(--surface);border:1.5px solid var(--accent);border-radius:8px;padding:12px;margin-bottom:10px;box-shadow:0 3px 12px rgba(2,132,199,0.15);display:flex;flex-direction:column;gap:10px}
+.noz-insp-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;border-bottom:1px solid var(--line-sub)}
+.noz-insp-badge{display:flex;align-items:center;gap:8px}
+.noz-mark-tag{font-size:11px;font-weight:800;color:#fff;background:var(--accent);padding:2px 8px;border-radius:4px;letter-spacing:0.5px}
+.noz-insp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 10px}
 .noz-field{display:flex;flex-direction:column;gap:3px}
-.noz-field label{font-size:10px;font-weight:700;color:var(--muted)}
-.noz-field select, .noz-field input{height:28px;font-size:11px;padding:2px 4px;border-radius:5px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
-.input-unit-wrap{display:flex;align-items:center;gap:2px;position:relative}
-.input-unit-wrap input{flex:1;min-width:0;text-align:right;padding:2px 3px}
-.stepper-btns{display:flex;flex-direction:column;height:28px;width:15px;justify-content:center;gap:1px}
-.btn-step{flex:1;display:flex;align-items:center;justify-content:center;padding:0;font-size:7px;border:1px solid var(--line);background:var(--surface-sub);color:var(--fg);cursor:pointer;line-height:1;border-radius:2px}
+.noz-field label{font-size:10.5px;font-weight:700;color:var(--muted)}
+.noz-field select, .noz-field input{height:30px;font-size:11.5px;padding:3px 6px;border-radius:5px;border:1px solid var(--line);background:var(--bg);color:var(--fg);box-sizing:border-box}
+.noz-field select:focus, .noz-field input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px rgba(2,132,199,0.2)}
+.input-unit-wrap{display:flex;align-items:center;gap:4px;position:relative}
+.input-unit-wrap input{flex:1;min-width:0;text-align:right;padding-right:4px}
+.stepper-btns{display:flex;flex-direction:column;height:30px;width:18px;justify-content:center;gap:1px}
+.btn-step{flex:1;display:flex;align-items:center;justify-content:center;padding:0;font-size:8px;border:1px solid var(--line);background:var(--surface-sub);color:var(--fg);cursor:pointer;line-height:1;border-radius:2px}
 .btn-step:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
-.input-unit-wrap span{font-size:10px;color:var(--muted)}
-.noz-el-presets{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding-top:6px;border-top:1px dashed var(--line)}
-.el-hint{font-size:10px;color:var(--muted);margin-right:2px}
-.btn-el-quick{padding:2px 6px;font-size:10px;font-weight:600;border-radius:4px;border:1px solid var(--line);background:var(--surface-sub);color:var(--muted);cursor:pointer;transition:all .15s}
-.btn-el-quick:hover{border-color:var(--accent);color:var(--accent)}
+.unit-text{font-size:10.5px;font-weight:600;color:var(--muted)}
 
-.pipe-master-toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:3px 8px;border-radius:14px;border:1px solid var(--line);background:var(--surface-sub);font-size:11px;font-weight:700;color:var(--muted);user-select:none;transition:all .15s}
-.pipe-master-toggle:hover{border-color:var(--accent)}
-.pipe-master-toggle:has(input:checked){background:#e0f2fe;color:#0369a1;border-color:#38bdf8}
-.pipe-master-toggle input{margin:0;accent-color:var(--accent);cursor:pointer}
+.noz-el-presets{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 0 2px 0;border-top:1px dashed var(--line)}
+.quick-el-chips{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.el-hint{font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+.btn-el-quick{padding:3px 8px;font-size:10.5px;font-weight:600;border-radius:5px;border:1px solid var(--line);background:var(--surface-sub);color:var(--fg);cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-el-quick:hover{border-color:var(--accent);color:var(--accent);background:rgba(2,132,199,0.08)}
 
-.noz-inspector-empty{padding:10px;background:var(--surface-sub);border:1px dashed var(--line);border-radius:8px;margin-bottom:10px;font-size:11px;color:var(--muted);text-align:center;line-height:1.5}
+.noz-inspector-empty{padding:14px;background:linear-gradient(135deg,rgba(2,132,199,0.03) 0%,rgba(2,132,199,0.08) 100%);border:1px dashed rgba(2,132,199,0.3);border-radius:8px;margin-bottom:10px;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5}
 
-.noz-sched-details{border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
-.noz-sched-summary{cursor:pointer;padding:8px 12px;font-size:11px;font-weight:700;color:var(--fg);display:flex;align-items:center;justify-content:space-between;background:var(--surface-sub);user-select:none}
+.noz-sched-details{border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden;box-shadow:var(--shadow-sm)}
+.noz-sched-summary{cursor:pointer;padding:9px 12px;font-size:11.5px;font-weight:700;color:var(--fg);display:flex;align-items:center;justify-content:space-between;background:var(--surface-sub);user-select:none;transition:background .15s}
+.noz-sched-summary:hover{background:color-mix(in srgb,var(--accent) 8%,var(--surface-sub))}
 
 
 /* Viewport / Main */
@@ -639,20 +656,38 @@ canvas.drag{cursor:grabbing}
     <!-- Tab: Side Elevation & Nozzles (측면 편집) -->
     <div class="tab-content" id="tab-nozzles">
       <section class="box">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2 id="secTitleSide" style="margin:0">📐 측면 편집 (판넬 및 배관)</h2>
+        <div class="side-header-wrap">
+          <div>
+            <h2 id="secTitleSide" style="margin:0;display:flex;align-items:center;gap:6px">
+              <span>📐</span>
+              <span class="txt-ko">측면 편집 (판넬 및 배관)</span>
+              <span class="txt-en">Side Elevation &amp; Nozzles</span>
+            </h2>
+            <p class="hint" id="hintSide" style="margin:3px 0 0 0">도구를 선택한 후 아래 측면 격자 칸을 클릭하여 <b>판넬 변경</b> 또는 <b>배관 노즐</b>을 배치합니다.</p>
+          </div>
           <label class="pipe-master-toggle" title="도면 상 배관 노즐 및 일람표 표시 여부를 전환합니다">
             <input type="checkbox" id="pipeFeatureToggle" checked>
-            <span id="pipeToggleText">💧 배관 ON</span>
+            <span id="pipeToggleText">💧 배관 표시 ON</span>
           </label>
         </div>
-        <p class="hint" id="hintSide" style="margin-bottom:8px">도구를 선택한 후 아래 측면 격자 칸을 클릭하여 <b>판넬 변경</b> 또는 <b>배관 노즐</b>을 배치합니다.</p>
-        <div style="margin-bottom:10px">
-          <button type="button" class="btn-sm" id="btnGoToCapacityDwg" style="width:100%;padding:7px 10px;background:rgba(2,132,199,0.12);color:var(--accent);border:1px solid var(--accent);border-radius:6px;font-weight:700;font-size:11.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openCapacityDrawing()">
-            <span style="font-size:15px">🌊</span>
-            <span class="txt-ko">INLET·OUTLET·OVERFLOW 실담수량 산출도 바로보기</span>
-            <span class="txt-en">View Water Capacity &amp; Water Level DWG</span>
-          </button>
+
+        <!-- 실담수량 산출도 바로가기 액션 배너 -->
+        <div id="btnGoToCapacityDwg" class="cap-action-card" onclick="openCapacityDrawing()" title="INLET·OUTLET·OVERFLOW 실담수량 산출도 바로보기">
+          <div class="cap-action-left">
+            <span class="cap-action-icon">🌊</span>
+            <div class="cap-action-text">
+              <div class="cap-action-title">
+                <span class="txt-ko">실담수량 &amp; 유효수위 산출도 바로보기</span>
+                <span class="txt-en">View Water Capacity &amp; Water Level DWG</span>
+              </div>
+              <div class="cap-action-sub">INLET · OUTLET · OVERFLOW 연동 실시간 유효용량 산출</div>
+            </div>
+          </div>
+          <div class="cap-action-arrow">
+            <span class="txt-ko">도면</span>
+            <span class="txt-en">DWG</span>
+            <span>➔</span>
+          </div>
         </div>
 
         <!-- 1. 뷰 선택 세그먼트 (정면 / 우측면 / 배면 / 좌측면 / 상부 / 하부) -->
@@ -679,31 +714,37 @@ canvas.drag{cursor:grabbing}
           </label>
           <label class="face-seg-btn" style="grid-column:span 2">
             <input type="radio" name="nozViewFace" value="top">
-            <span id="lblFaceTop">🏠 상부</span>
-            <span class="face-sub">Top</span>
+            <span id="lblFaceTop">🏠 상부 (지붕)</span>
+            <span class="face-sub">Roof</span>
           </label>
           <label class="face-seg-btn" style="grid-column:span 2">
             <input type="radio" name="nozViewFace" value="bottom">
-            <span id="lblFaceBottom">⚓ 하부</span>
-            <span class="face-sub">Bottom</span>
+            <span id="lblFaceBottom">⚓ 하부 (바닥)</span>
+            <span class="face-sub">Floor</span>
           </label>
         </div>
 
         <!-- 2. 직관적인 도구 팔레트 카드 (판넬 4종 & 배관 6종 격자 정렬) -->
         <div class="side-tool-card">
-          <!-- 섹션 1: 판넬 종류 변경 (4열 균등 정렬, 줄바꿈 없음) -->
+          <!-- 섹션 1: 판넬 종류 변경 (4열 균등 정렬) -->
           <div>
-            <div class="side-tool-sec-title"><span id="lblSecPanelTool">🔲 판넬 종류 선택</span></div>
+            <div class="side-tool-sec-title">
+              <span class="sec-badge">1</span>
+              <span id="lblSecPanelTool">🔲 판넬 종류 선택</span>
+            </div>
             <div class="side-panel-grid">
-              <label class="side-tool-btn"><input type="radio" name="nozTool" value="panel-std" checked><span id="lblToolStd">기본</span></label>
-              <label class="side-tool-btn"><input type="radio" name="nozTool" value="panel-flat-1x1"><span id="lblToolFlat1">1×1평판</span></label>
-              <label class="side-tool-btn"><input type="radio" name="nozTool" value="panel-flat-half2"><span id="lblToolFlatHalf">0.5×1(2장)</span></label>
-              <label class="side-tool-btn"><input type="radio" name="nozTool" value="panel-fitting"><span id="lblToolFitting">피팅판넬</span></label>
+              <label class="side-tool-btn" title="기본 일반 판넬"><input type="radio" name="nozTool" value="panel-std" checked><span id="lblToolStd">기본</span></label>
+              <label class="side-tool-btn" title="1×1m 평판 판넬"><input type="radio" name="nozTool" value="panel-flat-1x1"><span id="lblToolFlat1">1×1평판</span></label>
+              <label class="side-tool-btn" title="0.5×1m 평판 2장"><input type="radio" name="nozTool" value="panel-flat-half2"><span id="lblToolFlatHalf">0.5×1(2장)</span></label>
+              <label class="side-tool-btn" title="배관용 피팅 판넬"><input type="radio" name="nozTool" value="panel-fitting"><span id="lblToolFitting">피팅판넬</span></label>
             </div>
           </div>
-          <!-- 섹션 2: 배관 노즐 배치 (3열 2행 균등 정렬, 줄바꿈 없음) -->
+          <!-- 섹션 2: 배관 노즐 배치 (3열 2행 균등 정렬) -->
           <div>
-            <div class="side-tool-sec-title"><span id="lblSecNozTool">💧 배관 노즐 선택</span></div>
+            <div class="side-tool-sec-title">
+              <span class="sec-badge">2</span>
+              <span id="lblSecNozTool">💧 배관 노즐 선택</span>
+            </div>
             <div class="side-nozzle-grid">
               <label class="side-tool-btn" title="유입구 (INLET)"><input type="radio" name="nozTool" value="INLET"><span>💧 IN</span></label>
               <label class="side-tool-btn" title="유출구 (OUTLET)"><input type="radio" name="nozTool" value="OUTLET"><span>🚰 OUT</span></label>
@@ -718,16 +759,19 @@ canvas.drag{cursor:grabbing}
         <!-- 3. 빠른 프리셋 & 전체 비우기 -->
         <div class="preset-action-bar">
           <div class="btn-group" id="nozPresetBtnGroup">
-            <button type="button" id="nozPresetSingle" class="btn-preset primary">⚡ 1구획 기본배관</button>
+            <button type="button" id="nozPresetSingle" class="btn-preset primary" title="표준 1구획 기본 배관 자동 배치">⚡ 1구획 기본배관</button>
           </div>
-          <button type="button" id="nozClearAll" class="btn-preset danger">전체 비우기</button>
+          <button type="button" id="nozClearAll" class="btn-preset danger" title="모든 노즐을 초기화합니다">전체 비우기</button>
         </div>
 
         <!-- 4. 측면뷰 패널 격자 카드 (Elev Grid Card) -->
         <div class="elev-grid-card">
           <div class="elev-grid-header">
-            <b style="font-size:12px;color:var(--fg)" id="nozGridTitle">🏢 정면 뷰 (Front Elevation)</b>
-            <span style="font-size:10px;color:var(--muted)" id="lblNozGridHint">💡 칸 클릭 시 판넬 전환 / 노즐 배치</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:15px">🏢</span>
+              <b style="font-size:12.5px;color:var(--fg)" id="nozGridTitle">정면 뷰 (Front Elevation)</b>
+            </div>
+            <span class="grid-hint-badge" id="lblNozGridHint">💡 셀 클릭하여 판넬 변경 / 노즐 배치</span>
           </div>
 
           <!-- 상단 패널 열 번호 & 구획 라벨 표시 영역 -->
@@ -753,16 +797,16 @@ canvas.drag{cursor:grabbing}
           </div>
         </div>
 
-        <!-- 5. 고도화된 노즐 속성 인스펙터 카드 -->
+        <!-- 5. 고도화된 노즐 속성 인스펙터 카드 (반응형 2열 정렬 & 넉넉한 빠른 EL 칩스) -->
         <div id="nozMiniBar" class="noz-inspector-card" style="display:none">
           <div class="noz-insp-header">
             <div class="noz-insp-badge">
               <span id="miniMark" class="noz-mark-tag">N1</span>
-              <b id="miniName" style="font-size:12px;color:var(--fg)">INLET (유입구)</b>
+              <b id="miniName" style="font-size:12.5px;color:var(--fg)">INLET (유입구)</b>
             </div>
-            <button type="button" id="miniDel" class="btn-preset danger" style="padding:2px 8px;font-size:11px">🗑️ 노즐 삭제</button>
+            <button type="button" id="miniDel" class="btn-preset danger" style="padding:3px 9px;font-size:11px">🗑️ 노즐 삭제</button>
           </div>
-          <div class="noz-insp-fields">
+          <div class="noz-insp-grid">
             <div class="noz-field">
               <label id="lblMiniFace">배치 면 (Face)</label>
               <select id="miniFace">
@@ -772,6 +816,14 @@ canvas.drag{cursor:grabbing}
                 <option value="left">🏢 좌측면 (Left)</option>
                 <option value="top">🏠 상부 지붕 (Top)</option>
                 <option value="bottom">⚓ 하부 바닥 (Bottom)</option>
+              </select>
+            </div>
+            <div class="noz-field">
+              <label id="lblMiniOffset">수평 위치 (Offset)</label>
+              <select id="miniOffset">
+                <option value="-250">◀ 좌 (-250mm)</option>
+                <option value="0">● 중앙 (0mm)</option>
+                <option value="250">▶ 우 (+250mm)</option>
               </select>
             </div>
             <div class="noz-field">
@@ -798,33 +850,30 @@ canvas.drag{cursor:grabbing}
                 <option value="SOCKET">SOCKET (나사식)</option>
               </select>
             </div>
-            <div class="noz-field">
-              <label id="lblMiniElev">설치 높이 (EL)</label>
+            <div class="noz-field" style="grid-column: span 2">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <label id="lblMiniElev">설치 높이 (EL)</label>
+                <span style="font-size:10px;color:var(--muted)">50mm 단위 조정</span>
+              </div>
               <div class="input-unit-wrap">
                 <input type="number" id="miniElev" step="50" min="0">
                 <div class="stepper-btns">
                   <button type="button" class="btn-step" id="btnElevUp" title="50mm 올리기">▲</button>
                   <button type="button" class="btn-step" id="btnElevDown" title="50mm 내리기">▼</button>
                 </div>
-                <span>mm</span>
+                <span class="unit-text">mm</span>
               </div>
-            </div>
-            <div class="noz-field">
-              <label id="lblMiniOffset">수평 위치</label>
-              <select id="miniOffset">
-                <option value="-250">◀ 좌 (-250)</option>
-                <option value="0">● 중앙 (0)</option>
-                <option value="250">▶ 우 (+250)</option>
-              </select>
             </div>
           </div>
           <div class="noz-el-presets">
             <span class="el-hint" id="lblQuickElHint">빠른 EL:</span>
-            <button type="button" class="btn-el-quick" id="btnQuickEl1" data-val="100">바닥 100</button>
-            <button type="button" class="btn-el-quick" id="btnQuickEl2" data-val="200">소방 200</button>
-            <button type="button" class="btn-el-quick" id="btnQuickEl3" data-val="300">토출 300</button>
-            <button type="button" class="btn-el-quick" id="btnQuickEl4" data-mode="top-overflow">월류 H-200</button>
-            <button type="button" class="btn-el-quick" id="btnQuickEl5" data-mode="top-inlet">유입 H-300</button>
+            <div class="quick-el-chips">
+              <button type="button" class="btn-el-quick" id="btnQuickEl1" data-val="100">바닥 100</button>
+              <button type="button" class="btn-el-quick" id="btnQuickEl2" data-val="200">소방 200</button>
+              <button type="button" class="btn-el-quick" id="btnQuickEl3" data-val="300">토출 300</button>
+              <button type="button" class="btn-el-quick" id="btnQuickEl4" data-mode="top-overflow">월류 H-200</button>
+              <button type="button" class="btn-el-quick" id="btnQuickEl5" data-mode="top-inlet">유입 H-300</button>
+            </div>
           </div>
         </div>
         <div id="nozMiniBarEmpty" class="noz-inspector-empty">
@@ -7298,38 +7347,6 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         pBadge.className = 'badge-partition';
         pBadge.textContent = isEn ? '⚡Baffle' : '⚡칸막이';
         b.appendChild(pBadge);
-      }
-
-      const isPipeOn = $('pipeFeatureToggle') ? $('pipeFeatureToggle').checked : true;
-      if (!off && isPipeOn) {
-        const cellNozs = (nozzleData || []).filter(n => {
-          if (n.use === false) return false;
-          if (n.face === 'top') return n.topCell && n.topCell[0] === i && n.topCell[1] === j;
-          if (n.face === 'bottom') return (n.bottomCell ? (n.bottomCell[0] === i && n.bottomCell[1] === j) : (n.topCell && n.topCell[0] === i && n.topCell[1] === j));
-          if (n.face === 'front') return (Number(n.seg) || 1) === (j + 1) && i === 0;
-          if (n.face === 'rear') return (Number(n.seg) || 1) === (j + 1) && i === (map.rows.length - 1);
-          if (n.face === 'left') return (Number(n.seg) || 1) === (i + 1) && j === 0;
-          if (n.face === 'right') return (Number(n.seg) || 1) === (i + 1) && j === (map.cols.length - 1);
-          return false;
-        });
-
-        cellNozs.forEach(n => {
-          const nozBadge = document.createElement('span');
-          const svcClass = {
-            INLET: 'badge-noz-inlet',
-            OUTLET: 'badge-noz-outlet',
-            OVERFLOW: 'badge-noz-overflow',
-            DRAIN: 'badge-noz-drain',
-            FIRE: 'badge-noz-fire'
-          }[n.name] || 'badge-noz-custom';
-          const faceKo = { front: '정면', rear: '배면', left: '좌측', right: '우측', top: '상부', bottom: '하부' }[n.face] || n.face;
-          const svcAbbr = (C && C.getNozzleAbbr) ? C.getNozzleAbbr(n.name) : (n.name || 'NOZ');
-          nozBadge.className = `badge-plan-nozzle ${svcClass}`;
-          const elevLabel = n.face === 'top' ? '상부' : (n.face === 'bottom' ? '하부' : 'EL.+' + n.elev + 'mm');
-          nozBadge.title = `[${n.mark}] ${svcAbbr} ${n.size} (${faceKo} ${elevLabel})`;
-          nozBadge.textContent = n.mark;
-          b.appendChild(nozBadge);
-        });
       }
 
       b.addEventListener('click', () => {
