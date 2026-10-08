@@ -6182,9 +6182,10 @@
         ln([x, y + 6], [x + w, y + 6]);
       }
 
-      // 분할 이음부 (Splice fishplate) 및 결합 볼트 홀
+      // 분할 이음부 (Splice fishplate) 및 결합 볼트 홀 (커팅 오차 방지를 위해 양단 5mm씩 공간 확보)
       divide(w, d => {
-        ln([x + d, y], [x + d, y + h]);
+        ln([x + d - 5, y], [x + d - 5, y + h]);
+        ln([x + d + 5, y], [x + d + 5, y + h]);
         rectEnts(x + d - 50, y - 3, 100, h + 6, L, out);
         drawBoltHole(out, x + d - 25, y + h * 0.28, 5.5, 12, L);
         drawBoltHole(out, x + d - 25, y + h * 0.72, 5.5, 12, L);
@@ -6399,7 +6400,8 @@
     rec.forEach(m => m.segs.forEach((sl, k) => {
       const mid = (m.pts[k] + m.pts[k + 1]) / 2;
       if (m.hor) {
-        const cutLen = sl >= 1000 ? (sl - 10) : sl;
+        // 양끝단 5mm씩(총 10mm) 공간을 확보하여 연결부 커팅 오차 방지 (1M=0990, 1.5M=1490, 2M=1990)
+        const cutLen = sl > 10 ? (sl - 10) : sl;
         const codeStr = cutLen < 1000 ? `0${cutLen}` : String(cutLen);
         const isBottom = Math.abs(m.y - yMin) < 10;
         const isTop = Math.abs(m.y - (yMax - flgW)) < 10;
@@ -6607,6 +6609,8 @@
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '5. 기초고정: 각 코너 및 2m 간격 M12 앙카볼트 & WBR-5010Z 클램프 체결', rot: 0, align: 'left', layer: 'DIM' });
     noteY -= tH * 1.25;
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '6. 색상범례: 주황색(ORANGE)=스틸스키드, 녹색(GREEN)=1000×1000 저면패널 안착위치', rot: 0, align: 'left', layer: 'DIM' });
+    noteY -= tH * 1.25;
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '7. L방향 주재 가공: 연결부 커팅 오차 방지 및 조립 여유로 양끝단 5mm(총 10mm) 공간 확보 실가공 [1M=0990, 1.5M=1490, 2M=1990]', rot: 0, align: 'left', layer: 'DIM' });
 
     return { ents, G };
   }
