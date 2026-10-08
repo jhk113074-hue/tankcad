@@ -360,6 +360,22 @@ const skidUser150 = TankCore.buildSkid(optUser150);
 const corner150Text = skidUser150.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'text' && e.s === 'WFF-0150HCCZ');
 assert(corner150Text, 'Stepped corner bracket WFF-0150HCCZ text must exist for Frame 150');
 assert.strictEqual(corner150Text.rot, 0, 'WFF-0150HCCZ must be horizontal (rot: 0)');
+
+// Test 8-B: Internal Row Stepped Corner (Y=3000 with removed [[2, 3], [3, 2], [3, 3]])
+const optStepped = { length: [4000], width: [4000], height: [3000], frame: 75, removed: [[2, 3], [3, 2], [3, 3]], sheetKind: 'frame' };
+const skidStepped = TankCore.buildSkid(optStepped);
+const cornerSteppedText = skidStepped.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'text' && e.s === 'WFF-0200ACZ' && Math.abs(e.p[1] - 3000) < 5);
+assert(cornerSteppedText, 'Corner bracket WFF-0200ACZ at Y=3000 must exist');
+assert.strictEqual(cornerSteppedText.p[1], 3000, 'Corner bracket at Y=3000 must be centered in Y at 3000');
+
+// Verify WFF-0200ACZ lines at Y=3000 match adjoining beam (yA=2962.5, yB=3037.5, yWeb=3031.5)
+const cornerWebLine = skidStepped.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'line' && e.a[0] >= 2995 && Math.abs(e.a[1] - 3031.5) < 1e-3);
+assert(cornerWebLine, 'WFF-0200ACZ web line must be at Y=3031.5 (matching adjoining beam toes-down section)');
+const cornerBotLine = skidStepped.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'line' && e.a[0] >= 2995 && Math.abs(e.a[1] - 2962.5) < 1e-3);
+assert(cornerBotLine, 'WFF-0200ACZ bottom line must be at Y=2962.5 (matching adjoining beam Y range)');
+const cornerTopLine = skidStepped.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'line' && e.a[0] >= 2995 && Math.abs(e.a[1] - 3037.5) < 1e-3);
+assert(cornerTopLine, 'WFF-0200ACZ top line must be at Y=3037.5 (matching adjoining beam Y range)');
+
 // 13. Test 9: Frame Cross Section Shapes (50 SHS -> 50X50 SQ PIPE, 75 Angle -> L)
 console.log('--- Testing Frame Cross Section Shapes (50 SHS -> 50X50 SQ PIPE, 75 Angle -> L) ---');
 const cross50 = TankCore.buildSkidCross({ width: [4000], length: [4000], height: [2000], frame: 50 });
