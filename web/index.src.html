@@ -7498,7 +7498,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   $('eReset').addEventListener('click', () => { removed = new Set(); pillars = new Set(); marks = {}; ladders = {}; manholeDirs = {}; topInletCell = [0, 0]; rebuild(false); });
 
   const cv = $('c'), ctx = cv.getContext('2d');
-  const LY = { PANEL: 'lyPanel', PANEL_DETAIL: 'lyDetail', FRAME: 'lyFrame', FRAME_MAIN_W: 'lyFrame', FRAME_MAIN_L: 'lyFrame', FRAME_SUB: 'lyFrame', REINF: 'lyReinf', WALL: 'lyWall', DIM: 'lyDim', SHEET: 'lySheet', NOZZLE: 'lyNozzle', BALLOON: 'lyBalloon', PAD: 'lyPad' };
+  const LY = { PANEL: 'lyPanel', PANEL_DETAIL: 'lyDetail', FRAME: 'lyFrame', FRAME_MAIN_W: 'lyFrame', FRAME_MAIN_L: 'lyFrame', FRAME_SUB: 'lyFrame', REINF: 'lyReinf', WALL: 'lyWall', DIM: 'lyDim', SHEET: 'lySheet', NOZZLE: 'lyNozzle', BALLOON: 'lyBalloon', PAD: 'lyPad', HIDDEN: 'lyFrame' };
   const layerOn = e => {
     if (e.layer === 'BALLOON') {
       const b1 = $('lyBalloon') ? $('lyBalloon').checked : true;
@@ -8497,7 +8497,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         SHEET: css('--cv-sheet') || '#e2e8f0',
         BALLOON: css('--cv-balloon') || '#f43f5e',
         NOZZLE: css('--cv-nozzle') || '#10b981',
-        PAD: css('--cv-pad') || '#facc15'
+        PAD: css('--cv-pad') || '#facc15',
+        HIDDEN: css('--cv-hidden') || '#94a3b8'
       };
       const lw = {
         PANEL: 1.4,
@@ -8513,7 +8514,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         SHEET: 1.3,
         BALLOON: 1.8,
         NOZZLE: 1.6,
-        PAD: 1.2
+        PAD: 1.2,
+        HIDDEN: 1.0
       };
       const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
 
@@ -8583,6 +8585,11 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           curLayer = layer;
           ctx.strokeStyle = col[layer] || '#fff';
           ctx.lineWidth = lw[layer] || 1;
+          if (layer === 'HIDDEN') {
+            ctx.setLineDash([4, 3]);
+          } else {
+            ctx.setLineDash([]);
+          }
           ctx.beginPath();
         };
 

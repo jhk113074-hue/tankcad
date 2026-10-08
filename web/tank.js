@@ -1473,9 +1473,9 @@
     if (f === 50) {
       return {
         f: 50,
-        name: 'SHS 50',
-        mainSpec: 'SHS-50x50x3.2T',
-        subSpec: 'SHS-50x50x3.2T',
+        name: '50 SHS (50X50 SQ PIPE)',
+        mainSpec: '50X50 SQ PIPE (3.2T)',
+        subSpec: '50X50 SQ PIPE (3.2T)',
         mainW: 50,
         mainH: 50,
         subW: 50,
@@ -1516,7 +1516,7 @@
     // 기본값: 75 Angle
     return {
       f: 75,
-      name: '75 Angle',
+      name: '75 Angle (L)',
       mainSpec: 'L-75x75x6T',
       subSpec: '[-75x40x5T',
       mainW: 75,
@@ -4911,11 +4911,12 @@
     if (opt.onlySkidAndPad) {
       // 3D 스틸 스키드 프레임 정밀 렌더링 (W방향 주재, L방향 주재, 부재)
       const dSkid = getSkidDimensions(opt.frame);
+      const fNum = Number(opt.frame) || 75;
       const flgW = dSkid.mainW;
       const lapIn = 5;
       const overOut = flgW - lapIn;
       const overY = flgW - lapIn;
-      const subW = (Number(opt.frame) === 75) ? 75 : 40;
+      const subW = (fNum === 75) ? 75 : 40;
 
       // 1. W방향 세로 주재 (FRAME_MAIN_W, Orange) - 시작 열 및 끝 열 외곽 테두리
       // 좌측 외곽 주재 (first)
@@ -4944,6 +4945,48 @@
         poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xA, yB, 0)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, (yA + yB) / 2, 0));
         poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yA, -th), toIso(xA, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, yA, -th / 2));
         poly([toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xB, yB, -th), toIso(xB, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth(xB, (yA + yB) / 2, -th / 2));
+      }
+
+      // 1-B. 이형 외곽 단차 코너 단재 3D (WFF-0200ACZ / WFF-0150CCZ / WFF-0150HCCZ)
+      const stepCornerLen = (fNum === 75) ? 200 : 150;
+      for (let j = 1; j < map.cols.length; j++) {
+        const colX = map.xs[j];
+        for (let i = 0; i < map.rows.length; i++) {
+          const rcL = map.has(i, j - 1), rcR = map.has(i, j);
+          if (rcL && !rcR && !map.has(i + 1, j - 1)) {
+            const rowY = map.ys[i] + map.rows[i];
+            const xA = colX - lapIn, xB = xA + flgW;
+            const yB = rowY + overY, yA = yB - stepCornerLen;
+            poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xA, yB, 0)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, (yA + yB) / 2, 0));
+            poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yA, -th), toIso(xA, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, yA, -th / 2));
+            poly([toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xB, yB, -th), toIso(xB, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth(xB, (yA + yB) / 2, -th / 2));
+            poly([toIso(xA, yB, 0), toIso(xB, yB, 0), toIso(xB, yB, -th), toIso(xA, yB, -th)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, yB, -th / 2));
+          } else if (!rcL && rcR && !map.has(i + 1, j)) {
+            const rowY = map.ys[i] + map.rows[i];
+            const xA = colX - overOut, xB = xA + flgW;
+            const yB = rowY + overY, yA = yB - stepCornerLen;
+            poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xA, yB, 0)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, (yA + yB) / 2, 0));
+            poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yA, -th), toIso(xA, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, yA, -th / 2));
+            poly([toIso(xA, yA, 0), toIso(xA, yB, 0), toIso(xA, yB, -th), toIso(xA, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth(xA, (yA + yB) / 2, -th / 2));
+            poly([toIso(xA, yB, 0), toIso(xB, yB, 0), toIso(xB, yB, -th), toIso(xA, yB, -th)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, yB, -th / 2));
+          } else if (rcL && !rcR && !map.has(i - 1, j - 1)) {
+            const rowY = map.ys[i];
+            const xA = colX - lapIn, xB = xA + flgW;
+            const yA = rowY - overY, yB = yA + stepCornerLen;
+            poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xA, yB, 0)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, (yA + yB) / 2, 0));
+            poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yA, -th), toIso(xA, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, yA, -th / 2));
+            poly([toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xB, yB, -th), toIso(xB, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth(xB, (yA + yB) / 2, -th / 2));
+            poly([toIso(xA, yB, 0), toIso(xB, yB, 0), toIso(xB, yB, -th), toIso(xA, yB, -th)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, yB, -th / 2));
+          } else if (!rcL && rcR && !map.has(i - 1, j)) {
+            const rowY = map.ys[i];
+            const xA = colX - overOut, xB = xA + flgW;
+            const yA = rowY - overY, yB = yA + stepCornerLen;
+            poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xA, yB, 0)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, (yA + yB) / 2, 0));
+            poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yA, -th), toIso(xA, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, yA, -th / 2));
+            poly([toIso(xA, yA, 0), toIso(xA, yB, 0), toIso(xA, yB, -th), toIso(xA, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth(xA, (yA + yB) / 2, -th / 2));
+            poly([toIso(xA, yB, 0), toIso(xB, yB, 0), toIso(xB, yB, -th), toIso(xA, yB, -th)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, yB, -th / 2));
+          }
+        }
       }
 
       // 2. L방향 가로 주재 (FRAME_MAIN_L, Purple)
@@ -6640,6 +6683,203 @@
     }
     if (nHeight) addMainBeam(nX - lapIn, nY - overY, flgW, nHeight + overY * 2, 'last', nHeight, true);
 
+    // 2-B. 이형 외곽 단차 코너 단재 (WFF-0200ACZ / WFF-0150CCZ / WFF-0150HCCZ)
+    // 외곽 단차 코너에 기초프레임 사양별 부품 적용 및 안보이는 부분(미노출부) HIDDEN 점선 처리
+    const stepCornerLen = (fNum === 75) ? 200 : 150;
+    const stepCornerCode = (fNum === 75) ? 'WFF-0200ACZ' : ((fNum === 150) ? 'WFF-0150HCCZ' : 'WFF-0150CCZ');
+    const cornerTxtH = Math.max(22, Math.min(32, Math.round(flgW * 0.38)));
+
+    function addDashedLine(p1, p2, layer = 'HIDDEN', dashLen = 15, gapLen = 10) {
+      const dx = p2[0] - p1[0], dy = p2[1] - p1[1];
+      const dist = Math.hypot(dx, dy);
+      if (dist <= 1e-3) return;
+      const ux = dx / dist, uy = dy / dist;
+      let cur = 0;
+      while (cur < dist) {
+        const segEnd = Math.min(cur + dashLen, dist);
+        ents.push({
+          t: 'line',
+          a: [p1[0] + ux * cur, p1[1] + uy * cur],
+          b: [p1[0] + ux * segEnd, p1[1] + uy * segEnd],
+          layer: layer,
+          ltype: 'HIDDEN'
+        });
+        cur += dashLen + gapLen;
+      }
+    }
+
+    for (let j = 1; j < G.map.cols.length; j++) {
+      const colX = G.map.xs[j];
+      for (let i = 0; i < G.map.rows.length; i++) {
+        const rcL = G.map.has(i, j - 1), rcR = G.map.has(i, j);
+
+        // 1) 상부 단차 코너 (우측 단차: rcL && !rcR && !has(i+1, j-1))
+        if (rcL && !rcR && !G.map.has(i + 1, j - 1)) {
+          const rowY = G.map.ys[i] + G.map.rows[i];
+          const xA = colX - lapIn, xB = xA + flgW;
+          const yB = rowY + overY, yA = yB - stepCornerLen;
+          const yDiv = rowY;
+          const xWeb = xA + 6;
+
+          // 노출부 (외측 돌출 Y = rowY ~ yB): 실선 (FRAME_MAIN_W)
+          ents.push({ t: 'line', a: [xA, yB], b: [xB, yB], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xA, yDiv], b: [xA, yB], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xB, yDiv], b: [xB, yB], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xWeb, yDiv], b: [xWeb, yB], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xA, yDiv], b: [xB, yDiv], layer: 'FRAME_MAIN_W' });
+
+          // 미노출부 (탱크 내부/패널 하부 Y = yA ~ yDiv): 점선 (HIDDEN)
+          addDashedLine([xA, yA], [xB, yA], 'HIDDEN');
+          addDashedLine([xA, yA], [xA, yDiv], 'HIDDEN');
+          addDashedLine([xB, yA], [xB, yDiv], 'HIDDEN');
+          addDashedLine([xWeb, yA], [xWeb, yDiv], 'HIDDEN');
+
+          // 개공홀 (4 - Ø17 Hole): 외측은 FRAME_MAIN_W, 내측(미노출부)은 HIDDEN
+          const holeOffsets = (fNum === 75) ? [50, 82.5, 117.5, 150] : [50, 100];
+          holeOffsets.forEach(hOff => {
+            const hY = yB - hOff;
+            const hLayer = (hY >= yDiv) ? 'FRAME_MAIN_W' : 'HIDDEN';
+            ents.push({ t: 'circle', c: [(xA + xB) / 2, hY], r: 8.5, layer: hLayer });
+          });
+
+          // 부품명 텍스트
+          ents.push({
+            t: 'text',
+            p: [(xA + xB) / 2, (yA + yB) / 2],
+            h: cornerTxtH,
+            s: stepCornerCode,
+            rot: 90,
+            align: 'center',
+            valign: 'middle',
+            layer: 'FRAME_MAIN_W'
+          });
+        }
+        // 2) 상부 단차 코너 (좌측 단차: !rcL && rcR && !has(i+1, j))
+        else if (!rcL && rcR && !G.map.has(i + 1, j)) {
+          const rowY = G.map.ys[i] + G.map.rows[i];
+          const xA = colX - overOut, xB = xA + flgW;
+          const yB = rowY + overY, yA = yB - stepCornerLen;
+          const yDiv = rowY;
+          const xWeb = xB - 6;
+
+          // 노출부
+          ents.push({ t: 'line', a: [xA, yB], b: [xB, yB], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xA, yDiv], b: [xA, yB], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xB, yDiv], b: [xB, yB], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xWeb, yDiv], b: [xWeb, yB], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xA, yDiv], b: [xB, yDiv], layer: 'FRAME_MAIN_W' });
+
+          // 미노출부
+          addDashedLine([xA, yA], [xB, yA], 'HIDDEN');
+          addDashedLine([xA, yA], [xA, yDiv], 'HIDDEN');
+          addDashedLine([xB, yA], [xB, yDiv], 'HIDDEN');
+          addDashedLine([xWeb, yA], [xWeb, yDiv], 'HIDDEN');
+
+          // 개공홀
+          const holeOffsets = (fNum === 75) ? [50, 82.5, 117.5, 150] : [50, 100];
+          holeOffsets.forEach(hOff => {
+            const hY = yB - hOff;
+            const hLayer = (hY >= yDiv) ? 'FRAME_MAIN_W' : 'HIDDEN';
+            ents.push({ t: 'circle', c: [(xA + xB) / 2, hY], r: 8.5, layer: hLayer });
+          });
+
+          // 부품명 텍스트
+          ents.push({
+            t: 'text',
+            p: [(xA + xB) / 2, (yA + yB) / 2],
+            h: cornerTxtH,
+            s: stepCornerCode,
+            rot: 90,
+            align: 'center',
+            valign: 'middle',
+            layer: 'FRAME_MAIN_W'
+          });
+        }
+        // 3) 하부 단차 코너 (우측 단차: rcL && !rcR && !has(i-1, j-1))
+        else if (rcL && !rcR && !G.map.has(i - 1, j - 1)) {
+          const rowY = G.map.ys[i];
+          const xA = colX - lapIn, xB = xA + flgW;
+          const yA = rowY - overY, yB = yA + stepCornerLen;
+          const yDiv = rowY;
+          const xWeb = xA + 6;
+
+          // 노출부 (외측 돌출 Y = yA ~ yDiv)
+          ents.push({ t: 'line', a: [xA, yA], b: [xB, yA], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xA, yA], b: [xA, yDiv], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xB, yA], b: [xB, yDiv], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xWeb, yA], b: [xWeb, yDiv], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xA, yDiv], b: [xB, yDiv], layer: 'FRAME_MAIN_W' });
+
+          // 미노출부 (탱크 내부/패널 하부 Y = yDiv ~ yB)
+          addDashedLine([xA, yB], [xB, yB], 'HIDDEN');
+          addDashedLine([xA, yDiv], [xA, yB], 'HIDDEN');
+          addDashedLine([xB, yDiv], [xB, yB], 'HIDDEN');
+          addDashedLine([xWeb, yDiv], [xWeb, yB], 'HIDDEN');
+
+          // 개공홀
+          const holeOffsets = (fNum === 75) ? [50, 82.5, 117.5, 150] : [50, 100];
+          holeOffsets.forEach(hOff => {
+            const hY = yA + hOff;
+            const hLayer = (hY <= yDiv) ? 'FRAME_MAIN_W' : 'HIDDEN';
+            ents.push({ t: 'circle', c: [(xA + xB) / 2, hY], r: 8.5, layer: hLayer });
+          });
+
+          // 부품명 텍스트
+          ents.push({
+            t: 'text',
+            p: [(xA + xB) / 2, (yA + yB) / 2],
+            h: cornerTxtH,
+            s: stepCornerCode,
+            rot: 90,
+            align: 'center',
+            valign: 'middle',
+            layer: 'FRAME_MAIN_W'
+          });
+        }
+        // 4) 하부 단차 코너 (좌측 단차: !rcL && rcR && !has(i-1, j))
+        else if (!rcL && rcR && !G.map.has(i - 1, j)) {
+          const rowY = G.map.ys[i];
+          const xA = colX - overOut, xB = xA + flgW;
+          const yA = rowY - overY, yB = yA + stepCornerLen;
+          const yDiv = rowY;
+          const xWeb = xB - 6;
+
+          // 노출부
+          ents.push({ t: 'line', a: [xA, yA], b: [xB, yA], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xA, yA], b: [xA, yDiv], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xB, yA], b: [xB, yDiv], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xWeb, yA], b: [xWeb, yDiv], layer: 'FRAME_MAIN_W' });
+          ents.push({ t: 'line', a: [xA, yDiv], b: [xB, yDiv], layer: 'FRAME_MAIN_W' });
+
+          // 미노출부
+          addDashedLine([xA, yB], [xB, yB], 'HIDDEN');
+          addDashedLine([xA, yDiv], [xA, yB], 'HIDDEN');
+          addDashedLine([xB, yDiv], [xB, yB], 'HIDDEN');
+          addDashedLine([xWeb, yDiv], [xWeb, yB], 'HIDDEN');
+
+          // 개공홀
+          const holeOffsets = (fNum === 75) ? [50, 82.5, 117.5, 150] : [50, 100];
+          holeOffsets.forEach(hOff => {
+            const hY = yA + hOff;
+            const hLayer = (hY <= yDiv) ? 'FRAME_MAIN_W' : 'HIDDEN';
+            ents.push({ t: 'circle', c: [(xA + xB) / 2, hY], r: 8.5, layer: hLayer });
+          });
+
+          // 부품명 텍스트
+          ents.push({
+            t: 'text',
+            p: [(xA + xB) / 2, (yA + yB) / 2],
+            h: cornerTxtH,
+            s: stepCornerCode,
+            rot: 90,
+            align: 'center',
+            valign: 'middle',
+            layer: 'FRAME_MAIN_W'
+          });
+        }
+      }
+    }
+
     // 3. W방향 주재는 테두리(첫번째 및 마지막 열)에만 배치되며, 중간 열에는 배치되지 않음
     // 중간 열(sCol + 1 ~ eCol)의 각 베이에는 가로 주재 사이를 연결하는 부재(서브빔, FRAME_SUB)를 배치
     const subW = (fNum === 75) ? 75 : 40; // 부재 플랜지 폭 ([-75x40x5T / L-75x75x6T)
@@ -6960,10 +7200,10 @@
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `7. L방향 주재: 500 판넬 배치 시 1.5M(1490${fSuf}) 적용, 양끝단 5mm(총 10mm) 커팅 여유 확보 [2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}]`, rot: 0, align: 'left', layer: 'FRAME_MAIN_L' });
     noteY -= tH * 1.25;
     const wSpecSummary = (fNum === 75)
-      ? '75Angle: 시작/끝단 1570ASZL/R (1.5M), 2070ASZL/R (2M), 신규 1070ASZL/R (1M, 70mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1140, 1640, 2140, 2640ASZ'
+      ? '75Angle: 시작/끝단 1570ASZL/R (1.5M), 2070ASZL/R (2M), 신규 1070ASZL/R (1M, 70mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0200ACZ (L=200, 4-Ø17H) / 단일재: 1140, 1640, 2140, 2640ASZ'
       : (fNum === 150)
-        ? '150Channel: 시작/끝단 1570CSZL/R (1.5M), 2070CSZL/R (2M), 신규 1070CSZL/R (1M, 70mm 돌출) 대칭배치(한쪽 CSZL+CSZR 시 반대쪽 CSZR+CSZL), 중간 2000CSZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1140, 1640, 2140, 2640CSZ'
-        : '125Channel: 시작/끝단 1560ASZL/R (1.5M), 2060ASZL/R (2M), 신규 1060ASZL/R (1M, 60mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유) / 단일재: 1120, 1620, 2120, 2640ASZ';
+        ? '150Channel: 시작/끝단 1570CSZL/R (1.5M), 2070CSZL/R (2M), 신규 1070CSZL/R (1M, 70mm 돌출) 대칭배치(한쪽 CSZL+CSZR 시 반대쪽 CSZR+CSZL), 중간 2000CSZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0150HCCZ (L=150, 4-Ø17H) / 단일재: 1140, 1640, 2140, 2640CSZ'
+        : '125Channel: 시작/끝단 1560ASZL/R (1.5M), 2060ASZL/R (2M), 신규 1060ASZL/R (1M, 60mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0150CCZ (L=150, 4-Ø17H) / 단일재: 1120, 1620, 2120, 2640ASZ';
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `8. W방향 주재(테두리 전용): 외곽 테두리(시작 열 및 끝 열)에만 배치되며, 내부 중간 열에는 미배치 (부재만 배치). ${wSpecSummary}`, rot: 0, align: 'left', layer: 'FRAME_MAIN_W' });
 
     return { ents, G };
@@ -6977,7 +7217,11 @@
     const lapIn = 5;
     const overY = flgW - lapIn;
     const mx = flgW / 2;
-    const tw = 6, tf = 8;
+    const f = Number(opt.frame) || 75;
+    const isSHS = (f === 50);
+    const isAngle = (f === 75);
+    const tw = isSHS ? 3.2 : ((f === 150) ? 6.5 : 6.0);
+    const tf = isSHS ? 3.2 : (isAngle ? 6.0 : ((f === 150) ? 10.0 : 8.0));
 
     const wl = []; { const sw = (opt.width || []).filter(Boolean); let c0 = 0; sw.forEach(sn => { sideSplit(sn, c0).forEach(w => wl.push(w)); c0 += sn; }); }
     const cn = wl.length;
@@ -7002,12 +7246,14 @@
 
     // 서브 빔 부재 규격 및 실 제작/가공 길이 매핑 (081031 PDF Z-Z' SECTION 실물 기준)
     function getSubBeamInfo(k, pitch) {
-      const f = Number(opt.frame) || 125;
       const isOuter = (k === 0 || k === cn - 1);
       const isTypeC = (k === centerBay && cn >= 3);
       const isShort = pitch < 700;
 
-      if (f === 150) {
+      if (f === 50) {
+        // Base Frame 50 SHS (50X50 SQ PIPE)
+        return { code: isShort ? 'WFB-0450SZ' : 'WFB-0950SZ', type: 'SHS', len: isShort ? 450 : 950, subSpec: '50X50 SQ PIPE' };
+      } else if (f === 150) {
         // Base Frame 150 Channel
         if (isOuter) return { code: isShort ? 'WFB-0456CMZ' : 'WFB-0956CMZ', type: 'A타입', len: isShort ? 456 : 956, subSpec: '[-75x40x5T' };
         if (isTypeC) return { code: isShort ? 'WFB-0561CMZ' : 'WFB-1061CMZ', type: 'C타입', len: isShort ? 561 : 1061, subSpec: '[-75x40x5T' };
@@ -7025,44 +7271,67 @@
       }
     }
 
-    // 실제 찬넬 단면 [-125x65x6T 작도 함수 (yWeb, yToe 기준)
-    const drawChannelSection = (yWeb, yToe) => {
-      const isUp = yToe > yWeb;
-      const yFlangeInner = isUp ? yWeb + tw : yWeb - tw;
-
-      const pts = [
-        [0, yToe],
-        [0, yWeb],
-        [th, yWeb],
-        [th, yToe],
-        [th - tf, yToe],
-        [th - tf, yFlangeInner],
-        [tf, yFlangeInner],
-        [tf, yToe]
-      ];
-      for (let k = 0; k < pts.length; k++) {
-        ents.push({ t: 'line', a: pts[k], b: pts[(k + 1) % pts.length], layer: 'FRAME_MAIN_L' });
+    // 실제 단면 작도 함수: 50 SHS (50X50 SQ PIPE □), 75 Angle (L-75x75x6T L), 125/150 Channel (ㄷ)
+    const drawSection = (yWeb, yToe) => {
+      if (isSHS) {
+        // 50X50 SQ PIPE (사각 파이프 □)
+        const y0 = Math.min(yWeb, yToe);
+        const y1 = Math.max(yWeb, yToe);
+        const ptsOut = [[0, y0], [th, y0], [th, y1], [0, y1]];
+        for (let k = 0; k < ptsOut.length; k++) {
+          ents.push({ t: 'line', a: ptsOut[k], b: ptsOut[(k + 1) % ptsOut.length], layer: 'FRAME_MAIN_L' });
+        }
+        const ptsIn = [[tw, y0 + tw], [th - tw, y0 + tw], [th - tw, y1 - tw], [tw, y1 - tw]];
+        for (let k = 0; k < ptsIn.length; k++) {
+          ents.push({ t: 'line', a: ptsIn[k], b: ptsIn[(k + 1) % ptsIn.length], layer: 'FRAME_MAIN_L' });
+        }
+      } else if (isAngle) {
+        // 75 Angle (L-형 앵글 L-75x75x6T)
+        const isUp = yToe > yWeb;
+        const yFlangeInner = isUp ? yWeb + tw : yWeb - tw;
+        const pts = [
+          [0, yToe],
+          [0, yWeb],
+          [th, yWeb],
+          [th, yFlangeInner],
+          [tw, yFlangeInner],
+          [tw, yToe]
+        ];
+        for (let k = 0; k < pts.length; k++) {
+          ents.push({ t: 'line', a: pts[k], b: pts[(k + 1) % pts.length], layer: 'FRAME_MAIN_L' });
+        }
+      } else {
+        // 125 / 150 Channel (ㄷ-형 찬넬)
+        const isUp = yToe > yWeb;
+        const yFlangeInner = isUp ? yWeb + tw : yWeb - tw;
+        const pts = [
+          [0, yToe],
+          [0, yWeb],
+          [th, yWeb],
+          [th, yToe],
+          [th - tf, yToe],
+          [th - tf, yFlangeInner],
+          [tf, yFlangeInner],
+          [tf, yToe]
+        ];
+        for (let k = 0; k < pts.length; k++) {
+          ents.push({ t: 'line', a: pts[k], b: pts[(k + 1) % pts.length], layer: 'FRAME_MAIN_L' });
+        }
       }
     };
 
-    // 각 찬넬 정보: k = 0 (하단 외곽) ~ k = cn (상단 외곽)
-    // 081031 PDF Z-Z' SECTION 실물 기준:
-    // - k = 0 (하단 외곽): 하향 개구(toes down, -overY 방향)
-    // - k <= centerBay: 상향 개구(toes up, +Y 방향)
-    // - k > centerBay: 하향 개구(toes down, -Y 방향)
-    // -> 따라서 centerBay(제일 Center)에서 두 찬넬이 [ ] 안쪽으로 마주보게 됨
-    // - k = cn (상단 외곽): 상향 개구(toes up, +overY 방향)
+    // 각 주재 정보: k = 0 (하단 외곽) ~ k = cn (상단 외곽)
     const chanGeom = [];
 
-    // k = 0 (하단 외곽 찬넬: y = -overY ~ lapIn)
+    // k = 0 (하단 외곽: y = -overY ~ lapIn)
     chanGeom[0] = {
       yWeb: lapIn,
       yToe: -overY,
-      topFace: lapIn,      // 상부 서브빔이 닿는 외측 웨브면 (y = 5)
+      topFace: lapIn,      // 상부 서브빔이 닿는 외측 면 (y = 5)
       botFace: -overY
     };
 
-    // k = 1 .. cn - 1 (중간 찬넬들)
+    // k = 1 .. cn - 1 (중간 주재들)
     for (let k = 1; k < cn; k++) {
       const rowY = ys[k];
       const isUp = (k <= centerBay); // 제일 Center에서 [ ] 마주보도록: centerBay 이하 상향, 초과 하향
@@ -7073,36 +7342,41 @@
       chanGeom[k] = { yWeb, yToe, botFace, topFace };
     }
 
-    // k = cn (상단 외곽 찬넬: y = totalW - lapIn ~ totalW + overY)
+    // k = cn (상단 외곽: y = totalW - lapIn ~ totalW + overY)
     chanGeom[cn] = {
       yWeb: totalW - lapIn,
       yToe: totalW + overY,
-      botFace: totalW - lapIn, // 하부 서브빔이 닿는 외측 웨브면 (y = totalW - 5)
+      botFace: totalW - lapIn, // 하부 서브빔이 닿는 외측 면 (y = totalW - 5)
       topFace: totalW + overY
     };
 
-    // 1~3. 찬넬 단면 그리기 (0 ~ cn)
+    // 1~3. 주재 단면 그리기 (0 ~ cn): 50 SHS(50X50 SQ PIPE □), 75 Angle(L-형), 125/150 Channel(ㄷ-형)
     for (let k = 0; k <= cn; k++) {
-      drawChannelSection(chanGeom[k].yWeb, chanGeom[k].yToe);
+      drawSection(chanGeom[k].yWeb, chanGeom[k].yToe);
     }
 
     const tH = Math.max(60, Math.round(totalW / 100), Math.round(2.4 * (opt._N || 0)));
 
-    // 4. 인접 찬넬 사이 수직 서브빔 연결 상세
+    // 4. 인접 주재 사이 수직 서브빔 연결 상세
     for (let k = 0; k < cn; k++) {
       const sub = getSubBeamInfo(k, wl[k]);
-      // 찬넬 웨브 두께를 완벽히 반영: 서브빔 수직 라인은 찬넬 웨브 면에서 시작하여 찬넬 웨브 면에서 종료
+      // 서브빔 수직 라인은 주재 면에서 시작하여 주재 면에서 종료
       const yBot = chanGeom[k].topFace;
       const yTop = chanGeom[k + 1].botFace;
       const yMid = (yBot + yTop) / 2;
 
-      // 서브빔 단면 높이 75mm (가로 75mm)
-      const subH = 75, subX0 = (th - subH) / 2, subX1 = subX0 + subH;
+      // 서브빔 단면 폭 (50 SHS: 50mm, 75/125/150: 75mm)
+      const subH = isSHS ? 50 : 75, subX0 = (th - subH) / 2, subX1 = subX0 + subH;
       ents.push({ t: 'line', a: [subX0, yBot], b: [subX0, yTop], layer: 'FRAME_SUB' });
       ents.push({ t: 'line', a: [subX1, yBot], b: [subX1, yTop], layer: 'FRAME_SUB' });
       ents.push({ t: 'line', a: [subX0, yBot], b: [subX1, yBot], layer: 'FRAME_SUB' });
       ents.push({ t: 'line', a: [subX0, yTop], b: [subX1, yTop], layer: 'FRAME_SUB' });
-      ents.push({ t: 'line', a: [subX0 + 5, yBot], b: [subX0 + 5, yTop], layer: 'FRAME_SUB' });
+      if (!isSHS) {
+        ents.push({ t: 'line', a: [subX0 + 5, yBot], b: [subX0 + 5, yTop], layer: 'FRAME_SUB' });
+      } else {
+        ents.push({ t: 'line', a: [subX0 + 3.2, yBot], b: [subX0 + 3.2, yTop], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1 - 3.2, yBot], b: [subX1 - 3.2, yTop], layer: 'FRAME_SUB' });
+      }
 
       // 결합 탭 & 볼트 홀 M12 (서브빔 양단 안쪽 14mm 위치에 배치하여 찬넬 웨브와 간섭 방지)
       ents.push({ t: 'line', a: [subX0 - 8, yBot + 14], b: [subX1 + 8, yBot + 14], layer: 'FRAME_SUB' });
@@ -8965,7 +9239,7 @@
   }
 
   /* ---------- DXF (AutoCAD R12 ASCII, mm) ---------- */
-  const LAYERS = { PANEL: 7, FLOOR_PANEL: 3, PANEL_DETAIL: 8, FRAME: 1, FRAME_MAIN_W: 30, FRAME_MAIN_L: 6, FRAME_SUB: 4, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4, PAD: 2, GUIDE: 3 };
+  const LAYERS = { PANEL: 7, FLOOR_PANEL: 3, PANEL_DETAIL: 8, FRAME: 1, FRAME_MAIN_W: 30, FRAME_MAIN_L: 6, FRAME_SUB: 4, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4, PAD: 2, GUIDE: 3, HIDDEN: 8 };
   const dxfText = str => Array.from(str).map(ch => { const c = ch.codePointAt(0); return c < 128 ? ch : '\\U+' + c.toString(16).toUpperCase().padStart(4, '0'); }).join('');
 
   function toDxf(ents, blocks, opt = {}) {
@@ -9025,12 +9299,16 @@
     g(9, '$DIMASSOC'); g(70, 2);
     g(9, '$PICKSTYLE'); g(70, 1);
     g(0, 'ENDSEC');
-    g(0, 'SECTION'); g(2, 'TABLES'); g(0, 'TABLE'); g(2, 'LTYPE'); g(70, 1);
+    g(0, 'SECTION'); g(2, 'TABLES'); g(0, 'TABLE'); g(2, 'LTYPE'); g(70, 2);
     g(0, 'LTYPE'); g(2, 'CONTINUOUS'); g(70, 0); g(3, 'Solid line'); g(72, 65); g(73, 0); g(40, 0);
+    g(0, 'LTYPE'); g(2, 'HIDDEN'); g(70, 0); g(3, 'Hidden line __ __ __'); g(72, 65); g(73, 2); g(40, 9.525); g(49, 6.35); g(49, -3.175);
     g(0, 'ENDTAB');
     g(0, 'TABLE'); g(2, 'LAYER'); g(70, Object.keys(LAYERS).length + 1);
     g(0, 'LAYER'); g(2, '0'); g(70, 0); g(62, 7); g(6, 'CONTINUOUS');
-    Object.entries(LAYERS).forEach(([k, c]) => { g(0, 'LAYER'); g(2, k); g(70, 0); g(62, c); g(6, 'CONTINUOUS'); });
+    Object.entries(LAYERS).forEach(([k, c]) => {
+      g(0, 'LAYER'); g(2, k); g(70, 0); g(62, c);
+      g(6, (k === 'HIDDEN') ? 'HIDDEN' : 'CONTINUOUS');
+    });
     g(0, 'ENDTAB');
 
     const fontKey = String((opt && (opt.font || opt.cadFont)) || (ents && ents.font) || (blocks && blocks.font) || 'romans').toLowerCase().trim();
@@ -9085,6 +9363,7 @@
       else if (e.t === 'line') {
         g(0, 'LINE'); g(8, layer);
         if (e.color) g(62, e.color);
+        if (e.ltype || layer === 'HIDDEN') g(6, e.ltype || 'HIDDEN');
         g(10, n(e.a[0])); g(20, n(e.a[1])); g(30, 0);
         g(11, n(e.b[0])); g(21, n(e.b[1])); g(31, 0);
       }
@@ -9093,12 +9372,14 @@
           for (let i = 0; i < e.pts.length - 1; i++) {
             g(0, 'LINE'); g(8, layer);
             if (e.color) g(62, e.color);
+            if (e.ltype || layer === 'HIDDEN') g(6, e.ltype || 'HIDDEN');
             g(10, n(e.pts[i][0])); g(20, n(e.pts[i][1])); g(30, 0);
             g(11, n(e.pts[i + 1][0])); g(21, n(e.pts[i + 1][1])); g(31, 0);
           }
           if (e.close && e.pts.length > 2) {
             g(0, 'LINE'); g(8, layer);
             if (e.color) g(62, e.color);
+            if (e.ltype || layer === 'HIDDEN') g(6, e.ltype || 'HIDDEN');
             g(10, n(e.pts[e.pts.length - 1][0])); g(20, n(e.pts[e.pts.length - 1][1])); g(30, 0);
             g(11, n(e.pts[0][0])); g(21, n(e.pts[0][1])); g(31, 0);
           }
@@ -9108,6 +9389,7 @@
         const nn = a => ((a % 360) + 360) % 360;
         g(0, 'ARC'); g(8, layer);
         if (e.color) g(62, e.color);
+        if (e.ltype || layer === 'HIDDEN') g(6, e.ltype || 'HIDDEN');
         g(10, n(e.c[0])); g(20, n(e.c[1])); g(30, 0);
         g(40, n(e.r));
         g(50, n(nn(e.a0))); g(51, n(nn(e.a1)));
@@ -9115,6 +9397,7 @@
       else if (e.t === 'circle') {
         g(0, 'CIRCLE'); g(8, layer);
         if (e.color) g(62, e.color);
+        if (e.ltype || layer === 'HIDDEN') g(6, e.ltype || 'HIDDEN');
         g(10, n(e.c[0])); g(20, n(e.c[1])); g(30, 0);
         g(40, n(e.r));
       }
