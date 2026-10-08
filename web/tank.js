@@ -8407,6 +8407,23 @@
     text(projMidX, ty + 4.2, 2.3, lang === 'ko' ? '제 3 각 법' : '3RD ANGLE PROJECTION', 'center', 0, 'middle');
     ty += metaH;
 
+    // 4-1. 도면 관리 정보 행 (ISO 7200 / ISO 2768 / ISO 216): 단위 · 용지 · 일반공차 · 축척금지
+    const ctrlH = 7;
+    line([tx0, ty + ctrlH], [x1, ty + ctrlH]);
+    const ctrlCells = [
+      { w: 34, s: lang === 'ko' ? '단위 : mm' : 'UNITS : mm' },
+      { w: 46, s: lang === 'ko' ? '용지 : ISO A1 (841x594)' : 'SHEET : ISO A1 (841x594)' },
+      { w: 62, s: lang === 'ko' ? '일반공차 : ISO 2768-m' : 'GENERAL TOL. : ISO 2768-m' },
+      { w: 58, s: lang === 'ko' ? '도면을 축척하여 측정하지 말 것' : 'DO NOT SCALE DRAWING' }
+    ];
+    let ccx = tx0;
+    ctrlCells.forEach((c, i) => {
+      if (i > 0) line([ccx, ty], [ccx, ty + ctrlH]);
+      text(ccx + c.w / 2, ty + ctrlH / 2, 2.3, c.s, 'center', 0, 'middle');
+      ccx += c.w;
+    });
+    ty += ctrlH;
+
     // 5. 서명 승인란 (4단계: DESIGNED, DRAWN, CHECKED, APPROVED) (높이 26mm: 헤더 9mm, 서명란 17mm)
     const signHeaderH = 9, signValH = 17;
     line([tx0, ty + signValH], [x1, ty + signValH]);
@@ -8695,9 +8712,9 @@
       const pRight = [cx + r * 0.38, cy - r * 0.1];
       const pMid = [cx, cy];
 
-      // 우측 반쪽 솔리드 채움 (Standard Architectural Black-filled right half)
-      solid([pTop, pRight, pMid]);
-      solid([pBot, pLeft, pMid]);
+      // 우측 반쪽 솔리드 채움 (DXF SOLID 는 4점 필수 → 마지막 점 반복)
+      solid([pTop, pRight, pMid, pMid]);
+      solid([pBot, pLeft, pMid, pMid]);
 
       // 외곽선 및 중심선
       line(pTop, pLeft);
@@ -8709,6 +8726,24 @@
       // 'N' 표기 (상단 중앙)
       text(cx, cy + r * 1.85, 2.8, 'N', 'center', 0, 'middle');
     };
+
+    // ISO 128-2 (Type 04.1 가는 1점쇄선) 중심선: 모델 좌표(이미 축척 적용된 좌표) 기준
+    // 대칭 형상의 중심을 외곽선 밖 3mm(용지 기준)까지 연장하고, 끝단에 'CL' 표기
+    const centerLineM = (a, b, label = true) => {
+      ents.push({ t: 'line', a: [a[0], a[1]], b: [b[0], b[1]], layer: 'CENTER' });
+      if (label) {
+        const vertical = Math.abs(b[0] - a[0]) < Math.abs(b[1] - a[1]);
+        const tip = (vertical ? (b[1] > a[1]) : (b[0] > a[0])) ? b : a;
+        const off = 1.6 * N;
+        ents.push({
+          t: 'text',
+          p: vertical ? [tip[0], tip[1] + off] : [tip[0] + off, tip[1]],
+          h: 2.2 * N, s: 'CL', rot: 0,
+          align: vertical ? 'center' : 'left', valign: 'middle', layer: 'CENTER'
+        });
+      }
+    };
+    const CL_EXT = 3.0 * N; // 외곽선 밖 연장 길이 (용지 3mm)
 
     const translateEnts = (es, dx, dy) => {
       es.forEach(e => {
@@ -9292,7 +9327,7 @@
       ents.push({ t: 'line', a: q0, b: q1, layer: 'NOZZLE' });
       ents.push({ t: 'line', a: q1, b: q2, layer: 'NOZZLE' });
       ents.push({ t: 'line', a: q2, b: q3, layer: 'NOZZLE' });
-      ents.push({ t: 'line', a: q3, b: p0, layer: 'NOZZLE' });
+      ents.push({ t: 'line', a: q3, b: q0, layer: 'NOZZLE' });
 
       // 3D 수위 지시선
       ents.push({ t: 'line', a: p1, b: [p1[0] + 15 * N * fitScale, p1[1] + 10 * N * fitScale], layer: 'NOZZLE' });
@@ -9551,6 +9586,8 @@
 
       // 1. Row 1 Col 1: 평면도 배치 (View 1 / 1)
       translateEnts(plan.ents, dx1, dy1);
+      centerLineM([dx1 - 75 - CL_EXT, dy1 + totalW / 2], [dx1 + totalL + 75 + CL_EXT, dy1 + totalW / 2], false);
+      centerLineM([dx1 + totalL / 2, dy1 - 75 - CL_EXT], [dx1 + totalL / 2, dy1 + totalW + 75 + CL_EXT], false);
       drawViewTitleBubble(col1_tank_cx, row1_title_y, 1, 1, viewTitlePlan, N);
       const northX = Math.min(col1_tank_cx + (totalL / 2 + 100) / N + 15, isAsm5 ? col2_tank_cx - 40 : tx0 - 25);
       const northY = Math.min(y1 - 25, row1_top_y - 10);
@@ -9584,10 +9621,12 @@
 
       // 3. Row 2 Col 1: 정면도 배치 (View 1 / 3)
       translateEnts(front.ents, dx1, dy2);
+      centerLineM([dx1 + totalL / 2, dy2 - CL_EXT], [dx1 + totalL / 2, dy2 + H + CL_EXT], false);
       drawViewTitleBubble(col1_tank_cx, row2_title_y, 1, 3, viewTitleFront, N);
 
       // 4. Row 2 Col 2: 우측면도 배치 (View 1 / 4)
       translateEnts(side.ents, dx2_side, dy2);
+      centerLineM([dx2_side + totalW / 2, dy2 - CL_EXT], [dx2_side + totalW / 2, dy2 + H + CL_EXT], false);
       drawViewTitleBubble(col2_tank_cx, row2_title_y, 1, 4, viewTitleSide, N);
 
       // 5. Row 3 Col 1: 기초 패드 평면 및 단면/입면도 수직 통합 배치 (View 1 / 2)
@@ -9713,7 +9752,7 @@
   }
 
   /* ---------- DXF (AutoCAD R12 ASCII, mm) ---------- */
-  const LAYERS = { PANEL: 7, FLOOR_PANEL: 3, PANEL_DETAIL: 8, FRAME: 1, FRAME_MAIN_W: 30, FRAME_MAIN_L: 6, FRAME_SUB: 4, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4, PAD: 2, GUIDE: 3, HIDDEN: 8 };
+  const LAYERS = { PANEL: 7, FLOOR_PANEL: 3, PANEL_DETAIL: 8, FRAME: 1, FRAME_MAIN_W: 30, FRAME_MAIN_L: 6, FRAME_SUB: 4, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4, PAD: 2, GUIDE: 3, HIDDEN: 8, CENTER: 1 };
   const dxfText = str => Array.from(str).map(ch => { const c = ch.codePointAt(0); return c < 128 ? ch : '\\U+' + c.toString(16).toUpperCase().padStart(4, '0'); }).join('');
 
   function toDxf(ents, blocks, opt = {}) {
@@ -9772,16 +9811,21 @@
     g(9, '$DIMTSZ'); g(40, 0);
     g(9, '$DIMASSOC'); g(70, 2);
     g(9, '$PICKSTYLE'); g(70, 1);
+    // 선종류 축척: 도면 축척(1:N)과 일치시켜 용지상 패턴 길이를 ISO 128 기준으로 유지
+    const ltScale = (opt && Number(opt.scale) > 0) ? Number(opt.scale) : 1;
+    g(9, '$LTSCALE'); g(40, n(ltScale));
     g(0, 'ENDSEC');
-    g(0, 'SECTION'); g(2, 'TABLES'); g(0, 'TABLE'); g(2, 'LTYPE'); g(70, 2);
+    g(0, 'SECTION'); g(2, 'TABLES'); g(0, 'TABLE'); g(2, 'LTYPE'); g(70, 3);
     g(0, 'LTYPE'); g(2, 'CONTINUOUS'); g(70, 0); g(3, 'Solid line'); g(72, 65); g(73, 0); g(40, 0);
     g(0, 'LTYPE'); g(2, 'HIDDEN'); g(70, 0); g(3, 'Hidden line __ __ __'); g(72, 65); g(73, 2); g(40, 9.525); g(49, 6.35); g(49, -3.175);
+    // ISO 128 Type 04.1 (가는 1점쇄선): 장선 24 / 간격 3 / 점 0.5 / 간격 3 (용지 mm)
+    g(0, 'LTYPE'); g(2, 'CENTER'); g(70, 0); g(3, 'Center ____ _ ____ _'); g(72, 65); g(73, 4); g(40, 30.5); g(49, 24); g(49, -3); g(49, 0.5); g(49, -3);
     g(0, 'ENDTAB');
     g(0, 'TABLE'); g(2, 'LAYER'); g(70, Object.keys(LAYERS).length + 1);
     g(0, 'LAYER'); g(2, '0'); g(70, 0); g(62, 7); g(6, 'CONTINUOUS');
     Object.entries(LAYERS).forEach(([k, c]) => {
       g(0, 'LAYER'); g(2, k); g(70, 0); g(62, c);
-      g(6, (k === 'HIDDEN') ? 'HIDDEN' : 'CONTINUOUS');
+      g(6, (k === 'HIDDEN') ? 'HIDDEN' : (k === 'CENTER' ? 'CENTER' : 'CONTINUOUS'));
     });
     g(0, 'ENDTAB');
 

@@ -7513,7 +7513,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   $('eReset').addEventListener('click', () => { removed = new Set(); pillars = new Set(); marks = {}; ladders = {}; manholeDirs = {}; topInletCell = [0, 0]; rebuild(false); });
 
   const cv = $('c'), ctx = cv.getContext('2d');
-  const LY = { PANEL: 'lyPanel', PANEL_DETAIL: 'lyDetail', FRAME: 'lyFrame', FRAME_MAIN_W: 'lyFrame', FRAME_MAIN_L: 'lyFrame', FRAME_SUB: 'lyFrame', REINF: 'lyReinf', WALL: 'lyWall', DIM: 'lyDim', SHEET: 'lySheet', NOZZLE: 'lyNozzle', BALLOON: 'lyBalloon', PAD: 'lyPad', HIDDEN: 'lyFrame' };
+  const LY = { PANEL: 'lyPanel', PANEL_DETAIL: 'lyDetail', FRAME: 'lyFrame', FRAME_MAIN_W: 'lyFrame', FRAME_MAIN_L: 'lyFrame', FRAME_SUB: 'lyFrame', REINF: 'lyReinf', WALL: 'lyWall', DIM: 'lyDim', SHEET: 'lySheet', NOZZLE: 'lyNozzle', BALLOON: 'lyBalloon', PAD: 'lyPad', HIDDEN: 'lyFrame', CENTER: 'lyDim' };
   const layerOn = e => {
     if (e.layer === 'BALLOON') {
       const b1 = $('lyBalloon') ? $('lyBalloon').checked : true;
@@ -8496,6 +8496,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       ctx.fillRect(0, 0, cv.width, cv.height);
       ctx.restore();
       ctx.setTransform(z.d, 0, 0, z.d, 0, 0);
+      ctx.setLineDash([]);
       ctx.beginPath();
 
       const col = {
@@ -8513,7 +8514,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         BALLOON: css('--cv-balloon') || '#f43f5e',
         NOZZLE: css('--cv-nozzle') || '#10b981',
         PAD: css('--cv-pad') || '#facc15',
-        HIDDEN: css('--cv-hidden') || '#94a3b8'
+        HIDDEN: css('--cv-hidden') || '#94a3b8',
+        CENTER: css('--cv-center') || '#f87171'
       };
       const lw = {
         PANEL: 1.4,
@@ -8530,7 +8532,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         BALLOON: 1.8,
         NOZZLE: 1.6,
         PAD: 1.2,
-        HIDDEN: 1.0
+        HIDDEN: 1.0,
+        CENTER: 0.8
       };
       const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
 
@@ -8602,6 +8605,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
           ctx.lineWidth = lw[layer] || 1;
           if (layer === 'HIDDEN') {
             ctx.setLineDash([4, 3]);
+          } else if (layer === 'CENTER') {
+            ctx.setLineDash([14, 3, 2, 3]);
           } else {
             ctx.setLineDash([]);
           }
@@ -8708,8 +8713,9 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         });
         images.forEach(renderImageEnt);
       } else {
-        ['PAD', 'PANEL_DETAIL', 'PANEL', 'WALL', 'FRAME', 'REINF', 'DIM', 'SHEET', 'BALLOON', 'NOZZLE'].forEach(layer => {
+        ['PAD', 'PANEL_DETAIL', 'PANEL', 'WALL', 'FRAME', 'REINF', 'HIDDEN', 'CENTER', 'DIM', 'SHEET', 'BALLOON', 'NOZZLE'].forEach(layer => {
           ctx.strokeStyle = col[layer]; ctx.fillStyle = col[layer]; ctx.lineWidth = lw[layer]; ctx.beginPath();
+          ctx.setLineDash(layer === 'HIDDEN' ? [4, 3] : (layer === 'CENTER' ? [14, 3, 2, 3] : []));
           const texts = [];
           const images = [];
           const renderEnt = (e, ox = 0, oy = 0) => {
@@ -8863,7 +8869,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
   /* ODA Guide Modal Controls */
   const getDxfContent = () => {
-    const fOpt = { font: ($('cadFontSel') ? $('cadFontSel').value : 'romans') };
+    const fOpt = { font: ($('cadFontSel') ? $('cadFontSel').value : 'romans'), scale: (plan && plan.scale) || 1 };
     return C.toDxf(plan.ents, plan.blocks, fOpt);
   };
 
