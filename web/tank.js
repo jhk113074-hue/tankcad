@@ -6615,6 +6615,7 @@
       if (nHeight) addWSpans(nHeight, isRightSide);
     }
 
+    let wSpliceCount = 0;
     function addWSpans(hVal, isRight) {
       const totalH = Math.round(hVal + overY * 2);
       const spans = computeMainBeamSpans(hVal);
@@ -6628,6 +6629,7 @@
         const code = (fNum === 125 && totalH === 2620) ? 'WFF-2640ASZ' : ('WFF-' + pad4(totalH) + sSufSingle);
         wBeamCounts[code] = (wBeamCounts[code] || 0) + 1;
       } else {
+        wSpliceCount += (spans.length - 1);
         spans.forEach(seg => {
           let code = '';
           if (seg.type === 'start') code = 'WFF-' + pad4(seg.span + overY) + startSuf;
@@ -6728,6 +6730,21 @@
         spec: `${code} [${dSkid.mainSpec}]`
       });
     });
+
+    // W방향 주재 연결 플레이트 (Splice Joint: 75Angle은 WBR-02150ZE, 125/150Channel은 WBR-9016CZE)
+    if (wSpliceCount > 0) {
+      const isAngle = (fNum === 75);
+      const spliceCode = isAngle ? 'WBR-02150ZE' : 'WBR-9016CZE';
+      const spliceSpec = isAngle ? 'WBR-02150ZE [L=215mm, 4-Ø17H]' : 'WBR-9016CZE [160x90x6t PL, 4-Ø17H]';
+      boms.push({
+        no: no++,
+        key: 'splice',
+        name: lang === 'en' ? 'Main Beam Splice Plate (W)' : 'W방향 주재 연결 플레이트',
+        mat: 'SS41(HDG)',
+        qty: `${wSpliceCount} EA`,
+        spec: spliceSpec
+      });
+    }
 
     // L방향 주재
     Object.entries(lBeamCounts).forEach(([code, qty]) => {
@@ -6928,10 +6945,58 @@
           curY += segLen;
 
           if (sIdx < spans.length - 1) {
+            // 1. 주재 간 맞댐 이음선 (Splice Joint Cut Line)
             ents.push({
               t: 'line',
               a: [x, curY],
               b: [x + w, curY],
+              layer: 'FRAME_MAIN_W'
+            });
+
+            // 2. 주재 연결 플레이트/브라켓 (75 Angle: WBR-02150ZE / 125·150 Channel: WBR-9016CZE)
+            const isAngle = (fNum === 75);
+            const spliceCode = isAngle ? 'WBR-02150ZE' : 'WBR-9016CZE';
+            const splL = isAngle ? 215 : 160;
+            const splHalf = splL / 2;
+            const pw = isAngle ? 25 : 12;
+            const px0 = (type === 'first') ? (x + w - 6 - pw) : (x + 6);
+            const px1 = px0 + pw;
+            const py0 = curY - splHalf;
+
+            // 연결 플레이트 외곽 직사각형
+            rectEnts(px0, py0, pw, splL, 'FRAME_MAIN_W', ents);
+
+            // 3. 4-Ø17 볼트 홀 및 중심선 표시
+            // WBR-02150ZE: 20 + 32.5 + 110 + 32.5 + 20 = 215mm (중심 기준 ±55, ±87.5)
+            // WBR-9016CZE: 25 + 110 + 25 = 160mm (중심 기준 ±55)
+            const holeOffsets = isAngle ? [-87.5, -55, 55, 87.5] : [-55, 55];
+            const holeR = Math.max(3.0, Math.min(4.5, pw * 0.28));
+            holeOffsets.forEach(offY => {
+              ents.push({
+                t: 'circle',
+                c: [(px0 + px1) / 2, curY + offY],
+                r: holeR,
+                layer: 'FRAME_MAIN_W'
+              });
+              ents.push({
+                t: 'line',
+                a: [px0 - 2, curY + offY],
+                b: [px1 + 2, curY + offY],
+                layer: 'FRAME_MAIN_W'
+              });
+            });
+
+            // 4. 연결 부재 품번 텍스트 마킹 (외곽 여백에 배치)
+            const sTxtH = Math.max(16, Math.min(22, Math.round(w * 0.32)));
+            const tx = (type === 'first') ? (x - 16) : (x + w + 16);
+            ents.push({
+              t: 'text',
+              p: [tx, curY],
+              h: sTxtH,
+              s: spliceCode,
+              rot: 90,
+              align: 'center',
+              valign: 'middle',
               layer: 'FRAME_MAIN_W'
             });
           }
@@ -7377,10 +7442,12 @@
 
     const bracketItem = skidBOM.find(b => b.key === 'bracket');
     const clampItem = skidBOM.find(b => b.key === 'clamp');
+    const spliceItem = skidBOM.find(b => b.key === 'splice');
     const bracketCode = isFrame150 ? 'WBR-0120CZE' : 'WBR-7575Z';
     const bQtyStr = bracketItem ? ` (${bracketItem.qty})` : '';
     const cQtyStr = clampItem ? ` (${clampItem.qty})` : '';
-    ents.push({ t: 'text', p: [lx, curLy], h: tH * 0.78, s: `HARDWARE : ${bracketCode} 연결 브라켓${bQtyStr} / WBR-5010Z 클램프${cQtyStr}`, rot: 0, align: 'left', layer: 'DIM' });
+    const sQtyStr = spliceItem ? ` / ${spliceItem.spec.split(' ')[0]} 주재 연결재 (${spliceItem.qty})` : '';
+    ents.push({ t: 'text', p: [lx, curLy], h: tH * 0.78, s: `HARDWARE : ${bracketCode} 연결 브라켓${bQtyStr}${sQtyStr} / WBR-5010Z 클램프${cQtyStr}`, rot: 0, align: 'left', layer: 'DIM' });
 
     // 표준 제작 가공 시방 NOTE (YSACC Foundation Standard - 기초.zip & Steel Skid.dwg)
     const noteX = Math.max(lx + 3200, G.map.length * 0.52);
@@ -7407,6 +7474,8 @@
         ? '150Channel: 시작/끝단 1570CSZL/R (1.5M), 2070CSZL/R (2M), 신규 1070CSZL/R (1M, 70mm 돌출) 대칭배치(한쪽 CSZL+CSZR 시 반대쪽 CSZR+CSZL), 중간 2000CSZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0150HCCZ (L=150, 4-Ø17H) / 단일재: 1140, 1640, 2140, 2640CSZ'
         : '125Channel: 시작/끝단 1560ASZL/R (1.5M), 2060ASZL/R (2M), 신규 1060ASZL/R (1M, 60mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0150CCZ (L=150, 4-Ø17H) / 단일재: 1120, 1620, 2120, 2640ASZ';
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `8. W방향 주재(테두리 전용): 외곽 테두리(시작 열 및 끝 열)에만 배치되며, 내부 중간 열에는 미배치 (부재만 배치). ${wSpecSummary}`, rot: 0, align: 'left', layer: 'FRAME_MAIN_W' });
+    noteY -= tH * 1.25;
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '9. W방향 주재 이음(Splice): 75Angle은 WBR-02150ZE(L=215, 4-Ø17H), 125/150Channel은 WBR-9016CZE(160x90x6t PL, 4-Ø17H) 찬넬간 연결 적용', rot: 0, align: 'left', layer: 'DIM' });
 
     return { ents, G, bom: skidBOM };
   }
