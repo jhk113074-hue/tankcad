@@ -6333,7 +6333,7 @@
     const overOut = flgW - lapIn; // 패널 외곽 기준 외측 60mm (또는 70mm) 돌출
     const overY = overOut;      // 상/하부 외곽 돌출 (총길이 = H + 120mm)
 
-    // 0. 기초 콘크리트 패드 (CONCRETE STRIP PADS - 하늘색 줄기초)
+    // 0. 기초 콘크리트 패드 (CONCRETE STRIP PADS - 노란색 줄기초)
     // 사용자 요청: "여기에 콘크리트패드도 놓아 주세요"
     const firstW = Number(opt && opt.padFirstW) || 400;
     const midW = Number(opt && opt.padMidW) || 300;
@@ -6736,7 +6736,7 @@
     noteY -= tH * 1.25;
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '5. 기초고정: 각 코너 및 2m 간격 M12 앙카볼트 & WBR-5010Z 클램프 체결', rot: 0, align: 'left', layer: 'DIM' });
     noteY -= tH * 1.25;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '6. 색상범례: 하늘색(CYAN)=콘크리트패드, 주황색(ORANGE)=스틸스키드, 녹색(GREEN)=저면패널', rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '6. 색상범례: 노란색(YELLOW)=콘크리트패드, 주황색(ORANGE)=스틸스키드, 녹색(GREEN)=저면패널', rot: 0, align: 'left', layer: 'DIM' });
     noteY -= tH * 1.25;
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `7. L방향 주재: 500 판넬 배치 시 1.5M(1490${fSuf}) 적용, 양끝단 5mm(총 10mm) 커팅 여유 확보 [2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}]`, rot: 0, align: 'left', layer: 'DIM' });
 
@@ -8703,7 +8703,7 @@
   }
 
   /* ---------- DXF (AutoCAD R12 ASCII, mm) ---------- */
-  const LAYERS = { PANEL: 7, FLOOR_PANEL: 3, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4, PAD: 8, GUIDE: 3 };
+  const LAYERS = { PANEL: 7, FLOOR_PANEL: 3, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4, PAD: 2, GUIDE: 3 };
   const dxfText = str => Array.from(str).map(ch => { const c = ch.codePointAt(0); return c < 128 ? ch : '\\U+' + c.toString(16).toUpperCase().padStart(4, '0'); }).join('');
 
   function toDxf(ents, blocks, opt = {}) {
