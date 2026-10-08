@@ -639,6 +639,13 @@ canvas.drag{cursor:grabbing}
           </label>
         </div>
         <p class="hint" id="hintSide" style="margin-bottom:8px">도구를 선택한 후 아래 측면 격자 칸을 클릭하여 <b>판넬 변경</b> 또는 <b>배관 노즐</b>을 배치합니다.</p>
+        <div style="margin-bottom:10px">
+          <button type="button" class="btn-sm" id="btnGoToCapacityDwg" style="width:100%;padding:7px 10px;background:rgba(2,132,199,0.12);color:var(--accent);border:1px solid var(--accent);border-radius:6px;font-weight:700;font-size:11.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openCapacityDrawing()">
+            <span style="font-size:15px">🌊</span>
+            <span class="txt-ko">INLET·OUTLET·OVERFLOW 실담수량 산출도 바로보기</span>
+            <span class="txt-en">View Water Capacity &amp; Water Level DWG</span>
+          </button>
+        </div>
 
         <!-- 1. 뷰 선택 세그먼트 (정면 / 우측면 / 배면 / 좌측면 / 상부 / 하부) -->
         <div class="face-seg-control">
@@ -1307,6 +1314,7 @@ canvas.drag{cursor:grabbing}
             <option value="iso">등각 조감도 (3D ISOMETRIC DWG)</option>
             <option value="frame">프레임도 (스키드·내부 스테이)</option>
             <option value="detail">상세도 (DETAILS DWG)</option>
+            <option value="capacity">🌊 실담수량 산출도 (WATER CAPACITY DWG)</option>
           </select>
         </div>
         <div class="vs-sep"></div>
@@ -2465,6 +2473,30 @@ canvas.drag{cursor:grabbing}
       </div>
     </div>
   
+
+          <div class="manual-card" style="border-left:3px solid #0284c7">
+            <h4>
+              <span>🌊</span>
+              <span class="txt-ko">실담수량 및 수위 산출도 (WATER CAPACITY &amp; LEVEL DWG)</span>
+              <span class="txt-en">Water Capacity &amp; Water Level Calculation DWG</span>
+            </h4>
+            <p>
+              <span class="txt-ko">
+                ● <b>도면 전환:</b> 상단 도면 뷰 선택 드롭다운에서 <b>[🌊 실담수량 산출도 (WATER CAPACITY DWG)]</b>를 선택하거나, 측면 편집(Tab 3)에서 <b>[🌊 실담수량 산출도 바로보기]</b> 버튼을 누르면 즉시 전환됩니다.<br>
+                ● <b>수위 및 수심 단면도:</b> INLET(유입구), OVERFLOW(월류구/최고수위 HWL), OUTLET(유출구/최저수위 LWL), DRAIN(배수구 EL.+0)의 설치 표고가 직관적인 수위선과 ▽ 레벨 기호로 표시됩니다.<br>
+                ● <b>유효 담수 영역 표시:</b> LWL부터 HWL까지의 <b>실담수량(유효 용량 Ton)</b> 및 담수율(%)이 수조 단면 중앙 뱃지에 강조되며, 하부 사수량(Dead Water Zone) 및 상부 여유고(Freeboard)가 수심 치수선과 함께 분리 계산됩니다.<br>
+                ● <b>정밀 산출 내역서 표 (SCHEDULE):</b> 바닥 유효 면적(A), 총 공칭용량, 각 노즐 표고, 유효수심(H_eff), 실담수량(V_eff), 다구획(1구획/2구획) 분할 실담수량 등 인허가 제출용 16개 핵심 사양이 일목요연하게 표로 출력됩니다.<br>
+                ● <b>CAD/DXF 내보내기:</b> AutoCAD에서 바로 출력할 수 있는 A1 정규 도면틀 및 표제란이 포함된 DXF/DWG로 즉시 저장됩니다.
+              </span>
+              <span class="txt-en">
+                ● <b>Switch Sheet:</b> Select <b>[🌊 Water Capacity Dwg]</b> from the top sheet dropdown or click <b>[🌊 View Water Capacity DWG]</b> in Side Elevation Tab 3.<br>
+                ● <b>Water Level Elevation:</b> Clear visualization of INLET, OVERFLOW (HWL), OUTLET (LWL), and DRAIN (EL.+0) elevations with level triangle markers.<br>
+                ● <b>Effective Storage Zone:</b> The exact effective water volume (Ton / m³) and effective ratio (%) between LWL and HWL are displayed in the tank cross-section, with separate dead water and freeboard dimensioning.<br>
+                ● <b>Engineering Schedule Table:</b> Complete 16-row calculation sheet including Floor Net Area (A), Gross Volume, Nozzle Elevations, Effective Depth (H_eff), Net Effective Capacity (V_eff), and Compartment breakdown for submittal.<br>
+                ● <b>AutoCAD Export:</b> Export directly to standard DXF/DWG format ready for permits and approvals.
+              </span>
+            </p>
+          </div>
 
           <div class="manual-card">
             <h4>
@@ -3865,12 +3897,13 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if (setTabBtn) setTabBtn.textContent = t.tabSettings;
 
     // Tab 1: Select dropdown options
-    if ($('sheetKind') && $('sheetKind').options && $('sheetKind').options.length >= 5) {
+    if ($('sheetKind') && $('sheetKind').options && $('sheetKind').options.length >= 6) {
       $('sheetKind').options[0].textContent = currentLang === 'en' ? 'General Assembly (Plan, Pad, Elev, 3D)' : '조립도 (평면·패드·정면·측면·3D등각)';
       $('sheetKind').options[1].textContent = currentLang === 'en' ? 'Foundation Pad Dwg' : '기초콘크리트도 (FOUNDATION PAD DWG)';
       $('sheetKind').options[2].textContent = currentLang === 'en' ? '3D Isometric Dwg' : '등각 조감도 (3D ISOMETRIC DWG)';
       $('sheetKind').options[3].textContent = currentLang === 'en' ? 'Frame Dwg (Skid & Stay)' : '프레임도 (스키드·내부 스테이)';
       $('sheetKind').options[4].textContent = currentLang === 'en' ? 'Details Dwg' : '상세도 (DETAILS DWG)';
+      $('sheetKind').options[5].textContent = currentLang === 'en' ? '🌊 Water Capacity Dwg (Effective Storage)' : '🌊 실담수량 산출도 (WATER CAPACITY DWG)';
     }
     if ($('drawingLangSel') && $('drawingLangSel').options && $('drawingLangSel').options.length >= 3) {
       $('drawingLangSel').options[0].textContent = currentLang === 'en' ? '🇰🇷 Korean' : '🇰🇷 한글 (Korean)';
@@ -5560,6 +5593,15 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     }
   }
   window.openUserManualModal = openUserManualModal;
+
+  function openCapacityDrawing() {
+    const sk = $('sheetKind');
+    if (sk) sk.value = 'capacity';
+    const so = $('sheetOn');
+    if (so) so.checked = true;
+    schedule();
+  }
+  window.openCapacityDrawing = openCapacityDrawing;
 
   function closeUserManualModal() {
     const dlg = $('manualModelessDialog');
@@ -7888,7 +7930,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       };
       const sheet = $('sheetOn').checked;
       opt.sheetKind = $('sheetKind').value;
-      if (sheet) {
+      if (sheet || opt.sheetKind === 'capacity') {
         plan = C.buildSheet(opt, TEMPLATES, SIDE_T);
       } else if (opt.sheetKind === 'iso') {
         const iso = C.buildIsometric(opt, TEMPLATES, SIDE_T);
@@ -7899,12 +7941,12 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       } else {
         plan = C.buildPlan(opt, TEMPLATES);
       }
-      plan.sheet = sheet;
+      plan.sheet = sheet || (opt.sheetKind === 'capacity');
 
       const isEn = currentLang === 'en';
       const kindText = isEn
-        ? ({ asm: 'GENERAL ASSEMBLY DWG', pad: 'FOUNDATION PAD DWG', iso: '3D ISOMETRIC DWG', frame: 'FRAME & SKID DWG', detail: 'DETAILS DWG' }[opt.sheetKind] || 'DWG')
-        : ({ asm: '조립도 (종합)', pad: '기초콘크리트도 (FOUNDATION PAD)', iso: '등각 조감도 (3D ISO)', frame: '프레임도 (하부/내부)', detail: '상세도 (DETAILS)' }[opt.sheetKind] || '도면');
+        ? ({ asm: 'GENERAL ASSEMBLY DWG', pad: 'FOUNDATION PAD DWG', iso: '3D ISOMETRIC DWG', frame: 'FRAME & SKID DWG', detail: 'DETAILS DWG', capacity: 'WATER CAPACITY & LEVEL DWG' }[opt.sheetKind] || 'DWG')
+        : ({ asm: '조립도 (종합)', pad: '기초콘크리트도 (FOUNDATION PAD)', iso: '등각 조감도 (3D ISO)', frame: '프레임도 (하부/내부)', detail: '상세도 (DETAILS)', capacity: '실담수량 산출도 (CAPACITY)' }[opt.sheetKind] || '도면');
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));

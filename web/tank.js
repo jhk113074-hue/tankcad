@@ -6816,6 +6816,33 @@
       });
     });
     const ton = (activeAreaMm2 * H / 1e9).toFixed(1);
+
+    // 실담수량 (Effective Water Capacity) 및 노즐 표고 (INLET, OUTLET, OVERFLOW) 분석
+    const nozzleList = getNozzleList(opt);
+    const overflowNoz = nozzleList.find(n => n.name === 'OVERFLOW' || (n.desc && n.desc.includes('월류')) || n.key === 'overflow');
+    const outletNoz = nozzleList.find(n => n.name === 'OUTLET' || (n.desc && n.desc.includes('유출')) || n.key === 'outlet');
+    const inletNoz = nozzleList.find(n => n.name === 'INLET' || (n.desc && (n.desc.includes('유입') || n.desc.includes('급수'))) || n.key === 'inlet');
+    const drainNoz = nozzleList.find(n => n.name === 'DRAIN' || (n.desc && n.desc.includes('배수')) || n.key === 'drain');
+    const fireNoz = nozzleList.find(n => n.name === 'FIRE' || (n.desc && n.desc.includes('소화')) || n.key === 'fire');
+
+    let hwlElev = (overflowNoz && typeof overflowNoz.elev === 'number' && overflowNoz.elev > 0) ? overflowNoz.elev : (overflowNoz && overflowNoz.elev === 'TOP' ? Math.max(100, H - 200) : Math.max(100, H - 300));
+    let lwlElev = (outletNoz && typeof outletNoz.elev === 'number' && outletNoz.elev > 0) ? outletNoz.elev : (outletNoz && (outletNoz.elev === 'BOTTOM' || outletNoz.face === 'bottom') ? 100 : 300);
+    let inletElev = (inletNoz && typeof inletNoz.elev === 'number' && inletNoz.elev > 0) ? inletNoz.elev : (inletNoz && inletNoz.elev === 'TOP' ? H : Math.max(100, H - 200));
+
+    if (hwlElev > H) hwlElev = H - 200;
+    if (lwlElev < 0) lwlElev = 0;
+    if (hwlElev <= lwlElev) hwlElev = Math.min(H, lwlElev + 500);
+
+    const effDepth = Math.max(0, hwlElev - lwlElev);
+    const freeDepth = Math.max(0, H - hwlElev);
+    const deadDepth = Math.max(0, lwlElev);
+    const areaM2 = activeAreaMm2 / 1e6;
+    const grossTon = Number((activeAreaMm2 * H / 1e9).toFixed(2));
+    const effTon = Number((activeAreaMm2 * effDepth / 1e9).toFixed(2));
+    const deadTon = Number((activeAreaMm2 * deadDepth / 1e9).toFixed(2));
+    const freeTon = Number((activeAreaMm2 * freeDepth / 1e9).toFixed(2));
+    const effRatio = grossTon > 0 ? Number((effTon / grossTon * 100).toFixed(1)) : 0;
+
     let ty = y0;
     const colLabelW = 55, colValW = tw - colLabelW;
 
@@ -6825,7 +6852,11 @@
     const titleLabel = lang === 'ko' ? '도  면  명' : (lang === 'en' ? 'DRAWING TITLE' : 'TITLE (도면명)');
     text(tx0 + colLabelW / 2, ty + titleH / 2, 4.8, titleLabel, 'center', 0, 'middle');
     line([tx0 + colLabelW, ty], [tx0 + colLabelW, ty + titleH]);
-    const titleVal = opt.sheetKind === 'frame' ? (lang === 'ko' ? '기초 프레임 및 스테이 도면' : 'STEEL SKID DRAWING') : opt.sheetKind === 'detail' ? (lang === 'ko' ? '탱크 상세도' : 'DETAILS DWG') : opt.sheetKind === 'pad' ? (lang === 'ko' ? '기초 콘크리트 패드 도면' : 'FOUNDATION PAD DWG') : dimStr + '\n= ' + ton + ' Ton';
+    const titleVal = opt.sheetKind === 'frame' ? (lang === 'ko' ? '기초 프레임 및 스테이 도면' : 'STEEL SKID DRAWING')
+      : opt.sheetKind === 'detail' ? (lang === 'ko' ? '탱크 상세도' : 'DETAILS DWG')
+      : opt.sheetKind === 'pad' ? (lang === 'ko' ? '기초 콘크리트 패드 도면' : 'FOUNDATION PAD DWG')
+      : opt.sheetKind === 'capacity' ? (lang === 'ko' ? '실담수량 및 수위 산출도\n실담수량: ' + effTon.toFixed(1) + ' Ton (' + effRatio.toFixed(1) + '%)' : 'WATER CAPACITY & LEVEL DWG\nNET: ' + effTon.toFixed(1) + ' Ton (' + effRatio.toFixed(1) + '%)')
+      : dimStr + '\n= ' + ton + ' Ton';
     const tparts = titleVal.split('\n');
     if (tparts.length > 1) {
       const maxChar = Math.max(tparts[0].length, tparts[1].length);
@@ -6852,7 +6883,7 @@
       [lang === 'ko' ? '고 객 명' : (lang === 'en' ? 'CLIENT' : 'Client (고객명)'), t.client || ''],
       [lang === 'ko' ? '설계감리' : (lang === 'en' ? 'CONSULTANT' : 'Consultant (감리)'), t.consultant || ''],
       [lang === 'ko' ? '시 공 사' : (lang === 'en' ? 'CONTRACTOR' : 'Contractor (시공)'), t.contractor || ''],
-      [lang === 'ko' ? '탱크규격' : (lang === 'en' ? 'TANK SIZE' : 'TANK SIZE (규격)'), dimStr]
+      [lang === 'ko' ? (opt.sheetKind === 'capacity' ? '실 담 수 량' : '탱크규격') : (lang === 'en' ? (opt.sheetKind === 'capacity' ? 'NET CAPACITY' : 'TANK SIZE') : (opt.sheetKind === 'capacity' ? 'NET CAPACITY (실담수량)' : 'TANK SIZE (규격)')), opt.sheetKind === 'capacity' ? `${effTon.toFixed(1)} Ton (${effRatio.toFixed(1)}%)` : dimStr]
     ];
     specRows.slice().reverse().forEach(([k, v]) => {
       line([tx0, ty + rowH], [x1, ty + rowH]);
@@ -7170,6 +7201,16 @@
       text(textX, by + 3.6, 5.0, titleText, 'center', 0, 'middle');
     };
 
+    const translateEnts = (es, dx, dy) => {
+      es.forEach(e => {
+        if (e.t === 'poly') ents.push({ ...e, pts: e.pts.map(p => [p[0] + dx, p[1] + dy]) });
+        else if (e.t === 'line') ents.push({ ...e, a: [e.a[0] + dx, e.a[1] + dy], b: [e.b[0] + dx, e.b[1] + dy] });
+        else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] + dx, e.c[1] + dy] });
+        else if (e.t === 'solid') ents.push({ ...e, p: e.p.map(p => [p[0] + dx, p[1] + dy]) });
+        else ents.push({ ...e, p: [e.p[0] + dx, e.p[1] + dy] });
+      });
+    };
+
     if (opt.sheetKind === 'detail') {
       ents.push(...buildDetails(opt, N, P, x0, y0, tx0, y1));
       return { map: mmap, ents, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
@@ -7270,6 +7311,328 @@
       ents.blocks = blocks;
       return { map: mmap, ents, blocks, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
     }
+    if (opt.sheetKind === 'capacity') {
+      const areaW = tx0 - x0;
+      const areaH = y1 - y0;
+      const lenSecs = (opt.length || []).filter(Boolean);
+
+      // 구획별(Multi-compartment) 면적 및 유효수량 분할 계산
+      const compAreas = [];
+      const compTons = [];
+      if (lenSecs.length > 1) {
+        let curX = 0;
+        for (let s = 0; s < lenSecs.length; s++) {
+          const cLen = lenSecs[s];
+          let cAreaMm2 = 0;
+          mmap.rows.forEach((rh, i) => {
+            mmap.cols.forEach((cw, j) => {
+              if (!mmap.removed.has(i + ',' + j)) {
+                const colLeft = mmap.xs[j], colRight = mmap.xs[j + 1];
+                const overlapL = Math.max(0, Math.min(colRight, curX + cLen) - Math.max(colLeft, curX));
+                if (overlapL > 0) cAreaMm2 += overlapL * rh;
+              }
+            });
+          });
+          const cAreaM2 = cAreaMm2 / 1e6;
+          const cEffTon = cAreaMm2 * effDepth / 1e9;
+          compAreas.push(cAreaM2);
+          compTons.push(cEffTon);
+          curX += cLen;
+        }
+      }
+
+      // ==========================================
+      // VIEW 1 (좌측 상단): 수위 및 수심 단면도 (WATER LEVEL ELEVATION & SECTION DWG)
+      // ==========================================
+      const cx1 = x0 + areaW * 0.28;
+      const cy1 = y0 + areaH * 0.72;
+      const dx1 = P(cx1) - totalL / 2;
+      const dy1 = P(cy1) - H / 2;
+      const secEnts = [];
+
+      // 1. 하부 스키드 프레임
+      const frmVal = opt.frame || opt.frm || 75;
+      secEnts.push({ t: 'line', a: [0, -frmVal], b: [totalL, -frmVal], layer: 'FRAME' });
+      secEnts.push({ t: 'line', a: [0, 0], b: [totalL, 0], layer: 'FRAME' });
+      for (let sx = 0; sx <= totalL; sx += 1000) {
+        secEnts.push({ t: 'line', a: [sx, -frmVal], b: [sx, 0], layer: 'FRAME' });
+      }
+
+      // 2. 수조 외곽 및 지붕 플랜지
+      secEnts.push({ t: 'line', a: [0, 0], b: [totalL, 0], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [totalL, 0], b: [totalL, H], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [totalL, H], b: [0, H], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [0, H], b: [0, 0], layer: 'PANEL' });
+
+      secEnts.push({ t: 'line', a: [-35, H], b: [totalL + 35, H], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [-35, H + 65], b: [totalL + 35, H + 65], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [-35, H], b: [-35, H + 65], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [totalL + 35, H], b: [totalL + 35, H + 65], layer: 'PANEL' });
+
+      // 판넬 종방향 분할선 (Col Seams)
+      mmap.cols.forEach((cw, j) => {
+        if (j > 0) {
+          const px = mmap.xs[j];
+          secEnts.push({ t: 'line', a: [px, 0], b: [px, H], layer: 'PANEL_DETAIL' });
+        }
+      });
+      // 판넬 횡방향 단 분할선 (Tier Seams)
+      let curZ = 0;
+      hs.forEach((segH, k) => {
+        curZ += segH;
+        if (k < hs.length - 1) {
+          secEnts.push({ t: 'line', a: [0, curZ], b: [totalL, curZ], layer: 'PANEL_DETAIL' });
+        }
+      });
+
+      // 다구획 격벽 표시
+      if (lenSecs.length > 1) {
+        let px = 0;
+        for (let s = 0; s < lenSecs.length - 1; s++) {
+          px += lenSecs[s];
+          secEnts.push({ t: 'line', a: [px - 35, 0], b: [px - 35, H], layer: 'PANEL' });
+          secEnts.push({ t: 'line', a: [px + 35, 0], b: [px + 35, H], layer: 'PANEL' });
+          secEnts.push({ t: 'text', p: [px, H * 0.88], h: Math.round(2.6 * N), s: lang === 'ko' ? '격벽 (PARTITION)' : 'PARTITION WALL', rot: 90, align: 'center', valign: 'middle', layer: 'SHEET' });
+        }
+      }
+
+      // 3. 수위 음영 및 해치 (Water Shading & Hatches)
+      // A. 사수 구역 (하부 0 ~ LWL)
+      secEnts.push({ t: 'solid', p: [[0, 0], [totalL, 0], [0, lwlElev], [totalL, lwlElev]], layer: 'NOZZLE', color: 2 });
+      for (let hy = 150; hy < lwlElev; hy += 150) {
+        secEnts.push({ t: 'line', a: [30, hy], b: [totalL - 30, hy], layer: 'NOZZLE', color: 2 });
+      }
+      secEnts.push({ t: 'text', p: [totalL / 2, lwlElev / 2], h: Math.round(2.6 * N), s: lang === 'ko' ? `⚠️ 사수 구역 (DEAD WATER ZONE) | H_dead = ${lwlElev} mm [V = ${deadTon.toFixed(1)} Ton]` : `⚠️ DEAD WATER ZONE | H_dead = ${lwlElev} mm [V = ${deadTon.toFixed(1)} Ton]`, align: 'center', valign: 'middle', layer: 'SHEET' });
+
+      // B. 유효 담수 구역 (LWL ~ HWL)
+      secEnts.push({ t: 'solid', p: [[0, lwlElev], [totalL, lwlElev], [0, hwlElev], [totalL, hwlElev]], layer: 'NOZZLE', color: 4 });
+      for (let hy = lwlElev + 150; hy < hwlElev; hy += 150) {
+        secEnts.push({ t: 'line', a: [30, hy], b: [totalL - 30, hy], layer: 'NOZZLE', color: 4 });
+      }
+
+      // 중앙 강조 실담수량 뱃지 (Effective Capacity Center Badge)
+      const badgeW = Math.min(totalL * 0.72, Math.max(2200, 75 * N));
+      const badgeH = Math.min(effDepth * 0.65, Math.max(900, 30 * N));
+      const bcx = totalL / 2;
+      const bcy = lwlElev + effDepth / 2;
+      const bx0 = bcx - badgeW / 2, bx1 = bcx + badgeW / 2;
+      const by0 = bcy - badgeH / 2, by1 = bcy + badgeH / 2;
+
+      secEnts.push({ t: 'solid', p: [[bx0, by0], [bx1, by0], [bx0, by1], [bx1, by1]], layer: 'SHEET', color: 7 });
+      secEnts.push({ t: 'line', a: [bx0, by0], b: [bx1, by0], layer: 'SHEET', color: 4 });
+      secEnts.push({ t: 'line', a: [bx1, by0], b: [bx1, by1], layer: 'SHEET', color: 4 });
+      secEnts.push({ t: 'line', a: [bx1, by1], b: [bx0, by1], layer: 'SHEET', color: 4 });
+      secEnts.push({ t: 'line', a: [bx0, by1], b: [bx0, by0], layer: 'SHEET', color: 4 });
+
+      secEnts.push({ t: 'text', p: [bcx, bcy + badgeH * 0.28], h: Math.round(3.4 * N), s: lang === 'ko' ? '🌊 실담수량 (NET EFFECTIVE WATER CAPACITY)' : '🌊 NET EFFECTIVE WATER CAPACITY', align: 'center', valign: 'middle', layer: 'SHEET' });
+      secEnts.push({ t: 'text', p: [bcx, bcy], h: Math.round(4.8 * N), s: `V_eff = ${effTon.toFixed(1)} Ton (㎥)  [${effRatio.toFixed(1)} %]`, align: 'center', valign: 'middle', layer: 'SHEET' });
+      secEnts.push({ t: 'text', p: [bcx, bcy - badgeH * 0.28], h: Math.round(2.8 * N), s: lang === 'ko' ? `유효 수심 H_eff = ${effDepth.toLocaleString()} mm (HWL - LWL)` : `Effective Depth H_eff = ${effDepth.toLocaleString()} mm`, align: 'center', valign: 'middle', layer: 'SHEET' });
+
+      // C. 상부 여유고 구역 (HWL ~ H)
+      if (freeDepth > 200) {
+        secEnts.push({ t: 'text', p: [totalL / 2, hwlElev + freeDepth / 2], h: Math.round(2.4 * N), s: lang === 'ko' ? `상부 여유고 (FREEBOARD ZONE) | H_free = ${freeDepth} mm [V = ${freeTon.toFixed(1)} Ton]` : `FREEBOARD ZONE | H_free = ${freeDepth} mm [V = ${freeTon.toFixed(1)} Ton]`, align: 'center', valign: 'middle', layer: 'SHEET' });
+      }
+
+      // 4. 수위 기준선 및 ▽ 레벨 마크
+      const mkSz = Math.round(2.5 * N);
+      const drawLevelTriangle = (x, y, color) => {
+        secEnts.push({ t: 'solid', p: [[x - mkSz, y + mkSz * 1.2], [x + mkSz, y + mkSz * 1.2], [x, y], [x, y]], layer: 'NOZZLE', color });
+        secEnts.push({ t: 'line', a: [x - mkSz * 1.4, y + mkSz * 1.2], b: [x + mkSz * 1.4, y + mkSz * 1.2], layer: 'NOZZLE', color });
+      };
+
+      // HWL 선
+      secEnts.push({ t: 'line', a: [-Math.round(15 * N), hwlElev], b: [totalL + Math.round(15 * N), hwlElev], layer: 'NOZZLE', color: 4 });
+      drawLevelTriangle(-Math.round(8 * N), hwlElev, 4);
+      drawLevelTriangle(totalL + Math.round(8 * N), hwlElev, 4);
+      secEnts.push({ t: 'text', p: [-Math.round(8 * N), hwlElev + Math.round(2.5 * N)], h: Math.round(2.8 * N), s: `▽ HWL EL. +${hwlElev.toLocaleString()}`, align: 'right', valign: 'bottom', layer: 'SHEET' });
+      secEnts.push({ t: 'text', p: [totalL + Math.round(8 * N), hwlElev + Math.round(2.5 * N)], h: Math.round(2.6 * N), s: lang === 'ko' ? '최고수위 (OVERFLOW Invert)' : 'HWL (OVERFLOW Invert)', align: 'left', valign: 'bottom', layer: 'SHEET' });
+
+      // LWL 선
+      secEnts.push({ t: 'line', a: [-Math.round(15 * N), lwlElev], b: [totalL + Math.round(15 * N), lwlElev], layer: 'NOZZLE', color: 2 });
+      drawLevelTriangle(-Math.round(8 * N), lwlElev, 2);
+      drawLevelTriangle(totalL + Math.round(8 * N), lwlElev, 2);
+      secEnts.push({ t: 'text', p: [-Math.round(8 * N), lwlElev + Math.round(2.5 * N)], h: Math.round(2.8 * N), s: `▽ LWL EL. +${lwlElev.toLocaleString()}`, align: 'right', valign: 'bottom', layer: 'SHEET' });
+      secEnts.push({ t: 'text', p: [totalL + Math.round(8 * N), lwlElev + Math.round(2.5 * N)], h: Math.round(2.6 * N), s: lang === 'ko' ? '최저수위 (OUTLET Invert)' : 'LWL (OUTLET Invert)', align: 'left', valign: 'bottom', layer: 'SHEET' });
+
+      // 5. 노즐 포인터 지시선 (Callouts)
+      drawLeader(secEnts, [totalL, hwlElev], [totalL + Math.round(8 * N), hwlElev + Math.round(6 * N)], [totalL + Math.round(22 * N), hwlElev + Math.round(6 * N)], [lang === 'ko' ? `[N3] 월류구 (${overflowNoz ? overflowNoz.size : '100A'})` : `[N3] OVERFLOW (${overflowNoz ? overflowNoz.size : '100A'})`, `EL. +${hwlElev} mm`], Math.round(2.4 * N), 'left', 'NOZZLE');
+      drawLeader(secEnts, [totalL, lwlElev], [totalL + Math.round(8 * N), lwlElev - Math.round(5 * N)], [totalL + Math.round(22 * N), lwlElev - Math.round(5 * N)], [lang === 'ko' ? `[N2] 유출구 (${outletNoz ? outletNoz.size : '100A'})` : `[N2] OUTLET (${outletNoz ? outletNoz.size : '100A'})`, `EL. +${lwlElev} mm`], Math.round(2.4 * N), 'left', 'NOZZLE');
+      drawLeader(secEnts, [0, inletElev], [-Math.round(8 * N), inletElev + Math.round(6 * N)], [-Math.round(22 * N), inletElev + Math.round(6 * N)], [lang === 'ko' ? `[N1] 유입구 (${inletNoz ? inletNoz.size : '100A'})` : `[N1] INLET (${inletNoz ? inletNoz.size : '100A'})`, `EL. +${inletElev} mm`], Math.round(2.4 * N), 'right', 'NOZZLE');
+      drawLeader(secEnts, [totalL * 0.15, 0], [totalL * 0.15 - Math.round(8 * N), -Math.round(12 * N)], [totalL * 0.15 - Math.round(20 * N), -Math.round(12 * N)], [lang === 'ko' ? `[N4] 배수구 (${drainNoz ? drainNoz.size : '50A'})` : `[N4] DRAIN (${drainNoz ? drainNoz.size : '50A'})`, `EL. +0 mm (바닥)`], Math.round(2.4 * N), 'right', 'NOZZLE');
+
+      // 6. 수직 및 수평 치수선 (Dimensions)
+      dimLinear(secEnts, [0, 0], [0, lwlElev], -Math.round(22 * N), true, String(lwlElev), Math.round(2.5 * N), 'DIM');
+      dimLinear(secEnts, [0, lwlElev], [0, hwlElev], -Math.round(22 * N), true, `${effDepth} (유효)`, Math.round(2.5 * N), 'DIM');
+      dimLinear(secEnts, [0, hwlElev], [0, H], -Math.round(22 * N), true, `${freeDepth} (여유)`, Math.round(2.5 * N), 'DIM');
+      dimLinear(secEnts, [0, 0], [0, H], -Math.round(34 * N), true, `${H} (총높이)`, Math.round(2.8 * N), 'DIM');
+
+      if (lenSecs.length > 1) {
+        let cx0 = 0;
+        lenSecs.forEach(cLen => {
+          dimLinear(secEnts, [cx0, 0], [cx0 + cLen, 0], -Math.round(18 * N), false, String(cLen), Math.round(2.5 * N), 'DIM');
+          cx0 += cLen;
+        });
+      }
+      dimLinear(secEnts, [0, 0], [totalL, 0], -Math.round(lenSecs.length > 1 ? 28 * N : 20 * N), false, `${totalL} (전장 L)`, Math.round(2.8 * N), 'DIM');
+
+      translateEnts(secEnts, dx1, dy1);
+      const titleSecY = (dy1 - Math.round(lenSecs.length > 1 ? 38 * N : 30 * N)) / N;
+      drawViewTitleBubble(cx1, titleSecY, 1, 1, lang === 'ko' ? `수위 및 수심 단면도 (WATER LEVEL ELEVATION)  [SCALE 1 : ${N}]` : `WATER LEVEL & DEPTH ELEVATION  [SCALE 1 : ${N}]`);
+
+      // ==========================================
+      // VIEW 2 (우측 상단): 3D 등각 수위 조감도 (3D ISOMETRIC WATER LEVEL VIEW)
+      // ==========================================
+      const iso = buildIsometric(opt, templates, sideT);
+      const bIso = bb(iso.ents);
+      const isoAreaW = areaW * 0.40;
+      const isoAreaH = areaH * 0.44;
+      const cx2 = x0 + areaW * 0.74;
+      const cy2 = y0 + areaH * 0.72;
+      const viewW = (bIso[2] - bIso[0]) / N, viewH = (bIso[3] - bIso[1]) / N;
+      const fitScale = Math.min((isoAreaW * 0.85) / viewW, (isoAreaH * 0.78) / viewH);
+      const centerDx = P(cx2) - ((bIso[0] + bIso[2]) / 2) * fitScale;
+      const centerDy = P(cy2) - ((bIso[1] + bIso[3]) / 2) * fitScale;
+
+      iso.ents.forEach(e => {
+        if (e.t === 'poly') ents.push({ ...e, pts: e.pts.map(p => [p[0] * fitScale + centerDx, p[1] * fitScale + centerDy]) });
+        else if (e.t === 'line') ents.push({ ...e, a: [e.a[0] * fitScale + centerDx, e.a[1] * fitScale + centerDy], b: [e.b[0] * fitScale + centerDx, e.b[1] * fitScale + centerDy] });
+        else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] * fitScale + centerDx, e.c[1] * fitScale + centerDy], r: e.r * fitScale });
+        else ents.push({ ...e, p: [e.p[0] * fitScale + centerDx, e.p[1] * fitScale + centerDy], h: e.h * fitScale });
+      });
+
+      // 3D 수위선 투영 (Z = hwlElev, Z = lwlElev)
+      const toIsoP = (x, y, z) => [
+        (x + y - totalL) * 0.8660254037844386 * fitScale + centerDx,
+        (((totalL - x) + y) * 0.5 + z) * fitScale + centerDy
+      ];
+      const p0 = toIsoP(0, 0, hwlElev), p1 = toIsoP(totalL, 0, hwlElev), p2 = toIsoP(totalL, totalW, hwlElev), p3 = toIsoP(0, totalW, hwlElev);
+      ents.push({ t: 'line', a: p0, b: p1, layer: 'NOZZLE', color: 4 });
+      ents.push({ t: 'line', a: p1, b: p2, layer: 'NOZZLE', color: 4 });
+      ents.push({ t: 'line', a: p2, b: p3, layer: 'NOZZLE', color: 4 });
+      ents.push({ t: 'line', a: p3, b: p0, layer: 'NOZZLE', color: 4 });
+
+      const q0 = toIsoP(0, 0, lwlElev), q1 = toIsoP(totalL, 0, lwlElev), q2 = toIsoP(totalL, totalW, lwlElev), q3 = toIsoP(0, totalW, lwlElev);
+      ents.push({ t: 'line', a: q0, b: q1, layer: 'NOZZLE', color: 2 });
+      ents.push({ t: 'line', a: q1, b: q2, layer: 'NOZZLE', color: 2 });
+      ents.push({ t: 'line', a: q2, b: q3, layer: 'NOZZLE', color: 2 });
+      ents.push({ t: 'line', a: q3, b: q0, layer: 'NOZZLE', color: 2 });
+
+      // 3D 수위 지시선
+      ents.push({ t: 'line', a: p1, b: [p1[0] + 15 * N * fitScale, p1[1] + 10 * N * fitScale], layer: 'NOZZLE', color: 4 });
+      ents.push({ t: 'line', a: [p1[0] + 15 * N * fitScale, p1[1] + 10 * N * fitScale], b: [p1[0] + 45 * N * fitScale, p1[1] + 10 * N * fitScale], layer: 'NOZZLE', color: 4 });
+      ents.push({ t: 'text', p: [p1[0] + 16 * N * fitScale, p1[1] + 13 * N * fitScale], h: Math.round(2.6 * N * fitScale), s: `▽ HWL EL. +${hwlElev}`, align: 'left', valign: 'bottom', layer: 'SHEET' });
+
+      const titleIsoY = y0 + areaH * 0.52 - 8;
+      drawViewTitleBubble(cx2, titleIsoY, 1, 2, lang === 'ko' ? '3D 등각 수위 조감도 (3D ISOMETRIC WATER VIEW)' : '3D ISOMETRIC WATER LEVEL VIEW');
+
+      // ==========================================
+      // VIEW 3 (좌측 하단): 평면도 및 유효면적도 (PLAN VIEW & WATER SURFACE AREA)
+      // ==========================================
+      const plan = buildPlan(opt, templates);
+      const bPlan = bb(plan.ents);
+      const cx3 = cx1;
+      const cy3 = y0 + areaH * 0.25;
+      const dx3 = P(cx3) - (bPlan[0] + bPlan[2]) / 2;
+      const dy3 = P(cy3) - (bPlan[1] + bPlan[3]) / 2;
+      translateEnts(plan.ents, dx3, dy3);
+
+      if (lenSecs.length > 1) {
+        let curXp = 0;
+        for (let s = 0; s < lenSecs.length; s++) {
+          const cL = lenSecs[s];
+          const midX = dx3 + curXp + cL / 2;
+          const midY = dy3 + totalW / 2;
+          const cA = compAreas[s] || (cL * totalW / 1e6);
+          const cT = compTons[s] || (cA * effDepth / 1000);
+          ents.push({ t: 'text', p: [midX, midY + Math.round(4 * N)], h: Math.round(2.8 * N), s: lang === 'ko' ? `【 ${s + 1}구획 】 A${s + 1} = ${cA.toFixed(2)} ㎡` : `【 COMP.${s + 1} 】 A${s + 1} = ${cA.toFixed(2)} ㎡`, align: 'center', valign: 'middle', layer: 'SHEET' });
+          ents.push({ t: 'text', p: [midX, midY - Math.round(4 * N)], h: Math.round(3.4 * N), s: lang === 'ko' ? `실담수량: ${cT.toFixed(1)} Ton` : `Net Cap.: ${cT.toFixed(1)} Ton`, align: 'center', valign: 'middle', layer: 'SHEET' });
+          curXp += cL;
+        }
+      } else {
+        ents.push({ t: 'text', p: [P(cx3), P(cy3) + Math.round(4 * N)], h: Math.round(3.2 * N), s: lang === 'ko' ? `유효 담수 면적: A = ${areaM2.toFixed(2)} ㎡` : `Floor Net Area: A = ${areaM2.toFixed(2)} ㎡`, align: 'center', valign: 'middle', layer: 'SHEET' });
+        ents.push({ t: 'text', p: [P(cx3), P(cy3) - Math.round(4 * N)], h: Math.round(3.6 * N), s: lang === 'ko' ? `실담수량: ${effTon.toFixed(1)} Ton (${effRatio.toFixed(1)}%)` : `Net Cap.: ${effTon.toFixed(1)} Ton (${effRatio.toFixed(1)}%)`, align: 'center', valign: 'middle', layer: 'SHEET' });
+      }
+
+      const titlePlanY = (bPlan[1] + dy3) / N - 14.0;
+      drawViewTitleBubble(cx3, titlePlanY, 1, 3, lang === 'ko' ? `평면도 및 유효면적도 (PLAN VIEW & AREA)  [SCALE 1 : ${N}]` : `PLAN VIEW & WATER SURFACE AREA  [SCALE 1 : ${N}]`);
+
+      // ==========================================
+      // VIEW 4 (우측 하단): 실담수량 정밀 산출 내역서 표 (EFFECTIVE WATER CAPACITY TABLE)
+      // ==========================================
+      const tbx = tx0 - 325, tby = y0 + 15, tbw = 320, tbh = 250;
+      rect(tbx, tby, tbx + tbw, tby + tbh);
+      line([tbx, tby + tbh - 14], [tbx + tbw, tby + tbh - 14]);
+      solid([[tbx, tby + tbh - 14], [tbx + tbw, tby + tbh - 14], [tbx, tby + tbh], [tbx + tbw, tby + tbh]], 'SHEET', 4);
+      text(tbx + tbw / 2, tby + tbh - 7, 3.8, lang === 'ko' ? '🌊 실담수량 및 수위 정밀 산출 내역서 (CAPACITY SCHEDULE)' : 'WATER CAPACITY & LEVEL CALCULATION SCHEDULE', 'center', 0, 'middle');
+
+      const colY = tby + tbh - 22;
+      line([tbx, colY], [tbx + tbw, colY]);
+      const c1 = 46, c2 = 90, c3 = 118, c4 = 66; // total 320
+      line([tbx + c1, tby], [tbx + c1, tby + tbh - 14]);
+      line([tbx + c1 + c2, tby], [tbx + c1 + c2, tby + tbh - 14]);
+      line([tbx + c1 + c2 + c3, tby], [tbx + c1 + c2 + c3, tby + tbh - 14]);
+
+      text(tbx + c1 / 2, colY + 4, 2.5, lang === 'ko' ? '구  분' : 'CAT.', 'center', 0, 'middle');
+      text(tbx + c1 + c2 / 2, colY + 4, 2.5, lang === 'ko' ? '산  출  항  목' : 'ITEM DESCRIPTION', 'center', 0, 'middle');
+      text(tbx + c1 + c2 + c3 / 2, colY + 4, 2.5, lang === 'ko' ? '설계 수치 및 계산식' : 'VALUE & FORMULA', 'center', 0, 'middle');
+      text(tbx + c1 + c2 + c3 + c4 / 2, colY + 4, 2.5, lang === 'ko' ? '비고 및 기준' : 'REMARKS / CODE', 'center', 0, 'middle');
+
+      const calcRows = [
+        [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '탱크 외형 치수 (L×W×H)' : 'Tank Overall Dims', `${totalL} × ${totalW} × ${H} mm`, lang === 'ko' ? '호칭 규격' : 'Nominal Dims'],
+        [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '바닥 유효 면적 (A_net)' : 'Floor Net Area', `${areaM2.toFixed(2)} ㎡ (${activeAreaMm2.toLocaleString()} ㎟)`, lang === 'ko' ? '실제 담수면적' : 'Floor Area'],
+        [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '총 공칭 용량 (V_gross)' : 'Total Gross Volume', `${grossTon.toFixed(2)} Ton (㎥)`, 'A × H (100%)'],
+        [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '수조 구획 구분' : 'Compartment Type', lenSecs.length > 1 ? (lang === 'ko' ? `${lenSecs.length}구획 (${lenSecs.join('+')}mm)` : `${lenSecs.length}-Comp. (${lenSecs.join('+')}mm)`) : (lang === 'ko' ? '단일 구획 (Single)' : 'Single Comp.'), lang === 'ko' ? '격벽 설치' : 'Partition'],
+
+        [lang === 'ko' ? '노즐표고' : 'NOZZLE', lang === 'ko' ? '급수 유입구 (INLET)' : 'Inlet Nozzle', `EL. +${inletElev} mm (${inletNoz ? inletNoz.size : '100A'})`, lang === 'ko' ? '급수 인입 표고' : 'Inlet Center'],
+        [lang === 'ko' ? '노즐표고' : 'NOZZLE', lang === 'ko' ? '월류관 / 최고수위 (HWL)' : 'Overflow / HWL', `EL. +${hwlElev} mm (${overflowNoz ? overflowNoz.size : '100A'})`, lang === 'ko' ? '월류관 하단(HWL)' : 'Overflow Invert'],
+        [lang === 'ko' ? '노즐표고' : 'NOZZLE', lang === 'ko' ? '유출관 / 최저수위 (LWL)' : 'Outlet / LWL', `EL. +${lwlElev} mm (${outletNoz ? outletNoz.size : '100A'})`, lang === 'ko' ? '유출관 하단(LWL)' : 'Outlet Invert'],
+        [lang === 'ko' ? '노즐표고' : 'NOZZLE', lang === 'ko' ? '바닥 배수구 (DRAIN)' : 'Bottom Drain', `EL. +0 mm (${drainNoz ? drainNoz.size : '50A'})`, lang === 'ko' ? '바닥 잔수 배수' : 'Bottom Drain'],
+
+        [lang === 'ko' ? '수심분석' : 'DEPTH', lang === 'ko' ? '상부 여유고 (H_free)' : 'Freeboard Height', `${freeDepth.toLocaleString()} mm (H - HWL)`, lang === 'ko' ? '공기층/넘침방지' : 'Air Gap'],
+        [lang === 'ko' ? '수심분석' : 'DEPTH', lang === 'ko' ? '하부 사수위 (H_dead)' : 'Dead Water Depth', `${deadDepth.toLocaleString()} mm (LWL)`, lang === 'ko' ? '흡입정/침전구간' : 'Dead Depth'],
+        [lang === 'ko' ? '수심분석' : 'DEPTH', lang === 'ko' ? '★ 유효 수심 (H_eff)' : '★ Effective Depth', `★ ${effDepth.toLocaleString()} mm (HWL - LWL)`, lang === 'ko' ? '가용 수심 확보' : 'Effective Depth'],
+
+        [lang === 'ko' ? '용량산출' : 'VOLUME', lang === 'ko' ? '상부 비유효용적 (V_free)' : 'Freeboard Volume', `${freeTon.toFixed(2)} Ton (㎥)`, 'A × H_free'],
+        [lang === 'ko' ? '용량산출' : 'VOLUME', lang === 'ko' ? '하부 사수량 (V_dead)' : 'Dead Water Volume', `${deadTon.toFixed(2)} Ton (㎥)`, 'A × H_dead'],
+        [lang === 'ko' ? '용량산출' : 'VOLUME', lang === 'ko' ? '🌊 ★ 최종 실담수량 (V_eff)' : '🌊 ★ Net Effective Cap.', `★ ${effTon.toFixed(2)} Ton (㎥)`, lang === 'ko' ? '★ 인허가 실용량' : '★ Net Storage'],
+        [lang === 'ko' ? '용량산출' : 'VOLUME', lang === 'ko' ? '★ 유효 담수율 (η)' : '★ Storage Efficiency', `★ ${effRatio.toFixed(1)} %`, 'V_eff / V_gross'],
+        [lang === 'ko' ? '구획/판정' : 'CHECK', lang === 'ko' ? (lenSecs.length > 1 ? '구획별 실담수량' : '설계 적합성 판정') : (lenSecs.length > 1 ? 'Comp. Net Storage' : 'Design Criteria Check'), lenSecs.length > 1 ? compTons.map((t, idx) => `${idx + 1}구획: ${t.toFixed(1)}T`).join(' / ') : (lang === 'ko' ? '유효수심 확보 적합 [PASS]' : 'Valid Effective Depth [PASS]'), lang === 'ko' ? '설비설계기준 적합' : 'Code Compliant']
+      ];
+
+      const rowH = (colY - tby) / calcRows.length;
+      calcRows.forEach((r, idx) => {
+        const ry = colY - (idx + 1) * rowH;
+        if (idx > 0) line([tbx, ry + rowH], [tbx + tbw, ry + rowH]);
+
+        const isKey = (idx === 10 || idx === 13 || idx === 14);
+        if (isKey) {
+          solid([[tbx + c1, ry], [tbx + tbw, ry], [tbx + c1, ry + rowH], [tbx + tbw, ry + rowH]], 'SHEET', 4);
+        }
+        const fs = isKey ? 2.6 : 2.2;
+        text(tbx + c1 / 2, ry + rowH / 2, 2.1, r[0], 'center', 0, 'middle');
+        text(tbx + c1 + 3, ry + rowH / 2, fs, r[1], 'left', 0, 'middle');
+        text(tbx + c1 + c2 + 3, ry + rowH / 2, isKey ? 2.7 : 2.3, r[2], 'left', 0, 'middle');
+        text(tbx + c1 + c2 + c3 + 3, ry + rowH / 2, 2.0, r[3], 'left', 0, 'middle');
+      });
+
+      return {
+        map: mmap,
+        ents,
+        scale: N,
+        elev: false,
+        tank: {
+          dimStr,
+          ton,
+          effTon: effTon.toFixed(1),
+          effRatio: effRatio.toFixed(1),
+          hwl: hwlElev,
+          lwl: lwlElev,
+          inlet: inletElev,
+          effDepth,
+          activeAreaM2: activeAreaMm2 / 1e6
+        }
+      };
+    }
     if (opt.sheetKind === 'iso') {
       const iso = buildIsometric(opt, templates, sideT);
       const b = bb(iso.ents);
@@ -7308,16 +7671,6 @@
     const isAsm5 = (!opt.sheetKind || opt.sheetKind === 'asm');
     const areaW = tx0 - x0;
     const areaH = y1 - y0;
-
-    const translateEnts = (es, dx, dy) => {
-      es.forEach(e => {
-        if (e.t === 'poly') ents.push({ ...e, pts: e.pts.map(p => [p[0] + dx, p[1] + dy]) });
-        else if (e.t === 'line') ents.push({ ...e, a: [e.a[0] + dx, e.a[1] + dy], b: [e.b[0] + dx, e.b[1] + dy] });
-        else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] + dx, e.c[1] + dy] });
-        else if (e.t === 'solid') ents.push({ ...e, p: e.p.map(p => [p[0] + dx, p[1] + dy]) });
-        else ents.push({ ...e, p: [e.p[0] + dx, e.p[1] + dy] });
-      });
-    };
 
     const viewTitlePlan = lang === 'en' ? 'PLAN VIEW' : (lang === 'bilingual' ? '평 면 도 (PLAN VIEW)' : '평  면  도');
     const viewTitlePad = lang === 'en' ? 'FOUNDATION PAD PLAN & SECTION' : (lang === 'bilingual' ? '기 초 패 드 평 면 및 단 면 도 (PAD PLAN & SECTION)' : '기  초  패  드  평  면  및  단  면  도');
