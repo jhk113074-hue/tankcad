@@ -381,6 +381,14 @@ const subBeam3000Row2 = skidStepped.ents.find(e => e.layer === 'FRAME_SUB' && e.
 assert(subBeam3000Row2, 'Sub-beam at X=3000 Row 2 must exist');
 assert.strictEqual(subBeam3000Row2.s, 'WFB-0994AMZ', 'Sub-beam at X=3000 Row 2 must be WFB-0994AMZ (Type B) connecting between two internal beams, not 0962');
 
+// Test 8-C: Tank with removed [[2, 3], [3, 3]] - brackets must exist at both Y=3000 and Y=4000 (X=3000)
+const optStep2333 = { length: [4000], width: [4000], height: [3000], frame: 75, removed: [[2, 3], [3, 3]], sheetKind: 'frame' };
+const skidStep2333 = TankCore.buildSkid(optStep2333);
+const bracketY3000 = skidStep2333.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'text' && e.s === 'WFF-0200ACZ' && Math.abs(e.p[0] - 3095) < 5 && Math.abs(e.p[1] - 3000) < 5);
+assert(bracketY3000, 'Bracket WFF-0200ACZ at X=3000, Y=3000 must exist');
+const bracketY4000 = skidStep2333.ents.find(e => e.layer === 'FRAME_MAIN_L' && e.t === 'text' && e.s === 'WFF-0200ACZ' && Math.abs(e.p[0] - 3095) < 5 && Math.abs(e.p[1] - 4032.5) < 5);
+assert(bracketY4000, 'Bracket WFF-0200ACZ at X=3000, Y=4000 must exist');
+
 // 13. Test 9: Frame Cross Section Shapes (50 SHS -> 50X50 SQ PIPE, 75 Angle -> L)
 console.log('--- Testing Frame Cross Section Shapes (50 SHS -> 50X50 SQ PIPE, 75 Angle -> L) ---');
 const cross50 = TankCore.buildSkidCross({ width: [4000], length: [4000], height: [2000], frame: 50 });

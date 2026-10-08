@@ -5020,31 +5020,23 @@
       const stepCornerLen = (fNum === 75) ? 200 : 150;
       for (let j = 1; j < map.cols.length; j++) {
         const colX = map.xs[j];
-        for (let i = 0; i < map.rows.length; i++) {
-          const rcL = map.has(i, j - 1), rcR = map.has(i, j);
+        for (let rIdx = 0; rIdx <= map.rows.length; rIdx++) {
+          const hasBeamLeft = (rIdx > 0 && map.has(rIdx - 1, j - 1)) || (rIdx < map.rows.length && map.has(rIdx, j - 1));
+          const hasBeamRight = (rIdx > 0 && map.has(rIdx - 1, j)) || (rIdx < map.rows.length && map.has(rIdx, j));
+          if (!hasBeamLeft && !hasBeamRight) continue;
+          if (hasBeamLeft && hasBeamRight) continue;
 
-          let cornerType = 0, rIdx = 0, colIdx = 0, isRight = false;
-          if (rcL && !rcR && !map.has(i + 1, j - 1)) {
-            cornerType = 1; rIdx = i + 1; colIdx = j - 1; isRight = true;
-          } else if (!rcL && rcR && !map.has(i + 1, j)) {
-            cornerType = 2; rIdx = i + 1; colIdx = j; isRight = false;
-          } else if (rcL && !rcR && !map.has(i - 1, j - 1)) {
-            cornerType = 3; rIdx = i; colIdx = j - 1; isRight = true;
-          } else if (!rcL && rcR && !map.has(i - 1, j)) {
-            cornerType = 4; rIdx = i; colIdx = j; isRight = false;
-          }
+          const isRight = hasBeamLeft && !hasBeamRight;
+          const colIdx = isRight ? (j - 1) : j;
+          const spec = getRowBeamSpec(map, rIdx, colIdx, flgW, overY);
+          const { yA, yB } = spec;
+          const xA = isRight ? (colX - lapIn) : (colX + lapIn - stepCornerLen);
+          const xB = isRight ? (xA + stepCornerLen) : (colX + lapIn);
 
-          if (cornerType > 0) {
-            const spec = getRowBeamSpec(map, rIdx, colIdx, flgW, overY);
-            const { yA, yB } = spec;
-            const xA = isRight ? (colX - lapIn) : (colX + lapIn - stepCornerLen);
-            const xB = isRight ? (xA + stepCornerLen) : (colX + lapIn);
-
-            poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xA, yB, 0)], 'FRAME_MAIN_L', true, true, getDepth((xA + xB) / 2, (yA + yB) / 2, 0));
-            poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yA, -th), toIso(xA, yA, -th)], 'FRAME_MAIN_L', true, true, getDepth((xA + xB) / 2, yA, -th / 2));
-            poly([toIso(isRight ? xB : xA, yA, 0), toIso(isRight ? xB : xA, yB, 0), toIso(isRight ? xB : xA, yB, -th), toIso(isRight ? xB : xA, yA, -th)], 'FRAME_MAIN_L', true, true, getDepth(isRight ? xB : xA, (yA + yB) / 2, -th / 2));
-            poly([toIso(xA, yB, 0), toIso(xB, yB, 0), toIso(xB, yB, -th), toIso(xA, yB, -th)], 'FRAME_MAIN_L', true, true, getDepth((xA + xB) / 2, yB, -th / 2));
-          }
+          poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xA, yB, 0)], 'FRAME_MAIN_L', true, true, getDepth((xA + xB) / 2, (yA + yB) / 2, 0));
+          poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yA, -th), toIso(xA, yA, -th)], 'FRAME_MAIN_L', true, true, getDepth((xA + xB) / 2, yA, -th / 2));
+          poly([toIso(isRight ? xB : xA, yA, 0), toIso(isRight ? xB : xA, yB, 0), toIso(isRight ? xB : xA, yB, -th), toIso(isRight ? xB : xA, yA, -th)], 'FRAME_MAIN_L', true, true, getDepth(isRight ? xB : xA, (yA + yB) / 2, -th / 2));
+          poly([toIso(xA, yB, 0), toIso(xB, yB, 0), toIso(xB, yB, -th), toIso(xA, yB, -th)], 'FRAME_MAIN_L', true, true, getDepth((xA + xB) / 2, yB, -th / 2));
         }
       }
 
@@ -6741,8 +6733,8 @@
     }
     if (nHeight) addMainBeam(nX - lapIn, nY - overY, flgW, nHeight + overY * 2, 'last', nHeight, true);
 
-    // 2-B. 이형 외곽 단차 코너 단재 (WFF-0200ACZ / WFF-0150CCZ / WFF-0150HCCZ - 가로 배치, 0990CLZ과 동일 Section 방향)
-    // 외곽 단차 코너에 기초프레임 사양별 부품 적용 및 인접 가로 주재와 동일한 Y축 위치 및 Section 방향 적용
+    // 2-B. 이형 외곽 단차 코너 단재 (WFF-0200ACZ / WFF-0150CCZ / WFF-0150HCCZ - 가로 배치, 인접 가로 주재와 동일 Section 방향)
+    // 수평 주재가 내부 열 경계에서 종료되는 모든 단차/외곽 지점에 브라켓 배치
     const centerBay = getCenterBay(G.map);
     const stepCornerLen = (fNum === 75) ? 200 : 150;
     const stepCornerCode = (fNum === 75) ? 'WFF-0200ACZ' : ((fNum === 150) ? 'WFF-0150HCCZ' : 'WFF-0150CCZ');
@@ -6750,58 +6742,43 @@
 
     for (let j = 1; j < G.map.cols.length; j++) {
       const colX = G.map.xs[j];
-      for (let i = 0; i < G.map.rows.length; i++) {
-        const rcL = G.map.has(i, j - 1), rcR = G.map.has(i, j);
+      for (let rIdx = 0; rIdx <= G.map.rows.length; rIdx++) {
+        const hasBeamLeft = (rIdx > 0 && G.map.has(rIdx - 1, j - 1)) || (rIdx < G.map.rows.length && G.map.has(rIdx, j - 1));
+        const hasBeamRight = (rIdx > 0 && G.map.has(rIdx - 1, j)) || (rIdx < G.map.rows.length && G.map.has(rIdx, j));
+        if (!hasBeamLeft && !hasBeamRight) continue;
+        if (hasBeamLeft && hasBeamRight) continue;
 
-        let cornerType = 0, rIdx = 0, colIdx = 0, isRight = false;
-        // 1) 상부 우측 단차 코너 (rcL && !rcR && !has(i+1, j-1)) - 0990 끝단에서 시작하여 외측(+X)으로 가로 배치
-        if (rcL && !rcR && !G.map.has(i + 1, j - 1)) {
-          cornerType = 1; rIdx = i + 1; colIdx = j - 1; isRight = true;
-        }
-        // 2) 상부 좌측 단차 코너 (!rcL && rcR && !has(i+1, j)) - 0990 시작단에서 좌측(-X)으로 가로 배치
-        else if (!rcL && rcR && !G.map.has(i + 1, j)) {
-          cornerType = 2; rIdx = i + 1; colIdx = j; isRight = false;
-        }
-        // 3) 하부 우측 단차 코너 (rcL && !rcR && !has(i-1, j-1)) - 0990 끝단에서 우측(+X)으로 가로 배치
-        else if (rcL && !rcR && !G.map.has(i - 1, j - 1)) {
-          cornerType = 3; rIdx = i; colIdx = j - 1; isRight = true;
-        }
-        // 4) 하부 좌측 단차 코너 (!rcL && rcR && !has(i-1, j)) - 0990 시작단에서 좌측(-X)으로 가로 배치
-        else if (!rcL && rcR && !G.map.has(i - 1, j)) {
-          cornerType = 4; rIdx = i; colIdx = j; isRight = false;
-        }
+        const isRight = hasBeamLeft && !hasBeamRight;
+        const colIdx = isRight ? (j - 1) : j;
+        const spec = getRowBeamSpec(G.map, rIdx, colIdx, flgW, overY, centerBay);
+        const { yA, yB, yWeb } = spec;
+        const xA = isRight ? (colX - lapIn) : (colX + lapIn - stepCornerLen);
+        const xB = isRight ? (xA + stepCornerLen) : (colX + lapIn);
 
-        if (cornerType > 0) {
-          const spec = getRowBeamSpec(G.map, rIdx, colIdx, flgW, overY, centerBay);
-          const { yA, yB, yWeb } = spec;
-          const xA = isRight ? (colX - lapIn) : (colX + lapIn - stepCornerLen);
-          const xB = isRight ? (xA + stepCornerLen) : (colX + lapIn);
+        ents.push({ t: 'line', a: [xA, yA], b: [xB, yA], layer: 'FRAME_MAIN_L' });
+        ents.push({ t: 'line', a: [xA, yB], b: [xB, yB], layer: 'FRAME_MAIN_L' });
+        ents.push({ t: 'line', a: [xA, yWeb], b: [xB, yWeb], layer: 'FRAME_MAIN_L' });
+        ents.push({ t: 'line', a: [xA, yA], b: [xA, yB], layer: 'FRAME_MAIN_L' });
+        ents.push({ t: 'line', a: [xB, yA], b: [xB, yB], layer: 'FRAME_MAIN_L' });
 
-          ents.push({ t: 'line', a: [xA, yA], b: [xB, yA], layer: 'FRAME_MAIN_L' });
-          ents.push({ t: 'line', a: [xA, yB], b: [xB, yB], layer: 'FRAME_MAIN_L' });
-          ents.push({ t: 'line', a: [xA, yWeb], b: [xB, yWeb], layer: 'FRAME_MAIN_L' });
-          ents.push({ t: 'line', a: [xA, yA], b: [xA, yB], layer: 'FRAME_MAIN_L' });
-          ents.push({ t: 'line', a: [xB, yA], b: [xB, yB], layer: 'FRAME_MAIN_L' });
+        // 개공홀
+        const holeOffsets = (fNum === 75) ? [50, 82.5, 117.5, 150] : [50, 100];
+        holeOffsets.forEach(hOff => {
+          const hX = isRight ? (xA + hOff) : (xB - hOff);
+          ents.push({ t: 'circle', c: [hX, (yA + yB) / 2], r: 8.5, layer: 'FRAME_MAIN_L' });
+        });
 
-          // 개공홀
-          const holeOffsets = (fNum === 75) ? [50, 82.5, 117.5, 150] : [50, 100];
-          holeOffsets.forEach(hOff => {
-            const hX = isRight ? (xA + hOff) : (xB - hOff);
-            ents.push({ t: 'circle', c: [hX, (yA + yB) / 2], r: 8.5, layer: 'FRAME_MAIN_L' });
-          });
-
-          // 부품명 텍스트 (가로 배치 rot: 0)
-          ents.push({
-            t: 'text',
-            p: [(xA + xB) / 2, (yA + yB) / 2],
-            h: cornerTxtH,
-            s: stepCornerCode,
-            rot: 0,
-            align: 'center',
-            valign: 'middle',
-            layer: 'FRAME_MAIN_L'
-          });
-        }
+        // 부품명 텍스트 (가로 배치 rot: 0)
+        ents.push({
+          t: 'text',
+          p: [(xA + xB) / 2, (yA + yB) / 2],
+          h: cornerTxtH,
+          s: stepCornerCode,
+          rot: 0,
+          align: 'center',
+          valign: 'middle',
+          layer: 'FRAME_MAIN_L'
+        });
       }
     }
 
