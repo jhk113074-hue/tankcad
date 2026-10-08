@@ -7511,7 +7511,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     if (e.layer === 'PAD' || e.isFoundation) {
       return $('lyPad') ? $('lyPad').checked : true;
     }
-    if (e.layer === 'PANEL') {
+    if (e.layer === 'PANEL' || e.layer === 'FLOOR_PANEL') {
       return $('lyPanel') ? $('lyPanel').checked : true;
     }
     if (e.layer === 'PANEL_DETAIL') {
@@ -8480,8 +8480,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       ctx.setTransform(z.d, 0, 0, z.d, 0, 0);
       ctx.beginPath();
 
-      const col = { PANEL: css('--cv-panel') || '#f1f5f9', PANEL_DETAIL: css('--cv-detail') || '#94a3b8', FRAME: css('--cv-frame') || '#fb923c', REINF: css('--cv-reinf') || '#f472b6', WALL: css('--cv-frame') || '#fb923c', DIM: css('--cv-dim') || '#38bdf8', SHEET: css('--cv-sheet') || '#e2e8f0', BALLOON: css('--cv-balloon') || '#f43f5e', NOZZLE: css('--cv-nozzle') || '#10b981', PAD: css('--cv-dim') || '#38bdf8' };
-      const lw = { PANEL: 1.4, PANEL_DETAIL: 0.9, FRAME: 1.6, REINF: 2.0, WALL: 1, DIM: 1, SHEET: 1.3, BALLOON: 1.8, NOZZLE: 1.6, PAD: 1.2 };
+      const col = { PANEL: css('--cv-panel') || '#f1f5f9', FLOOR_PANEL: '#f43f5e', PANEL_DETAIL: css('--cv-detail') || '#94a3b8', FRAME: css('--cv-frame') || '#fb923c', REINF: css('--cv-reinf') || '#f472b6', WALL: css('--cv-frame') || '#fb923c', DIM: css('--cv-dim') || '#38bdf8', SHEET: css('--cv-sheet') || '#e2e8f0', BALLOON: css('--cv-balloon') || '#f43f5e', NOZZLE: css('--cv-nozzle') || '#10b981', PAD: css('--cv-dim') || '#38bdf8' };
+      const lw = { PANEL: 1.4, FLOOR_PANEL: 1.3, PANEL_DETAIL: 0.9, FRAME: 1.6, REINF: 2.0, WALL: 1, DIM: 1, SHEET: 1.3, BALLOON: 1.8, NOZZLE: 1.6, PAD: 1.2 };
       const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
 
       const renderImageEnt = (e) => {

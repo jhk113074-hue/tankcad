@@ -6365,20 +6365,107 @@
     }));
     frameDims(ents, G.map, tH, true, true);
 
-    // 코너 브라켓 WBR-7575Z & WBR-0160Z
-    drawCornerBracket(ents, nLeft, nTop, 75, 6, 1, 1);
-    drawCornerBracket(ents, nRight, nTop, 75, 6, -1, 1);
-    drawCornerBracket(ents, nLeft, nBottom, 75, 6, 1, -1);
-    drawCornerBracket(ents, nRight, nBottom, 75, 6, -1, -1);
+    // ★★★ 1000x1000 저면 패널 안착 위치 (FLOOR_PANEL 레이어, 붉은색 계열로 가시화) ★★★
+    // 사용자 요청: "1000x1000mm박스을 다른색으로 배열해서 어떻게 기초가 적용되었는지 확인하게 해주세요."
+    for (let i = 0; i < G.map.rows.length; i++) {
+      for (let j = 0; j < G.map.cols.length; j++) {
+        if (G.map.has(i, j)) {
+          const px0 = G.map.xs[j];
+          const py0 = G.map.ys[i];
+          const pw = G.map.cols[j];
+          const ph = G.map.rows[i];
+          const px1 = px0 + pw;
+          const py1 = py0 + ph;
+          const cx = (px0 + px1) / 2;
+          const cy = (py0 + py1) / 2;
 
-    // 앙카 클램프 WBR-5010Z (외곽 찬넬 둘레 2m 간격 배치)
-    for (let ax = nLeft + 1000; ax < nRight; ax += 2000) {
-      drawAnchorClamp(ents, ax, nTop - 15);
-      drawAnchorClamp(ents, ax, nBottom + 15);
+          // 1. 외곽 1000x1000 패널 윤곽선 (FLOOR_PANEL 레이어)
+          ents.push({ t: 'line', a: [px0, py0], b: [px1, py0], layer: 'FLOOR_PANEL' });
+          ents.push({ t: 'line', a: [px1, py0], b: [px1, py1], layer: 'FLOOR_PANEL' });
+          ents.push({ t: 'line', a: [px1, py1], b: [px0, py1], layer: 'FLOOR_PANEL' });
+          ents.push({ t: 'line', a: [px0, py1], b: [px0, py0], layer: 'FLOOR_PANEL' });
+
+          // 2. 패널 내부 플랜지 윤곽 (45mm 플랜지 림 및 4코너 마이터선)
+          const off = 45;
+          if (pw > off * 2 && ph > off * 2) {
+            const ix0 = px0 + off, ix1 = px1 - off;
+            const iy0 = py0 + off, iy1 = py1 - off;
+            ents.push({ t: 'line', a: [ix0, iy0], b: [ix1, iy0], layer: 'FLOOR_PANEL' });
+            ents.push({ t: 'line', a: [ix1, iy0], b: [ix1, iy1], layer: 'FLOOR_PANEL' });
+            ents.push({ t: 'line', a: [ix1, iy1], b: [ix0, iy1], layer: 'FLOOR_PANEL' });
+            ents.push({ t: 'line', a: [ix0, iy1], b: [ix0, iy0], layer: 'FLOOR_PANEL' });
+
+            ents.push({ t: 'line', a: [px0, py0], b: [ix0, iy0], layer: 'FLOOR_PANEL' });
+            ents.push({ t: 'line', a: [px1, py0], b: [ix1, iy0], layer: 'FLOOR_PANEL' });
+            ents.push({ t: 'line', a: [px1, py1], b: [ix1, iy1], layer: 'FLOOR_PANEL' });
+            ents.push({ t: 'line', a: [px0, py1], b: [ix0, iy1], layer: 'FLOOR_PANEL' });
+          }
+
+          // 3. 패널 중앙 규격 식별 텍스트 (예: 1000×1000)
+          const dimLabel = `${pw}×${ph}`;
+          const pTxtH = Math.max(26, Math.min(34, Math.round(pw / 30)));
+          ents.push({
+            t: 'text',
+            p: [cx, cy],
+            h: pTxtH,
+            s: dimLabel,
+            rot: 0,
+            align: 'center',
+            layer: 'FLOOR_PANEL'
+          });
+        }
+      }
     }
-    for (let ay = nTop + 1000; ay < nBottom; ay += 2000) {
-      drawAnchorClamp(ents, nLeft - 15, ay);
-      drawAnchorClamp(ents, nRight + 15, ay);
+
+    // 코너 브라켓 WBR-7575Z & WBR-0160Z (실제 존재하는 외곽 볼록 코너에만 배치하여 허공 부유 방지)
+    for (let i = 0; i <= G.nr; i++) {
+      for (let j = 0; j <= G.nc; j++) {
+        const cTL = (i > 0 && j > 0) && G.R(i - 1, j - 1);
+        const cTR = (i > 0 && j < G.nc) && G.R(i - 1, j);
+        const cBL = (i < G.nr && j > 0) && G.R(i, j - 1);
+        const cBR = (i < G.nr && j < G.nc) && G.R(i, j);
+        const count = (cTL ? 1 : 0) + (cTR ? 1 : 0) + (cBL ? 1 : 0) + (cBR ? 1 : 0);
+        const vx = G.map.xs[j];
+        const vy = G.map.ys[i];
+        if (count === 1) {
+          if (cBR) drawCornerBracket(ents, vx, vy, 75, 6, 1, 1);
+          else if (cBL) drawCornerBracket(ents, vx, vy, 75, 6, -1, 1);
+          else if (cTR) drawCornerBracket(ents, vx, vy, 75, 6, 1, -1);
+          else if (cTL) drawCornerBracket(ents, vx, vy, 75, 6, -1, -1);
+        }
+      }
+    }
+
+    // 앙카 클램프 WBR-5010Z (실제 존재하는 외곽 찬넬 둘레에 2m 간격 배치)
+    for (let j = 0; j < G.nc; j += 2) {
+      const cx = (G.map.xs[j] + G.map.xs[Math.min(j + 1, G.nc)]) / 2;
+      for (let i = 0; i < G.nr; i++) {
+        if (G.R(i, j) && !G.R(i - 1, j)) {
+          drawAnchorClamp(ents, cx, G.map.ys[i] - 15);
+          break;
+        }
+      }
+      for (let i = G.nr - 1; i >= 0; i--) {
+        if (G.R(i, j) && !G.R(i + 1, j)) {
+          drawAnchorClamp(ents, cx, G.map.ys[i + 1] + 15);
+          break;
+        }
+      }
+    }
+    for (let i = 0; i < G.nr; i += 2) {
+      const cy = (G.map.ys[i] + G.map.ys[Math.min(i + 1, G.nr)]) / 2;
+      for (let j = 0; j < G.nc; j++) {
+        if (G.R(i, j) && !G.R(i, j - 1)) {
+          drawAnchorClamp(ents, G.map.xs[j] - 15, cy);
+          break;
+        }
+      }
+      for (let j = G.nc - 1; j >= 0; j--) {
+        if (G.R(i, j) && !G.R(i, j + 1)) {
+          drawAnchorClamp(ents, G.map.xs[j + 1] + 15, cy);
+          break;
+        }
+      }
     }
 
     // 도면 하단 부재 규격 및 표준 제작 가공 시방 NOTE (수량 집계가 아닌 도면 상세 사양)
@@ -6405,6 +6492,8 @@
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '4. 조립기준: 외곽 찬넬 열림부 외측 배치, 코너 WBR-7575Z 체결', rot: 0, align: 'left', layer: 'DIM' });
     noteY -= tH * 1.25;
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '5. 기초고정: 각 코너 및 2m 간격 M12 앙카볼트 & WBR-5010Z 클램프 체결', rot: 0, align: 'left', layer: 'DIM' });
+    noteY -= tH * 1.25;
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '6. 색상범례: 주황색(ORANGE)=스틸스키드, 붉은색(RED)=1000×1000 저면패널 안착위치', rot: 0, align: 'left', layer: 'DIM' });
 
     return { ents, G };
   }
@@ -8360,7 +8449,7 @@
   }
 
   /* ---------- DXF (AutoCAD R12 ASCII, mm) ---------- */
-  const LAYERS = { PANEL: 7, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4, PAD: 8, GUIDE: 3 };
+  const LAYERS = { PANEL: 7, FLOOR_PANEL: 1, PANEL_DETAIL: 8, FRAME: 1, REINF: 5, WALL: 1, DIM: 3, SHEET: 7, BALLOON: 6, NOZZLE: 4, PAD: 8, GUIDE: 3 };
   const dxfText = str => Array.from(str).map(ch => { const c = ch.codePointAt(0); return c < 128 ? ch : '\\U+' + c.toString(16).toUpperCase().padStart(4, '0'); }).join('');
 
   function toDxf(ents, blocks, opt = {}) {
