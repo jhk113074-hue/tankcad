@@ -60,9 +60,14 @@ assert(hasGalvNote, 'Hot-dip galvanized SS41 note must exist');
 const hasToleranceNote = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('±1mm'));
 assert(hasToleranceNote, 'Tolerance ±1mm note must exist');
 
-// 5. Check Frame Cross DWG details (No concrete pad as requested, 3-tier dimensions, Sub-beam)
-const hasPadLayer = sheet1.ents.some(e => e.layer === 'PAD');
-assert(!hasPadLayer, 'Concrete pad entities must be removed from FRAME CROSS DWG as requested by user');
+// 5. Check Concrete Pad on Skid Drawing and removed from Frame Cross DWG
+const crossRes1 = TankCore.buildSkidCross(opt1);
+const hasCrossPad = crossRes1.ents.some(e => e.layer === 'PAD');
+assert(!hasCrossPad, 'Concrete pad entities must be removed from FRAME CROSS DWG as requested by user');
+
+const skidRes1 = TankCore.buildSkid(opt1);
+const hasSkidPad = skidRes1.ents.some(e => e.layer === 'PAD');
+assert(hasSkidPad, 'Concrete pad entities must exist in STEEL SKID DRAWING as requested by user');
 
 const hasOverhangDim = sheet1.ents.some(e => e.t === 'text' && e.s === '60');
 assert(hasOverhangDim, '60mm overhang dimension must exist in drawings');
@@ -136,4 +141,22 @@ const sheet4 = TankCore.buildSheet(opt4, {}, {});
 assert(sheet4 && sheet4.ents.length > 500, 'Sheet 4 (irregular skid) should be created without crashing');
 console.log('Sheet 4 entities count:', sheet4.ents.length);
 
+// 9. Test 5: 500mm Panel combination -> 1.5M member (1490CLZ / 1490ALZ / 1490HCLZ)
+console.log('--- Testing 500mm Panel Combination with 1.5M Members (1490CLZ / 1490ALZ / 1490HCLZ) ---');
+const opt5_125 = { length: [5500], width: [4000], height: [3000], frame: 125, sheetKind: 'frame' };
+const sheet5_125 = TankCore.buildSheet(opt5_125, {}, {});
+const has1490CLZ = sheet5_125.ents.some(e => e.t === 'text' && e.s && e.s.includes('1490CLZ'));
+assert(has1490CLZ, 'Must have 1490CLZ for 500mm panel combination with 125 frame');
+
+const opt5_75 = { length: [5500], width: [4000], height: [2000], frame: 75, sheetKind: 'frame' };
+const sheet5_75 = TankCore.buildSheet(opt5_75, {}, {});
+const has1490ALZ = sheet5_75.ents.some(e => e.t === 'text' && e.s && e.s.includes('1490ALZ'));
+assert(has1490ALZ, 'Must have 1490ALZ for 500mm panel combination with 75 angle frame');
+
+const opt5_150 = { length: [5500], width: [4000], height: [5000], frame: 150, sheetKind: 'frame' };
+const sheet5_150 = TankCore.buildSheet(opt5_150, {}, {});
+const has1490HCLZ = sheet5_150.ents.some(e => e.t === 'text' && e.s && e.s.includes('1490HCLZ'));
+assert(has1490HCLZ, 'Must have 1490HCLZ for 500mm panel combination with 150 channel frame');
+
 console.log('✅ ALL STEEL SKID & FOUNDATION TESTS PASSED SUCCESSFULLY!');
+

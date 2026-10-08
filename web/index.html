@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.6.65</title>
+<title>YSACC TANK CAD v1.6.66</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -487,7 +487,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.65</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.66</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1545,7 +1545,7 @@ canvas.drag{cursor:grabbing}
           <h3 id="manualDialogTitle" style="margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">
             <span class="txt-ko">YSACC TANK CAD 사용자 가이드 &amp; 사용 매뉴얼</span>
             <span class="txt-en">YSACC TANK CAD User Guide &amp; Operation Manual</span>
-            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.6.65</span>
+            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.6.66</span>
           </h3>
           <span class="modeless-drag-hint">
             <span class="txt-ko">✥ 상단바를 잡고 자유롭게 이동 가능</span>
@@ -3498,7 +3498,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.65</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.66</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -3508,7 +3508,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.65</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.66</span></div>
     </div>
   </main>
 </div>
@@ -15324,13 +15324,66 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
     drawBoltHole(out, cx, cy, 6.5, 14, layer);
   };
 
+  // L방향 판넬 배치에 따른 주재 표준 규격 분할 (2.0M: 1990, 1.5M: 1490, 1.0M: 0990)
+  // 500mm 판넬이 있는 경우 인접 판넬과 결합하여 반드시 1.5M(1490) 부재를 사용
+  function computeColSpans(cols) {
+    if (!cols || !cols.length) return [1000];
+    const n = cols.length;
+    const memo = new Map();
+    function solve(idx) {
+      if (idx >= n) return { cost: 0, spans: [] };
+      if (memo.has(idx)) return memo.get(idx);
+      let best = null;
+      let sum = 0;
+      const cands = [];
+      for (let j = idx; j < n; j++) {
+        sum += cols[j];
+        if (sum > 2000) break;
+        if (sum === 2000 || sum === 1500 || sum === 1000) {
+          cands.push({ j, sum });
+        }
+      }
+      cands.sort((a, b) => b.sum - a.sum);
+
+      for (const cand of cands) {
+        let stepCost = 0;
+        if (cand.sum === 2000) stepCost = 10;
+        else if (cand.sum === 1500) stepCost = 20;
+        else if (cand.sum === 1000) stepCost = 30;
+
+        const sub = solve(cand.j + 1);
+        const totalCost = stepCost + sub.cost;
+        if (!best || totalCost < best.cost) {
+          best = { cost: totalCost, spans: [cand.sum, ...sub.spans] };
+        }
+      }
+      if (!best) {
+        const sub = solve(idx + 1);
+        best = { cost: 100000 + sub.cost, spans: [cols[idx], ...sub.spans] };
+      }
+      memo.set(idx, best);
+      return best;
+    }
+    return solve(0).spans;
+  }
+
   // 실제 제작 부재 기반 프레임 작도 (주 베이스 프레임 ㄷ-125 / 서브 빔 A·B·C타입 결합부)
-  function insideFrm(out, x, y, w, h, lat, rec) {
+  function insideFrm(out, x, y, w, h, lat, rec, colSpans, nLeft) {
     const L = 'FRAME', ln = (a, b) => out.push({ t: 'line', a, b, layer: L });
     const DIV = 2000, MIN = 850;
     const cuts = [];
     const divide = (len, at0) => {
       const at = d => { cuts.push(d); at0(d); };
+      if (w > h && colSpans && colSpans.length > 1) {
+        let acc = 0;
+        for (let k = 0; k < colSpans.length - 1; k++) {
+          acc += colSpans[k];
+          // 이음부 중심선 = 탱크 판넬 접합선 위치 (x + d = nLeft + acc)
+          const cutPos = (nLeft !== undefined ? (nLeft + acc) : (x + acc)) - x;
+          at(cutPos);
+        }
+        return;
+      }
       const cnt = (len % DIV >= MIN) ? Math.trunc(len / DIV) : Math.trunc(len / DIV) - 1;
       if (cnt <= 0) return;
       for (let i = 1; i <= cnt; i++) at(DIV * i);
@@ -15425,7 +15478,7 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
     if (rec && w !== h) {
       const len = w > h ? w : h, cs = cuts.slice().sort((a, b) => a - b), pts = [0, ...cs, len], segs = [];
       for (let k = 0; k + 1 < pts.length; k++) segs.push(pts[k + 1] - pts[k]);
-      rec.push({ hor: w > h, x, y, w, h, pts, segs, lat });
+      rec.push({ hor: w > h, x, y, w, h, pts, segs, lat, colSpans: (w > h ? colSpans : null) });
     }
   }
 
@@ -15446,12 +15499,70 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
   // 스틸 스키드 프레임 조립도 (STEEL SKID DRAWING)
   function buildSkid(opt) {
     const G = frameGeom(opt), { R, sRow, eRow, sCol, eCol, nLeft, nRight, nTop, nBottom } = G;
-    const ents = [], rec = [], add = (x, y, w, h, lat) => insideFrm(ents, x, y, w, h, lat, rec);
+    const colSpans = computeColSpans(G.map.cols);
+    const ents = [], rec = [], add = (x, y, w, h, lat) => insideFrm(ents, x, y, w, h, lat, rec, colSpans, nLeft);
     const dSkid = getSkidDimensions(opt.frame);
     const flgW = dSkid.mainW;   // 125 채널: 65, 150 채널: 75
     const lapIn = 5;            // 패널 내부로 5mm 걸침
     const overOut = flgW - lapIn; // 패널 외곽 기준 외측 60mm (또는 70mm) 돌출
     const overY = overOut;      // 상/하부 외곽 돌출 (총길이 = H + 120mm)
+
+    // 0. 기초 콘크리트 패드 (CONCRETE STRIP PADS - 하늘색 줄기초)
+    // 사용자 요청: "여기에 콘크리트패드도 놓아 주세요"
+    const firstW = Number(opt && opt.padFirstW) || 400;
+    const midW = Number(opt && opt.padMidW) || 300;
+    const padOv = (opt && opt.padOverhang !== undefined && opt.padOverhang !== '') ? Number(opt.padOverhang) : 200;
+
+    const hasTankAtRow = (cIdx, r) => {
+      if (cIdx < 0 || cIdx >= G.nc) {
+        if (cIdx < 0) return G.map.has(r, 0);
+        return G.map.has(r, G.nc - 1);
+      }
+      if (cIdx === 0) return G.map.has(r, 0);
+      return G.map.has(r, cIdx) || G.map.has(r, cIdx - 1);
+    };
+
+    const runsForPad = cIdx => {
+      const out = [];
+      let st = -1;
+      for (let i = 0; i <= G.nr; i++) {
+        const h = i < G.nr && hasTankAtRow(cIdx, i);
+        if (h && st < 0) st = i;
+        if (!h && st >= 0) {
+          out.push([G.map.ys[st], G.map.ys[i]]);
+          st = -1;
+        }
+      }
+      return out;
+    };
+
+    for (let j = 0; j <= G.nc; j++) {
+      const colX = G.map.xs[j] !== undefined ? G.map.xs[j] : (j === G.nc ? G.map.length : 0);
+      const isOuter = (j === 0 || j === G.nc);
+      const padWidth = isOuter ? firstW : midW;
+      const padX0 = colX - padWidth / 2;
+      const padX1 = colX + padWidth / 2;
+
+      const runs = runsForPad(j === G.nc ? -1 : j);
+      runs.forEach(([rY0, rY1]) => {
+        const pY0 = rY0 - padOv;
+        const pY1 = rY1 + padOv;
+        // 4개 외곽선 (PAD 레이어)
+        ents.push({ t: 'line', a: [padX0, pY0], b: [padX1, pY0], layer: 'PAD' });
+        ents.push({ t: 'line', a: [padX1, pY0], b: [padX1, pY1], layer: 'PAD' });
+        ents.push({ t: 'line', a: [padX1, pY1], b: [padX0, pY1], layer: 'PAD' });
+        ents.push({ t: 'line', a: [padX0, pY1], b: [padX0, pY0], layer: 'PAD' });
+
+        // 패드 중심선 (Centerline)
+        ents.push({ t: 'line', a: [colX, pY0 - 30], b: [colX, pY1 + 30], layer: 'PAD' });
+      });
+    }
+
+    const fNum = Number(opt.frame);
+    const fSuf = (fNum === 75) ? 'ALZ' : (fNum === 150 ? 'HCLZ' : 'CLZ');
+    const sideSufL = (fNum === 75) ? 'ASZL' : (fNum === 150 ? 'HCSZL' : 'CSZL');
+    const sideSufR = (fNum === 75) ? 'ASZR' : (fNum === 150 ? 'HCSZR' : 'CSZR');
+    const mainSuf = (fNum === 75) ? 'ALZ' : (fNum === 150 ? 'HCLZ' : 'CLZ');
 
     function addMainBeam(x, y, w, h, type) {
       rectEnts(x, y, w, h, 'FRAME', ents);
@@ -15472,15 +15583,15 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
       const halfH = Math.round(totalH / 2);
       const bTxtH = Math.max(26, Math.min(36, Math.round(w * 0.44)));
       if (type === 'first') {
-        // 좌측 외곽: 하반부 WFF-2060 CSZL, 상반부 WFF-2060 CSZR
-        ents.push({ t: 'text', p: [x + w / 2, y + h * 0.25], h: bTxtH, s: `WFF-${halfH} CSZL`, rot: 90, align: 'center', layer: 'DIM' });
-        ents.push({ t: 'text', p: [x + w / 2, y + h * 0.75], h: bTxtH, s: `WFF-${halfH} CSZR`, rot: 90, align: 'center', layer: 'DIM' });
+        // 좌측 외곽: 하반부 WFF-xxxx CSZL, 상반부 WFF-xxxx CSZR
+        ents.push({ t: 'text', p: [x + w / 2, y + h * 0.25], h: bTxtH, s: `WFF-${halfH} ${sideSufL}`, rot: 90, align: 'center', layer: 'DIM' });
+        ents.push({ t: 'text', p: [x + w / 2, y + h * 0.75], h: bTxtH, s: `WFF-${halfH} ${sideSufR}`, rot: 90, align: 'center', layer: 'DIM' });
       } else if (type === 'last') {
-        // 우측 외곽: 하반부 WFF-2060 CSZL, 상반부 WFF-2060 CSZR
-        ents.push({ t: 'text', p: [x + w / 2, y + h * 0.25], h: bTxtH, s: `WFF-${halfH} CSZL`, rot: 90, align: 'center', layer: 'DIM' });
-        ents.push({ t: 'text', p: [x + w / 2, y + h * 0.75], h: bTxtH, s: `WFF-${halfH} CSZR`, rot: 90, align: 'center', layer: 'DIM' });
+        // 우측 외곽: 하반부 WFF-xxxx CSZL, 상반부 WFF-xxxx CSZR
+        ents.push({ t: 'text', p: [x + w / 2, y + h * 0.25], h: bTxtH, s: `WFF-${halfH} ${sideSufL}`, rot: 90, align: 'center', layer: 'DIM' });
+        ents.push({ t: 'text', p: [x + w / 2, y + h * 0.75], h: bTxtH, s: `WFF-${halfH} ${sideSufR}`, rot: 90, align: 'center', layer: 'DIM' });
       } else {
-        ents.push({ t: 'text', p: [x + w / 2, y + h / 2], h: bTxtH, s: `WFF-${totalH} CLZ`, rot: 90, align: 'center', layer: 'DIM' });
+        ents.push({ t: 'text', p: [x + w / 2, y + h / 2], h: bTxtH, s: `WFF-${totalH} ${mainSuf}`, rot: 90, align: 'center', layer: 'DIM' });
       }
     }
 
@@ -15570,20 +15681,21 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
     const yMin = nTop - overY, yMax = nBottom + overY;
     const skidL = totalL + overOut * 2, skidW = totalW + overY * 2;
 
-    // 모든 가로 프레임 분할 부재 라벨 (외곽 및 중간 모든 행의 부재 품번 WFF-xxxx CLZ)
+    // 모든 가로 프레임 분할 부재 라벨 (외곽 및 중간 모든 행의 부재 품번 WFF-xxxx ALZ / CLZ / HCLZ)
     rec.forEach(m => m.segs.forEach((sl, k) => {
       const mid = (m.pts[k] + m.pts[k + 1]) / 2;
       if (m.hor) {
+        const nominalSpan = (m.colSpans && m.colSpans[k]) ? m.colSpans[k] : (sl > 10 ? (sl + 10) : sl);
         // 양끝단 5mm씩(총 10mm) 공간을 확보하여 연결부 커팅 오차 방지 (1M=0990, 1.5M=1490, 2M=1990)
-        const cutLen = sl > 10 ? (sl - 10) : sl;
-        const codeStr = cutLen < 1000 ? `0${cutLen}` : String(cutLen);
+        const cutLen = nominalSpan - 10;
+        const codeStr = cutLen < 1000 ? (cutLen < 100 ? `00${cutLen}` : `0${cutLen}`) : String(cutLen);
         const isBottom = Math.abs(m.y - yMin) < 10;
         const isTop = Math.abs(m.y - (yMax - flgW)) < 10;
         let txtY;
         if (isBottom) txtY = yMin - st * 0.65;
         else if (isTop) txtY = yMax + st * 0.75;
         else txtY = m.y + flgW / 2;
-        ents.push({ t: 'text', p: [m.x + mid, txtY], h: st * 0.60, s: `WFF-${codeStr} CLZ`, rot: 0, align: 'center', valign: 'middle', layer: 'DIM' });
+        ents.push({ t: 'text', p: [m.x + mid, txtY], h: st * 0.60, s: `WFF-${codeStr}${fSuf}`, rot: 0, align: 'center', valign: 'middle', layer: 'DIM' });
       }
     }));
 
@@ -15608,18 +15720,26 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
       }
     }
 
-    // ★★★ 빠짐없이 정확한 3-Tier 치수선 작도 (외곽 돌출 60mm, 패널 피치 1000..., 전체 외곽 치수) ★★★
-    // A. 좌측 수직 치수선 (Y방향: 3열 배치)
-    const xl1 = xMin - tH * 2.8;
+    // ★★★ 빠짐없이 정확한 4-Tier 치수선 작도 (기초 돌출 200mm, 패널 피치, 스키드 전체 치수, 기초 전체 치수) ★★★
+    const padMinX = -padOv;
+    const padMaxX = totalL + padOv;
+    const padMinY = -padOv;
+    const padMaxY = totalW + padOv;
+    const padTotalL = totalL + padOv * 2;
+    const padTotalW = totalW + padOv * 2;
+
+    // A. 좌측 수직 치수선 (Y방향: 4열 배치 - 패널 피치, 패널 전체, 스키드 전체, 기초 전체)
+    const xl1 = Math.min(xMin, padMinX) - tH * 2.8;
     const xl2 = xl1 - tH * 2.5;
     const xl3 = xl2 - tH * 2.5;
+    const xl4 = xl3 - tH * 2.5;
 
-    // 1열: 하부 돌출(60), 각 행 패널 피치(1000...), 상부 돌출(60)
-    dimLinear(ents, [xMin, yMin], [0, 0], xl1, true, String(overY), tH, 'DIM');
+    // 1열: 기초 하부 돌출(200), 각 행 패널 피치(1000...), 기초 상부 돌출(200)
+    dimLinear(ents, [padMinX, padMinY], [padMinX, 0], xl1, true, String(padOv), tH, 'DIM');
     G.map.rows.forEach((h, i) => {
       dimLinear(ents, [0, G.map.ys[i]], [0, G.map.ys[i] + h], xl1, true, String(h), tH, 'DIM');
     });
-    dimLinear(ents, [0, totalW], [xMin, yMax], xl1, true, String(overY), tH, 'DIM');
+    dimLinear(ents, [padMinX, totalW], [padMinX, padMaxY], xl1, true, String(padOv), tH, 'DIM');
 
     // 2열: 탱크 패널 전체 높이 (4000)
     dimLinear(ents, [0, 0], [0, totalW], xl2, true, String(totalW), tH, 'DIM');
@@ -15627,23 +15747,30 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
     // 3열: 스틸 스키드 프레임 전체 높이 (4120)
     dimLinear(ents, [xMin, yMin], [xMin, yMax], xl3, true, String(skidW), tH, 'DIM');
 
-    // B. 하부 수평 치수선 (X방향: 3열 배치)
-    const yb1 = yMin - tH * 2.8;
+    // 4열: 콘크리트 기초 패드 전체 높이 (4400)
+    dimLinear(ents, [padMinX, padMinY], [padMinX, padMaxY], xl4, true, String(padTotalW), tH, 'DIM');
+
+    // B. 하부 수평 치수선 (X방향: 4열 배치 - 패널 피치, 패널 전체, 스키드 전체, 기초 전체)
+    const yb1 = Math.min(yMin, padMinY) - tH * 2.8;
     const yb2 = yb1 - tH * 2.5;
     const yb3 = yb2 - tH * 2.5;
+    const yb4 = yb3 - tH * 2.5;
 
-    // 1열: 좌측 돌출(60), 각 열 패널 피치(1000...), 우측 돌출(60)
-    dimLinear(ents, [xMin, yMin], [0, 0], yb1, false, String(overOut), tH, 'DIM');
+    // 1열: 기초 좌측 돌출(200), 각 열 패널 피치(1000...), 기초 우측 돌출(200)
+    dimLinear(ents, [padMinX, padMinY], [0, padMinY], yb1, false, String(padOv), tH, 'DIM');
     G.map.cols.forEach((w, j) => {
       dimLinear(ents, [G.map.xs[j], 0], [G.map.xs[j] + w, 0], yb1, false, String(w), tH, 'DIM');
     });
-    dimLinear(ents, [totalL, 0], [xMax, yMin], yb1, false, String(overOut), tH, 'DIM');
+    dimLinear(ents, [totalL, padMinY], [padMaxX, padMinY], yb1, false, String(padOv), tH, 'DIM');
 
     // 2열: 탱크 패널 전체 길이 (9000)
     dimLinear(ents, [0, 0], [totalL, 0], yb2, false, String(totalL), tH, 'DIM');
 
     // 3열: 스틸 스키드 프레임 전체 길이 (9120)
     dimLinear(ents, [xMin, yMin], [xMax, yMin], yb3, false, String(skidL), tH, 'DIM');
+
+    // 4열: 콘크리트 기초 패드 전체 길이 (9400)
+    dimLinear(ents, [padMinX, padMinY], [padMaxX, padMinY], yb4, false, String(padTotalL), tH, 'DIM');
 
     // Detail Callout Bubbles & Section Cut (081031 PDF 일치)
     const rBub = tH * 0.9;
@@ -15753,9 +15880,9 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
       }
     }
 
-    // 도면 하단 부재 규격 및 표준 제작 가공 시방 NOTE (치수선과 절대 겹치지 않도록 yb3 하단에 배치)
+    // 도면 하단 부재 규격 및 표준 제작 가공 시방 NOTE (치수선과 절대 겹치지 않도록 yb4 하단에 배치)
     const lx = Math.max(300, G.map.length * 0.10);
-    const ly0 = yb3 - tH * 2.8;
+    const ly0 = yb4 - tH * 2.8;
     ents.push({ t: 'text', p: [lx, ly0], h: tH * 1.05, s: `MEMBER SPECIFICATIONS - FRAME ${opt.frame || 125} (${dSkid.name})`, rot: 0, align: 'left', layer: 'DIM' });
     ents.push({ t: 'text', p: [lx, ly0 - tH * 1.35], h: tH * 0.78, s: `MAIN BEAM : ${dSkid.mainSpec} (SS41 + 용융아연도금 HDG)`, rot: 0, align: 'left', layer: 'DIM' });
     const isFrame150 = (Number(opt.frame) === 150);
@@ -15765,7 +15892,8 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
     ents.push({ t: 'text', p: [lx, ly0 - tH * 2.6], h: tH * 0.78, s: `SUB-BEAM TYPE A : ${subA}`, rot: 0, align: 'left', layer: 'DIM' });
     ents.push({ t: 'text', p: [lx, ly0 - tH * 3.85], h: tH * 0.78, s: `SUB-BEAM TYPE B : ${subB}`, rot: 0, align: 'left', layer: 'DIM' });
     ents.push({ t: 'text', p: [lx, ly0 - tH * 5.1], h: tH * 0.78, s: `SUB-BEAM TYPE C : ${subC}`, rot: 0, align: 'left', layer: 'DIM' });
-    ents.push({ t: 'text', p: [lx, ly0 - tH * 6.35], h: tH * 0.78, s: `HARDWARE : WBR-7575Z & WBR-0160Z 코너 브라켓 / WBR-5010Z 클램프 / WBR-0120Z`, rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [lx, ly0 - tH * 6.35], h: tH * 0.78, s: `FOUNDATION PAD : ${firstW}mm / ${midW}mm CONCRETE STRIP (OVERHANG ${padOv}mm)`, rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [lx, ly0 - tH * 7.60], h: tH * 0.78, s: `HARDWARE : WBR-7575Z & WBR-0160Z 코너 브라켓 / WBR-5010Z 클램프 / WBR-0120Z`, rot: 0, align: 'left', layer: 'DIM' });
 
     // 표준 제작 가공 시방 NOTE (YSACC Foundation Standard - 기초.zip & Steel Skid.dwg)
     const noteX = Math.max(lx + 3200, G.map.length * 0.52);
@@ -15782,9 +15910,9 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
     noteY -= tH * 1.25;
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '5. 기초고정: 각 코너 및 2m 간격 M12 앙카볼트 & WBR-5010Z 클램프 체결', rot: 0, align: 'left', layer: 'DIM' });
     noteY -= tH * 1.25;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '6. 색상범례: 주황색(ORANGE)=스틸스키드, 녹색(GREEN)=1000×1000 저면패널 안착위치', rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '6. 색상범례: 하늘색(CYAN)=콘크리트패드, 주황색(ORANGE)=스틸스키드, 녹색(GREEN)=저면패널', rot: 0, align: 'left', layer: 'DIM' });
     noteY -= tH * 1.25;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '7. L방향 주재 가공: 연결부 커팅 오차 방지 및 조립 여유로 양끝단 5mm(총 10mm) 공간 확보 실가공 [1M=0990, 1.5M=1490, 2M=1990]', rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `7. L방향 주재: 500 판넬 배치 시 1.5M(1490${fSuf}) 적용, 양끝단 5mm(총 10mm) 커팅 여유 확보 [2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}]`, rot: 0, align: 'left', layer: 'DIM' });
 
     return { ents, G };
   }
@@ -18031,7 +18159,7 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
     return o.join('\r\n') + '\r\n';
   }
 
-  const api = { SKID_PARTS_DATA, NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, getFoundationDesign, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, getSkidDimensions, getSkidSpec, DEFAULT_SKID_RULES, getDefaultSkidRules, setCustomSkidRules, getCustomSkidRules, getActiveSkidRules, getFrameForHeight, formatSkidRuleSummary, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType, getDefaultPanelPattern };
+  const api = { SKID_PARTS_DATA, NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, computeColSpans, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, getFoundationDesign, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, getSkidDimensions, getSkidSpec, DEFAULT_SKID_RULES, getDefaultSkidRules, setCustomSkidRules, getCustomSkidRules, getActiveSkidRules, getFrameForHeight, formatSkidRuleSummary, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType, getDefaultPanelPattern };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TankCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -22527,7 +22655,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.65</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.66</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
