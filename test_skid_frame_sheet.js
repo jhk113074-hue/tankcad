@@ -99,31 +99,61 @@ const hasEnCrossTitle = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.inclu
 assert(hasEnCrossTitle, 'English view title FRAME CROSS DWG must exist');
 
 // 6-1. Check W-direction catalog members for Frame 125, 75, 150
+// 6-1. Check W-direction catalog members for Frame 125, 75, 150
 console.log('--- Testing W-direction Catalog Standard Members (ASZL/ASZR/CSZL/CSZR/ASZ/CSZ) ---');
-const has1560ASZL = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('1560ASZL'));
-assert(has1560ASZL, 'Sheet 1 (Frame 125) must have 1560ASZL at start of W-direction main beam');
+// Sheet 1 (Frame 125, W=8000 - even 2000 multiple -> 2060ASZL, 2000ASZ, 2060ASZR)
+const has2060ASZL = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('2060ASZL'));
+assert(has2060ASZL, 'Sheet 1 (Frame 125, W=8000) must have 2060ASZL at start of W-direction main beam');
 const has2000ASZ = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('2000ASZ'));
-assert(has2000ASZ, 'Sheet 1 (Frame 125) must have 2000ASZ in middle of W-direction main beam');
-const has1560ASZR = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('1560ASZR'));
-assert(has1560ASZR, 'Sheet 1 (Frame 125) must have 1560ASZR at end of W-direction main beam');
+assert(has2000ASZ, 'Sheet 1 (Frame 125, W=8000) must have 2000ASZ in middle of W-direction main beam');
+const has2060ASZR = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('2060ASZR'));
+assert(has2060ASZR, 'Sheet 1 (Frame 125, W=8000) must have 2060ASZR at end of W-direction main beam');
 
+// Test 125 frame with W=7000 (odd 1000 multiple -> 1560ASZL, 2000ASZ, 1560ASZR)
+const opt1_7000 = { length: [6000], width: [7000], height: [3000], frame: 125, sheetKind: 'frame' };
+const sheet1_7000 = TankCore.buildSheet(opt1_7000, {}, {});
+const has1560ASZL = sheet1_7000.ents.some(e => e.t === 'text' && e.s && e.s.includes('1560ASZL'));
+assert(has1560ASZL, 'Sheet (Frame 125, W=7000) must have 1560ASZL at start of W-direction main beam');
+const has1560ASZR = sheet1_7000.ents.some(e => e.t === 'text' && e.s && e.s.includes('1560ASZR'));
+assert(has1560ASZR, 'Sheet (Frame 125, W=7000) must have 1560ASZR at end of W-direction main beam');
+
+// Sheet 2 (Frame 75, W=3000 -> 1570ASZL, 1570ASZR)
 const has1570ASZL = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('1570ASZL'));
-assert(has1570ASZL, 'Sheet 2 (Frame 75) must have 1570ASZL at start of W-direction main beam');
+assert(has1570ASZL, 'Sheet 2 (Frame 75, W=3000) must have 1570ASZL at start of W-direction main beam');
 const has1570ASZR = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('1570ASZR'));
-assert(has1570ASZR, 'Sheet 2 (Frame 75) must have 1570ASZR at end of W-direction main beam');
+assert(has1570ASZR, 'Sheet 2 (Frame 75, W=3000) must have 1570ASZR at end of W-direction main beam');
 
+// Test 75 frame with W=6000 (even 2000 multiple -> 2070ASZL, 2000ASZ, 2070ASZR)
+const opt2_6000 = { length: [4000], width: [6000], height: [2000], frame: 75, sheetKind: 'frame' };
+const sheet2_6000 = TankCore.buildSheet(opt2_6000, {}, {});
+const has2070ASZL = sheet2_6000.ents.some(e => e.t === 'text' && e.s && e.s.includes('2070ASZL'));
+assert(has2070ASZL, 'Frame 75, W=6000 must have 2070ASZL at start of W-direction main beam');
+const has2070ASZR = sheet2_6000.ents.some(e => e.t === 'text' && e.s && e.s.includes('2070ASZR'));
+assert(has2070ASZR, 'Frame 75, W=6000 must have 2070ASZR at end of W-direction main beam');
+
+// Frame 150 with W=7000 (odd 1000 multiple -> 1570CSZL, 2000CSZ, 1570CSZR)
 const opt150 = { length: [6000], width: [7000], height: [4000], frame: 150, sheetKind: 'frame' };
 const sheet150 = TankCore.buildSheet(opt150, {}, {});
 const has1570CSZL = sheet150.ents.some(e => e.t === 'text' && e.s && e.s.includes('1570CSZL'));
-assert(has1570CSZL, 'Frame 150 must have 1570CSZL at start of W-direction main beam');
+assert(has1570CSZL, 'Frame 150, W=7000 must have 1570CSZL at start of W-direction main beam');
 const has2000CSZ = sheet150.ents.some(e => e.t === 'text' && e.s && e.s.includes('2000CSZ'));
-assert(has2000CSZ, 'Frame 150 must have 2000CSZ in middle of W-direction main beam');
+assert(has2000CSZ, 'Frame 150, W=7000 must have 2000CSZ in middle of W-direction main beam');
 const has1570CSZR = sheet150.ents.some(e => e.t === 'text' && e.s && e.s.includes('1570CSZR'));
-assert(has1570CSZR, 'Frame 150 must have 1570CSZR at end of W-direction main beam');
+assert(has1570CSZR, 'Frame 150, W=7000 must have 1570CSZR at end of W-direction main beam');
+
+// Frame 150 with W=6000 (even 2000 multiple -> 2070CSZL, 2000CSZ, 2070CSZR)
+const opt150_6000 = { length: [6000], width: [6000], height: [4000], frame: 150, sheetKind: 'frame' };
+const sheet150_6000 = TankCore.buildSheet(opt150_6000, {}, {});
+const has2070CSZL = sheet150_6000.ents.some(e => e.t === 'text' && e.s && e.s.includes('2070CSZL'));
+assert(has2070CSZL, 'Frame 150, W=6000 must have 2070CSZL at start of W-direction main beam');
+const has2070CSZR = sheet150_6000.ents.some(e => e.t === 'text' && e.s && e.s.includes('2070CSZR'));
+assert(has2070CSZR, 'Frame 150, W=6000 must have 2070CSZR at end of W-direction main beam');
 
 // Verify computeMainBeamSpans
 const spans7000 = TankCore.computeMainBeamSpans(7000);
 assert.deepStrictEqual(spans7000.map(s => s.span), [1500, 2000, 2000, 1500], '7000mm width should partition into [1500, 2000, 2000, 1500]');
+const spans8000 = TankCore.computeMainBeamSpans(8000);
+assert.deepStrictEqual(spans8000.map(s => s.span), [2000, 2000, 2000, 2000], '8000mm width should partition into [2000, 2000, 2000, 2000]');
 const spans2000 = TankCore.computeMainBeamSpans(2000);
 assert.deepStrictEqual(spans2000, [{ span: 2000, type: 'single' }], '2000mm width should be single piece');
 
