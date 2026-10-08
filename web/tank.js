@@ -6280,9 +6280,17 @@
     if (nHeight) add(nX, nY, 75, nHeight + 75, 0x20000);
     // 가로 프레임 (행마다)
     nX = nLeft; nY = nTop; let nWidth = 0; base = false;
-    let cntDown = Math.trunc((eRow + 2 - sRow) / 2) + ((eRow + 2 - sRow) % 2);
+    const midRow = sRow + Math.floor((eRow - sRow + 1) / 2);
     for (i = sRow; i <= eRow; i++) {
-      const lat = (cntDown-- > 0 || i === sRow) ? 0x20000 : 0x40000;
+      // 사용자 지정 방향 규칙: 첫줄과 마지막줄은 밖으로 열리고, 내부는 [[[[]]]] (중앙을 마주보도록)
+      let lat;
+      if (i === sRow) {
+        lat = 0x40000; // 첫줄: 밖으로 열림 (아래쪽 / -Y)
+      } else if (i < midRow) {
+        lat = 0x20000; // 전반부: 위쪽으로 열림 (중앙 쪽을 향해 [[[[)
+      } else {
+        lat = 0x40000; // 후반부: 아래쪽으로 열림 (중앙 쪽을 향해 ]]]])
+      }
       for (j = sCol; j <= eCol; j++) {
         rc = R(i, j);
         if (!rc) {
@@ -6300,17 +6308,17 @@
       if (nWidth) nX === nLeft ? add(nX, nY, nWidth, 75, lat) : add(nX + 45, nY, nWidth - 45, 75, lat);
       nX = nLeft; nY = G.rowTop(i + 1); nWidth = 0; base = false;
     }
-    // 마지막 행 위쪽 가로 프레임
+    // 마지막 행 위쪽 가로 프레임 (마지막줄: 밖으로 열림 -> 위쪽 0x20000)
     nX = nLeft; nY = nBottom; nWidth = 0; base = false;
     for (j = sCol; j <= eCol; j++) {
       rc = R(eRow, j);
       if (!rc) {
-        if (nWidth) { nX === nLeft ? add(nX, nY, nWidth, 75, 0x40000) : add(nX + 45, nY, nWidth - 45, 75, 0x40000); nWidth = 0; }
+        if (nWidth) { nX === nLeft ? add(nX, nY, nWidth, 75, 0x20000) : add(nX + 45, nY, nWidth - 45, 75, 0x20000); nWidth = 0; }
         for (j = j + 1; j <= eCol; j++) { rc = R(eRow, j); if (!rc) continue; nX = rc.l; break; }
       }
       if (rc) { nWidth += rc.w; if (!base) { nX = rc.l; base = true; } }
     }
-    if (nWidth) nX === nLeft ? add(nX, nY, nWidth, 75, 0x40000) : add(nX + 45, nY, nWidth - 45, 75, 0x40000);
+    if (nWidth) nX === nLeft ? add(nX, nY, nWidth, 75, 0x20000) : add(nX + 45, nY, nWidth - 45, 75, 0x20000);
     // 열 사이 세로 프레임 (서브 빔 배치)
     for (j = sCol; j < eCol; j++) {
       for (i = sRow; i <= eRow; i++) {
@@ -6457,8 +6465,18 @@
     for (let k = 1; k <= cn; k++) { y += wl[k - 1]; ys.push(y); }
 
     // 각 그리드 라인에 찬넬 배치 (Steel Skid.dwg Strip 실제 방향 반영)
+    // 사용자 지정 방향 규칙: 첫줄과 마지막줄은 밖으로 열리고, 그 다음 내부는 [[[[]]]] (중앙을 마주보도록)
     for (let k = 0; k <= cn; k++) {
-      const facesUp = (k === cn) ? true : (k === 0 ? false : (k >= div));
+      let facesUp;
+      if (k === 0) {
+        facesUp = false; // 첫줄: 밖으로 열림 (아래쪽 / -Y)
+      } else if (k === cn) {
+        facesUp = true;  // 마지막줄: 밖으로 열림 (위쪽 / +Y)
+      } else if (k < div) {
+        facesUp = true;  // 전반부 내부 찬넬: 위쪽으로 열림 (중앙 쪽을 향해 [[[[)
+      } else {
+        facesUp = false; // 후반부 내부 찬넬: 아래쪽으로 열림 (중앙 쪽을 향해 ]]]])
+      }
       drawChannelSection(ys[k], facesUp);
     }
 
