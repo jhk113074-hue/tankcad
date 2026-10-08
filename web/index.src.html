@@ -8599,7 +8599,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             if (e.fill && e.pts && e.pts.length > 2) {
               if (curLayer !== null) { ctx.stroke(); ctx.beginPath(); curLayer = null; }
               ctx.save();
-              ctx.fillStyle = bgCol;
+              ctx.fillStyle = e.fillColor || (e.fillLayer ? (col[e.fillLayer] || '#c084fc') : (e.fill === true ? bgCol : (col[e.layer] || bgCol)));
               ctx.beginPath();
               ctx.moveTo(tx(e.pts[0][0] + ox), ty(e.pts[0][1] + oy));
               for (let i = 1; i < e.pts.length; i++) ctx.lineTo(tx(e.pts[i][0] + ox), ty(e.pts[i][1] + oy));
@@ -8982,7 +8982,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const c = col[e.layer];
       if (e.t === 'poly') {
         if (e.fill && e.pts && e.pts.length > 2) {
-          s += `<polygon points="${e.pts.map(p => `${f(p[0] + ox)},${f(-(p[1] + oy))}`).join(' ')}" fill="#fff" stroke="none"/>`;
+          const fc = e.fillColor || (e.fillLayer ? (col[e.fillLayer] || '#9333ea') : (e.fill === true && !e.fillLayer ? '#fff' : (c || '#fff')));
+          s += `<polygon points="${e.pts.map(p => `${f(p[0] + ox)},${f(-(p[1] + oy))}`).join(' ')}" fill="${fc}" stroke="none"/>`;
         }
         if (e.stroke !== false && e.pts && e.pts.length > 1) {
           s += `<polygon points="${e.pts.map(p => `${f(p[0] + ox)},${f(-(p[1] + oy))}`).join(' ')}" stroke="${c}" fill="none"/>`;

@@ -7276,16 +7276,29 @@
     }
 
     // 실제 단면 작도 함수: 50 SHS (50X50 SQ PIPE □), 75 Angle (L-75x75x6T L), 125/150 Channel (ㄷ)
+    // 사용자 요청: "모두 잘보이게 내부를 채워주세요." -> 강재 단면 내부(두께)를 솔리드 채움 처리하여 선명하게 표시
     const drawSection = (yWeb, yToe) => {
       if (isSHS) {
         // 50X50 SQ PIPE (사각 파이프 □)
         const y0 = Math.min(yWeb, yToe);
         const y1 = Math.max(yWeb, yToe);
         const ptsOut = [[0, y0], [th, y0], [th, y1], [0, y1]];
+        const ptsIn = [[tw, y0 + tw], [th - tw, y0 + tw], [th - tw, y1 - tw], [tw, y1 - tw]];
+
+        // 4개 벽체 내부 솔리드 채움
+        const wallBottom = [[0, y0], [th, y0], [th, y0 + tw], [0, y0 + tw]];
+        const wallTop = [[0, y1 - tw], [th, y1 - tw], [th, y1], [0, y1]];
+        const wallLeft = [[0, y0 + tw], [tw, y0 + tw], [tw, y1 - tw], [0, y1 - tw]];
+        const wallRight = [[th - tw, y0 + tw], [th, y0 + tw], [th, y1 - tw], [th - tw, y1 - tw]];
+        const solids = [wallBottom, wallTop, wallLeft, wallRight];
+
+        solids.forEach(wPts => {
+          ents.push({ t: 'poly', pts: wPts, fill: true, fillLayer: 'FRAME_MAIN_L', stroke: false, close: true, layer: 'FRAME_MAIN_L', solids: [wPts] });
+        });
+
         for (let k = 0; k < ptsOut.length; k++) {
           ents.push({ t: 'line', a: ptsOut[k], b: ptsOut[(k + 1) % ptsOut.length], layer: 'FRAME_MAIN_L' });
         }
-        const ptsIn = [[tw, y0 + tw], [th - tw, y0 + tw], [th - tw, y1 - tw], [tw, y1 - tw]];
         for (let k = 0; k < ptsIn.length; k++) {
           ents.push({ t: 'line', a: ptsIn[k], b: ptsIn[(k + 1) % ptsIn.length], layer: 'FRAME_MAIN_L' });
         }
@@ -7301,6 +7314,26 @@
           [tw, yFlangeInner],
           [tw, yToe]
         ];
+
+        // 2개 사각형으로 분할한 DXF 솔리드
+        const rect1 = isUp
+          ? [[0, yWeb], [tw, yWeb], [tw, yToe], [0, yToe]]
+          : [[0, yToe], [tw, yToe], [tw, yWeb], [0, yWeb]];
+        const rect2 = isUp
+          ? [[tw, yWeb], [th, yWeb], [th, yFlangeInner], [tw, yFlangeInner]]
+          : [[tw, yFlangeInner], [th, yFlangeInner], [th, yWeb], [tw, yWeb]];
+
+        ents.push({
+          t: 'poly',
+          pts,
+          fill: true,
+          fillLayer: 'FRAME_MAIN_L',
+          stroke: false,
+          close: true,
+          layer: 'FRAME_MAIN_L',
+          solids: [rect1, rect2]
+        });
+
         for (let k = 0; k < pts.length; k++) {
           ents.push({ t: 'line', a: pts[k], b: pts[(k + 1) % pts.length], layer: 'FRAME_MAIN_L' });
         }
@@ -7318,6 +7351,29 @@
           [tf, yFlangeInner],
           [tf, yToe]
         ];
+
+        // 3개 사각형으로 분할한 DXF 솔리드
+        const rectWeb = isUp
+          ? [[0, yWeb], [th, yWeb], [th, yFlangeInner], [0, yFlangeInner]]
+          : [[0, yFlangeInner], [th, yFlangeInner], [th, yWeb], [0, yWeb]];
+        const rectFlangeL = isUp
+          ? [[0, yFlangeInner], [tf, yFlangeInner], [tf, yToe], [0, yToe]]
+          : [[0, yToe], [tf, yToe], [tf, yFlangeInner], [0, yFlangeInner]];
+        const rectFlangeR = isUp
+          ? [[th - tf, yFlangeInner], [th, yFlangeInner], [th, yToe], [th - tf, yToe]]
+          : [[th - tf, yToe], [th, yToe], [th, yFlangeInner], [th - tf, yFlangeInner]];
+
+        ents.push({
+          t: 'poly',
+          pts,
+          fill: true,
+          fillLayer: 'FRAME_MAIN_L',
+          stroke: false,
+          close: true,
+          layer: 'FRAME_MAIN_L',
+          solids: [rectWeb, rectFlangeL, rectFlangeR]
+        });
+
         for (let k = 0; k < pts.length; k++) {
           ents.push({ t: 'line', a: pts[k], b: pts[(k + 1) % pts.length], layer: 'FRAME_MAIN_L' });
         }
@@ -7353,11 +7409,6 @@
       botFace: totalW - lapIn, // 하부 서브빔이 닿는 외측 면 (y = totalW - 5)
       topFace: totalW + overY
     };
-
-    // 1~3. 주재 단면 그리기 (0 ~ cn): 50 SHS(50X50 SQ PIPE □), 75 Angle(L-형), 125/150 Channel(ㄷ-형)
-    for (let k = 0; k <= cn; k++) {
-      drawSection(chanGeom[k].yWeb, chanGeom[k].yToe);
-    }
 
     const tH = Math.max(60, Math.round(totalW / 100), Math.round(2.4 * (opt._N || 0)));
 
@@ -7397,7 +7448,12 @@
       dimLinear(ents, [0, yBot], [0, yTop], -tH * 3.4, true, String(sub.len), tH, 'DIM');
     }
 
-    // 5. 우측 3-Tier 치수선: 돌출(60), 패널 피치(1000...), 탱크 폭(4000), 스키드 전체(4120)
+    // 5. 주재 단면 그리기 (0 ~ cn): 서브빔 상위에 배치하여 단면 솔리드 및 외곽선이 완벽히 전면에 노출되도록 함
+    for (let k = 0; k <= cn; k++) {
+      drawSection(chanGeom[k].yWeb, chanGeom[k].yToe);
+    }
+
+    // 6. 우측 3-Tier 치수선: 돌출(60), 패널 피치(1000...), 탱크 폭(4000), 스키드 전체(4120)
     const xr1 = th + tH * 2.8;
     const xr2 = xr1 + tH * 2.5;
     const xr3 = xr2 + tH * 2.5;
@@ -9372,6 +9428,18 @@
         g(11, n(e.b[0])); g(21, n(e.b[1])); g(31, 0);
       }
       else if (e.t === 'poly') {
+        if (e.solids && Array.isArray(e.solids)) {
+          e.solids.forEach(quad => {
+            if (quad && quad.length >= 4) {
+              g(0, 'SOLID'); g(8, layer);
+              if (e.color) g(62, e.color);
+              g(10, n(quad[0][0])); g(20, n(quad[0][1])); g(30, 0);
+              g(11, n(quad[1][0])); g(21, n(quad[1][1])); g(31, 0);
+              g(12, n(quad[3][0])); g(22, n(quad[3][1])); g(32, 0);
+              g(13, n(quad[2][0])); g(23, n(quad[2][1])); g(33, 0);
+            }
+          });
+        }
         if (e.stroke !== false && e.pts && e.pts.length > 1) {
           for (let i = 0; i < e.pts.length - 1; i++) {
             g(0, 'LINE'); g(8, layer);
