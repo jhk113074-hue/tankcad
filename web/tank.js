@@ -6395,25 +6395,27 @@
     const yMin = nTop - overY, yMax = nBottom + overY;
     const skidL = totalL + overOut * 2, skidW = totalW + overY * 2;
 
-    // 하부 및 상부 외곽 가로 프레임 분할 부재 라벨 (WFF-1990 CLZ, WFF-0990 CLZ 등)
+    // 모든 가로 프레임 분할 부재 라벨 (외곽 및 중간 모든 행의 부재 품번 WFF-xxxx CLZ)
     rec.forEach(m => m.segs.forEach((sl, k) => {
       const mid = (m.pts[k] + m.pts[k + 1]) / 2;
       if (m.hor) {
+        const cutLen = sl >= 1000 ? (sl - 10) : sl;
+        const codeStr = cutLen < 1000 ? `0${cutLen}` : String(cutLen);
         const isBottom = Math.abs(m.y - yMin) < 10;
         const isTop = Math.abs(m.y - (yMax - flgW)) < 10;
-        if (isBottom || isTop) {
-          const cutLen = sl >= 1000 ? (sl - 10) : sl;
-          const codeStr = cutLen < 1000 ? `0${cutLen}` : String(cutLen);
-          const txtY = isBottom ? (yMin - st * 0.65) : (yMax + st * 0.75);
-          ents.push({ t: 'text', p: [m.x + mid, txtY], h: st * 0.68, s: `WFF-${codeStr} CLZ`, rot: 0, align: 'center', layer: 'DIM' });
-        }
+        let txtY;
+        if (isBottom) txtY = yMin - st * 0.65;
+        else if (isTop) txtY = yMax + st * 0.75;
+        else txtY = m.y + flgW / 2;
+        ents.push({ t: 'text', p: [m.x + mid, txtY], h: st * 0.60, s: `WFF-${codeStr} CLZ`, rot: 0, align: 'center', valign: 'middle', layer: 'DIM' });
       }
     }));
 
-    // 첫번째 내부 열(Col 1)에 서브빔 명칭 표기 (WFB-0962AMZ, WFB-1053AMZ, WFB-0994AMZ 등)
-    if (G.nc >= 1) {
-      const col1X = (G.map.xs[1] || 1000) + flgW / 2 + st * 0.45;
-      const isF150 = (Number(opt.frame) === 150);
+    // 모든 열(Col 0 ~ G.nc - 1)의 모든 베이에 서브빔 명칭 표기 (WFB-0962AMZ, WFB-1053AMZ, WFB-0994AMZ 등)
+    const isF150 = (Number(opt.frame) === 150);
+    for (let c = 0; c < G.nc; c++) {
+      const px0 = G.map.xs[c] || 0;
+      const colX = (c === 0) ? (px0 + lapIn + st * 0.45 + 15) : (px0 + flgW / 2 + st * 0.45);
       for (let i = 0; i < cnRows; i++) {
         const rY0 = G.map.ys[i];
         const rY1 = rY0 + G.map.rows[i];
@@ -6426,7 +6428,7 @@
         } else {
           subCode = isF150 ? (isShort ? 'WFB-0493CMZ' : 'WFB-0993CMZ') : (isShort ? 'WFB-0494AMZ' : 'WFB-0994AMZ');
         }
-        ents.push({ t: 'text', p: [col1X, (rY0 + rY1) / 2], h: st * 0.65, s: subCode, rot: 90, align: 'center', layer: 'DIM' });
+        ents.push({ t: 'text', p: [colX, (rY0 + rY1) / 2], h: st * 0.60, s: subCode, rot: 90, align: 'center', valign: 'middle', layer: 'DIM' });
       }
     }
 
