@@ -6254,30 +6254,83 @@
   function buildSkid(opt) {
     const G = frameGeom(opt), { R, sRow, eRow, sCol, eCol, nLeft, nRight, nTop, nBottom } = G;
     const ents = [], rec = [], add = (x, y, w, h, lat) => insideFrm(ents, x, y, w, h, lat, rec);
+    const flgW = 65;   // 125 채널 플랜지 폭 (65 x 125 x 6t)
+    const overOut = 60; // 패널 외곽 기준 외측 60mm 돌출
+    const lapIn = 5;    // 패널 내부로 5mm 걸침 (60 + 5 = 65mm 플랜지 폭)
+    const overY = 60;   // 상/하부 60mm 외곽 돌출 (총길이 = H + 120mm)
+
+    function addMainBeam(x, y, w, h, type) {
+      rectEnts(x, y, w, h, 'FRAME', ents);
+      // 웨브 두께선 (6mm)
+      if (type === 'first') {
+        ents.push({ t: 'line', a: [x + 6, y], b: [x + 6, y + h], layer: 'FRAME' });
+      } else if (type === 'last') {
+        ents.push({ t: 'line', a: [x + w - 6, y], b: [x + w - 6, y + h], layer: 'FRAME' });
+      } else {
+        ents.push({ t: 'line', a: [x + 6, y], b: [x + 6, y + h], layer: 'FRAME' });
+      }
+      // 메인 빔 품번 및 실측 규격 텍스트 (예: 2120CSZ (65 x 125 x 6t))
+      const totalH = Math.round(h);
+      const beamCode = `${totalH}CSZ`;
+      const specText = `(65 x 125 x 6t)`;
+      const bTxtH = Math.max(26, Math.min(36, Math.round(w * 0.48)));
+      ents.push({
+        t: 'text',
+        p: [x + w / 2, y + h / 2],
+        h: bTxtH,
+        s: `${beamCode} ${specText}`,
+        rot: 90,
+        align: 'center',
+        layer: 'DIM'
+      });
+    }
+
     let nX = nLeft, nY = nTop, nHeight = 0, base = false, rc, i, j;
-    // 왼쪽 세로 프레임
+    // 1. 첫번째 열 Main Beam (외측 60mm 돌출, 내측 5mm 걸침, 상하 60mm 연장)
     for (i = sRow; i <= eRow; i++) {
       rc = R(i, sCol);
       if (!rc) {
         if (!nHeight) continue;
-        add(nX - 75, nY, 75, nHeight + 75, 0x20000); nHeight = 0;
+        addMainBeam(nX - overOut, nY - overY, flgW, nHeight + overY * 2, 'first');
+        nHeight = 0;
         for (i = i + 1; i <= eRow; i++) { rc = R(i, sCol); if (!rc) continue; nY = rc.t; break; }
       }
       if (rc) { nHeight += rc.h; if (!base) { nY = rc.t; base = true; } }
     }
-    if (nHeight) add(nX - 75, nY, 75, nHeight + 75, 0x20000);
-    // 오른쪽 세로 프레임
+    if (nHeight) addMainBeam(nX - overOut, nY - overY, flgW, nHeight + overY * 2, 'first');
+
+    // 2. 마지막 열 Main Beam (외측 60mm 돌출, 내측 5mm 걸침, 상하 60mm 연장)
     nX = nRight; nY = nTop; nHeight = 0; base = false;
     for (i = sRow; i <= eRow; i++) {
       rc = R(i, eCol);
       if (!rc) {
         if (!nHeight) continue;
-        add(nX, nY, 75, nHeight + 75, 0x20000); nHeight = 0;
+        addMainBeam(nX - lapIn, nY - overY, flgW, nHeight + overY * 2, 'last');
+        nHeight = 0;
         for (i = i + 1; i <= eRow; i++) { rc = R(i, eCol); if (!rc) continue; nY = rc.t; break; }
       }
       if (rc) { nHeight += rc.h; if (!base) { nY = rc.t; base = true; } }
     }
-    if (nHeight) add(nX, nY, 75, nHeight + 75, 0x20000);
+    if (nHeight) addMainBeam(nX - lapIn, nY - overY, flgW, nHeight + overY * 2, 'last');
+
+    // 3. 중간에 있는 주재 (Center 판넬과 판넬 Center 이음부에 주재의 Center 배치)
+    for (j = sCol + 1; j <= eCol; j++) {
+      const colX = G.map.xs[j];
+      let midH = 0, midTop = 0, midBase = false;
+      for (i = sRow; i <= eRow; i++) {
+        const rcL = R(i, j - 1), rcR = R(i, j);
+        if (rcL || rcR) {
+          midH += (rcL || rcR).h;
+          if (!midBase) { midTop = (rcL || rcR).t; midBase = true; }
+        } else if (midH) {
+          addMainBeam(colX - flgW / 2, midTop - overY, flgW, midH + overY * 2, 'mid');
+          midH = 0; midBase = false;
+        }
+      }
+      if (midH) {
+        addMainBeam(colX - flgW / 2, midTop - overY, flgW, midH + overY * 2, 'mid');
+      }
+    }
     // 가로 프레임 (행마다)
     nX = nLeft; nY = nTop; let nWidth = 0; base = false;
     const midRow = sRow + Math.floor((eRow - sRow + 1) / 2);
