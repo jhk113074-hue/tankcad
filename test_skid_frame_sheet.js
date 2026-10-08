@@ -125,4 +125,18 @@ assert(hasTypeCTitle, 'Type C fabrication drawing title must exist');
 const hasMainBeamTitle = sheet3.ents.some(e => e.t === 'text' && e.s && (e.s.includes('주재') || e.s.includes('ㄷ-125')));
 assert(hasMainBeamTitle, 'Main beam fabrication drawing title must exist');
 
+// 8. Test 4: Irregular / L-shaped Skid Frame with removed cells
+console.log('--- Testing Irregular / L-shaped Skid Frame with removed cells ---');
+const opt4 = {
+  length: [10000],
+  width: [8000],
+  height: [4000],
+  frame: 150,
+  removed: [[0, 5], [1, 5], [2, 5]],
+  sheetKind: 'frame'
+};
+const sheet4 = TankCore.buildSheet(opt4, {}, {});
+assert(sheet4 && sheet4.ents.length > 500, 'Sheet 4 (irregular skid) should be created without crashing');
+console.log('Sheet 4 entities count:', sheet4.ents.length);
+
 console.log('✅ ALL STEEL SKID & FOUNDATION TESTS PASSED SUCCESSFULLY!');

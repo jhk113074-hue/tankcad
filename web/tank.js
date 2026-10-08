@@ -6323,7 +6323,7 @@
           add(nX, nY, 75, nHeight - 75, 0x20000);
         } else if (!rcR) {
           if (sRow === i) { nX = rcL.r; nY = rcL.t; nHeight = rcL.h + 75; } else { nX = rcL.r; nY = rcL.t + 75; nHeight = rcL.h; }
-          for (i = i + 1; i <= eRow; i++) { rcR = R(i, j + 1); if (!rcR) { rcL = R(i, j); if (!rcL) break; nHeight += rcR.h; } else break; }
+          for (i = i + 1; i <= eRow; i++) { rcR = R(i, j + 1); if (!rcR) { rcL = R(i, j); if (!rcL) break; nHeight += rcL.h; } else break; }
           i--; if (i === eRow) nHeight += 75;
           add(nX, nY, 75, nHeight - 75, 0x20000);
         } else add(rcL.r, rcL.t + 75, 45, rcL.h - 75, 0x20000);
