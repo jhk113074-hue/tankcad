@@ -3590,31 +3590,29 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     currentLang = localStorage.getItem('tank_lang') || 'ko';
   } catch (e) {}
   const NOTES_EN = [
-    'Customers are requested to make a base concrete according to the designed specifications and the strength of site.',
-    'The required strength of base concrete must be at least 180Kg/cm2.',
-    'It is recommended to leave a space of 600mm in each direction from repairing and maintenance (as shown in left figure).',
-    'The customer designates the size of sockets for plumbing.',
-    'After the sockets are in place, the plumbing and heat insulation must be done by the customer.',
-    'A warranty card is posted on the tank which specifies the responsibilities of the manufacturer and customer\'s right usage.',
-    'Do not place heavy load or force on the panels during transportation. The parts that are touched with rope or other cargo should be cushioned.',
-    'Be careful not to put any heavy weight on the pipes which are connected to the fittings.',
-    'Pipe installation must be started from the tank side.',
-    'Make the hole at the exact place and be careful not to put unbalanced weight on the fittings.',
-    'Be careful of fire during welding.',
-    'Be careful to keep the inside supporting parts from colliding each other.'];
+    'All dimensions are in millimeters (mm), and elevations (EL) are based on the bottom panel face.',
+    'Tank panels shall comply with KS D 3698 (STS304/STS316) or KS F 4806 (SMC) high-pressure molding.',
+    'Base concrete pad design compressive strength shall be at least 18 MPa, level tolerance within ±2mm.',
+    'Steel base channels and structural skid members shall be hot-dip galvanized (HDG, min. 550g/m²).',
+    'Foundation anchor bolts shall be directly embedded into concrete pads with sufficient pull-out strength.',
+    'All external piping must be independently supported; no eccentric load shall be imposed on tank nozzles.',
+    'Ensure minimum maintenance clearance of 600mm around tank perimeter and 1,000mm above tank roof.',
+    'Hydrostatic leak test shall be performed for 24 hours under full water condition prior to acceptance.',
+    'Air vents must be fitted with insect screens (STS mesh), and manholes equipped with sanitary lock covers.',
+    'Piping connection and thermal insulation beyond tank nozzles are within client (contractor) scope.'
+  ];
   const NOTES_KO = [
-    '기초 콘크리트는 현장 강도 및 설계 사양에 적합하게 시공하여 주십시오.',
-    '기초 콘크리트의 설계 기준 강도는 최소 180 kgf/cm² 이상이어야 합니다.',
-    '유지관리 및 보수를 위해 물탱크 주위에 최소 600mm 이상의 여유 공간을 확보하십시오.',
-    '배관용 소켓 및 노즐의 규격과 위치는 발주처(고객) 지정 사양입니다.',
-    '소켓 설치 완료 후 배관 연결 및 보온공사는 고객(발주처) 시공 범위입니다.',
-    '탱크 표면에 제품 보증서 및 취급 주의사항이 부착되어 있습니다.',
-    '운반 및 양중 시 판넬에 과도한 하중이나 충격이 가해지지 않도록 주의하십시오.',
-    '피팅(배관 연결부)에 직접적인 배관 하중이 가해지지 않도록 배관 지지대를 설치하십시오.',
-    '배관 연결 작업은 반드시 물탱크 측 노즐부터 시작하여 연결하십시오.',
-    '타공 작업 시 정확한 위치에 천공하고 편하중이 발생하지 않도록 주의하십시오.',
-    '용접 작업 시 화재 및 불티 비산에 각별히 주의하십시오.',
-    '내부 보강재 및 부속품이 상호 간섭이나 충돌이 발생하지 않도록 조립하십시오.'];
+    '본 도면의 치수는 밀리미터(mm) 기준이며, 표고(EL)는 저판 하단면을 기준으로 함.',
+    '탱크 본체는 KS D 3698(STS304/316) 또는 KS F 4806(SMC) 규격의 고압 프레스 성형 패널을 적용함.',
+    '기초 콘크리트 패드는 설계기준강도 18MPa 이상, 상면 수평오차 ±2mm 이내로 정밀 타설할 것.',
+    '스틸 베이스 찬넬 및 프레임 부속철물은 용융아연도금(HDG 최소 550g/m²) 방청 처리를 적용함.',
+    '기초 앵커볼트는 콘크리트 패드에 직결 시공하며, 구조계산서에 의거한 인발 내력을 확보할 것.',
+    '배관 연결 시 탱크 피팅에 편심 하중이 전달되지 않도록 독립된 배관 지지대(SUPPORT)를 필히 설치할 것.',
+    '유지관리 및 위생점검을 위하여 탱크 외벽 둘레 600mm, 상부 1,000mm 이상의 여유공간을 확보할 것.',
+    '조립 완료 후 만수 상태에서 24시간 동안 수압시험(LEAK TEST)을 실시하여 누수 없을 시 합격으로 판정함.',
+    '통기구(VENT)에는 방충망(STS MESH)을 설치하고, 맨홀은 위생 잠금장치를 체결하여 외부 오염을 차단할 것.',
+    '소켓 설치 완료 후 배관 연결 및 단열·보온공사는 발주처(고객) 시공 범위임.'
+  ];
   const NOTES = (currentLang === 'en' ? NOTES_EN : NOTES_KO);
   $('tNotes').value = NOTES.join('\n');
 

@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.6.87</title>
+<title>YSACC TANK CAD v1.6.88</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -504,7 +504,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.87</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.88</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1594,7 +1594,7 @@ canvas.drag{cursor:grabbing}
           <h3 id="manualDialogTitle" style="margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">
             <span class="txt-ko">YSACC TANK CAD 사용자 가이드 &amp; 사용 매뉴얼</span>
             <span class="txt-en">YSACC TANK CAD User Guide &amp; Operation Manual</span>
-            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.6.87</span>
+            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.6.88</span>
           </h3>
           <span class="modeless-drag-hint">
             <span class="txt-ko">✥ 상단바를 잡고 자유롭게 이동 가능</span>
@@ -3547,7 +3547,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.87</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.88</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -3557,7 +3557,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.87</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.88</span></div>
     </div>
   </main>
 </div>
@@ -17805,25 +17805,23 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
     }
     if (!allNotes.length) allNotes = [lang === 'ko' ? '특기사항 없음.' : 'No special remarks.'];
 
-    if (lang === 'ko' && allNotes.some(n => typeof n === 'string' && (n.includes('Customers are requested') || n.includes('base concrete')))) {
+    if (lang === 'ko' && allNotes.some(n => typeof n === 'string' && (n.includes('Customers are requested') || n.includes('base concrete') || n.includes('기초 콘크리트')))) {
       allNotes = [
-        '기초 콘크리트는 현장 강도 및 설계 사양에 적합하게 시공하여 주십시오.',
-        '기초 콘크리트의 설계 기준 강도는 최소 180 kgf/cm² 이상이어야 합니다.',
-        '유지관리 및 보수를 위해 물탱크 주위에 최소 600mm 이상의 여유 공간을 확보하십시오.',
-        '배관용 소켓 및 노즐의 규격과 위치는 발주처(고객) 지정 사양입니다.',
-        '소켓 설치 완료 후 배관 연결 및 보온공사는 고객(발주처) 시공 범위입니다.',
-        '탱크 표면에 제품 보증서 및 취급 주의사항이 부착되어 있습니다.',
-        '운반 및 양중 시 판넬에 과도한 하중이나 충격이 가해지지 않도록 주의하십시오.',
-        '피팅(배관 연결부)에 직접적인 배관 하중이 가해지지 않도록 배관 지지대를 설치하십시오.',
-        '배관 연결 작업은 반드시 물탱크 측 노즐부터 시작하여 연결하십시오.',
-        '타공 작업 시 정확한 위치에 천공하고 편하중이 발생하지 않도록 주의하십시오.',
-        '용접 작업 시 화재 및 불티 비산에 각별히 주의하십시오.',
-        '내부 보강재 및 부속품이 상호 간섭이나 충돌이 발생하지 않도록 조립하십시오.'
+        '본 도면의 치수는 밀리미터(mm) 기준이며, 표고(EL)는 저판 하단면을 기준으로 함.',
+        '탱크 본체는 KS D 3698(STS304/316) 또는 KS F 4806(SMC) 규격의 고압 프레스 성형 패널을 적용함.',
+        '기초 콘크리트 패드는 설계기준강도 18MPa 이상, 상면 수평오차 ±2mm 이내로 정밀 타설할 것.',
+        '스틸 베이스 찬넬 및 프레임 부속철물은 용융아연도금(HDG 최소 550g/m²) 방청 처리를 적용함.',
+        '기초 앵커볼트는 콘크리트 패드에 직결 시공하며, 구조계산서에 의거한 인발 내력을 확보할 것.',
+        '배관 연결 시 탱크 피팅에 편심 하중이 전달되지 않도록 독립된 배관 지지대(SUPPORT)를 필히 설치할 것.',
+        '유지관리 및 위생점검을 위하여 탱크 외벽 둘레 600mm, 상부 1,000mm 이상의 여유공간을 확보할 것.',
+        '조립 완료 후 만수 상태에서 24시간 동안 수압시험(LEAK TEST)을 실시하여 누수 없을 시 합격으로 판정함.',
+        '통기구(VENT)에는 방충망(STS MESH)을 설치하고, 맨홀은 위생 잠금장치를 체결하여 외부 오염을 차단할 것.',
+        '소켓 설치 완료 후 배관 연결 및 단열·보온공사는 발주처(고객) 시공 범위임.'
       ];
     }
 
     let ny = y - 8;
-    const remarksTitle = lang === 'en' ? '< GENERAL REMARKS >' : (lang === 'ko' ? '< 일  반  사  항 >' : '< Remarks / 일반 사항 >');
+    const remarksTitle = lang === 'en' ? '< GENERAL NOTES >' : (lang === 'ko' ? '< 특 기 시 방  및  일 반 사 항 >' : '< General Notes / 특기사항 >');
     text(tx0 + 8, ny, 6.5, remarksTitle, 'left');
     ny -= 10.0;
 
@@ -17857,14 +17855,28 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
       ny -= lines.length * noteLineH + noteGap;
     });
 
-    // 뷰 타이틀 기호 (T 1/1 원형 마크, 이중 밑줄 및 한글 뷰 명칭)
-    const drawViewTitleBubble = (tank_cx, title_y, sheetNo, viewNo, titleText) => {
+    // 뷰 타이틀 기호 (건축/엔지니어링 표준 뷰 심볼: 원형 뷰태그, 이중 밑줄, 뷰명칭 및 축척 SCALE 표기)
+    const drawViewTitleBubble = (tank_cx, title_y, sheetNo, viewNo, rawTitleText, customScale) => {
       const R = 6.0;
       const textH = 4.2;
       const approxCharW = 2.4;
-      const estimatedTextW = Math.max(60, titleText.length * approxCharW + 6);
+
+      // [SCALE ...] 형태가 이미 텍스트에 포함되어 있으면 추출 후 타이틀에서 제거하여 하단 전용 축척 라인에 정돈
+      let titleText = String(rawTitleText || '').replace(/\s*\[SCALE\s+[^\]]+\]/i, '').trim();
+      let scaleStr = '';
+      if (customScale !== undefined && customScale !== null) {
+        scaleStr = (typeof customScale === 'number' && customScale > 0) ? `SCALE : 1 / ${customScale}` : (customScale === 'N.T.S.' || customScale === 'NTS' || customScale === 'NONE' ? 'SCALE : N.T.S.' : String(customScale));
+      } else if (/\[SCALE\s+([^\]]+)\]/i.test(rawTitleText)) {
+        const sm = rawTitleText.match(/\[SCALE\s+([^\]]+)\]/i);
+        const scVal = sm[1].replace(/^1\s*:\s*/, '').trim();
+        scaleStr = scVal.toUpperCase() === 'NONE' || scVal.toUpperCase() === 'NTS' ? 'SCALE : N.T.S.' : `SCALE : 1 / ${scVal}`;
+      } else if (typeof N === 'number' && N > 0) {
+        scaleStr = `SCALE : 1 / ${N}`;
+      }
+
+      const estimatedTextW = Math.max(65, Math.max(titleText.length * approxCharW, scaleStr.length * 2.2) + 8);
       const totalW = R * 2 + estimatedTextW;
-      const gap = 1.0;
+      const gap = 1.2;
       let bx = tank_cx - totalW / 2 + R;
       let by = title_y;
       if (bx - R < x0 + 4) bx = x0 + 4 + R;
@@ -17872,26 +17884,53 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
       if (by - R < y0 + 3) by = y0 + 3 + R;
       if (by + R + 10 > y1 - 3) by = y1 - 3 - R - 10;
 
-      // 1. 원형 기호
+      // 1. 원형 기호 (Architectural View Bubble)
       circle([bx, by], R);
 
       // 2. 원형 내부 수평 분할선 및 우측 상단 밑줄 (연속선)
       line([bx - R, by], [bx + R + estimatedTextW, by]);
 
-      // 3. 원형 내부 하단 수직 분할선
-      line([bx, by], [bx, by - R]);
-
-      // 4. 이중 밑줄 중 하단 평행선 (원 우측 둘레에서 시작)
+      // 3. 이중 밑줄 중 하단 평행선 (원 우측 둘레에서 시작)
       const dx_circ = Math.sqrt(Math.max(0, R * R - gap * gap));
       line([bx + dx_circ, by - gap], [bx + R + estimatedTextW, by - gap]);
 
-      // 5. 원 내부 표식: 상단 T, 하단 좌측 시트번호(1), 하단 우측 뷰번호(1~5)
-      text(bx, by + R * 0.44, 3.4, 'T', 'center', 0, 'middle');
-      text(bx - R * 0.48, by - R * 0.48, 2.5, String(sheetNo), 'center', 0, 'middle');
-      text(bx + R * 0.48, by - R * 0.48, 2.5, String(viewNo), 'center', 0, 'middle');
+      // 4. 원 내부 표식 (건축 표준: 상단 뷰번호 01, 02.. / 하단 시트번호 T1, T2..)
+      const vStr = typeof viewNo === 'number' ? (viewNo < 10 ? '0' + viewNo : String(viewNo)) : String(viewNo);
+      const sStr = typeof sheetNo === 'number' ? `T${sheetNo}` : String(sheetNo);
+      text(bx, by + R * 0.44, 3.4, vStr, 'center', 0, 'middle');
+      text(bx, by - R * 0.46, 2.4, sStr, 'center', 0, 'middle');
 
-      // 6. 이중 밑줄 위 한글 뷰 명칭 (좌측 정렬로 원형 기호와 겹침 완전 방지)
-      text(bx + R + 3.0, by + 3.2, textH, titleText, 'left', 0, 'middle');
+      // 5. 이중 밑줄 위 도면 뷰 명칭
+      text(bx + R + 3.0, by + 3.4, textH, titleText, 'left', 0, 'middle');
+
+      // 6. 이중 밑줄 아래 건축 표준 축척 표기 (SCALE : 1 / N)
+      if (scaleStr) {
+        text(bx + R + 3.0, by - 3.2, 2.5, scaleStr, 'left', 0, 'middle');
+      }
+    };
+
+    // 정통 건축 평면도 방위표 (Architectural North Arrow: KS F 1501 / ISO 표준 북향 기호)
+    const drawNorthArrow = (cx, cy, r = 5.5) => {
+      circle([cx, cy], r);
+      const pTop = [cx, cy + r * 1.35];
+      const pBot = [cx, cy - r * 0.85];
+      const pLeft = [cx - r * 0.38, cy - r * 0.1];
+      const pRight = [cx + r * 0.38, cy - r * 0.1];
+      const pMid = [cx, cy];
+
+      // 우측 반쪽 솔리드 채움 (Standard Architectural Black-filled right half)
+      solid([pTop, pRight, pMid]);
+      solid([pBot, pLeft, pMid]);
+
+      // 외곽선 및 중심선
+      line(pTop, pLeft);
+      line(pLeft, pBot);
+      line(pBot, pRight);
+      line(pRight, pTop);
+      line(pTop, pBot);
+
+      // 'N' 표기 (상단 중앙)
+      text(cx, cy + r * 1.85, 2.8, 'N', 'center', 0, 'middle');
     };
 
     const translateEnts = (es, dx, dy) => {
@@ -17940,9 +17979,10 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
 
       const titleSkidY = Math.max(y0 + 10, (bSkid[1] + dy1) / N - 14.0);
       const viewTitleSkid = lang === 'en'
-        ? `STEEL SKID DRAWING  [SCALE 1 : ${N}]`
-        : `스틸 스키드 프레임 조립도 (STEEL SKID DRAWING)  [SCALE 1 : ${N}]`;
-      drawViewTitleBubble(cx1, titleSkidY, 1, 1, viewTitleSkid);
+        ? 'STEEL SKID DRAWING'
+        : '스틸 스키드 프레임 조립도 (STEEL SKID DRAWING)';
+      drawViewTitleBubble(cx1, titleSkidY, 1, 1, viewTitleSkid, N);
+      drawNorthArrow(cx1 + wSkid / 2 + 15, y1 - 25);
 
       // 2. 중앙-우측 뷰: 프레임 단면 및 기초 조립 상세도 (FRAME CROSS DWG)
       // 단면도(FRAME CROSS DWG)는 평면도(STEEL SKID DRAWING)의 Z-Z' 절단 단면이므로 Y축 투영 높이가 정확히 1:1 일치해야 함
@@ -17959,9 +17999,9 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
       });
 
       const viewTitleCross = lang === 'en'
-        ? `FRAME CROSS DWG  [SCALE 1 : ${N}]`
-        : `프레임 단면 및 기초 조립 상세도 (FRAME CROSS DWG)  [SCALE 1 : ${N}]`;
-      drawViewTitleBubble(cx2, titleSkidY, 1, 2, viewTitleCross);
+        ? 'FRAME CROSS DWG'
+        : '프레임 단면 및 기초 조립 상세도 (FRAME CROSS DWG)';
+      drawViewTitleBubble(cx2, titleSkidY, 1, 2, viewTitleCross, N);
 
       // 3. 우측 뷰: 3D 등각 조감도 (3D ISOMETRIC VIEW)
       const rightStart = cx2 + wCross / 2 + Math.max(20, gap12 * 0.75);
@@ -17988,9 +18028,9 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
 
       const effIsoScale = Math.max(5, Math.round(N / fitScale));
       const viewTitleIso = lang === 'en'
-        ? `3D ISOMETRIC VIEW  [SCALE 1 : ${effIsoScale}]`
-        : `등각조감도 (3D ISOMETRIC VIEW)  [SCALE 1 : ${effIsoScale}]`;
-      drawViewTitleBubble(cx3, titleSkidY, 1, 3, viewTitleIso);
+        ? '3D ISOMETRIC FRAME VIEW'
+        : '3D 등각 프레임 조감도 (3D ISOMETRIC FRAME VIEW)';
+      drawViewTitleBubble(cx3, titleSkidY, 1, 3, viewTitleIso, effIsoScale);
 
       return { map: mmap, ents, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
     }
@@ -18067,6 +18107,7 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
       const titlePlanY = (bPlan[1] + dy1) / N - 14.0;
       const viewTitlePlan = lang === 'en' ? `FOUNDATION PAD PLAN  [SCALE 1 : ${N}]` : (lang === 'bilingual' ? `기 초 콘 크 리 트 평 면 도 (FOUNDATION PLAN)  [SCALE 1 : ${N}]` : `기  초  콘  크  리  트  평  면  도  [SCALE 1 : ${N}]`);
       drawViewTitleBubble(cx1, titlePlanY, 1, 1, viewTitlePlan);
+      drawNorthArrow(cx1 + 80, y1 - 25);
 
       // 2. 하단: 기초 패드 단면 및 입면도 (FOUNDATION PAD SECTION & ELEVATION - media_1790950018151.png 반영)
       if (frontSec) {
@@ -18436,7 +18477,7 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
 
       translateEnts(secEnts, dx1, dy1);
       const titleSecY = (dy1 - Math.round(lenSecs.length > 1 ? 38 * N : 30 * N)) / N;
-      drawViewTitleBubble(cx1, titleSecY, 1, 1, lang === 'ko' ? `수위 및 수심 단면도 (WATER LEVEL ELEVATION)  [SCALE 1 : ${N}]` : `WATER LEVEL & DEPTH ELEVATION  [SCALE 1 : ${N}]`);
+      drawViewTitleBubble(cx1, titleSecY, 1, 1, lang === 'ko' ? '수위 및 수심 단면도 (WATER LEVEL ELEVATION)' : 'WATER LEVEL & DEPTH ELEVATION', N);
 
       // ==========================================
       // VIEW 2 (우측 상단): 3D 등각 수위 조감도 (3D ISOMETRIC WATER LEVEL VIEW)
@@ -18474,7 +18515,7 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
       ents.push({ t: 'line', a: q0, b: q1, layer: 'NOZZLE' });
       ents.push({ t: 'line', a: q1, b: q2, layer: 'NOZZLE' });
       ents.push({ t: 'line', a: q2, b: q3, layer: 'NOZZLE' });
-      ents.push({ t: 'line', a: q3, b: q0, layer: 'NOZZLE' });
+      ents.push({ t: 'line', a: q3, b: p0, layer: 'NOZZLE' });
 
       // 3D 수위 지시선
       ents.push({ t: 'line', a: p1, b: [p1[0] + 15 * N * fitScale, p1[1] + 10 * N * fitScale], layer: 'NOZZLE' });
@@ -18482,7 +18523,7 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
       ents.push({ t: 'text', p: [p1[0] + 16 * N * fitScale, p1[1] + 13 * N * fitScale], h: Math.round(2.6 * N * fitScale), s: `▽ HWL EL. +${hwlElev}`, align: 'left', valign: 'bottom', layer: 'SHEET' });
 
       const titleIsoY = y0 + areaH * 0.52 - 8;
-      drawViewTitleBubble(cx2, titleIsoY, 1, 2, lang === 'ko' ? '3D 등각 수위 조감도 (3D ISOMETRIC WATER VIEW)' : '3D ISOMETRIC WATER LEVEL VIEW');
+      drawViewTitleBubble(cx2, titleIsoY, 1, 2, lang === 'ko' ? '3D 등각 수위 조감도 (3D ISOMETRIC WATER VIEW)' : '3D ISOMETRIC WATER LEVEL VIEW', 'N.T.S.');
 
       // ==========================================
       // VIEW 3 (좌측 하단): 평면도 및 유효면적도 (PLAN VIEW & WATER SURFACE AREA)
@@ -18513,7 +18554,10 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
       }
 
       const titlePlanY = (bPlan[1] + dy3) / N - 14.0;
-      drawViewTitleBubble(cx3, titlePlanY, 1, 3, lang === 'ko' ? `평면도 및 유효면적도 (PLAN VIEW & AREA)  [SCALE 1 : ${N}]` : `PLAN VIEW & WATER SURFACE AREA  [SCALE 1 : ${N}]`);
+      drawViewTitleBubble(cx3, titlePlanY, 1, 3, lang === 'ko' ? '평면도 및 유효면적도 (PLAN VIEW & AREA)' : 'PLAN VIEW & WATER SURFACE AREA', N);
+      const northCapX = Math.min((bPlan[2] + dx3) / N + 15, tx0 - 335);
+      const northCapY = Math.min(titleIsoY - 12, (bPlan[3] + dy3) / N + 10);
+      drawNorthArrow(northCapX, northCapY);
 
       // ==========================================
       // VIEW 4 (우측 하단): 실담수량 정밀 산출 내역서 표 (EFFECTIVE WATER CAPACITY TABLE)
@@ -18634,11 +18678,11 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
     const areaW = tx0 - x0;
     const areaH = y1 - y0;
 
-    const viewTitlePlan = lang === 'en' ? 'PLAN VIEW' : (lang === 'bilingual' ? '평 면 도 (PLAN VIEW)' : '평  면  도');
+    const viewTitlePlan = lang === 'en' ? 'FLOOR PLAN' : (lang === 'bilingual' ? '평 면 도 (FLOOR PLAN)' : '평  면  도');
     const viewTitlePad = lang === 'en' ? 'FOUNDATION PAD PLAN & SECTION' : (lang === 'bilingual' ? '기 초 패 드 평 면 및 단 면 도 (PAD PLAN & SECTION)' : '기  초  패  드  평  면  및  단  면  도');
-    const viewTitleFront = lang === 'en' ? 'FRONT ELEVATION' : (lang === 'bilingual' ? '정 면 도 (FRONT ELEVATION)' : '정  면  도');
-    const viewTitleSide = lang === 'en' ? 'RIGHT SIDE ELEVATION' : (lang === 'bilingual' ? '우 측 면 도 (SIDE ELEVATION)' : '우  측  면  도');
-    const viewTitleIso = lang === 'en' ? '3D ISOMETRIC VIEW' : (lang === 'bilingual' ? '등 각 조 감 도 (3D ISOMETRIC)' : '등  각  조  감  도');
+    const viewTitleFront = lang === 'en' ? 'FRONT ELEVATION VIEW' : (lang === 'bilingual' ? '정 면 도 (FRONT ELEVATION)' : '정  면  도');
+    const viewTitleSide = lang === 'en' ? 'RIGHT SIDE ELEVATION VIEW' : (lang === 'bilingual' ? '우 측 면 도 (SIDE ELEVATION)' : '우  측  면  도');
+    const viewTitleIso = lang === 'en' ? '3D ISOMETRIC VIEW' : (lang === 'bilingual' ? '3D 등 각 조 감 도 (3D ISOMETRIC)' : '3D  등  각  조  감  도');
     const viewTitleSec = lang === 'en' ? 'FOUNDATION PAD SECTION & ELEVATION' : (lang === 'bilingual' ? '기 초 패 드 단 면 및 입 면 도 (SECTION & ELEV)' : '기  초  패  드  단  면  및  입  면  도');
 
     let elev = false;
@@ -18730,7 +18774,10 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
 
       // 1. Row 1 Col 1: 평면도 배치 (View 1 / 1)
       translateEnts(plan.ents, dx1, dy1);
-      drawViewTitleBubble(col1_tank_cx, row1_title_y, 1, 1, viewTitlePlan);
+      drawViewTitleBubble(col1_tank_cx, row1_title_y, 1, 1, viewTitlePlan, N);
+      const northX = Math.min(col1_tank_cx + (totalL / 2 + 100) / N + 15, isAsm5 ? col2_tank_cx - 40 : tx0 - 25);
+      const northY = Math.min(y1 - 25, row1_top_y - 10);
+      drawNorthArrow(northX, northY);
 
       // 2. Row 1 Col 2: 등각 조감도 배치 (View 1 / 5)
       if (isAsm5) {
@@ -18755,16 +18802,16 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
           else ents.push({ ...e, p: [e.p[0] * isoFitScale + isoDx, e.p[1] * isoFitScale + isoDy], h: e.h * isoFitScale });
         });
 
-        drawViewTitleBubble(iso_cx, row1_title_y, 1, 5, viewTitleIso);
+        drawViewTitleBubble(iso_cx, row1_title_y, 1, 5, viewTitleIso, 'N.T.S.');
       }
 
       // 3. Row 2 Col 1: 정면도 배치 (View 1 / 3)
       translateEnts(front.ents, dx1, dy2);
-      drawViewTitleBubble(col1_tank_cx, row2_title_y, 1, 3, viewTitleFront);
+      drawViewTitleBubble(col1_tank_cx, row2_title_y, 1, 3, viewTitleFront, N);
 
       // 4. Row 2 Col 2: 우측면도 배치 (View 1 / 4)
       translateEnts(side.ents, dx2_side, dy2);
-      drawViewTitleBubble(col2_tank_cx, row2_title_y, 1, 4, viewTitleSide);
+      drawViewTitleBubble(col2_tank_cx, row2_title_y, 1, 4, viewTitleSide, N);
 
       // 5. Row 3 Col 1: 기초 패드 평면 및 단면/입면도 수직 통합 배치 (View 1 / 2)
       const dx_pad = P(col1_tank_cx) - totalL / 2;
@@ -18777,7 +18824,7 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
         const dy_sec = plan_bot_y - gap_plan_sec_mm;
         translateEnts(frontSec.ents, dx_pad, dy_sec);
       }
-      drawViewTitleBubble(col1_tank_cx, row3_title_y, 1, 2, viewTitlePad);
+      drawViewTitleBubble(col1_tank_cx, row3_title_y, 1, 2, viewTitlePad, N);
 
       // 6. Row 3 Col 2: 기초 콘크리트 설계 사양표 (FOUNDATION SPECIFICATION TABLE)
       const tbw = 128, tbh = 80;
@@ -18826,13 +18873,14 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
       const dy_p = P(row1_cy) - totalW / 2;
       translateEnts(plan.ents, dx_p, dy_p);
       const title_p_y = (dy_p - dim_bottom_1) / N - 14.0;
-      drawViewTitleBubble(center_cx, title_p_y, 1, 1, viewTitlePlan);
+      drawViewTitleBubble(center_cx, title_p_y, 1, 1, viewTitlePlan, N);
+      drawNorthArrow(center_cx + totalL / 2 / N + 15, y1 - 25);
 
       const dx_c = P(center_cx) - totalL / 2;
       const dy_c = P(row2_cy) - totalW / 2;
       translateEnts(conc.ents, dx_c, dy_c);
       const title_c_y = (dy_c - PAD_OVERHANG - dim_bottom_1) / N - 14.0;
-      drawViewTitleBubble(center_cx, title_c_y, 1, 2, viewTitlePad);
+      drawViewTitleBubble(center_cx, title_c_y, 1, 2, viewTitlePad, N);
     }
 
     // 도면 테두리(y1, x1, y0, x0) 밖으로 풍선 기호가 나가지 않도록 최종 클램핑
@@ -19221,31 +19269,29 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     currentLang = localStorage.getItem('tank_lang') || 'ko';
   } catch (e) {}
   const NOTES_EN = [
-    'Customers are requested to make a base concrete according to the designed specifications and the strength of site.',
-    'The required strength of base concrete must be at least 180Kg/cm2.',
-    'It is recommended to leave a space of 600mm in each direction from repairing and maintenance (as shown in left figure).',
-    'The customer designates the size of sockets for plumbing.',
-    'After the sockets are in place, the plumbing and heat insulation must be done by the customer.',
-    'A warranty card is posted on the tank which specifies the responsibilities of the manufacturer and customer\'s right usage.',
-    'Do not place heavy load or force on the panels during transportation. The parts that are touched with rope or other cargo should be cushioned.',
-    'Be careful not to put any heavy weight on the pipes which are connected to the fittings.',
-    'Pipe installation must be started from the tank side.',
-    'Make the hole at the exact place and be careful not to put unbalanced weight on the fittings.',
-    'Be careful of fire during welding.',
-    'Be careful to keep the inside supporting parts from colliding each other.'];
+    'All dimensions are in millimeters (mm), and elevations (EL) are based on the bottom panel face.',
+    'Tank panels shall comply with KS D 3698 (STS304/STS316) or KS F 4806 (SMC) high-pressure molding.',
+    'Base concrete pad design compressive strength shall be at least 18 MPa, level tolerance within ±2mm.',
+    'Steel base channels and structural skid members shall be hot-dip galvanized (HDG, min. 550g/m²).',
+    'Foundation anchor bolts shall be directly embedded into concrete pads with sufficient pull-out strength.',
+    'All external piping must be independently supported; no eccentric load shall be imposed on tank nozzles.',
+    'Ensure minimum maintenance clearance of 600mm around tank perimeter and 1,000mm above tank roof.',
+    'Hydrostatic leak test shall be performed for 24 hours under full water condition prior to acceptance.',
+    'Air vents must be fitted with insect screens (STS mesh), and manholes equipped with sanitary lock covers.',
+    'Piping connection and thermal insulation beyond tank nozzles are within client (contractor) scope.'
+  ];
   const NOTES_KO = [
-    '기초 콘크리트는 현장 강도 및 설계 사양에 적합하게 시공하여 주십시오.',
-    '기초 콘크리트의 설계 기준 강도는 최소 180 kgf/cm² 이상이어야 합니다.',
-    '유지관리 및 보수를 위해 물탱크 주위에 최소 600mm 이상의 여유 공간을 확보하십시오.',
-    '배관용 소켓 및 노즐의 규격과 위치는 발주처(고객) 지정 사양입니다.',
-    '소켓 설치 완료 후 배관 연결 및 보온공사는 고객(발주처) 시공 범위입니다.',
-    '탱크 표면에 제품 보증서 및 취급 주의사항이 부착되어 있습니다.',
-    '운반 및 양중 시 판넬에 과도한 하중이나 충격이 가해지지 않도록 주의하십시오.',
-    '피팅(배관 연결부)에 직접적인 배관 하중이 가해지지 않도록 배관 지지대를 설치하십시오.',
-    '배관 연결 작업은 반드시 물탱크 측 노즐부터 시작하여 연결하십시오.',
-    '타공 작업 시 정확한 위치에 천공하고 편하중이 발생하지 않도록 주의하십시오.',
-    '용접 작업 시 화재 및 불티 비산에 각별히 주의하십시오.',
-    '내부 보강재 및 부속품이 상호 간섭이나 충돌이 발생하지 않도록 조립하십시오.'];
+    '본 도면의 치수는 밀리미터(mm) 기준이며, 표고(EL)는 저판 하단면을 기준으로 함.',
+    '탱크 본체는 KS D 3698(STS304/316) 또는 KS F 4806(SMC) 규격의 고압 프레스 성형 패널을 적용함.',
+    '기초 콘크리트 패드는 설계기준강도 18MPa 이상, 상면 수평오차 ±2mm 이내로 정밀 타설할 것.',
+    '스틸 베이스 찬넬 및 프레임 부속철물은 용융아연도금(HDG 최소 550g/m²) 방청 처리를 적용함.',
+    '기초 앵커볼트는 콘크리트 패드에 직결 시공하며, 구조계산서에 의거한 인발 내력을 확보할 것.',
+    '배관 연결 시 탱크 피팅에 편심 하중이 전달되지 않도록 독립된 배관 지지대(SUPPORT)를 필히 설치할 것.',
+    '유지관리 및 위생점검을 위하여 탱크 외벽 둘레 600mm, 상부 1,000mm 이상의 여유공간을 확보할 것.',
+    '조립 완료 후 만수 상태에서 24시간 동안 수압시험(LEAK TEST)을 실시하여 누수 없을 시 합격으로 판정함.',
+    '통기구(VENT)에는 방충망(STS MESH)을 설치하고, 맨홀은 위생 잠금장치를 체결하여 외부 오염을 차단할 것.',
+    '소켓 설치 완료 후 배관 연결 및 단열·보온공사는 발주처(고객) 시공 범위임.'
+  ];
   const NOTES = (currentLang === 'en' ? NOTES_EN : NOTES_KO);
   $('tNotes').value = NOTES.join('\n');
 
@@ -23658,7 +23704,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.87</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.88</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
