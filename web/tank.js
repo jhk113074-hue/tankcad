@@ -4406,6 +4406,7 @@
     const N = opt._N || 25;
     const textH = Math.round(3.0 * N);
     const ents = [];
+    const ladderEnts = [];
 
     const getDepth = (x, y, z) => y - x - z;
 
@@ -4907,32 +4908,141 @@
 
     inFoundation = false;
 
-    // 베이스 찬넬 림 (Skid Channel 100mm)
-    // 1) 전면 탱크 하부 찬넬
-    for (let i = 0; i < map.rows.length; i++) {
-      const y0 = map.ys[i];
-      for (let j = 0; j < map.cols.length; j++) {
-        if (!map.has(i, j) || map.has(i - 1, j)) continue;
-        const x0 = map.xs[j], x1 = map.xs[j + 1];
-        const skidDepth = y0 - (x0 + x1) / 2 - (-th / 2);
-        poly([toIso(x0, y0, 0), toIso(x1, y0, 0), toIso(x1, y0, -th), toIso(x0, y0, -th)], 'FRAME', true, true, skidDepth);
-        ln(toIso(x0, y0, -th + 15), toIso(x1, y0, -th + 15), 'FRAME', skidDepth);
-        ln(toIso(x0, y0, -15), toIso(x1, y0, -15), 'FRAME', skidDepth);
+    if (opt.onlySkidAndPad) {
+      // 3D 스틸 스키드 프레임 정밀 렌더링 (W방향 주재, L방향 주재, 부재)
+      const dSkid = getSkidDimensions(opt.frame);
+      const flgW = dSkid.mainW;
+      const lapIn = 5;
+      const overOut = flgW - lapIn;
+      const overY = flgW - lapIn;
+      const subW = (Number(opt.frame) === 75) ? 75 : 40;
+
+      // 1. W방향 세로 주재 (FRAME_MAIN_W, Orange) - 시작 열 및 끝 열 외곽 테두리
+      // 좌측 외곽 주재 (first)
+      for (let i = 0; i < map.rows.length; i++) {
+        if (!map.has(i, 0)) continue;
+        let startR = i;
+        while (i < map.rows.length && map.has(i, 0)) i++;
+        let endR = i - 1;
+        const yA = map.ys[startR] - overY;
+        const yB = map.ys[endR] + map.rows[endR] + overY;
+        const xA = -overOut, xB = xA + flgW;
+        poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xA, yB, 0)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, (yA + yB) / 2, 0));
+        poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yA, -th), toIso(xA, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, yA, -th / 2));
+        poly([toIso(xA, yA, 0), toIso(xA, yB, 0), toIso(xA, yB, -th), toIso(xA, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth(xA, (yA + yB) / 2, -th / 2));
+      }
+      // 우측 외곽 주재 (last)
+      const lastC = map.cols.length - 1;
+      for (let i = 0; i < map.rows.length; i++) {
+        if (!map.has(i, lastC)) continue;
+        let startR = i;
+        while (i < map.rows.length && map.has(i, lastC)) i++;
+        let endR = i - 1;
+        const yA = map.ys[startR] - overY;
+        const yB = map.ys[endR] + map.rows[endR] + overY;
+        const xA = map.xs[lastC] + map.cols[lastC] - lapIn, xB = xA + flgW;
+        poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xA, yB, 0)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, (yA + yB) / 2, 0));
+        poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yA, -th), toIso(xA, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, yA, -th / 2));
+        poly([toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xB, yB, -th), toIso(xB, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth(xB, (yA + yB) / 2, -th / 2));
+      }
+
+      // 2. L방향 가로 주재 (FRAME_MAIN_L, Purple)
+      for (let i = 0; i <= map.rows.length; i++) {
+        const rowY = (i < map.rows.length) ? map.ys[i] : map.width;
+        let c = 0;
+        while (c < map.cols.length) {
+          const hasBelow = (i > 0) && map.has(i - 1, c);
+          const hasAbove = (i < map.rows.length) && map.has(i, c);
+          let cat = 0;
+          if (!hasBelow && hasAbove) cat = 1;
+          else if (hasBelow && !hasAbove) cat = 2;
+          else if (hasBelow && hasAbove) cat = 3;
+          if (cat === 0) { c++; continue; }
+
+          const cStart = c;
+          while (c < map.cols.length) {
+            const b = (i > 0) && map.has(i - 1, c);
+            const a = (i < map.rows.length) && map.has(i, c);
+            let cCat = 0;
+            if (!b && a) cCat = 1;
+            else if (b && !a) cCat = 2;
+            else if (b && a) cCat = 3;
+            if (cCat !== cat) break;
+            c++;
+          }
+          const cEnd = c - 1;
+          const xLeft = map.xs[cStart];
+          const xRight = map.xs[cEnd] + map.cols[cEnd];
+
+          const hasTankLeft = (cStart > 0) && ((cat === 1 && map.has(i, cStart - 1)) || (cat === 2 && map.has(i - 1, cStart - 1)) || (cat === 3 && (map.has(i - 1, cStart - 1) || map.has(i, cStart - 1))));
+          const hasTankRight = (cEnd < map.cols.length - 1) && ((cat === 1 && map.has(i, cEnd + 1)) || (cat === 2 && map.has(i - 1, cEnd + 1)) || (cat === 3 && (map.has(i - 1, cEnd + 1) || map.has(i, cEnd + 1))));
+
+          const x0 = hasTankLeft ? (xLeft - flgW / 2) : (xLeft + lapIn);
+          const x1 = hasTankRight ? (xRight + flgW / 2) : (xRight - lapIn);
+
+          let segY;
+          if (cat === 1) segY = rowY - overY;
+          else if (cat === 2) segY = rowY + overY - flgW;
+          else segY = rowY - flgW / 2;
+
+          const y0 = segY, y1 = segY + flgW;
+
+          poly([toIso(x0, y0, 0), toIso(x1, y0, 0), toIso(x1, y1, 0), toIso(x0, y1, 0)], 'FRAME_MAIN_L', true, true, getDepth((x0 + x1) / 2, (y0 + y1) / 2, 0));
+          poly([toIso(x0, y0, 0), toIso(x1, y0, 0), toIso(x1, y0, -th), toIso(x0, y0, -th)], 'FRAME_MAIN_L', true, true, getDepth((x0 + x1) / 2, y0, -th / 2));
+          if (!hasTankRight) {
+            poly([toIso(x1, y0, 0), toIso(x1, y1, 0), toIso(x1, y1, -th), toIso(x1, y0, -th)], 'FRAME_MAIN_L', true, true, getDepth(x1, (y0 + y1) / 2, -th / 2));
+          }
+        }
+      }
+
+      // 3. 중간 부재 (FRAME_SUB, Teal - 서브빔)
+      for (let j = 1; j < map.cols.length; j++) {
+        const colX = map.xs[j];
+        for (let i = 0; i < map.rows.length; i++) {
+          if (!map.has(i, j - 1) || !map.has(i, j)) continue;
+          const rY0 = map.ys[i];
+          const rY1 = rY0 + map.rows[i];
+          const isFirstRow = (i === 0) || (!map.has(i - 1, j - 1) && !map.has(i - 1, j));
+          const isLastRow = (i === map.rows.length - 1) || (!map.has(i + 1, j - 1) && !map.has(i + 1, j));
+          const yBayBot = isFirstRow ? (rY0 - overY + flgW) : (rY0 + flgW / 2);
+          const yBayTop = isLastRow ? (rY1 + overY - flgW) : (rY1 - flgW / 2);
+          if (yBayTop <= yBayBot + 10) continue;
+
+          const subX0 = colX - subW / 2, subX1 = colX + subW / 2;
+          poly([toIso(subX0, yBayBot, 0), toIso(subX1, yBayBot, 0), toIso(subX1, yBayTop, 0), toIso(subX0, yBayTop, 0)], 'FRAME_SUB', true, true, getDepth(colX, (yBayBot + yBayTop) / 2, 0));
+          poly([toIso(subX1, yBayBot, 0), toIso(subX1, yBayTop, 0), toIso(subX1, yBayTop, -th), toIso(subX1, yBayBot, -th)], 'FRAME_SUB', true, true, getDepth(subX1, (yBayBot + yBayTop) / 2, -th / 2));
+        }
+      }
+    } else {
+      // 베이스 찬넬 림 (Skid Channel 100mm)
+      // 1) 전면 탱크 하부 찬넬
+      for (let i = 0; i < map.rows.length; i++) {
+        const y0 = map.ys[i];
+        for (let j = 0; j < map.cols.length; j++) {
+          if (!map.has(i, j) || map.has(i - 1, j)) continue;
+          const x0 = map.xs[j], x1 = map.xs[j + 1];
+          const skidDepth = y0 - (x0 + x1) / 2 - (-th / 2);
+          poly([toIso(x0, y0, 0), toIso(x1, y0, 0), toIso(x1, y0, -th), toIso(x0, y0, -th)], 'FRAME', true, true, skidDepth);
+          ln(toIso(x0, y0, -th + 15), toIso(x1, y0, -th + 15), 'FRAME', skidDepth);
+          ln(toIso(x0, y0, -15), toIso(x1, y0, -15), 'FRAME', skidDepth);
+        }
+      }
+
+      // 2) 우측 탱크 하부 찬넬
+      for (let i = 0; i < map.rows.length; i++) {
+        const y0 = map.ys[i], y1 = map.ys[i + 1];
+        for (let j = 0; j < map.cols.length; j++) {
+          if (!map.has(i, j) || map.has(i, j + 1)) continue;
+          const xWall = map.xs[j + 1];
+          const skidDepth = (y0 + y1) / 2 - xWall - (-th / 2);
+          poly([toIso(xWall, y0, 0), toIso(xWall, y1, 0), toIso(xWall, y1, -th), toIso(xWall, y0, -th)], 'FRAME', true, true, skidDepth);
+          ln(toIso(xWall, y0, -th + 15), toIso(xWall, y1, -th + 15), 'FRAME', skidDepth);
+          ln(toIso(xWall, y0, -15), toIso(xWall, y1, -15), 'FRAME', skidDepth);
+        }
       }
     }
 
-    // 2) 우측 탱크 하부 찬넬
-    for (let i = 0; i < map.rows.length; i++) {
-      const y0 = map.ys[i], y1 = map.ys[i + 1];
-      for (let j = 0; j < map.cols.length; j++) {
-        if (!map.has(i, j) || map.has(i, j + 1)) continue;
-        const xWall = map.xs[j + 1];
-        const skidDepth = (y0 + y1) / 2 - xWall - (-th / 2);
-        poly([toIso(xWall, y0, 0), toIso(xWall, y1, 0), toIso(xWall, y1, -th), toIso(xWall, y0, -th)], 'FRAME', true, true, skidDepth);
-        ln(toIso(xWall, y0, -th + 15), toIso(xWall, y1, -th + 15), 'FRAME', skidDepth);
-        ln(toIso(xWall, y0, -15), toIso(xWall, y1, -15), 'FRAME', skidDepth);
-      }
-    }
+    if (!opt.onlySkidAndPad) {
     // 2. 전면 벽체 판넬 (Front-Facing Walls: normal -Y, 'D')
     for (let i = 0; i < map.rows.length; i++) {
       const y0 = map.ys[i];
@@ -5376,7 +5486,7 @@
     });
 
     // 6. 외부 사다리 (정면도 ladderShapes idx=5 및 측면도 idx=7 규격 완전 일치 3D 모델)
-    const ladderEnts = [];
+    ladderEnts.length = 0;
     const lads = ladderList(opt, map) || [];
     lads.forEach(l => {
       const T = 40, FW = 270, FT = 20, TI = 270, FO = 200, BO = -500, TOP = 700, TTOP = 500, CX = 75, SI = 400;
@@ -5942,6 +6052,7 @@
         }
       });
     }
+    } // end if (!opt.onlySkidAndPad)
 
     // 9. 3D 등각 치수선 (L, W, H) - 사용자 요청으로 등각조감도 치수선 기입 생략
 
@@ -7999,7 +8110,7 @@
       const isoAvailW = Math.max(80, (tx0 - 15) - rightStart);
       const isoAvailH = Math.max(80, areaH * 0.70);
 
-      const iso = buildIsometric(opt, templates, sideT);
+      const iso = buildIsometric({ ...opt, onlySkidAndPad: true }, templates, sideT);
       const bIso = bb(iso.ents);
       const isoW_mm = (bIso[2] - bIso[0]) / N;
       const isoH_mm = (bIso[3] - bIso[1]) / N;
