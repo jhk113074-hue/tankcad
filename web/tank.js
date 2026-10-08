@@ -6167,11 +6167,13 @@
     if (w > h) {
       // 1. 수평 주 베이스 프레임 (ㄷ-125x65x6T 또는 L-75x75x6T 채널/앵글)
       rectEnts(x, y, w, h, L, out);
-      // 웨브 두께선 (6mm)
+      // 웨브 두께선 (6mm) - 첫줄과 마지막줄은 외측(탱크 밖)으로 열리도록 배치
       if (lat === 0x20000) {
-        ln([x, y + 6], [x + w, y + 6]);
-      } else if (lat === 0x40000) {
+        // 첫줄(하부): 탱크 외측(하부, -Y)으로 열림 -> 웨브는 상단(내측)인 y + h - 6
         ln([x, y + h - 6], [x + w, y + h - 6]);
+      } else if (lat === 0x40000) {
+        // 마지막줄(상부): 탱크 외측(상부, +Y)으로 열림 -> 웨브는 하단(내측)인 y + 6
+        ln([x, y + 6], [x + w, y + 6]);
       } else {
         ln([x, y + 6], [x + w, y + 6]);
       }
@@ -6284,9 +6286,10 @@
         // 중간 주재: 판넬 센터 중심선 배치
         ents.push({ t: 'line', a: [x + 6, y], b: [x + 6, y + h], layer: 'FRAME' });
       }
-      // 메인 빔 품번 및 실측 규격 텍스트 (예: 2120CSZ (65 x 125 x 6t))
+      // 메인 빔 품번 및 실측 규격 텍스트 (예: WFF-2120 CSZL (65 x 125 x 6t))
       const totalH = Math.round(h);
-      const beamCode = `${totalH}CSZ`;
+      const sideSuffix = type === 'first' ? 'L' : (type === 'last' ? 'R' : '');
+      const beamCode = `WFF-${totalH} CSZ${sideSuffix}`;
       const specText = `(65 x 125 x 6t)`;
       const bTxtH = Math.max(26, Math.min(36, Math.round(w * 0.48)));
       ents.push({
