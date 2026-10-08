@@ -6363,10 +6363,26 @@
     // 4-1. 하단 외곽 가로 프레임 (첫줄, 0x20000): Y_bot = nTop - overY (-60mm)에서 시작하여 flgW(65mm) 높이
     add(bLeft, nTop - overY, bWidth, flgW, 0x20000);
 
+    const cnRows = G.map.rows.length;
+    let centerBay = -1, minDiff = Infinity;
+    for (let k = 0; k < cnRows; k++) {
+      const rY0 = G.map.ys[k];
+      const rY1 = rY0 + G.map.rows[k];
+      const bMid = (rY0 + rY1) / 2;
+      const diff = Math.abs(bMid - G.map.width / 2);
+      const penalty = G.map.rows[k] < 700 ? 500 : 0;
+      if (diff + penalty < minDiff) {
+        minDiff = diff + penalty;
+        centerBay = k;
+      }
+    }
+    if (centerBay < 0 || centerBay >= cnRows) centerBay = Math.floor((cnRows - 1) / 2);
+
     // 4-2. 중간 행 가로 프레임들 (각 행 접합선 위치에 flgW 높이로 배치)
     for (i = sRow + 1; i <= eRow; i++) {
       const rowY = G.map.ys[i];
-      const isUp = (i === sRow + 1); // 081031 PDF: 1행만 상향 개구, 2행 이상은 하향 개구
+      const k = i - sRow;
+      const isUp = (k <= centerBay); // 제일 Center에서 [ ] 마주보도록: centerBay 이하 상향, 초과 하향
       add(bLeft, rowY - flgW / 2, bWidth, flgW, isUp ? 0 : 0x10000);
     }
 
@@ -6397,15 +6413,19 @@
     // 첫번째 내부 열(Col 1)에 서브빔 명칭 표기 (WFB-0962AMZ, WFB-1053AMZ, WFB-0994AMZ 등)
     if (G.nc >= 1) {
       const col1X = (G.map.xs[1] || 1000) + flgW / 2 + st * 0.45;
-      const cn = G.map.rows.length;
       const isF150 = (Number(opt.frame) === 150);
-      for (let i = 0; i < cn; i++) {
+      for (let i = 0; i < cnRows; i++) {
         const rY0 = G.map.ys[i];
         const rY1 = rY0 + G.map.rows[i];
+        const isShort = G.map.rows[i] < 700;
         let subCode;
-        if (i === 0 || i === cn - 1) subCode = isF150 ? 'WFB-0956CMZ' : 'WFB-0962AMZ';
-        else if (i === 1 && cn >= 3) subCode = isF150 ? 'WFB-1061CMZ' : 'WFB-1053AMZ';
-        else subCode = isF150 ? 'WFB-0993CMZ' : 'WFB-0994AMZ';
+        if (i === 0 || i === cnRows - 1) {
+          subCode = isF150 ? (isShort ? 'WFB-0456CMZ' : 'WFB-0956CMZ') : (isShort ? 'WFB-0462AMZ' : 'WFB-0962AMZ');
+        } else if (i === centerBay && cnRows >= 3) {
+          subCode = isF150 ? (isShort ? 'WFB-0561CMZ' : 'WFB-1061CMZ') : (isShort ? 'WFB-0553AMZ' : 'WFB-1053AMZ');
+        } else {
+          subCode = isF150 ? (isShort ? 'WFB-0493CMZ' : 'WFB-0993CMZ') : (isShort ? 'WFB-0494AMZ' : 'WFB-0994AMZ');
+        }
         ents.push({ t: 'text', p: [col1X, (rY0 + rY1) / 2], h: st * 0.65, s: subCode, rot: 90, align: 'center', layer: 'DIM' });
       }
     }
@@ -6607,11 +6627,24 @@
     const ys = [0];
     for (let k = 1; k <= cn; k++) { totalW += wl[k - 1]; ys.push(totalW); }
 
+    // 제일 Center 위치의 베이(centerBay) 찾기: 중앙(totalW / 2)에 가장 가까운 베이
+    let centerBay = -1, minDiff = Infinity;
+    for (let k = 0; k < cn; k++) {
+      const bMid = (ys[k] + ys[k + 1]) / 2;
+      const diff = Math.abs(bMid - totalW / 2);
+      const penalty = wl[k] < 700 ? 500 : 0;
+      if (diff + penalty < minDiff) {
+        minDiff = diff + penalty;
+        centerBay = k;
+      }
+    }
+    if (centerBay < 0 || centerBay >= cn) centerBay = Math.floor((cn - 1) / 2);
+
     // 서브 빔 부재 규격 및 실 제작/가공 길이 매핑 (081031 PDF Z-Z' SECTION 실물 기준)
     function getSubBeamInfo(k, pitch) {
       const f = Number(opt.frame) || 125;
       const isOuter = (k === 0 || k === cn - 1);
-      const isTypeC = (k === 1 && cn >= 3);
+      const isTypeC = (k === centerBay && cn >= 3);
       const isShort = pitch < 700;
 
       if (f === 150) {
@@ -6655,8 +6688,9 @@
     // 각 찬넬 정보: k = 0 (하단 외곽) ~ k = cn (상단 외곽)
     // 081031 PDF Z-Z' SECTION 실물 기준:
     // - k = 0 (하단 외곽): 하향 개구(toes down, -overY 방향)
-    // - k = 1: 상향 개구(toes up, +Y 방향)
-    // - k = 2 ~ cn-1: 하향 개구(toes down, -Y 방향)
+    // - k <= centerBay: 상향 개구(toes up, +Y 방향)
+    // - k > centerBay: 하향 개구(toes down, -Y 방향)
+    // -> 따라서 centerBay(제일 Center)에서 두 찬넬이 [ ] 안쪽으로 마주보게 됨
     // - k = cn (상단 외곽): 상향 개구(toes up, +overY 방향)
     const chanGeom = [];
 
@@ -6671,7 +6705,7 @@
     // k = 1 .. cn - 1 (중간 찬넬들)
     for (let k = 1; k < cn; k++) {
       const rowY = ys[k];
-      const isUp = (k === 1); // 1행 찬넬만 상향 개구, 2행 이상은 하향 개구
+      const isUp = (k <= centerBay); // 제일 Center에서 [ ] 마주보도록: centerBay 이하 상향, 초과 하향
       const yWeb = isUp ? (rowY - mx) : (rowY + mx);
       const yToe = isUp ? (rowY + mx) : (rowY - mx);
       const botFace = isUp ? yWeb : (yWeb - tw); // 아래쪽 서브빔이 닿는 면
