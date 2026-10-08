@@ -571,9 +571,12 @@ canvas.drag{cursor:grabbing}
           <span>💡 <span id="lblSkidRuleLabel">높이 자동규칙:</span> <b id="skidRuleSummaryShort" style="color:var(--accent)">1~2.5m: 75앵글 / 3~4m: 125채널 / 4.5m+: 150채널</b></span>
           <a href="#" id="linkGoToSkidSettings" style="font-size:10px;color:var(--accent);text-decoration:underline;white-space:nowrap;margin-left:4px">세팅 화면 ➔</a>
         </div>
-        <div style="margin-top:4px;margin-bottom:8px">
-          <button type="button" class="btn-sm" id="btnGoToSkidDwg" style="width:100%;padding:7px 10px;background:rgba(245,158,11,0.12);color:#d97706;border:1px solid #f59e0b;border-radius:6px;font-weight:700;font-size:11.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openSkidDrawing()">
+        <div style="margin-top:4px;margin-bottom:8px;display:flex;flex-direction:column;gap:5px">
+          <button type="button" class="btn-sm" id="btnGoToSkidDwg" style="width:100%;padding:6px 10px;background:rgba(245,158,11,0.12);color:#d97706;border:1px solid #f59e0b;border-radius:6px;font-weight:700;font-size:11.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openSkidDrawing()">
             <span>🏗️</span><span id="lblBtnGoToSkidDwg">기초조립도 (스틸 스키드 프레임) 바로보기</span>
+          </button>
+          <button type="button" class="btn-sm" id="btnGoToSkidPartsDwg" style="width:100%;padding:6px 10px;background:rgba(2,132,199,0.10);color:#0284c7;border:1px solid #0284c7;border-radius:6px;font-weight:700;font-size:11.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openSkidPartsDrawing()">
+            <span>⚙️</span><span id="lblBtnGoToSkidPartsDwg">부재별 제작도 (A·B·C타입 &amp; 주재) 바로보기</span>
           </button>
         </div>
         <p class="hint" id="hintDims">💡 길이는 여러 칸에 입력 시 구간별 분할(예: 3 + 2)됩니다. 폭은 단일 치수(m)입니다.</p>
@@ -1320,6 +1323,7 @@ canvas.drag{cursor:grabbing}
             <option value="frame">🏗️ 기초조립도 / 스틸스키드 (STEEL SKID DWG)</option>
             <option value="detail">상세도 (DETAILS DWG)</option>
             <option value="capacity">🌊 실담수량 산출도 (WATER CAPACITY DWG)</option>
+            <option value="skid_parts">⚙️ 스키드 부재 제작도 (A·B·C타입 &amp; 주재)</option>
           </select>
         </div>
         <div class="vs-sep"></div>
@@ -3509,6 +3513,7 @@ canvas.drag{cursor:grabbing}
   </main>
 </div>
 
+<script>/*__SKID_PARTS_DATA__*/</script>
 <script>/*__TANK_JS__*/</script>
 <script>
 let TEMPLATES = /*__TEMPLATES__*/;
@@ -3935,6 +3940,9 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       $('sheetKind').options[3].textContent = currentLang === 'en' ? 'Steel Skid Dwg (Foundation & Skid)' : '🏗️ 기초조립도 / 스틸스키드 (STEEL SKID DWG)';
       $('sheetKind').options[4].textContent = currentLang === 'en' ? 'Details Dwg' : '상세도 (DETAILS DWG)';
       $('sheetKind').options[5].textContent = currentLang === 'en' ? '🌊 Water Capacity Dwg (Effective Storage)' : '🌊 실담수량 산출도 (WATER CAPACITY DWG)';
+      if ($('sheetKind').options[6]) {
+        $('sheetKind').options[6].textContent = currentLang === 'en' ? '⚙️ Skid Parts Dwg (Type A·B·C & Main)' : '⚙️ 스키드 부재 제작도 (A·B·C타입 & 주재)';
+      }
     }
     if ($('drawingLangSel') && $('drawingLangSel').options && $('drawingLangSel').options.length >= 3) {
       $('drawingLangSel').options[0].textContent = currentLang === 'en' ? '🇰🇷 Korean' : '🇰🇷 한글 (Korean)';
@@ -5642,6 +5650,15 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     schedule();
   }
   window.openSkidDrawing = openSkidDrawing;
+
+  function openSkidPartsDrawing() {
+    const sk = $('sheetKind');
+    if (sk) sk.value = 'skid_parts';
+    const so = $('sheetOn');
+    if (so) so.checked = true;
+    schedule();
+  }
+  window.openSkidPartsDrawing = openSkidPartsDrawing;
 
   function closeUserManualModal() {
     const dlg = $('manualModelessDialog');
@@ -7970,7 +7987,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       };
       const sheet = $('sheetOn').checked;
       opt.sheetKind = $('sheetKind').value;
-      if (sheet || opt.sheetKind === 'capacity') {
+      if (sheet || opt.sheetKind === 'capacity' || opt.sheetKind === 'skid_parts') {
         plan = C.buildSheet(opt, TEMPLATES, SIDE_T);
       } else if (opt.sheetKind === 'iso') {
         const iso = C.buildIsometric(opt, TEMPLATES, SIDE_T);
@@ -7981,12 +7998,12 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       } else {
         plan = C.buildPlan(opt, TEMPLATES);
       }
-      plan.sheet = sheet || (opt.sheetKind === 'capacity');
+      plan.sheet = sheet || (opt.sheetKind === 'capacity') || (opt.sheetKind === 'skid_parts');
 
       const isEn = currentLang === 'en';
       const kindText = isEn
-        ? ({ asm: 'GENERAL ASSEMBLY DWG', pad: 'FOUNDATION PAD DWG', iso: '3D ISOMETRIC DWG', frame: 'STEEL SKID & FOUNDATION DWG', detail: 'DETAILS DWG', capacity: 'WATER CAPACITY & LEVEL DWG' }[opt.sheetKind] || 'DWG')
-        : ({ asm: '조립도 (종합)', pad: '기초콘크리트도 (FOUNDATION PAD)', iso: '등각 조감도 (3D ISO)', frame: '기초조립도 / 스틸스키드 (SKID DWG)', detail: '상세도 (DETAILS)', capacity: '실담수량 산출도 (CAPACITY)' }[opt.sheetKind] || '도면');
+        ? ({ asm: 'GENERAL ASSEMBLY DWG', pad: 'FOUNDATION PAD DWG', iso: '3D ISOMETRIC DWG', frame: 'STEEL SKID & FOUNDATION DWG', detail: 'DETAILS DWG', capacity: 'WATER CAPACITY & LEVEL DWG', skid_parts: 'SKID PARTS FABRICATION DWG' }[opt.sheetKind] || 'DWG')
+        : ({ asm: '조립도 (종합)', pad: '기초콘크리트도 (FOUNDATION PAD)', iso: '등각 조감도 (3D ISO)', frame: '기초조립도 / 스틸스키드 (SKID DWG)', detail: '상세도 (DETAILS)', capacity: '실담수량 산출도 (CAPACITY)', skid_parts: '스키드 부재 제작도 (SKID PARTS)' }[opt.sheetKind] || '도면');
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));

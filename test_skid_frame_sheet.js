@@ -27,20 +27,23 @@ assert(hasSkidTitle, 'Left view title bubble (STEEL SKID DRAWING) must exist');
 const hasCrossTitle = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('프레임 단면') || e.s.includes('FRAME CROSS')));
 assert(hasCrossTitle, 'Right view title bubble (FRAME CROSS DWG) must exist');
 
-// 2. Check Part List and YSACC Part Codes
-const hasPartList = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('PART LIST - FRAME 125'));
-assert(hasPartList, 'PART LIST - FRAME 125 must exist in Skid drawing');
+// 2. Check Member Specifications and YSACC Part Codes
+const hasMemberSpecs = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('MEMBER SPECIFICATIONS - FRAME 125'));
+assert(hasMemberSpecs, 'MEMBER SPECIFICATIONS - FRAME 125 must exist in Skid drawing');
 
 const hasMainSubSpec = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.toUpperCase().includes('125X65X6'));
 assert(hasMainSubSpec, 'Main channel spec 125x65x6 must exist');
 
 const hasYSACCPartCodeA = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WFF-0961AMZ'));
-assert(hasYSACCPartCodeA, 'YSACC Part Code WFF-0961AMZ must be mapped in Part List');
+assert(hasYSACCPartCodeA, 'YSACC Part Code WFF-0961AMZ (A타입) must exist on sub-beams');
 
-const hasYSACCPartCodeMain = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WFF-1990CLZ'));
-assert(hasYSACCPartCodeMain, 'YSACC Part Code WFF-1990CLZ (주재) must be mapped in Part List');
+const hasYSACCPartCodeB = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WFF-0993AMZ'));
+assert(hasYSACCPartCodeB, 'YSACC Part Code WFF-0993AMZ (B타입) must exist on sub-beams');
 
-// 3. Check Standard Hardware Callouts
+const hasYSACCPartCodeC = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WFF-1051AMZ'));
+assert(hasYSACCPartCodeC, 'YSACC Part Code WFF-1051AMZ (C타입) must exist on sub-beams');
+
+// 3. Check Standard Hardware Callouts & Real CAD Details
 const hasCornerBrackets = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WBR-7575Z & WBR-0160Z'));
 assert(hasCornerBrackets, 'WBR-7575Z & WBR-0160Z corner bracket callout must exist');
 
@@ -57,7 +60,7 @@ assert(hasGalvNote, 'Hot-dip galvanized SS41 note must exist');
 const hasToleranceNote = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('±1mm'));
 assert(hasToleranceNote, 'Tolerance ±1mm note must exist');
 
-// 5. Check Frame Cross DWG details (Concrete Pad, Anchor Bolt, Dimensions)
+// 5. Check Frame Cross DWG details (Concrete Pad, Anchor Bolt, Dimensions, Sub-beam)
 const hasPadLayer = sheet1.ents.some(e => e.layer === 'PAD');
 assert(hasPadLayer, 'Concrete pad entities must exist in FRAME CROSS DWG');
 
@@ -69,6 +72,9 @@ assert(hasPadWidthDim, 'Pad width dimension must exist in FRAME CROSS DWG');
 
 const hasPadHeightDim = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('패드높이'));
 assert(hasPadHeightDim, 'Pad height dimension must exist in FRAME CROSS DWG');
+
+const hasCrossSubBeam = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('[-75x40x5T'));
+assert(hasCrossSubBeam, 'Cross-section horizontal sub-beam [-75x40x5T must exist in FRAME CROSS DWG');
 
 // 6. Test 2: 75 Angle Frame tank (e.g. 4000 x 3000 x 2000)
 const opt2 = {
@@ -83,11 +89,40 @@ const opt2 = {
 
 const sheet2 = TankCore.buildSheet(opt2, {}, {});
 assert(sheet2, 'Sheet 2 should be created');
-const hasAnglePartList = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('PART LIST - FRAME 75'));
-assert(hasAnglePartList, 'PART LIST - FRAME 75 must exist for 75 angle frame');
+const hasAngleSpecs = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('MEMBER SPECIFICATIONS - FRAME 75'));
+assert(hasAngleSpecs, 'MEMBER SPECIFICATIONS - FRAME 75 must exist for 75 angle frame');
 const hasEnSkidTitle = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('STEEL SKID DRAWING'));
 assert(hasEnSkidTitle, 'English view title STEEL SKID DRAWING must exist');
 const hasEnCrossTitle = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('FRAME CROSS DWG'));
 assert(hasEnCrossTitle, 'English view title FRAME CROSS DWG must exist');
+
+// 7. Test 3: Skid Component Fabrication Sheet (sheetKind: 'skid_parts')
+console.log('--- Testing Skid Parts Fabrication DWG Sheet (sheetKind: "skid_parts") ---');
+const opt3 = {
+  length: [10000],
+  width: [8000],
+  height: [3000],
+  frame: 125,
+  sheetKind: 'skid_parts',
+  userScale: 50,
+  lang: 'ko'
+};
+
+const sheet3 = TankCore.buildSheet(opt3, {}, {});
+assert(sheet3, 'Sheet 3 (skid_parts) should be created');
+assert(sheet3.ents && sheet3.ents.length > 200, 'Skid parts sheet should have > 200 entities');
+console.log('Sheet 3 entities count:', sheet3.ents.length);
+
+const hasTypeATitle = sheet3.ents.some(e => e.t === 'text' && e.s && e.s.includes('A타입 제작도'));
+assert(hasTypeATitle, 'Type A fabrication drawing title must exist');
+
+const hasTypeBTitle = sheet3.ents.some(e => e.t === 'text' && e.s && e.s.includes('B타입 제작도'));
+assert(hasTypeBTitle, 'Type B fabrication drawing title must exist');
+
+const hasTypeCTitle = sheet3.ents.some(e => e.t === 'text' && e.s && e.s.includes('C타입 제작도'));
+assert(hasTypeCTitle, 'Type C fabrication drawing title must exist');
+
+const hasMainBeamTitle = sheet3.ents.some(e => e.t === 'text' && e.s && (e.s.includes('주재') || e.s.includes('ㄷ-125')));
+assert(hasMainBeamTitle, 'Main beam fabrication drawing title must exist');
 
 console.log('✅ ALL STEEL SKID & FOUNDATION TESTS PASSED SUCCESSFULLY!');

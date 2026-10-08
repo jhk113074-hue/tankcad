@@ -6,6 +6,12 @@
 (function (root) {
   'use strict';
 
+  // 기초 부재 제작도 데이터 (기초.zip DXF 벡터 추출본: A타입, B타입, C타입, ㄷ-125 주재)
+  let SKID_PARTS_DATA = (typeof globalThis !== 'undefined' && globalThis.SKID_PARTS_DATA) || (typeof window !== 'undefined' && window.SKID_PARTS_DATA) || (typeof root !== 'undefined' && root.SKID_PARTS_DATA) || null;
+  if (!SKID_PARTS_DATA && typeof require !== 'undefined') {
+    try { SKID_PARTS_DATA = require('./skid_parts_data.js'); } catch (e) {}
+  }
+
   /* ---------- glFunc.cpp: 패널 분할 (1300 / 1000 / 500 모듈) ---------- */
   // 4-인자 버전(nHalf 사용): gFrontSplit == gSideSplit
   function splitHalf(nLength, baseX, nHalf) {
@@ -6109,7 +6115,42 @@
     return { map, R, nr, nc, sRow, eRow, sCol, eCol, rowTop, colLeft, nLeft, nRight, nTop, nBottom };
   }
   const rectEnts = (x, y, w, h, layer, out) => { const p = [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]; for (let k = 0; k < 4; k++) out.push({ t: 'line', a: p[k], b: p[(k + 1) % 4], layer }); };
-  // CInsideFrmLT: 사각 + 긴 부재의 분할선 + (가로 부재) 격자 폴리곤. lat: 0x20000 위쪽 격자 / 0x40000 아래쪽 격자
+
+  // 볼트 구멍 및 십자선 (Bolt hole with crosshairs)
+  const drawBoltHole = (out, cx, cy, r = 7, clen = 16, layer = 'FRAME') => {
+    out.push({ t: 'circle', c: [cx, cy], r, layer });
+    out.push({ t: 'line', a: [cx - clen / 2, cy], b: [cx + clen / 2, cy], layer });
+    out.push({ t: 'line', a: [cx, cy - clen / 2], b: [cx, cy + clen / 2], layer });
+  };
+
+  // 코너 브라켓 WBR-7575Z & WBR-0160Z (75x75x6T 코너 앵글 접합부)
+  const drawCornerBracket = (out, x, y, size = 75, thk = 6, dirX = 1, dirY = 1, layer = 'FRAME') => {
+    const pts = [
+      [x, y],
+      [x + dirX * size, y],
+      [x + dirX * size, y + dirY * thk],
+      [x + dirX * thk, y + dirY * thk],
+      [x + dirX * thk, y + dirY * size],
+      [x, y + dirY * size]
+    ];
+    for (let k = 0; k < pts.length; k++) {
+      out.push({ t: 'line', a: pts[k], b: pts[(k + 1) % pts.length], layer });
+    }
+    drawBoltHole(out, x + dirX * (size * 0.58), y + dirY * (thk * 0.5), 5.5, 12, layer);
+    drawBoltHole(out, x + dirX * (thk * 0.5), y + dirY * (size * 0.58), 5.5, 12, layer);
+  };
+
+  // 앙카 클램프 WBR-5010Z (M12 앙카 체결용 플레이트)
+  const drawAnchorClamp = (out, cx, cy, w = 50, h = 35, layer = 'FRAME') => {
+    const x0 = cx - w / 2, y0 = cy - h / 2;
+    out.push({ t: 'line', a: [x0, y0], b: [x0 + w, y0], layer });
+    out.push({ t: 'line', a: [x0 + w, y0], b: [x0 + w, y0 + h], layer });
+    out.push({ t: 'line', a: [x0 + w, y0 + h], b: [x0, y0 + h], layer });
+    out.push({ t: 'line', a: [x0, y0 + h], b: [x0, y0], layer });
+    drawBoltHole(out, cx, cy, 6.5, 14, layer);
+  };
+
+  // 실제 제작 부재 기반 프레임 작도 (주 베이스 프레임 ㄷ-125 / 서브 빔 A·B·C타입 결합부)
   function insideFrm(out, x, y, w, h, lat, rec) {
     const L = 'FRAME', ln = (a, b) => out.push({ t: 'line', a, b, layer: L });
     const DIV = 2000, MIN = 1000;
@@ -6122,22 +6163,79 @@
       const r = len % DIV;
       if (r >= 200 && r < 500) at(DIV * cnt + 1000); else if (r >= 500 && r < MIN) at(DIV * cnt + 1500);
     };
-    if (w > h) divide(w, d => ln([x + d, y], [x + d, y + h])); else if (w < h) divide(h, d => ln([x, y + d], [x + w, y + d]));
+
+    if (w > h) {
+      // 1. 수평 주 베이스 프레임 (ㄷ-125x65x6T 또는 L-75x75x6T 채널/앵글)
+      rectEnts(x, y, w, h, L, out);
+      // 웨브 두께선 (6mm)
+      if (lat === 0x20000) {
+        ln([x, y + 6], [x + w, y + 6]);
+      } else if (lat === 0x40000) {
+        ln([x, y + h - 6], [x + w, y + h - 6]);
+      } else {
+        ln([x, y + 6], [x + w, y + 6]);
+      }
+
+      // 분할 이음부 (Splice fishplate) 및 결합 볼트 홀
+      divide(w, d => {
+        ln([x + d, y], [x + d, y + h]);
+        rectEnts(x + d - 50, y - 3, 100, h + 6, L, out);
+        drawBoltHole(out, x + d - 25, y + h * 0.28, 5.5, 12, L);
+        drawBoltHole(out, x + d - 25, y + h * 0.72, 5.5, 12, L);
+        drawBoltHole(out, x + d + 25, y + h * 0.28, 5.5, 12, L);
+        drawBoltHole(out, x + d + 25, y + h * 0.72, 5.5, 12, L);
+      });
+
+      // 500mm 간격 서브빔 결합 홀 (이음부 위치 제외)
+      for (let sx = 500; sx < w; sx += 500) {
+        if (!cuts.some(c => Math.abs(c - sx) < 70)) {
+          drawBoltHole(out, x + sx, y + h / 2, 5.5, 12, L);
+        }
+      }
+
+      if (lat === 0x20000 || lat === 0x40000) {
+        const up = lat === 0x20000, sg = up ? 1 : -1, y0 = up ? y + h : y;
+        [1, -1].forEach(k => {
+          const x0 = k > 0 ? x : x + w, s = k;
+          const P = [[x0, y0], [x0, y0 + sg * 100], [x0 + s * 30, y0 + sg * 100], [x0 + s * 30, y0 + sg * 30], [x0 + s * 100, y0 + sg * 30], [x0 + s * 100, y0]];
+          for (let q = 0; q < 6; q++) ln(P[q], P[(q + 1) % 6]);
+        });
+      }
+    } else if (w < h) {
+      // 2. 수직 서브 빔 (A·B·C타입 채널 [-75x40x5T / L-75x75x6T)
+      rectEnts(x, y, w, h, L, out);
+      // 웨브 두께선 (5mm)
+      ln([x + 5, y], [x + 5, y + h]);
+
+      // 양단 WBR-0120Z 결합 탭 (폭 60mm, 돌출 24mm)
+      const tabW = Math.max(w + 10, 56);
+      const tabX0 = x + w / 2 - tabW / 2;
+      const tabX1 = x + w / 2 + tabW / 2;
+
+      // 하단 탭 & 볼트 홀
+      ln([tabX0, y], [tabX0, y - 24]);
+      ln([tabX0, y - 24], [tabX1, y - 24]);
+      ln([tabX1, y - 24], [tabX1, y]);
+      drawBoltHole(out, x + w / 2, y - 12, 6.0, 13, L);
+
+      // 상단 탭 & 볼트 홀
+      ln([tabX0, y + h], [tabX0, y + h + 24]);
+      ln([tabX0, y + h + 24], [tabX1, y + h + 24]);
+      ln([tabX1, y + h + 24], [tabX1, y + h]);
+      drawBoltHole(out, x + w / 2, y + h + 12, 6.0, 13, L);
+
+      divide(h, d => ln([x, y + d], [x + w, y + d]));
+    } else {
+      rectEnts(x, y, w, h, L, out);
+    }
+
     if (rec && w !== h) {
       const len = w > h ? w : h, cs = cuts.slice().sort((a, b) => a - b), pts = [0, ...cs, len], segs = [];
       for (let k = 0; k + 1 < pts.length; k++) segs.push(pts[k + 1] - pts[k]);
-      rec.push({ hor: w > h, x, y, w, h, pts, segs });
+      rec.push({ hor: w > h, x, y, w, h, pts, segs, lat });
     }
-    if (w > h && (lat === 0x20000 || lat === 0x40000)) {
-      const up = lat === 0x20000, sg = up ? 1 : -1, y0 = up ? y + h : y;
-      [1, -1].forEach(k => {
-        const x0 = k > 0 ? x : x + w, s = k;
-        const P = [[x0, y0], [x0, y0 + sg * 100], [x0 + s * 30, y0 + sg * 100], [x0 + s * 30, y0 + sg * 30], [x0 + s * 100, y0 + sg * 30], [x0 + s * 100, y0]];
-        for (let q = 0; q < 6; q++) ln(P[q], P[(q + 1) % 6]);
-      });
-    }
-    rectEnts(x, y, w, h, L, out);
   }
+
   // 프레임도 치수: 열 폭(아래), 행 높이(왼쪽), 전체
   function frameDims(ents, map, textH, cols, rows) {
     const yb = -textH * 4, xl = -75 - textH * 4;
@@ -6152,6 +6250,7 @@
   }
   const frameTextH = (map, opt) => Math.max(60, Math.round(Math.max(map.length, map.width) / 100), Math.round(2.4 * ((opt && opt._N) || 0)));
 
+  // 스틸 스키드 프레임 조립도 (STEEL SKID DRAWING)
   function buildSkid(opt) {
     const G = frameGeom(opt), { R, sRow, eRow, sCol, eCol, nLeft, nRight, nTop, nBottom } = G;
     const ents = [], rec = [], add = (x, y, w, h, lat) => insideFrm(ents, x, y, w, h, lat, rec);
@@ -6212,7 +6311,7 @@
       if (rc) { nWidth += rc.w; if (!base) { nX = rc.l; base = true; } }
     }
     if (nWidth) nX === nLeft ? add(nX, nY, nWidth, 75, 0x40000) : add(nX + 45, nY, nWidth - 45, 75, 0x40000);
-    // 열 사이 세로 프레임
+    // 열 사이 세로 프레임 (서브 빔 배치)
     for (j = sCol; j < eCol; j++) {
       for (i = sRow; i <= eRow; i++) {
         let rcL = R(i, j), rcR = R(i, j + 1);
@@ -6224,93 +6323,68 @@
           add(nX, nY, 75, nHeight - 75, 0x20000);
         } else if (!rcR) {
           if (sRow === i) { nX = rcL.r; nY = rcL.t; nHeight = rcL.h + 75; } else { nX = rcL.r; nY = rcL.t + 75; nHeight = rcL.h; }
-          for (i = i + 1; i <= eRow; i++) { rcR = R(i, j + 1); if (!rcR) { rcL = R(i, j); if (!rcL) break; nHeight += rcL.h; } else break; }
+          for (i = i + 1; i <= eRow; i++) { rcR = R(i, j + 1); if (!rcR) { rcL = R(i, j); if (!rcL) break; nHeight += rcR.h; } else break; }
           i--; if (i === eRow) nHeight += 75;
           add(nX, nY, 75, nHeight - 75, 0x20000);
         } else add(rcL.r, rcL.t + 75, 45, rcL.h - 75, 0x20000);
       }
     }
     const tH = frameTextH(G.map, opt), st = tH * 0.8;
-    rec.forEach(m => m.segs.forEach((sl, k) => {          // 부재(분할 조각)별 실제 길이
+    rec.forEach(m => m.segs.forEach((sl, k) => {
       const mid = (m.pts[k] + m.pts[k + 1]) / 2;
-      if (m.hor) ents.push({ t: 'text', p: [m.x + mid, m.y + m.h / 2 - st * 0.35], h: st, s: String(sl), rot: 0, align: 'center', layer: 'DIM' });
-      else ents.push({ t: 'text', p: [m.x + m.w / 2 + st * 0.35, m.y + mid], h: st, s: String(sl), rot: 90, align: 'center', layer: 'DIM' });
+      if (m.hor) {
+        ents.push({ t: 'text', p: [m.x + mid, m.y + m.h / 2 - st * 0.35], h: st * 0.88, s: String(sl), rot: 0, align: 'center', layer: 'DIM' });
+      } else {
+        // 서브 빔 A/B/C 타입 품번 및 실 가공 길이 판별 (Steel Skid.dwg 실제 배치 기준)
+        let subCode = 'WFF-0993AMZ', realLen = 993;
+        const isOuter = (m.y <= (G.map.ys[1] || 1000) + 10) || (m.y + m.h >= (G.map.ys[Math.max(0, G.nr - 2)] || G.map.width - 1000) - 10);
+        const centerRowIdx = Math.floor(G.nr / 2);
+        const isCenter = Math.abs(m.y - (G.map.ys[centerRowIdx] || 0)) < 150;
+
+        if (isOuter) {
+          subCode = sl < 700 ? 'WFF-0461AMZ' : 'WFF-0961AMZ';
+          realLen = sl < 700 ? 461 : 961;
+        } else if (isCenter) {
+          subCode = sl < 700 ? 'WFF-0551AMZ' : 'WFF-1051AMZ';
+          realLen = sl < 700 ? 551 : 1051;
+        } else {
+          subCode = sl < 700 ? 'WFF-0493AMZ' : 'WFF-0993AMZ';
+          realLen = sl < 700 ? 493 : 993;
+        }
+
+        ents.push({ t: 'text', p: [m.x + m.w / 2 + st * 0.35, m.y + mid], h: st * 0.70, s: `${subCode} (L=${realLen})`, rot: 90, align: 'center', layer: 'DIM' });
+      }
     }));
     frameDims(ents, G.map, tH, true, true);
-    // YSACC 표준 부품 코드 매핑 (기초.zip / Steel Skid.dwg / 원단위 구성 매뉴얼)
-    function getSkidPartCode(len, isHor, frameType = 125) {
-      const f = Number(frameType) || 75;
-      const l = Math.round(len);
-      if (f === 125) {
-        if (!isHor && l < 1400) {
-          if (l >= 1040) return 'WFF-1051AMZ (C타입)';
-          if (l >= 1010) return 'WFF-1021AMZ (2m폭)';
-          if (l >= 970) return 'WFF-0993AMZ (B타입)';
-          if (l >= 900) return 'WFF-0961AMZ (A타입)';
-          if (l >= 510) return 'WFF-0551AMZ (C타입)';
-          if (l >= 480) return 'WFF-0493AMZ (B타입)';
-          return 'WFF-0461AMZ (A타입)';
-        } else {
-          if (l >= 2400) return 'WFF-2490CLZ (주재)';
-          if (l >= 1900) return 'WFF-1990CLZ (주재)';
-          if (l >= 1400) return 'WFF-1490CLZ (주재)';
-          if (l >= 900) return 'WFF-0990CLZ (주재)';
-          return 'WFF-0490CLZ (주재)';
-        }
-      } else if (f === 150) {
-        if (!isHor) {
-          if (l >= 1010) return 'WFF-1061CMZ (C타입)';
-          if (l >= 970) return 'WFF-0993CMZ (B타입)';
-          if (l >= 900) return 'WFF-0956CMZ (A타입)';
-          return 'WFF-0456CMZ (A타입)';
-        } else {
-          if (l >= 2400) return 'WFF-2490HCLZ (주재)';
-          if (l >= 1900) return 'WFF-1990HCLZ (주재)';
-          if (l >= 1400) return 'WFF-1490HCLZ (주재)';
-          return 'WFF-0990HCLZ (주재)';
-        }
-      } else {
-        if (!isHor) {
-          if (l >= 970) return 'WFF-0993AMZ (B타입)';
-          return 'WFF-0957AMZ (A타입)';
-        } else {
-          if (l >= 1900) return 'WFF-1990ALZ (주재)';
-          if (l >= 1400) return 'WFF-1490ALZ (주재)';
-          return 'WFF-0990ALZ (주재)';
-        }
-      }
+
+    // 코너 브라켓 WBR-7575Z & WBR-0160Z
+    drawCornerBracket(ents, nLeft, nTop, 75, 6, 1, 1);
+    drawCornerBracket(ents, nRight, nTop, 75, 6, -1, 1);
+    drawCornerBracket(ents, nLeft, nBottom, 75, 6, 1, -1);
+    drawCornerBracket(ents, nRight, nBottom, 75, 6, -1, -1);
+
+    // 앙카 클램프 WBR-5010Z (외곽 찬넬 둘레 2m 간격 배치)
+    for (let ax = nLeft + 1000; ax < nRight; ax += 2000) {
+      drawAnchorClamp(ents, ax, nTop - 15);
+      drawAnchorClamp(ents, ax, nBottom + 15);
+    }
+    for (let ay = nTop + 1000; ay < nBottom; ay += 2000) {
+      drawAnchorClamp(ents, nLeft - 15, ay);
+      drawAnchorClamp(ents, nRight + 15, ay);
     }
 
-    // 부품 목록 (길이별 수량 및 YSACC BOM 품번)
-    const cnt = {}, meta = {};
-    rec.forEach(m => m.segs.forEach(sl => {
-      cnt[sl] = (cnt[sl] || 0) + 1;
-      if (!meta[sl]) meta[sl] = getSkidPartCode(sl, m.hor, opt.frame);
-    }));
-    const list = Object.entries(cnt).sort((a, b) => b[0] - a[0]);
-
-    // 위치: 탱크 하단 좌측 여유 영역 (media_1791447293957.png 참조)
+    // 도면 하단 부재 규격 및 표준 제작 가공 시방 NOTE (수량 집계가 아닌 도면 상세 사양)
     const lx = Math.max(300, G.map.length * 0.12), ly0 = -tH * 10;
     const dSkid = getSkidDimensions(opt.frame);
-    ents.push({ t: 'text', p: [lx, ly0], h: tH * 1.05, s: `PART LIST - FRAME ${opt.frame || 75} (${dSkid.name})`, rot: 0, align: 'left', layer: 'DIM' });
-    ents.push({ t: 'text', p: [lx, ly0 - tH * 1.35], h: tH * 0.75, s: `MAIN : ${dSkid.mainSpec} / SUB : ${dSkid.subSpec}`, rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [lx, ly0], h: tH * 1.05, s: `MEMBER SPECIFICATIONS - FRAME ${opt.frame || 125} (${dSkid.name})`, rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [lx, ly0 - tH * 1.35], h: tH * 0.78, s: `MAIN BEAM : ${dSkid.mainSpec} (SS41 + 용융아연도금 HDG)`, rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [lx, ly0 - tH * 2.6], h: tH * 0.78, s: `SUB-BEAM TYPE A : WFF-0961AMZ (L=961, 외곽 배치용)`, rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [lx, ly0 - tH * 3.85], h: tH * 0.78, s: `SUB-BEAM TYPE B : WFF-0993AMZ (L=993, 중간 배치용)`, rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [lx, ly0 - tH * 5.1], h: tH * 0.78, s: `SUB-BEAM TYPE C : WFF-1051AMZ (L=1051, 중앙 마주보는 열)`, rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [lx, ly0 - tH * 6.35], h: tH * 0.78, s: `HARDWARE : WBR-7575Z & WBR-0160Z 코너 브라켓 / WBR-5010Z 클램프`, rot: 0, align: 'left', layer: 'DIM' });
 
-    let curLy = ly0 - tH * 2.7;
-    list.forEach(([l, n]) => {
-      const codeStr = meta[l] ? `  [${meta[l]}]` : '';
-      ents.push({ t: 'text', p: [lx, curLy], h: tH * 0.8, s: `L=${l} x ${n} EA${codeStr}`, rot: 0, align: 'left', layer: 'DIM' });
-      curLy -= tH * 1.35;
-    });
-
-    // 부속 철물 (Standard Hardware)
-    const cornerCount = 4 + (G.nr * G.nc > (G.cells || 0) ? 2 : 0);
-    const anchorCount = Math.max(4, Math.round((G.map.length + G.map.width) / 1000));
-    ents.push({ t: 'text', p: [lx, curLy], h: tH * 0.78, s: `WBR-7575Z & WBR-0160Z 코너 브라켓 x ${cornerCount * 2} EA (코너 접합)`, rot: 0, align: 'left', layer: 'DIM' });
-    curLy -= tH * 1.35;
-    ents.push({ t: 'text', p: [lx, curLy], h: tH * 0.78, s: `WBR-5010Z 스키드 클램프 x ${anchorCount} EA (M12 앙카볼트 체결)`, rot: 0, align: 'left', layer: 'DIM' });
-
-    // 표준 제작 가공 시방 NOTE (YSACC Foundation Standard - 기초.zip & 원단위 구성 매뉴얼)
-    const noteX = Math.max(lx + 2800, G.map.length * 0.52);
+    // 표준 제작 가공 시방 NOTE (YSACC Foundation Standard - 기초.zip & Steel Skid.dwg)
+    const noteX = Math.max(lx + 3200, G.map.length * 0.52);
     let noteY = ly0;
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 1.0, s: '< N O T E >', rot: 0, align: 'left', layer: 'DIM' });
     noteY -= tH * 1.3;
@@ -6320,53 +6394,118 @@
     noteY -= tH * 1.25;
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '3. 컷팅 및 용접부는 깨끗이 사상(Grinding)하고 수평 유지할 것', rot: 0, align: 'left', layer: 'DIM' });
     noteY -= tH * 1.25;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '4. 조립기준: 외곽 프레임 열림부 외측 배치, 코너 WBR-7575Z 체결', rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '4. 조립기준: 외곽 찬넬 열림부 외측 배치, 코너 WBR-7575Z 체결', rot: 0, align: 'left', layer: 'DIM' });
     noteY -= tH * 1.25;
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '5. 기초고정: 각 코너 및 2m 간격 M12 앙카볼트 & WBR-5010Z 클램프 체결', rot: 0, align: 'left', layer: 'DIM' });
 
     return { ents, G };
   }
-  // 기초 프레임 단면도 (BaseFrameCross): 폭 방향 부재 단면
+
+  // 기초 프레임 단면 및 조립 상세도 (FRAME CROSS DWG): 폭 방향 부재 단면
   function buildSkidCross(opt) {
     const d = getSkidDimensions(opt.frame);
     const th = d.mainH, ents = [], mx = d.mainW / 2;
-    const T = Math.max(12, Math.round(th * 0.12));
-    const ch = d.type === 'channel';
-    const isShs = d.type === 'shs';
     const wl = []; { const sw = (opt.width || []).filter(Boolean); let c0 = 0; sw.forEach(sn => { sideSplit(sn, c0).forEach(w => wl.push(w)); c0 += sn; }); }
-    const down = y => {
-      if (isShs) {
-        const P = [[0, -mx], [th, -mx], [th, mx], [0, mx]];
-        for (let k = 0; k < P.length; k++) ents.push({ t: 'line', a: [P[k][0], y + P[k][1]], b: [P[(k + 1) % P.length][0], y + P[(k + 1) % P.length][1]], layer: 'FRAME' });
-        const P_in = [[T, -mx + T], [th - T, -mx + T], [th - T, mx - T], [T, mx - T]];
-        for (let k = 0; k < P_in.length; k++) ents.push({ t: 'line', a: [P_in[k][0], y + P_in[k][1]], b: [P_in[(k + 1) % P_in.length][0], y + P_in[(k + 1) % P_in.length][1]], layer: 'FRAME' });
-        return;
+    const cn = wl.length;
+    let div = (cn + 1) >> 1; if ((cn + 1) % 2) div++;
+
+    // 서브 빔 부재 규격 및 실 제작/가공 길이 매핑
+    function getSubBeamInfo(k, pitch) {
+      const f = Number(opt.frame) || 125;
+      const isOuter = (k === 0 || k === cn - 1);
+      const isCenter = (k === div - 1);
+      const isShort = pitch < 700;
+
+      if (f === 125) {
+        if (isOuter) return { code: isShort ? 'WFF-0461AMZ' : 'WFF-0961AMZ', type: 'A타입', len: isShort ? 461 : 961, subSpec: '[-75x40x5T' };
+        if (isCenter) return { code: isShort ? 'WFF-0551AMZ' : 'WFF-1051AMZ', type: 'C타입', len: isShort ? 551 : 1051, subSpec: '[-75x40x5T' };
+        return { code: isShort ? 'WFF-0493AMZ' : 'WFF-0993AMZ', type: 'B타입', len: isShort ? 493 : 993, subSpec: '[-75x40x5T' };
+      } else if (f === 150) {
+        if (isOuter) return { code: isShort ? 'WFF-0456CMZ' : 'WFF-0956CMZ', type: 'A타입', len: isShort ? 456 : 956, subSpec: '[-75x40x5T' };
+        if (isCenter) return { code: isShort ? 'WFF-0561CMZ' : 'WFF-1061CMZ', type: 'C타입', len: isShort ? 561 : 1061, subSpec: '[-75x40x5T' };
+        return { code: isShort ? 'WFF-0493CMZ' : 'WFF-0993CMZ', type: 'B타입', len: isShort ? 493 : 993, subSpec: '[-75x40x5T' };
+      } else {
+        if (isOuter) return { code: isShort ? 'WFF-0457AMZ' : 'WFF-0957AMZ', type: 'A타입', len: isShort ? 457 : 957, subSpec: 'L-75x75x6T' };
+        return { code: isShort ? 'WFF-0493AMZ' : 'WFF-0993AMZ', type: 'B타입', len: isShort ? 493 : 993, subSpec: 'L-75x75x6T' };
       }
-      const P = ch ? [[0, -mx], [T, -mx + T], [T, mx - T], [th - T, mx - T], [th - T, -mx + T], [th, -mx], [th, mx], [0, mx]]
-        : [[0, -mx], [T, -mx + T], [T, mx - T], [th - T, mx - T], [th, mx], [0, mx]];
-      for (let k = 0; k < P.length; k++) ents.push({ t: 'line', a: [P[k][0], y + P[k][1]], b: [P[(k + 1) % P.length][0], y + P[(k + 1) % P.length][1]], layer: 'FRAME' });
-    };
-    const up = y => {
-      if (isShs) {
-        down(y);
-        return;
+    }
+
+    // 실제 찬넬 단면 [-125x65x6T (또는 L-75x75x6T)
+    const tw = 6, tf = 8;
+    const drawChannelSection = (y, facesUp) => {
+      const yWeb = facesUp ? y - mx : y + mx;
+      const yToe = facesUp ? y + mx : y - mx;
+      const yFlangeInner = facesUp ? yWeb + tw : yWeb - tw;
+
+      const pts = [
+        [0, yToe],
+        [0, yWeb],
+        [th, yWeb],
+        [th, yToe],
+        [th - tf, yToe],
+        [th - tf, yFlangeInner],
+        [tf, yFlangeInner],
+        [tf, yToe]
+      ];
+      for (let k = 0; k < pts.length; k++) {
+        ents.push({ t: 'line', a: pts[k], b: pts[(k + 1) % pts.length], layer: 'FRAME' });
       }
-      const P = ch ? [[0, -mx], [th, -mx], [th, mx], [th - T, mx - T], [th - T, -mx + T], [T, -mx + T], [T, mx - T], [0, mx]]
-        : [[0, -mx], [th, -mx], [th - T, -mx + T], [T, -mx + T], [T, mx - T], [0, mx]];
-      for (let k = 0; k < P.length; k++) ents.push({ t: 'line', a: [P[k][0], y + P[k][1]], b: [P[(k + 1) % P.length][0], y + P[(k + 1) % P.length][1]], layer: 'FRAME' });
     };
-    const cn = wl.length; let div = (cn + 1) >> 1; if ((cn + 1) % 2) div++;
-    let y = 0; down(0);
-    const ys = [0]; for (let k = 1; k <= cn; k++) { y += wl[k - 1]; ys.push(y); (k < div ? up : (k < cn ? down : up))(y); }
+
+    let y = 0;
+    const ys = [0];
+    for (let k = 1; k <= cn; k++) { y += wl[k - 1]; ys.push(y); }
+
+    // 각 그리드 라인에 찬넬 배치 (Steel Skid.dwg Strip 실제 방향 반영)
+    for (let k = 0; k <= cn; k++) {
+      const facesUp = (k === cn) ? true : (k === 0 ? false : (k >= div));
+      drawChannelSection(ys[k], facesUp);
+    }
+
     const tH = Math.max(60, Math.round(y / 100), Math.round(2.4 * (opt._N || 0))), xr = th + 75 + tH * 4;
+
+    // 인접 찬넬 사이 수평 서브빔 연결 상세 및 "실제 이 길이로 부재의 크기를 측정할 수 있다" 치수선 작도
+    for (let k = 0; k < cn; k++) {
+      const sub = getSubBeamInfo(k, wl[k]);
+      const yMid = (ys[k] + ys[k + 1]) / 2;
+      const yBot = yMid - sub.len / 2;
+      const yTop = yMid + sub.len / 2;
+
+      // 서브빔 단면 폭(높이) 75mm
+      const subH = 75, subX0 = (th - subH) / 2, subX1 = subX0 + subH;
+      // 서브빔 실물 형상 (외곽 라인 및 웨브선)
+      ents.push({ t: 'line', a: [subX0, yBot], b: [subX0, yTop], layer: 'FRAME' });
+      ents.push({ t: 'line', a: [subX1, yBot], b: [subX1, yTop], layer: 'FRAME' });
+      ents.push({ t: 'line', a: [subX0, yBot], b: [subX1, yBot], layer: 'FRAME' });
+      ents.push({ t: 'line', a: [subX0, yTop], b: [subX1, yTop], layer: 'FRAME' });
+      ents.push({ t: 'line', a: [subX0 + 5, yBot], b: [subX0 + 5, yTop], layer: 'FRAME' });
+
+      // 양단 WBR-0120Z 결합 탭 & 결합 볼트 M12
+      ents.push({ t: 'line', a: [subX0 - 8, yBot + 14], b: [subX1 + 8, yBot + 14], layer: 'FRAME' });
+      drawBoltHole(ents, th / 2, yBot + 14, 6.0, 14, 'FRAME');
+
+      ents.push({ t: 'line', a: [subX0 - 8, yTop - 14], b: [subX1 + 8, yTop - 14], layer: 'FRAME' });
+      drawBoltHole(ents, th / 2, yTop - 14, 6.0, 14, 'FRAME');
+
+      // 부재 명칭 및 실 가공 규격
+      const subTextH = Math.max(34, Math.round(sub.len / 28));
+      ents.push({ t: 'text', p: [th / 2, yMid], h: subTextH, s: `${sub.code} (${sub.type}, L=${sub.len})`, rot: 90, align: 'center', layer: 'FRAME' });
+
+      // ★★★ 사용자 요청: "실제 이 길이로 부재의 크기를 측정할 수 있다" ★★★
+      // 부재의 실제 제작/가공 길이 치수선 (A: 961, B: 993, C: 1051)
+      dimLinear(ents, [0, yBot], [0, yTop], -tH * 3.4, true, String(sub.len), tH, 'DIM');
+    }
+
+    // 중심간격 1000 치수선 (우측)
     for (let k = 0; k < cn; k++) dimLinear(ents, [th, ys[k]], [th, ys[k + 1]], xr, true, String(wl[k]), tH, 'DIM');
-    for (let k = 0; k < cn; k++) dimLinear(ents, [0, ys[k] + mx], [0, ys[k + 1] - mx], -tH * 3, true, String(wl[k] - 2 * mx), tH, 'DIM');   // 부재 사이 실제(순) 간격
+    // 전체 폭 치수선
     dimLinear(ents, [th, 0], [th, y], xr + tH * 3, true, String(y), tH, 'DIM');
+    // 찬넬 단면 상세 치수선
     dimLinear(ents, [0, -mx], [th, -mx], -mx - tH * 3, false, String(th), tH, 'DIM');
     dimLinear(ents, [0, -mx], [0, mx], -tH * 6, true, String(d.mainW), tH, 'DIM');
-    dimLinear(ents, [0, -mx], [T, -mx], -mx - tH * 6.5, false, String(d.mainT) + 'T', tH, 'DIM');
+    dimLinear(ents, [0, -mx], [tw, -mx], -mx - tH * 6.5, false, String(tw) + 'T', tH, 'DIM');
 
-    // 1. 하부 기초 콘크리트 패드 (Concrete Pad / Plinth) 단면 상세
+    // 하부 기초 콘크리트 패드 (Concrete Plinth)
     const padW = Number(opt.padFirstW) || 400;
     const padH = Number(opt.padH) || Math.max(300, 600 - th);
     const padX0 = th / 2 - padW / 2;
@@ -6380,17 +6519,23 @@
     ents.push({ t: 'line', a: [padX0, padY1], b: [padX1, padY1], layer: 'PAD' });
     ents.push({ t: 'line', a: [padX0 - 150, padY1], b: [padX1 + 150, padY1], layer: 'PAD' });
 
-    // 2. M12 기초 앙카 볼트 (Anchor Bolt Detail)
+    // 콘크리트 단면 해치 표시
+    for (let hx = padX0 + 40; hx < padX1; hx += 80) {
+      ents.push({ t: 'line', a: [hx, padY0 - 30], b: [hx + 30, padY0 - 80], layer: 'PAD' });
+      ents.push({ t: 'circle', c: [hx + 15, padY0 - 55], r: 3, layer: 'PAD' });
+    }
+
+    // M12 기초 앙카 볼트
     const boltX = th / 2;
     const boltEmbed = Math.min(260, padH - 60);
     ents.push({ t: 'line', a: [boltX, padY0 + 35], b: [boltX, padY0 - boltEmbed], layer: 'NOZZLE' });
-    ents.push({ t: 'line', a: [boltX - 10, padY0 + 20], b: [boltX + 10, padY0 + 20], layer: 'NOZZLE' });
-    ents.push({ t: 'line', a: [boltX - 10, padY0 + 20], b: [boltX - 10, padY0 + 32], layer: 'NOZZLE' });
-    ents.push({ t: 'line', a: [boltX + 10, padY0 + 20], b: [boltX + 10, padY0 + 32], layer: 'NOZZLE' });
-    ents.push({ t: 'line', a: [boltX - 10, padY0 + 32], b: [boltX + 10, padY0 + 32], layer: 'NOZZLE' });
-    ents.push({ t: 'line', a: [boltX - 25, padY0 - boltEmbed], b: [boltX + 25, padY0 - boltEmbed], layer: 'NOZZLE' });
+    ents.push({ t: 'line', a: [boltX - 12, padY0 + 20], b: [boltX + 12, padY0 + 20], layer: 'NOZZLE' });
+    ents.push({ t: 'line', a: [boltX - 12, padY0 + 20], b: [boltX - 12, padY0 + 32], layer: 'NOZZLE' });
+    ents.push({ t: 'line', a: [boltX + 12, padY0 + 20], b: [boltX + 12, padY0 + 32], layer: 'NOZZLE' });
+    ents.push({ t: 'line', a: [boltX - 12, padY0 + 32], b: [boltX + 12, padY0 + 32], layer: 'NOZZLE' });
+    ents.push({ t: 'line', a: [boltX - 30, padY0 - boltEmbed], b: [boltX + 30, padY0 - boltEmbed], layer: 'NOZZLE' });
 
-    // 3. WBR-5010Z 스키드 클램프 (Skid Clamp Bracket)
+    // WBR-5010Z 스키드 클램프
     const clpW = Math.min(45, mx + 15);
     ents.push({ t: 'line', a: [th / 2 - clpW, padY0 + 10], b: [th / 2 + clpW, padY0 + 10], layer: 'FRAME' });
     ents.push({ t: 'line', a: [th / 2 - clpW, padY0], b: [th / 2 - clpW, padY0 + 10], layer: 'FRAME' });
@@ -7304,12 +7449,15 @@
     // 뷰 타이틀 기호 (T 1/1 원형 마크, 이중 밑줄 및 한글 뷰 명칭)
     const drawViewTitleBubble = (tank_cx, title_y, sheetNo, viewNo, titleText) => {
       const R = 6.0;
-      const lineW = 75;
+      const textH = 4.2;
+      const approxCharW = 2.4;
+      const estimatedTextW = Math.max(60, titleText.length * approxCharW + 6);
+      const totalW = R * 2 + estimatedTextW;
       const gap = 1.0;
-      let bx = tank_cx - lineW / 2;
+      let bx = tank_cx - totalW / 2 + R;
       let by = title_y;
       if (bx - R < x0 + 4) bx = x0 + 4 + R;
-      if (bx + R + lineW > tx0 - 4) bx = tx0 - 4 - R - lineW;
+      if (bx + R + estimatedTextW > tx0 - 4) bx = tx0 - 4 - R - estimatedTextW;
       if (by - R < y0 + 3) by = y0 + 3 + R;
       if (by + R + 10 > y1 - 3) by = y1 - 3 - R - 10;
 
@@ -7317,23 +7465,22 @@
       circle([bx, by], R);
 
       // 2. 원형 내부 수평 분할선 및 우측 상단 밑줄 (연속선)
-      line([bx - R, by], [bx + R + lineW, by]);
+      line([bx - R, by], [bx + R + estimatedTextW, by]);
 
       // 3. 원형 내부 하단 수직 분할선
       line([bx, by], [bx, by - R]);
 
       // 4. 이중 밑줄 중 하단 평행선 (원 우측 둘레에서 시작)
       const dx_circ = Math.sqrt(Math.max(0, R * R - gap * gap));
-      line([bx + dx_circ, by - gap], [bx + R + lineW, by - gap]);
+      line([bx + dx_circ, by - gap], [bx + R + estimatedTextW, by - gap]);
 
       // 5. 원 내부 표식: 상단 T, 하단 좌측 시트번호(1), 하단 우측 뷰번호(1~5)
       text(bx, by + R * 0.44, 3.4, 'T', 'center', 0, 'middle');
       text(bx - R * 0.48, by - R * 0.48, 2.5, String(sheetNo), 'center', 0, 'middle');
       text(bx + R * 0.48, by - R * 0.48, 2.5, String(viewNo), 'center', 0, 'middle');
 
-      // 6. 이중 밑줄 위 한글 뷰 명칭 (가운데 정렬)
-      const textX = bx + R + lineW / 2;
-      text(textX, by + 3.6, 5.0, titleText, 'center', 0, 'middle');
+      // 6. 이중 밑줄 위 한글 뷰 명칭 (좌측 정렬로 원형 기호와 겹침 완전 방지)
+      text(bx + R + 3.0, by + 3.2, textH, titleText, 'left', 0, 'middle');
     };
 
     const translateEnts = (es, dx, dy) => {
@@ -7400,6 +7547,56 @@
         : `프레임 단면 및 기초 조립 상세도 (FRAME CROSS DWG)  [SCALE 1 : ${N}]`;
       drawViewTitleBubble(cx2, titleCrossY, 1, 2, viewTitleCross);
 
+      return { map: mmap, ents, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
+    }
+    if (opt.sheetKind === 'skid_parts') {
+      const areaW = tx0 - x0;
+      const areaH = y1 - y0;
+      const partsData = SKID_PARTS_DATA || (typeof globalThis !== 'undefined' && globalThis.SKID_PARTS_DATA) || (typeof window !== 'undefined' && window.SKID_PARTS_DATA) || (typeof root !== 'undefined' && root.SKID_PARTS_DATA);
+      if (partsData) {
+        // 4분할 사분면 배치 (A타입, B타입, C타입, 주재 ㄷ-125)
+        const quads = [
+          { key: 'typeA', cx: x0 + areaW * 0.25, cy: y0 + areaH * 0.73, sheetNo: 1, viewNo: 1 },
+          { key: 'typeB', cx: x0 + areaW * 0.75, cy: y0 + areaH * 0.73, sheetNo: 1, viewNo: 2 },
+          { key: 'typeC', cx: x0 + areaW * 0.25, cy: y0 + areaH * 0.25, sheetNo: 1, viewNo: 3 },
+          { key: 'mainBeam', cx: x0 + areaW * 0.75, cy: y0 + areaH * 0.25, sheetNo: 1, viewNo: 4 }
+        ];
+        // 사분면 구분 분할선 (이중선 스타일)
+        line([x0 + areaW * 0.5, y0 + 10], [x0 + areaW * 0.5, y1 - 10]);
+        line([x0 + 10, y0 + areaH * 0.49], [tx0 - 10, y0 + areaH * 0.49]);
+
+        quads.forEach(q => {
+          const part = partsData[q.key];
+          if (!part || !part.ents) return;
+          const b = bb(part.ents);
+          const bw = Math.max(1, b[2] - b[0]);
+          const bh = Math.max(1, b[3] - b[1]);
+          const maxW = (areaW * 0.44) * N;
+          const maxH = (areaH * 0.35) * N;
+          const partScale = Math.min(maxW / bw, maxH / bh) * 0.88;
+          const pcx = (b[0] + b[2]) / 2;
+          const pcy = (b[1] + b[3]) / 2;
+          const targetX = P(q.cx);
+          const targetY = P(q.cy);
+
+          part.ents.forEach(e => {
+            const trPt = pt => [
+              targetX + (pt[0] - pcx) * partScale,
+              targetY + (pt[1] - pcy) * partScale
+            ];
+            if (e.t === 'line') ents.push({ ...e, a: trPt(e.a), b: trPt(e.b) });
+            else if (e.t === 'poly') ents.push({ ...e, pts: e.pts.map(trPt) });
+            else if (e.t === 'circle') ents.push({ ...e, c: trPt(e.c), r: e.r * partScale });
+            else if (e.t === 'arc') ents.push({ ...e, c: trPt(e.c), r: e.r * partScale });
+            else if (e.t === 'text') ents.push({ ...e, p: trPt(e.p), h: Math.max(8, e.h * partScale) });
+          });
+
+          // 뷰 타이틀 버블 및 규격 부제
+          const titleBubbleY = q.cy - areaH * 0.17;
+          drawViewTitleBubble(q.cx, titleBubbleY, q.sheetNo, q.viewNo, lang === 'en' ? part.titleEn : part.titleKo);
+          text(q.cx, titleBubbleY - 6.0, 3.0, part.spec, 'center', 0, 'middle');
+        });
+      }
       return { map: mmap, ents, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
     }
     if (opt.sheetKind === 'pad') {
@@ -8427,6 +8624,6 @@
     return o.join('\r\n') + '\r\n';
   }
 
-  const api = { NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, getFoundationDesign, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, getSkidDimensions, getSkidSpec, DEFAULT_SKID_RULES, getDefaultSkidRules, setCustomSkidRules, getCustomSkidRules, getActiveSkidRules, getFrameForHeight, formatSkidRuleSummary, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType, getDefaultPanelPattern };
+  const api = { SKID_PARTS_DATA, NOZZLE_SPECS, getNozzleSpec, getNozzleList, getNozzleAbbr, formatNozzleLabel, formatNozzleGroupLabel, buildIsometric, buildSkid, buildStay, buildSkidCross, exposedSides, ladderShapes, markShapes, panelShapes, concStrips, buildConcrete, buildFoundationSection, getFoundationDesign, heightSegs, buildElevation, splitHalf, frontSplit, sideSplit, checkSegment, createMap, buildPlan, buildSheet, toDxf, FRAME, buildDefaultBOM, getSkidDimensions, getSkidSpec, DEFAULT_SKID_RULES, getDefaultSkidRules, setCustomSkidRules, getCustomSkidRules, getActiveSkidRules, getFrameForHeight, formatSkidRuleSummary, drawBalloonCallout, recheckAndResolveCollisions, resolveDrawingCollisions: recheckAndResolveCollisions, DEFAULT_HEIGHT_TABLE, setCustomHeightTable, getCustomHeightTable, getDefaultHeightTable, getManholeDir, getManholeViewType, getDefaultPanelPattern };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TankCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
