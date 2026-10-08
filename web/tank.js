@@ -6385,20 +6385,15 @@
           ents.push({ t: 'line', a: [px1, py1], b: [px0, py1], layer: 'FLOOR_PANEL' });
           ents.push({ t: 'line', a: [px0, py1], b: [px0, py0], layer: 'FLOOR_PANEL' });
 
-          // 2. 패널 내부 플랜지 윤곽 (45mm 플랜지 림 및 4코너 마이터선)
-          const off = 45;
-          if (pw > off * 2 && ph > off * 2) {
-            const ix0 = px0 + off, ix1 = px1 - off;
-            const iy0 = py0 + off, iy1 = py1 - off;
+          // 2. 패널 내부 플랜지 윤곽 (10mm 플랜지 두께, 90도 직각 코너)
+          const flgT = 10;
+          if (pw > flgT * 2 && ph > flgT * 2) {
+            const ix0 = px0 + flgT, ix1 = px1 - flgT;
+            const iy0 = py0 + flgT, iy1 = py1 - flgT;
             ents.push({ t: 'line', a: [ix0, iy0], b: [ix1, iy0], layer: 'FLOOR_PANEL' });
             ents.push({ t: 'line', a: [ix1, iy0], b: [ix1, iy1], layer: 'FLOOR_PANEL' });
             ents.push({ t: 'line', a: [ix1, iy1], b: [ix0, iy1], layer: 'FLOOR_PANEL' });
             ents.push({ t: 'line', a: [ix0, iy1], b: [ix0, iy0], layer: 'FLOOR_PANEL' });
-
-            ents.push({ t: 'line', a: [px0, py0], b: [ix0, iy0], layer: 'FLOOR_PANEL' });
-            ents.push({ t: 'line', a: [px1, py0], b: [ix1, iy0], layer: 'FLOOR_PANEL' });
-            ents.push({ t: 'line', a: [px1, py1], b: [ix1, iy1], layer: 'FLOOR_PANEL' });
-            ents.push({ t: 'line', a: [px0, py1], b: [ix0, iy1], layer: 'FLOOR_PANEL' });
           }
 
           // 3. 패널 중앙 규격 식별 텍스트 (예: 1000×1000)
