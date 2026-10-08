@@ -7686,13 +7686,14 @@
       drawViewTitleBubble(cx1, titleSkidY, 1, 1, viewTitleSkid);
 
       // 2. 우측 뷰 (~38% 폭): 프레임 단면 및 기초 조립 상세도 (FRAME CROSS DWG)
-      // [-125x65x6t / L-75x75x6t 단면 + 하부 콘크리트 패드(Plinth) + M12 앙카볼트 + WBR-5010Z 클램프
+      // [-125x65x6t / L-75x75x6t 단면 (Z-Z' SECTION)
       const crossRes = buildSkidCross(opt);
       const bCross = bb(crossRes.ents);
       const cx2 = x0 + areaW * 0.81;
-      const cy2 = y0 + areaH * 0.52;
       const dx2 = P(cx2) - (bCross[0] + bCross[2]) / 2;
-      const dy2 = P(cy2) - (bCross[1] + bCross[3]) / 2;
+      // ★★★ 사용자 요청: "정확하게 Frame cross dwg 위치와 Steel skid 위치와 맞게 올려주세요." ★★★
+      // 단면도(FRAME CROSS DWG)는 평면도(STEEL SKID DRAWING)의 Z-Z' 절단 단면이므로 Y축 투영 높이가 정확히 1:1 일치해야 함
+      const dy2 = dy1;
 
       crossRes.ents.forEach(e => {
         if (e.t === 'line') ents.push({ ...e, a: [e.a[0] + dx2, e.a[1] + dy2], b: [e.b[0] + dx2, e.b[1] + dy2] });
@@ -7702,11 +7703,10 @@
         else ents.push({ ...e, p: [e.p[0] + dx2, e.p[1] + dy2] });
       });
 
-      const titleCrossY = Math.max(y0 + 10, (bCross[1] + dy2) / N - 14.0);
       const viewTitleCross = lang === 'en'
         ? `FRAME CROSS DWG  [SCALE 1 : ${N}]`
         : `프레임 단면 및 기초 조립 상세도 (FRAME CROSS DWG)  [SCALE 1 : ${N}]`;
-      drawViewTitleBubble(cx2, titleCrossY, 1, 2, viewTitleCross);
+      drawViewTitleBubble(cx2, titleSkidY, 1, 2, viewTitleCross);
 
       return { map: mmap, ents, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
     }
