@@ -6237,14 +6237,93 @@
       else ents.push({ t: 'text', p: [m.x + m.w / 2 + st * 0.35, m.y + mid], h: st, s: String(sl), rot: 90, align: 'center', layer: 'DIM' });
     }));
     frameDims(ents, G.map, tH, true, true);
-    // 부품 목록 (길이별 수량)
-    const cnt = {}; rec.forEach(m => m.segs.forEach(sl => { cnt[sl] = (cnt[sl] || 0) + 1; }));
+    // YSACC 표준 부품 코드 매핑 (기초.zip / Steel Skid.dwg / 원단위 구성 매뉴얼)
+    function getSkidPartCode(len, isHor, frameType = 125) {
+      const f = Number(frameType) || 75;
+      const l = Math.round(len);
+      if (f === 125) {
+        if (!isHor && l < 1400) {
+          if (l >= 1040) return 'WFF-1051AMZ (C타입)';
+          if (l >= 1010) return 'WFF-1021AMZ (2m폭)';
+          if (l >= 970) return 'WFF-0993AMZ (B타입)';
+          if (l >= 900) return 'WFF-0961AMZ (A타입)';
+          if (l >= 510) return 'WFF-0551AMZ (C타입)';
+          if (l >= 480) return 'WFF-0493AMZ (B타입)';
+          return 'WFF-0461AMZ (A타입)';
+        } else {
+          if (l >= 2400) return 'WFF-2490CLZ (주재)';
+          if (l >= 1900) return 'WFF-1990CLZ (주재)';
+          if (l >= 1400) return 'WFF-1490CLZ (주재)';
+          if (l >= 900) return 'WFF-0990CLZ (주재)';
+          return 'WFF-0490CLZ (주재)';
+        }
+      } else if (f === 150) {
+        if (!isHor) {
+          if (l >= 1010) return 'WFF-1061CMZ (C타입)';
+          if (l >= 970) return 'WFF-0993CMZ (B타입)';
+          if (l >= 900) return 'WFF-0956CMZ (A타입)';
+          return 'WFF-0456CMZ (A타입)';
+        } else {
+          if (l >= 2400) return 'WFF-2490HCLZ (주재)';
+          if (l >= 1900) return 'WFF-1990HCLZ (주재)';
+          if (l >= 1400) return 'WFF-1490HCLZ (주재)';
+          return 'WFF-0990HCLZ (주재)';
+        }
+      } else {
+        if (!isHor) {
+          if (l >= 970) return 'WFF-0993AMZ (B타입)';
+          return 'WFF-0957AMZ (A타입)';
+        } else {
+          if (l >= 1900) return 'WFF-1990ALZ (주재)';
+          if (l >= 1400) return 'WFF-1490ALZ (주재)';
+          return 'WFF-0990ALZ (주재)';
+        }
+      }
+    }
+
+    // 부품 목록 (길이별 수량 및 YSACC BOM 품번)
+    const cnt = {}, meta = {};
+    rec.forEach(m => m.segs.forEach(sl => {
+      cnt[sl] = (cnt[sl] || 0) + 1;
+      if (!meta[sl]) meta[sl] = getSkidPartCode(sl, m.hor, opt.frame);
+    }));
     const list = Object.entries(cnt).sort((a, b) => b[0] - a[0]);
-    const lx = G.map.length / 2 - 900, ly0 = -tH * 12;
+
+    // 위치: 탱크 하단 좌측 여유 영역 (media_1791447293957.png 참조)
+    const lx = Math.max(300, G.map.length * 0.12), ly0 = -tH * 10;
     const dSkid = getSkidDimensions(opt.frame);
-    ents.push({ t: 'text', p: [lx, ly0], h: tH, s: 'PART LIST - FRAME ' + (opt.frame || 75) + ' (' + dSkid.name + ')', rot: 0, align: 'left', layer: 'DIM' });
-    ents.push({ t: 'text', p: [lx, ly0 - tH * 1.3], h: tH * 0.75, s: 'MAIN: ' + dSkid.mainSpec + ' / SUB: ' + dSkid.subSpec, rot: 0, align: 'left', layer: 'DIM' });
-    list.forEach(([l, n], i) => ents.push({ t: 'text', p: [lx, ly0 - (i + 2.0) * tH * 1.5], h: tH * 0.85, s: 'L=' + l + ' x ' + n + ' EA', rot: 0, align: 'left', layer: 'DIM' }));
+    ents.push({ t: 'text', p: [lx, ly0], h: tH * 1.05, s: `PART LIST - FRAME ${opt.frame || 75} (${dSkid.name})`, rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [lx, ly0 - tH * 1.35], h: tH * 0.75, s: `MAIN : ${dSkid.mainSpec} / SUB : ${dSkid.subSpec}`, rot: 0, align: 'left', layer: 'DIM' });
+
+    let curLy = ly0 - tH * 2.7;
+    list.forEach(([l, n]) => {
+      const codeStr = meta[l] ? `  [${meta[l]}]` : '';
+      ents.push({ t: 'text', p: [lx, curLy], h: tH * 0.8, s: `L=${l} x ${n} EA${codeStr}`, rot: 0, align: 'left', layer: 'DIM' });
+      curLy -= tH * 1.35;
+    });
+
+    // 부속 철물 (Standard Hardware)
+    const cornerCount = 4 + (G.nr * G.nc > (G.cells || 0) ? 2 : 0);
+    const anchorCount = Math.max(4, Math.round((G.map.length + G.map.width) / 1000));
+    ents.push({ t: 'text', p: [lx, curLy], h: tH * 0.78, s: `WBR-7575Z & WBR-0160Z 코너 브라켓 x ${cornerCount * 2} EA (코너 접합)`, rot: 0, align: 'left', layer: 'DIM' });
+    curLy -= tH * 1.35;
+    ents.push({ t: 'text', p: [lx, curLy], h: tH * 0.78, s: `WBR-5010Z 스키드 클램프 x ${anchorCount} EA (M12 앙카볼트 체결)`, rot: 0, align: 'left', layer: 'DIM' });
+
+    // 표준 제작 가공 시방 NOTE (YSACC Foundation Standard - 기초.zip & 원단위 구성 매뉴얼)
+    const noteX = Math.max(lx + 2800, G.map.length * 0.52);
+    let noteY = ly0;
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 1.0, s: '< N O T E >', rot: 0, align: 'left', layer: 'DIM' });
+    noteY -= tH * 1.3;
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '1. 재질: SS41 + 용융아연도금 (80μ 이상) [Hot-Dip Galvanized]', rot: 0, align: 'left', layer: 'DIM' });
+    noteY -= tH * 1.25;
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '2. 허용공차: Hole간 거리 ±1mm, 전체길이 ±0.5mm', rot: 0, align: 'left', layer: 'DIM' });
+    noteY -= tH * 1.25;
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '3. 컷팅 및 용접부는 깨끗이 사상(Grinding)하고 수평 유지할 것', rot: 0, align: 'left', layer: 'DIM' });
+    noteY -= tH * 1.25;
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '4. 조립기준: 외곽 프레임 열림부 외측 배치, 코너 WBR-7575Z 체결', rot: 0, align: 'left', layer: 'DIM' });
+    noteY -= tH * 1.25;
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '5. 기초고정: 각 코너 및 2m 간격 M12 앙카볼트 & WBR-5010Z 클램프 체결', rot: 0, align: 'left', layer: 'DIM' });
+
     return { ents, G };
   }
   // 기초 프레임 단면도 (BaseFrameCross): 폭 방향 부재 단면
@@ -6286,6 +6365,53 @@
     dimLinear(ents, [0, -mx], [th, -mx], -mx - tH * 3, false, String(th), tH, 'DIM');
     dimLinear(ents, [0, -mx], [0, mx], -tH * 6, true, String(d.mainW), tH, 'DIM');
     dimLinear(ents, [0, -mx], [T, -mx], -mx - tH * 6.5, false, String(d.mainT) + 'T', tH, 'DIM');
+
+    // 1. 하부 기초 콘크리트 패드 (Concrete Pad / Plinth) 단면 상세
+    const padW = Number(opt.padFirstW) || 400;
+    const padH = Number(opt.padH) || Math.max(300, 600 - th);
+    const padX0 = th / 2 - padW / 2;
+    const padX1 = th / 2 + padW / 2;
+    const padY0 = -mx;
+    const padY1 = padY0 - padH;
+
+    ents.push({ t: 'line', a: [padX0, padY0], b: [padX1, padY0], layer: 'PAD' });
+    ents.push({ t: 'line', a: [padX0, padY0], b: [padX0, padY1], layer: 'PAD' });
+    ents.push({ t: 'line', a: [padX1, padY0], b: [padX1, padY1], layer: 'PAD' });
+    ents.push({ t: 'line', a: [padX0, padY1], b: [padX1, padY1], layer: 'PAD' });
+    ents.push({ t: 'line', a: [padX0 - 150, padY1], b: [padX1 + 150, padY1], layer: 'PAD' });
+
+    // 2. M12 기초 앙카 볼트 (Anchor Bolt Detail)
+    const boltX = th / 2;
+    const boltEmbed = Math.min(260, padH - 60);
+    ents.push({ t: 'line', a: [boltX, padY0 + 35], b: [boltX, padY0 - boltEmbed], layer: 'NOZZLE' });
+    ents.push({ t: 'line', a: [boltX - 10, padY0 + 20], b: [boltX + 10, padY0 + 20], layer: 'NOZZLE' });
+    ents.push({ t: 'line', a: [boltX - 10, padY0 + 20], b: [boltX - 10, padY0 + 32], layer: 'NOZZLE' });
+    ents.push({ t: 'line', a: [boltX + 10, padY0 + 20], b: [boltX + 10, padY0 + 32], layer: 'NOZZLE' });
+    ents.push({ t: 'line', a: [boltX - 10, padY0 + 32], b: [boltX + 10, padY0 + 32], layer: 'NOZZLE' });
+    ents.push({ t: 'line', a: [boltX - 25, padY0 - boltEmbed], b: [boltX + 25, padY0 - boltEmbed], layer: 'NOZZLE' });
+
+    // 3. WBR-5010Z 스키드 클램프 (Skid Clamp Bracket)
+    const clpW = Math.min(45, mx + 15);
+    ents.push({ t: 'line', a: [th / 2 - clpW, padY0 + 10], b: [th / 2 + clpW, padY0 + 10], layer: 'FRAME' });
+    ents.push({ t: 'line', a: [th / 2 - clpW, padY0], b: [th / 2 - clpW, padY0 + 10], layer: 'FRAME' });
+    ents.push({ t: 'line', a: [th / 2 + clpW, padY0], b: [th / 2 + clpW, padY0 + 10], layer: 'FRAME' });
+
+    // 패드 치수선
+    dimLinear(ents, [padX0, padY1], [padX1, padY1], padY1 - tH * 2.5, false, `${padW} (패드폭)`, tH, 'DIM');
+    dimLinear(ents, [padX0, padY1], [padX0, padY0], -padW / 2 - tH * 2.5, true, `${padH} (패드높이)`, tH, 'DIM');
+
+    // 지시선 Callouts
+    drawLeader(
+      ents,
+      [boltX, padY0 + 25],
+      [boltX - Math.round(18 * (opt._N || 50)), padY0 - Math.round(15 * (opt._N || 50))],
+      [boltX - Math.round(45 * (opt._N || 50)), padY0 - Math.round(15 * (opt._N || 50))],
+      ['M12 앙카볼트 (M12 Anchor Bolt)', 'WBR-5010Z 클램프 (Skid Clamp)'],
+      tH * 0.85,
+      'right',
+      'NOZZLE'
+    );
+
     return { ents };
   }
   // INTERNAL STAY: OutBorder + Vert/Horiz (CCeilFrmLT 30 폭 사각)
@@ -6861,7 +6987,7 @@
     const titleLabel = lang === 'ko' ? '도  면  명' : (lang === 'en' ? 'DRAWING TITLE' : 'TITLE (도면명)');
     text(tx0 + colLabelW / 2, ty + titleH / 2, 4.8, titleLabel, 'center', 0, 'middle');
     line([tx0 + colLabelW, ty], [tx0 + colLabelW, ty + titleH]);
-    const titleVal = opt.sheetKind === 'frame' ? (lang === 'ko' ? '기초 프레임 및 스테이 도면' : 'STEEL SKID DRAWING')
+    const titleVal = opt.sheetKind === 'frame' ? (lang === 'ko' ? '기초 조립도 및 스틸 스키드 제작도' : 'STEEL SKID & FOUNDATION ASSEMBLY DWG')
       : opt.sheetKind === 'detail' ? (lang === 'ko' ? '탱크 상세도' : 'DETAILS DWG')
       : opt.sheetKind === 'pad' ? (lang === 'ko' ? '기초 콘크리트 패드 도면' : 'FOUNDATION PAD DWG')
       : opt.sheetKind === 'capacity' ? (lang === 'ko' ? '실담수량 및 수위 산출도\n실담수량: ' + effTon.toFixed(1) + ' Ton (' + effRatio.toFixed(1) + '%)' : 'WATER CAPACITY & LEVEL DWG\nNET: ' + effTon.toFixed(1) + ' Ton (' + effRatio.toFixed(1) + '%)')
@@ -7225,23 +7351,55 @@
       return { map: mmap, ents, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
     }
     if (opt.sheetKind === 'frame') {
-      const placeFrame = (es, qx, qy, name) => {
-        const b = bb(es), cx = x0 + (tx0 - x0) * qx, cy = y0 + (y1 - y0) * qy;
-        const dx = P(cx) - (b[0] + b[2]) / 2, dy = P(cy) - (b[1] + b[3]) / 2;
-        es.forEach(e => {
-          if (e.t === 'line') ents.push({ ...e, a: [e.a[0] + dx, e.a[1] + dy], b: [e.b[0] + dx, e.b[1] + dy] });
-          else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] + dx, e.c[1] + dy] });
-          else ents.push({ ...e, p: [e.p[0] + dx, e.p[1] + dy] });
-        });
-        const lx = cx, ly = (b[1] + dy) / N - 10;
-        const w = Math.max(40, name.length * 3.6);
-        text(lx, ly, 5.5, name, 'center');
-        line([lx - w / 2, ly - 2.5], [lx + w / 2, ly - 2.5]);
-        text(lx, ly - 7.5, 3.5, 'SCALE  1 / ' + N, 'center');
-      };
-      placeFrame(buildStay(opt).ents, 0.45, 0.72, 'INTERNAL STAY DRAWING');
-      placeFrame(buildSkid(opt).ents, 0.32, 0.26, 'STEEL SKID DRAWING');
-      placeFrame(buildSkidCross(opt).ents, 0.78, 0.26, 'FRAME CROSS DWG');
+      const areaW = tx0 - x0;
+      const areaH = y1 - y0;
+
+      // 1. 좌측 뷰 (~62% 폭): 스틸 스키드 프레임 조립도 (STEEL SKID DRAWING)
+      // 평면 배치도 + 부재 분할/길이 치수 + PART LIST + 부속철물 + YSACC 표준 제작 NOTE 포함
+      const skidRes = buildSkid(opt);
+      const bSkid = bb(skidRes.ents);
+      const cx1 = x0 + areaW * 0.38;
+      const cy1 = y0 + areaH * 0.52;
+      const dx1 = P(cx1) - (bSkid[0] + bSkid[2]) / 2;
+      const dy1 = P(cy1) - (bSkid[1] + bSkid[3]) / 2;
+
+      skidRes.ents.forEach(e => {
+        if (e.t === 'line') ents.push({ ...e, a: [e.a[0] + dx1, e.a[1] + dy1], b: [e.b[0] + dx1, e.b[1] + dy1] });
+        else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] + dx1, e.c[1] + dy1] });
+        else if (e.t === 'poly') ents.push({ ...e, pts: e.pts.map(p => [p[0] + dx1, p[1] + dy1]) });
+        else if (e.t === 'solid') ents.push({ ...e, p: e.p.map(p => [p[0] + dx1, p[1] + dy1]) });
+        else ents.push({ ...e, p: [e.p[0] + dx1, e.p[1] + dy1] });
+      });
+
+      const titleSkidY = Math.max(y0 + 10, (bSkid[1] + dy1) / N - 14.0);
+      const viewTitleSkid = lang === 'en'
+        ? `STEEL SKID DRAWING  [SCALE 1 : ${N}]`
+        : `스틸 스키드 프레임 조립도 (STEEL SKID DRAWING)  [SCALE 1 : ${N}]`;
+      drawViewTitleBubble(cx1, titleSkidY, 1, 1, viewTitleSkid);
+
+      // 2. 우측 뷰 (~38% 폭): 프레임 단면 및 기초 조립 상세도 (FRAME CROSS DWG)
+      // [-125x65x6t / L-75x75x6t 단면 + 하부 콘크리트 패드(Plinth) + M12 앙카볼트 + WBR-5010Z 클램프
+      const crossRes = buildSkidCross(opt);
+      const bCross = bb(crossRes.ents);
+      const cx2 = x0 + areaW * 0.81;
+      const cy2 = y0 + areaH * 0.52;
+      const dx2 = P(cx2) - (bCross[0] + bCross[2]) / 2;
+      const dy2 = P(cy2) - (bCross[1] + bCross[3]) / 2;
+
+      crossRes.ents.forEach(e => {
+        if (e.t === 'line') ents.push({ ...e, a: [e.a[0] + dx2, e.a[1] + dy2], b: [e.b[0] + dx2, e.b[1] + dy2] });
+        else if (e.t === 'circle' || e.t === 'arc') ents.push({ ...e, c: [e.c[0] + dx2, e.c[1] + dy2] });
+        else if (e.t === 'poly') ents.push({ ...e, pts: e.pts.map(p => [p[0] + dx2, p[1] + dy2]) });
+        else if (e.t === 'solid') ents.push({ ...e, p: e.p.map(p => [p[0] + dx2, p[1] + dy2]) });
+        else ents.push({ ...e, p: [e.p[0] + dx2, e.p[1] + dy2] });
+      });
+
+      const titleCrossY = Math.max(y0 + 10, (bCross[1] + dy2) / N - 14.0);
+      const viewTitleCross = lang === 'en'
+        ? `FRAME CROSS DWG  [SCALE 1 : ${N}]`
+        : `프레임 단면 및 기초 조립 상세도 (FRAME CROSS DWG)  [SCALE 1 : ${N}]`;
+      drawViewTitleBubble(cx2, titleCrossY, 1, 2, viewTitleCross);
+
       return { map: mmap, ents, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
     }
     if (opt.sheetKind === 'pad') {

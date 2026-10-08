@@ -41,3 +41,8 @@ test_*.dxf
 test_*.dwg
 *.pdf
 예제도면/
+foundation_ref/
+*.zip
+*.xls
+*.pptx
+Steel Skid.*
