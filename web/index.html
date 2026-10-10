@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.7.28</title>
+<title>YSACC TANK CAD v1.7.29</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -504,7 +504,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.7.28</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.7.29</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1634,7 +1634,7 @@ canvas.drag{cursor:grabbing}
           <h3 id="manualDialogTitle" style="margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">
             <span class="txt-ko">YSACC TANK CAD 사용자 가이드 &amp; 사용 매뉴얼</span>
             <span class="txt-en">YSACC TANK CAD User Guide &amp; Operation Manual</span>
-            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.7.28</span>
+            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.7.29</span>
           </h3>
           <span class="modeless-drag-hint">
             <span class="txt-ko">✥ 상단바를 잡고 자유롭게 이동 가능</span>
@@ -2028,132 +2028,417 @@ canvas.drag{cursor:grabbing}
             <span class="manual-badge">Tab 1</span>
           </div>
 
-          <!-- Technical SVG Diagram 1 -->
-          
-    <div class="manual-diagram-box">
-      <svg viewBox="0 0 860 210" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="concGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#475569"/><stop offset="100%" stop-color="#334155"/></linearGradient>
-          <linearGradient id="skidGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/></linearGradient>
-        </defs>
+          <!-- Technical SVG Diagram: Input Window UI Detail (입력창 화면 상세도) -->
+          <div class="manual-diagram-box">
+            <svg viewBox="0 0 860 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="uiBgGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+                <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/></filter>
+              </defs>
 
-        <!-- Top Dimension: L = 3000 + 3000 -->
-        <line x1="70" y1="20" x2="790" y2="20" stroke="#38bdf8" stroke-width="1.5"/>
-        <line x1="70" y1="12" x2="70" y2="28" stroke="#38bdf8" stroke-width="1.5"/>
-        <line x1="430" y1="12" x2="430" y2="28" stroke="#38bdf8" stroke-width="1.5"/>
-        <line x1="790" y1="12" x2="790" y2="28" stroke="#38bdf8" stroke-width="1.5"/>
-        <text class="txt-ko" x="250" y="16" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">1구획: L1 = 3000 mm</text>
-        <text class="txt-en" x="250" y="16" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Comp 1: L1 = 3000 mm</text>
-        <text class="txt-ko" x="610" y="16" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">2구획: L2 = 3000 mm</text>
-        <text class="txt-en" x="610" y="16" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Comp 2: L2 = 3000 mm</text>
+              <!-- LEFT SIDE: Mockup of Tab 1 Specs Input UI Window (x: 20 to 390) -->
+              <rect x="20" y="15" width="370" height="350" rx="10" fill="url(#uiBgGrad)" stroke="#38bdf8" stroke-width="1.8" filter="url(#shadow)"/>
+              
+              <!-- Window Top Bar -->
+              <rect x="20" y="15" width="370" height="32" rx="10" fill="#0f172a"/>
+              <rect x="20" y="37" width="370" height="10" fill="#0f172a"/>
+              <line x1="20" y1="47" x2="390" y2="47" stroke="#334155" stroke-width="1"/>
+              <circle cx="36" cy="31" r="4.5" fill="#ef4444"/>
+              <circle cx="50" cy="31" r="4.5" fill="#f59e0b"/>
+              <circle cx="64" cy="31" r="4.5" fill="#10b981"/>
+              
+              <!-- Tab Header Pill -->
+              <rect x="85" y="23" width="165" height="18" rx="4" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1"/>
+              <text class="txt-ko" x="167" y="36" fill="#93c5fd" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">Tab 1: 사양·치수 (Specs)</text>
+              <text class="txt-en" x="167" y="36" fill="#93c5fd" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">Tab 1: Specifications</text>
+              
+              <!-- UI Section 1: Material & Reinforcement -->
+              <g transform="translate(32, 56)">
+                <text class="txt-ko" x="0" y="10" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold">1. 재질 및 보강 방식</text>
+                <text class="txt-en" x="0" y="10" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold">1. Material &amp; Reinforcement</text>
+                
+                <!-- GRP (SMC) Pill -->
+                <rect x="0" y="16" width="105" height="20" rx="4" fill="#0284c7" stroke="#38bdf8" stroke-width="1"/>
+                <circle cx="10" cy="26" r="3.5" fill="#fff"/>
+                <text x="20" y="30" fill="#fff" font-family="sans-serif" font-size="9" font-weight="bold">GRP (SMC)</text>
+                
+                <!-- Reinforcement Options -->
+                <rect x="115" y="16" width="105" height="20" rx="4" fill="#0f766e" stroke="#14b8a6" stroke-width="1"/>
+                <circle cx="125" cy="26" r="3.5" fill="#fff"/>
+                <text class="txt-ko" x="135" y="30" fill="#fff" font-family="sans-serif" font-size="9" font-weight="bold">외부 보강 (0)</text>
+                <text class="txt-en" x="135" y="30" fill="#fff" font-family="sans-serif" font-size="9" font-weight="bold">External (0)</text>
+                
+                <rect x="230" y="16" width="115" height="20" rx="4" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+                <circle cx="240" cy="26" r="3.5" stroke="#94a3b8" stroke-width="1" fill="none"/>
+                <text class="txt-ko" x="250" y="30" fill="#94a3b8" font-family="sans-serif" font-size="9">내부 환봉 (2)</text>
+                <text class="txt-en" x="250" y="30" fill="#94a3b8" font-family="sans-serif" font-size="9">Internal (2)</text>
+              </g>
 
-        <!-- Tank Shell Left & Right -->
-        <rect x="70" y="32" width="356" height="88" fill="rgba(2,132,199,0.08)" stroke="#0284c7" stroke-width="1.5"/>
-        <rect x="434" y="32" width="356" height="88" fill="rgba(2,132,199,0.08)" stroke="#0284c7" stroke-width="1.5"/>
+              <!-- UI Section 2: Length (L) with Segments -->
+              <g transform="translate(32, 106)">
+                <text class="txt-ko" x="0" y="10" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold">2. 길이 (L) : 구간 분할 (m)</text>
+                <text class="txt-en" x="0" y="10" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold">2. Length (L) : Partition (m)</text>
+                
+                <!-- Badge Total -->
+                <rect x="260" y="0" width="85" height="15" rx="3" fill="#15803d"/>
+                <text class="txt-ko" x="302" y="11" fill="#fff" font-family="sans-serif" font-size="9" font-weight="bold" text-anchor="middle">합계: 5.0 m</text>
+                <text class="txt-en" x="302" y="11" fill="#fff" font-family="sans-serif" font-size="9" font-weight="bold" text-anchor="middle">Total: 5.0 m</text>
+                
+                <!-- Segment Input 1 -->
+                <rect x="0" y="16" width="110" height="24" rx="4" fill="#0f172a" stroke="#38bdf8" stroke-width="1.2"/>
+                <text x="10" y="32" fill="#38bdf8" font-family="monospace" font-size="11" font-weight="bold">3.0</text>
+                <!-- Steppers -->
+                <rect x="88" y="18" width="18" height="9" rx="1" fill="#334155"/>
+                <text x="94" y="25" fill="#cbd5e1" font-family="sans-serif" font-size="7">▲</text>
+                <rect x="88" y="29" width="18" height="9" rx="1" fill="#334155"/>
+                <text x="94" y="36" fill="#cbd5e1" font-family="sans-serif" font-size="7">▼</text>
+                
+                <!-- Plus Sign -->
+                <text x="122" y="33" fill="#f59e0b" font-family="sans-serif" font-size="14" font-weight="bold">+</text>
+                
+                <!-- Segment Input 2 -->
+                <rect x="138" y="16" width="110" height="24" rx="4" fill="#0f172a" stroke="#38bdf8" stroke-width="1.2"/>
+                <text x="148" y="32" fill="#38bdf8" font-family="monospace" font-size="11" font-weight="bold">2.0</text>
+                <rect x="226" y="18" width="18" height="9" rx="1" fill="#334155"/>
+                <text x="232" y="25" fill="#cbd5e1" font-family="sans-serif" font-size="7">▲</text>
+                <rect x="226" y="29" width="18" height="9" rx="1" fill="#334155"/>
+                <text x="232" y="36" fill="#cbd5e1" font-family="sans-serif" font-size="7">▼</text>
+                
+                <!-- Add Segment Button -->
+                <rect x="260" y="16" width="30" height="24" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="1"/>
+                <text x="271" y="32" fill="#94a3b8" font-family="sans-serif" font-size="12" font-weight="bold">+</text>
+              </g>
 
-        <!-- Internal Baffle Wall -->
-        <rect x="426" y="30" width="8" height="92" fill="#ef4444" stroke="#f87171" stroke-width="1"/>
-        <circle cx="430" cy="50" r="12" fill="#ef4444"/>
-        <text x="430" y="54" fill="#fff" font-family="sans-serif" font-size="9" font-weight="bold" text-anchor="middle">BW</text>
-        <line x1="430" y1="62" x2="430" y2="100" stroke="#f87171" stroke-width="2"/>
-        <text class="txt-ko" x="430" y="112" fill="#f87171" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">내부 격벽 (Baffle)</text>
-        <text class="txt-en" x="430" y="112" fill="#f87171" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">Internal Baffle Wall</text>
+              <!-- UI Section 3: Width (W) & Height (H) -->
+              <g transform="translate(32, 160)">
+                <!-- Width (W) -->
+                <text class="txt-ko" x="0" y="10" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold">폭 (W)</text>
+                <text class="txt-en" x="0" y="10" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold">Width (W)</text>
+                <rect x="0" y="15" width="130" height="24" rx="4" fill="#0f172a" stroke="#64748b" stroke-width="1"/>
+                <text x="10" y="31" fill="#f8fafc" font-family="monospace" font-size="11" font-weight="bold">3.0 m</text>
+                <rect x="108" y="17" width="18" height="9" rx="1" fill="#334155"/>
+                <text x="114" y="24" fill="#cbd5e1" font-family="sans-serif" font-size="7">▲</text>
+                <rect x="108" y="28" width="18" height="9" rx="1" fill="#334155"/>
+                <text x="114" y="35" fill="#cbd5e1" font-family="sans-serif" font-size="7">▼</text>
 
-        <!-- Water tank height H -->
-        <line x1="808" y1="32" x2="808" y2="120" stroke="#38bdf8" stroke-width="1.5"/>
-        <line x1="802" y1="32" x2="814" y2="32" stroke="#38bdf8" stroke-width="1.5"/>
-        <line x1="802" y1="120" x2="814" y2="120" stroke="#38bdf8" stroke-width="1.5"/>
-        <text x="832" y="80" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold">H=3m</text>
+                <!-- Height (H) & Module Checkbox -->
+                <text class="txt-ko" x="145" y="10" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold">높이 (H) &amp; 단수</text>
+                <text class="txt-en" x="145" y="10" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold">Height (H) &amp; Tier</text>
+                <rect x="145" y="15" width="105" height="24" rx="4" fill="#0f172a" stroke="#64748b" stroke-width="1"/>
+                <text x="153" y="31" fill="#f8fafc" font-family="sans-serif" font-size="10" font-weight="bold">3.0m (3단)</text>
+                <rect x="228" y="17" width="18" height="9" rx="1" fill="#334155"/>
+                <text x="234" y="24" fill="#cbd5e1" font-family="sans-serif" font-size="7">▲</text>
+                <rect x="228" y="28" width="18" height="9" rx="1" fill="#334155"/>
+                <text x="234" y="35" fill="#cbd5e1" font-family="sans-serif" font-size="7">▼</text>
+                
+                <rect x="256" y="15" width="89" height="24" rx="4" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1"/>
+                <text class="txt-ko" x="261" y="31" fill="#bfdbfe" font-family="sans-serif" font-size="8.5" font-weight="bold">☑ 1×1 모듈</text>
+                <text class="txt-en" x="261" y="31" fill="#bfdbfe" font-family="sans-serif" font-size="8.5" font-weight="bold">☑ 1×1 Module</text>
+              </g>
 
-        <!-- Steel Skid Beam (H or Channel) -->
-        <rect x="60" y="122" width="740" height="16" rx="2" fill="url(#skidGrad)" stroke="#b45309" stroke-width="1.2"/>
-        <text class="txt-ko" x="160" y="134" fill="#fff" font-family="sans-serif" font-size="10" font-weight="bold">스틸 스키드 베이스: [-125×65×6/8t (자동 규칙 선정)</text>
-        <text class="txt-en" x="160" y="134" fill="#fff" font-family="sans-serif" font-size="10" font-weight="bold">Steel Skid Frame: [-125×65×6/8t (Auto Selected)</text>
+              <!-- UI Section 4: Skid Frame -->
+              <g transform="translate(32, 214)">
+                <text class="txt-ko" x="0" y="10" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold">프레임 (베이스 스키드)</text>
+                <text class="txt-en" x="0" y="10" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold">Base Frame (Skid)</text>
+                
+                <!-- Frame Select Dropdown -->
+                <rect x="0" y="15" width="175" height="24" rx="4" fill="#0f172a" stroke="#f59e0b" stroke-width="1.2"/>
+                <text x="8" y="31" fill="#f59e0b" font-family="sans-serif" font-size="10" font-weight="bold">125 (채널)(O)</text>
+                <text x="160" y="31" fill="#cbd5e1" font-family="sans-serif" font-size="9">▼</text>
+                
+                <!-- Auto Toggle -->
+                <rect x="183" y="15" width="92" height="24" rx="4" fill="#854d0e" stroke="#eab308" stroke-width="1"/>
+                <text class="txt-ko" x="190" y="31" fill="#fef08a" font-family="sans-serif" font-size="9.5" font-weight="bold">☑ ⚡ 자동</text>
+                <text class="txt-en" x="190" y="31" fill="#fef08a" font-family="sans-serif" font-size="9.5" font-weight="bold">☑ ⚡ Auto</text>
+                
+                <!-- Settings Button -->
+                <rect x="282" y="15" width="63" height="24" rx="4" fill="#334155" stroke="#64748b" stroke-width="1"/>
+                <text class="txt-ko" x="290" y="31" fill="#e2e8f0" font-family="sans-serif" font-size="9">⚙️ 설정</text>
+                <text class="txt-en" x="290" y="31" fill="#e2e8f0" font-family="sans-serif" font-size="9">⚙️ Set</text>
+                
+                <!-- Auto Rule Hint Line -->
+                <text class="txt-ko" x="0" y="50" fill="#fbbf24" font-family="sans-serif" font-size="8.5">💡 규칙: 1~2.5m: 75앵글 / 3~4m: 125채널 / 4.5m+: 150채널</text>
+                <text class="txt-en" x="0" y="50" fill="#fbbf24" font-family="sans-serif" font-size="8.5">💡 Rule: 1~2.5m: 75Angle / 3~4m: 125Ch / 4.5m+: 150Ch</text>
+              </g>
 
-        <!-- Concrete Foundation Piers (4 strips) -->
-        <!-- Strip 1 -->
-        <polygon points="100,140 180,140 170,188 110,188" fill="url(#concGrad)" stroke="#64748b" stroke-width="1.5"/>
-        <circle cx="140" cy="144" r="3.5" fill="#f59e0b"/>
-        <!-- Strip 2 -->
-        <polygon points="300,140 380,140 370,188 310,188" fill="url(#concGrad)" stroke="#64748b" stroke-width="1.5"/>
-        <circle cx="340" cy="144" r="3.5" fill="#f59e0b"/>
-        <!-- Strip 3 -->
-        <polygon points="500,140 580,140 570,188 510,188" fill="url(#concGrad)" stroke="#64748b" stroke-width="1.5"/>
-        <circle cx="540" cy="144" r="3.5" fill="#f59e0b"/>
-        <!-- Strip 4 -->
-        <polygon points="700,140 780,140 770,188 710,188" fill="url(#concGrad)" stroke="#64748b" stroke-width="1.5"/>
-        <circle cx="740" cy="144" r="3.5" fill="#f59e0b"/>
+              <!-- UI Section 5: Direct Drawing View Buttons -->
+              <g transform="translate(32, 280)">
+                <!-- Skid Drawing Button -->
+                <rect x="0" y="0" width="345" height="28" rx="5" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" stroke-width="1.2"/>
+                <text class="txt-ko" x="172" y="18" fill="#f59e0b" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">🏗️ 기초조립도 (스틸 스키드 프레임) 바로보기</text>
+                <text class="txt-en" x="172" y="18" fill="#f59e0b" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">🏗️ View Skid Frame Assembly Drawing</text>
+                
+                <!-- Parts Drawing Button -->
+                <rect x="0" y="34" width="345" height="28" rx="5" fill="rgba(2,132,199,0.15)" stroke="#38bdf8" stroke-width="1.2"/>
+                <text class="txt-ko" x="172" y="52" fill="#38bdf8" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">⚙️ 부재별 제작도 (A·B·C타입 &amp; 주재) 바로보기</text>
+                <text class="txt-en" x="172" y="52" fill="#38bdf8" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">⚙️ View Skid Members Fabrication Drawing</text>
+              </g>
 
-        <!-- Pitch Dimension -->
-        <line x1="140" y1="198" x2="340" y2="198" stroke="#94a3b8" stroke-width="1.2"/>
-        <line x1="140" y1="193" x2="140" y2="203" stroke="#94a3b8" stroke-width="1.2"/>
-        <line x1="340" y1="193" x2="340" y2="203" stroke="#94a3b8" stroke-width="1.2"/>
-        <text class="txt-ko" x="240" y="202" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">피치: @1000 mm</text>
-        <text class="txt-en" x="240" y="202" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">Pitch: @1000 mm</text>
+              <!-- RIGHT SIDE: Descriptive Feature Callout Cards (x: 410 to 845) -->
+              
+              <!-- Callout 1: Material & Reinforcement -->
+              <g transform="translate(420, 22)">
+                <rect x="0" y="0" width="425" height="60" rx="6" fill="#1e293b" stroke="#38bdf8" stroke-width="1.2"/>
+                <path d="M 0 30 L -25 30 L -30 50" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3,2" fill="none"/>
+                <circle cx="-30" cy="50" r="3" fill="#38bdf8"/>
+                <circle cx="20" cy="20" r="10" fill="#0284c7"/>
+                <text x="20" y="24" fill="#fff" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">1</text>
+                <text class="txt-ko" x="38" y="22" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold">재질 및 구조 보강 선택</text>
+                <text class="txt-en" x="38" y="22" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold">Material &amp; Reinforcement System</text>
+                <text class="txt-ko" x="38" y="38" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● GRP(SMC) 고온고압 일체 성형 패널 기본 탑재</text>
+                <text class="txt-en" x="38" y="38" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● Standard GRP SMC modular compression molded panels</text>
+                <text class="txt-ko" x="38" y="51" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● [외부 보강] 외벽 프레임 지지 vs [내부 환봉] 스테인리스 타이로드</text>
+                <text class="txt-en" x="38" y="51" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● [External Frame] vs [Internal Tie Rod] selection</text>
+              </g>
 
-        <!-- Foundation Callout -->
-        <line x1="580" y1="165" x2="630" y2="165" stroke="#94a3b8" stroke-width="1"/>
-        <text class="txt-ko" x="635" y="168" fill="#94a3b8" font-family="sans-serif" font-size="10">콘크리트 패드 (W400/300×H475) &amp; 앵커볼트</text>
-        <text class="txt-en" x="635" y="168" fill="#94a3b8" font-family="sans-serif" font-size="10">Concrete Pad (W400/300×H475) &amp; Anchor</text>
-      </svg>
-      <div class="manual-diagram-caption">
-        <span>📐</span>
-        <span class="txt-ko"><b>구조 상세도:</b> 길이 다구획 분할(격벽 생성), 탱크 높이에 따른 스틸 스키드 자동 선정(75A/125C/150C), 1000mm 피치 콘크리트 기초 연동</span>
-        <span class="txt-en"><b>Structural Detail:</b> Compartment Partitioning (Baffle Wall), Height-based Skid Frame Selection (75A/125C/150C), 1000mm Pitch Concrete Pads</span>
-      </div>
-    </div>
-  
+              <!-- Callout 2: Dimensions & Steppers -->
+              <g transform="translate(420, 92)">
+                <rect x="0" y="0" width="425" height="60" rx="6" fill="#1e293b" stroke="#10b981" stroke-width="1.2"/>
+                <path d="M 0 30 L -25 30 L -30 35" stroke="#10b981" stroke-width="1.5" stroke-dasharray="3,2" fill="none"/>
+                <circle cx="-30" cy="35" r="3" fill="#10b981"/>
+                <circle cx="20" cy="20" r="10" fill="#059669"/>
+                <text x="20" y="24" fill="#fff" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">2</text>
+                <text class="txt-ko" x="38" y="22" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold">0.5m 단위 증감 버튼 &amp; 치수 직접 입력</text>
+                <text class="txt-en" x="38" y="22" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold">0.5m Steppers &amp; Direct Number Input</text>
+                <text class="txt-ko" x="38" y="38" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● 입력 상자 우측 ▲/▼ 버튼 클릭 시 0.5m(500mm) 즉각 증감</text>
+                <text class="txt-en" x="38" y="38" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● Click ▲/▼ arrow buttons to step by 0.5m (500mm) effortlessly</text>
+                <text class="txt-ko" x="38" y="51" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● 마우스 없이 키보드로 숫자 직접 타이핑 가능 (3, 3.5, 4000 등)</text>
+                <text class="txt-en" x="38" y="51" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● Supports direct keyboard numeric entry (meters or millimeters)</text>
+              </g>
 
+              <!-- Callout 3: Baffle Partition Syntax -->
+              <g transform="translate(420, 162)">
+                <rect x="0" y="0" width="425" height="60" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-width="1.2"/>
+                <path d="M 0 30 L -25 30 L -50 0" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3,2" fill="none"/>
+                <circle cx="-50" cy="0" r="3" fill="#f59e0b"/>
+                <circle cx="20" cy="20" r="10" fill="#d97706"/>
+                <text x="20" y="24" fill="#fff" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">3</text>
+                <text class="txt-ko" x="38" y="22" fill="#fbbf24" font-family="sans-serif" font-size="11" font-weight="bold">다구획 격벽(Baffle Wall) '+' 분할 문법</text>
+                <text class="txt-en" x="38" y="22" fill="#fbbf24" font-family="sans-serif" font-size="11" font-weight="bold">Multi-Compartment Baffle '+' Syntax</text>
+                <text class="txt-ko" x="38" y="38" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● 길이 입력란에 '3.0 + 2.0' 입력 시 내부 격벽(Baffle) 자동 생성</text>
+                <text class="txt-en" x="38" y="38" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● Type '3.0 + 2.0' to automatically create an internal partition wall</text>
+                <text class="txt-ko" x="38" y="51" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● 상단 [합계: 5m] 초록색 뱃지가 실시간 총 길이와 구획수 검증</text>
+                <text class="txt-en" x="38" y="51" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● Green total badge verifies live gross length and compartment counts</text>
+              </g>
+
+              <!-- Callout 4: Skid Frame Auto & Manual -->
+              <g transform="translate(420, 232)">
+                <rect x="0" y="0" width="425" height="60" rx="6" fill="#1e293b" stroke="#a855f7" stroke-width="1.2"/>
+                <path d="M 0 30 L -25 30 L -30 15" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3,2" fill="none"/>
+                <circle cx="-30" cy="15" r="3" fill="#a855f7"/>
+                <circle cx="20" cy="20" r="10" fill="#7e22ce"/>
+                <text x="20" y="24" fill="#fff" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">4</text>
+                <text class="txt-ko" x="38" y="22" fill="#c084fc" font-family="sans-serif" font-size="11" font-weight="bold">스틸 스키드 프레임 지능형 자동 선정</text>
+                <text class="txt-en" x="38" y="22" fill="#c084fc" font-family="sans-serif" font-size="11" font-weight="bold">Intelligent Skid Frame Auto-Selection</text>
+                <text class="txt-ko" x="38" y="38" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● 1~2.5m: 75앵글 / 3~4m: 125채널 / 4.5m+: 150채널 자동 매핑</text>
+                <text class="txt-en" x="38" y="38" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● 1~2.5m: 75Angle / 3~4m: 125Channel / 4.5m+: 150Channel auto</text>
+                <text class="txt-ko" x="38" y="51" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● [⚡자동] 체크 해제 시 수동 변경 가능 / [⚙️설정]서 규칙 커스텀</text>
+                <text class="txt-en" x="38" y="51" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● Uncheck [⚡Auto] to override / Click [⚙️Set] to customize rules</text>
+              </g>
+
+              <!-- Callout 5: Direct Drawing Jump Buttons -->
+              <g transform="translate(420, 302)">
+                <rect x="0" y="0" width="425" height="60" rx="6" fill="#1e293b" stroke="#e11d48" stroke-width="1.2"/>
+                <path d="M 0 30 L -25 30 L -30 20" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="3,2" fill="none"/>
+                <circle cx="-30" cy="20" r="3" fill="#e11d48"/>
+                <circle cx="20" cy="20" r="10" fill="#be123c"/>
+                <text x="20" y="24" fill="#fff" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">5</text>
+                <text class="txt-ko" x="38" y="22" fill="#fb7185" font-family="sans-serif" font-size="11" font-weight="bold">원클릭 도면 바로보기 (0.1초 실시간 연동)</text>
+                <text class="txt-en" x="38" y="22" fill="#fb7185" font-family="sans-serif" font-size="11" font-weight="bold">One-Click Drawing Jump (0.1s Live Sync)</text>
+                <text class="txt-ko" x="38" y="38" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● [기초조립도] 클릭 시 스키드 전체 배치 및 콘크리트 패드 뷰 전환</text>
+                <text class="txt-en" x="38" y="38" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● [Skid Assembly] button instantly switches to overall base frame dwg</text>
+                <text class="txt-ko" x="38" y="51" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● [부재별 제작도] 클릭 시 A·B·C타입 및 주재 가공도 즉시 검토</text>
+                <text class="txt-en" x="38" y="51" fill="#94a3b8" font-family="sans-serif" font-size="9.5">● [Members Dwg] button jumps to detailed member fabrication sheet</text>
+              </g>
+            </svg>
+            <div class="manual-diagram-caption">
+              <span>🖥️</span>
+              <span class="txt-ko"><b>사양·치수 입력창 UI 상세도:</b> 좌측 입력창 인터페이스와 핵심 조작 요소(재질/보강, 0.5m 증감, 격벽 문법, 스키드 자동규칙, 도면 바로보기) 매핑</span>
+              <span class="txt-en"><b>Specifications Input Window UI Guide:</b> Full interface mapping of materials, 0.5m steppers, baffle syntax, skid rules, and direct drawing shortcuts</span>
+            </div>
+          </div>
+
+          <!-- Card 1: Overview & Live Sync -->
+          <div class="manual-card">
+            <h4>
+              <span>🖥️</span>
+              <span class="txt-ko">입력창 전체 화면 구성 및 0.1초 실시간 연동 요령</span>
+              <span class="txt-en">Input Window Layout &amp; 0.1s Real-Time Canvas Sync</span>
+            </h4>
+            <p>
+              <span class="txt-ko">
+                ● <b>위치:</b> 화면 좌측 사이드바의 첫 번째 탭인 <b>[사양·치수 (Specs)]</b> 패널입니다.<br>
+                ● <b>논리적 5단계 입력 순서:</b><br>
+                &nbsp;&nbsp;① <b>재질 및 보강 방식:</b> GRP SMC 단일 선택 및 [외부 보강] vs [내부 환봉] 선택<br>
+                &nbsp;&nbsp;② <b>길이 (L):</b> 단일 길이(예: <code>5.0</code>) 또는 격벽 분할(예: <code>3.0 + 2.0</code>)<br>
+                &nbsp;&nbsp;③ <b>폭 (W):</b> 수조 폭 치수 입력(예: <code>3.0</code>) 및 0.5m 증감<br>
+                &nbsp;&nbsp;④ <b>높이 (H):</b> 단수와 높이 선택(예: <code>3.0m (3단)</code>) 및 1×1 패널 모듈 조합 토글<br>
+                &nbsp;&nbsp;⑤ <b>스틸 스키드 프레임:</b> 높이 연동 75A/125C/150C 자동 선정 및 바로보기 바로가기<br>
+                ● <b>0.1초 즉시 반응:</b> 입력창의 수치나 옵션을 바꾸는 즉시, 별도의 '적용' 버튼 클릭 없이 중앙 캔버스의 평면도·측면도·3D 뷰 및 우측 하단 저수용량(Ton) 뱃지가 0.1초 만에 자동 재연산되어 반영됩니다.
+              </span>
+              <span class="txt-en">
+                ● <b>Location:</b> Located in the first tab <b>[Specs]</b> of the left sidebar.<br>
+                ● <b>Logical 5-Step Order:</b><br>
+                &nbsp;&nbsp;① <b>Material &amp; Reinforcement:</b> GRP SMC with [External Frame] vs [Internal Tie Rod]<br>
+                &nbsp;&nbsp;② <b>Length (L):</b> Single length (e.g., <code>5.0</code>) or partitioned (e.g., <code>3.0 + 2.0</code>)<br>
+                &nbsp;&nbsp;③ <b>Width (W):</b> Tank width (e.g., <code>3.0</code>) with 0.5m steppers<br>
+                &nbsp;&nbsp;④ <b>Height (H):</b> Tiers and height selection (e.g., <code>3.0m (3 tiers)</code>) with 1×1 module toggle<br>
+                &nbsp;&nbsp;⑤ <b>Steel Skid Frame:</b> Height-based auto-selection (75A/125C/150C) and instant drawing jump<br>
+                ● <b>0.1s Live Sync:</b> Changing any value triggers an immediate recalculation across the canvas, 3D views, and capacity badges within 0.1 seconds without pressing any submit buttons.
+              </span>
+            </p>
+          </div>
+
+          <!-- Card 2: Dimension Inputs & 0.5m Steppers -->
           <div class="manual-card">
             <h4>
               <span>📏</span>
-              <span class="txt-ko">탱크 치수(L, W, H) 입력 &amp; 0.5m 증감 버튼 조작법</span>
+              <span class="txt-ko">치수(L, W, H) 입력 &amp; 0.5m 증감 버튼 조작법</span>
               <span class="txt-en">Dimensions (L, W, H) &amp; 0.5m Stepper Controls</span>
             </h4>
             <p>
               <span class="txt-ko">
-                ● <b>조작 위치:</b> 좌측 사이드바 최상단의 <b>[입력] 탭</b>에서 탱크의 길이(L), 폭(W), 높이(H)를 설정합니다.<br>
-                ● <b>0.5m(500mm) 화살표 버튼:</b> 입력창 우측의 <b>▲ / ▼</b> 화살표를 클릭하여 500mm 단위로 빠르고 간편하게 치수를 증감할 수 있습니다.<br>
-                ● <b>직접 숫자 타이핑:</b> 입력 상자를 클릭하여 밀리미터 단위(예: <code>4000</code>) 또는 미터 단위(예: <code>4.0</code>)를 직접 키보드로 입력할 수 있습니다.<br>
-                ● <b>다구획 칸막이(Baffle) 분할 문법:</b> 길이에 <code>3000 + 3000</code>처럼 <b>+</b> 기호로 연결하여 입력하면, 해당 분할선에 <b>내부 격벽(Baffle Wall)</b>이 자동으로 생성되어 2구획(소화/급수 등) 수조로 도면화됩니다.<br>
-                ● <b>높이(H)와 단(Tier) 자동 분할:</b> 총 높이에 따라 1단부터 5단까지 SMC 판넬 단수가 자동으로 계산되며, 상단 헤더에 총 저수용량(Ton)이 실시간 표시됩니다.
+                ● <b>0.5m(500mm) 화살표 버튼:</b> 입력창 우측의 <b>▲ / ▼</b> 화살표를 마우스로 클릭하면 0.5m(500mm) 단위로 수치가 부드럽게 증감합니다. 국내외 표준 SMC 규격 패널 모듈(1000×1000, 1000×500)에 완벽하게 일치하는 단위입니다.<br>
+                ● <b>직접 키보드 입력:</b> 입력 상자를 클릭한 뒤 키보드로 미터 단위(예: <code>4.5</code>) 또는 밀리미터 단위(예: <code>4500</code>)를 입력하고 Enter 또는 포커스를 이동하면 표준 치수로 자동 정규화됩니다.<br>
+                ● <b>실시간 유효성 검사:</b> 규격 외 치수 입력 시 하단에 안내 힌트가 출력되며 안전한 표준 치수로 가이드합니다.
               </span>
               <span class="txt-en">
-                ● <b>Location:</b> Configure Length (L), Width (W), and Height (H) in the <b>[Specs] Tab</b>.<br>
-                ● <b>0.5m (500mm) Steppers:</b> Click the <b>▲ / ▼</b> arrow buttons inside input boxes to increment/decrement by 500mm effortlessly.<br>
-                ● <b>Direct Typing:</b> Click and type directly in millimeters (e.g., <code>4000</code>) or meters (e.g., <code>4.0</code>).<br>
-                ● <b>Partition Wall Syntax:</b> Enter length as <code>3000 + 3000</code> using <b>+</b> to automatically install an <b>Internal Baffle Partition Wall</b>.<br>
-                ● <b>Tier Auto-Segmentation:</b> Height is automatically segmented into standard panel tiers, and gross capacity (Ton) updates live in header.
+                ● <b>0.5m (500mm) Steppers:</b> Click the <b>▲ / ▼</b> buttons to step values by 0.5m (500mm), matching standard SMC panel modules (1000×1000, 1000×500).<br>
+                ● <b>Direct Keyboard Entry:</b> Type directly in meters (e.g., <code>4.5</code>) or millimeters (e.g., <code>4500</code>); values normalize automatically upon Enter or blur.<br>
+                ● <b>Live Validation:</b> Real-time validation guides out-of-bound dimensions to safe standard module dimensions.
+              </span>
+            </p>
+          </div>
+
+          <!-- Card 3: Baffle Wall Partitioning Syntax -->
+          <div class="manual-card">
+            <h4>
+              <span>➕</span>
+              <span class="txt-ko">다구획 칸막이(Baffle Wall) '+' 분할 문법 및 실시간 검증</span>
+              <span class="txt-en">Multi-Compartment Baffle Wall '+' Syntax &amp; Live Verification</span>
+            </h4>
+            <p>
+              <span class="txt-ko">
+                ● <b>격벽 생성 문법:</b> 길이에 <code>3.0 + 2.0</code>처럼 <b>+</b> 기호로 연결하여 입력하면, 해당 분할선 위치에 <b>내부 격벽(Baffle Wall)</b>이 자동으로 세워집니다.<br>
+                ● <b>다구획 지원:</b> 3구획 이상도 <code>2.0 + 3.0 + 2.0</code>과 같이 무제한 분할이 가능합니다.<br>
+                ● <b>실시간 합계 뱃지:</b> 입력창 우측 상단에 초록색 <b>[합계: 5.0m]</b> 뱃지가 실시간으로 계산되어 총 연장과 각 구획 길이의 정합성을 즉시 확인할 수 있습니다.<br>
+                ● <b>격벽 도면 자동화:</b> 격벽 패널, 내부 보강재, 바닥 코너 브라켓 및 수량 산출서(BOM)가 각 구획별로 완벽히 분리되어 자동 산출됩니다.
+              </span>
+              <span class="txt-en">
+                ● <b>Partition Syntax:</b> Entering length as <code>3.0 + 2.0</code> with a <b>+</b> symbol instantly installs an <b>Internal Baffle Partition Wall</b>.<br>
+                ● <b>Multi-Compartment:</b> Triple or more compartments (e.g., <code>2.0 + 3.0 + 2.0</code>) are supported without restrictions.<br>
+                ● <b>Live Total Badge:</b> The green <b>[Total: 5.0m]</b> badge live-verifies overall length and compartment consistency.<br>
+                ● <b>Automated Partition Drawings:</b> Partition panels, internal stays, floor angle brackets, and bill of materials (BOM) are fully isolated per chamber.
               </span>
             </p>
             <div class="manual-tip">
               <span>💡</span>
-              <span class="txt-ko"><b>꿀팁:</b> 3구획 이상도 <code>2000 + 3000 + 2000</code> 형태로 자유롭게 분할할 수 있습니다.</span>
-              <span class="txt-en"><b>Pro Tip:</b> Multi-compartments like <code>2000 + 3000 + 2000</code> are supported seamlessly.</span>
+              <span class="txt-ko"><b>실무 팁:</b> 아파트 및 상가 건물의 소화용수/생활급수 겸용 수조 설계 시 <code>4.0 + 2.0</code> 등으로 손쉽게 2구획 독립 수조를 설계할 수 있습니다.</span>
+              <span class="txt-en"><b>Pro Tip:</b> Easily design dual-purpose fire-fighting &amp; potable water tanks with <code>4.0 + 2.0</code>.</span>
             </div>
           </div>
 
+          <!-- Card 4: Tier Segmentation & 1x1 Module -->
           <div class="manual-card">
             <h4>
               <span>📑</span>
-              <span class="txt-ko">높이별·단별 판넬크기 지정 (와이드 표 편집창)</span>
-              <span class="txt-en">Tier Panel Heights Customization (Wide Table)</span>
+              <span class="txt-ko">높이별 단(Tier) 분할 및 1×1 패널 모듈 옵션</span>
+              <span class="txt-en">Tier Height Segmentation &amp; 1×1 Panel Module Option</span>
             </h4>
             <p>
-              <span class="txt-ko">높이 입력란 우측의 <b>[와이드 표]</b> 버튼을 누르면 높이(1.0m~5.0m)별로 1단(하단)부터 5단(상단)까지 판넬의 높이 분할(예: 1000, 1500, 2000mm 등)을 사용자가 직접 커스텀으로 설정하고 영구 저장할 수 있습니다.</span>
-              <span class="txt-en">Click the <b>[Wide Table]</b> button next to Height to customize and permanently save specific tier panel heights (1000, 1500, 2000mm) for each tank height from 1.0m to 5.0m.</span>
+              <span class="txt-ko">
+                ● <b>단(Tier) 자동 분할:</b> 높이 1.0m(1단), 1.5m(2단: 1000+500), 2.0m(2단: 1000+1000), 3.0m(3단: 1000×3) 등 높이에 따른 최적의 단수 분할이 자동으로 이루어집니다.<br>
+                ● <b>[☑ 1×1 패널 모듈] 토글:</b> 1000×1000mm 기본 모듈을 최우선으로 배치하여 제작 비용과 패널 규격 호환성을 극대화합니다.<br>
+                ● <b>와이드 표 편집:</b> 세팅 화면의 [와이드 표] 기능을 통해 높이별 각 단의 패널 높이 조합을 엔지니어링 기준에 맞게 직접 커스텀할 수 있습니다.
+              </span>
+              <span class="txt-en">
+                ● <b>Auto Tier Split:</b> Optimizes tier heights automatically: 1.0m (1 tier), 1.5m (2 tiers: 1000+500), 2.0m (2 tiers: 1000+1000), 3.0m (3 tiers: 1000×3).<br>
+                ● <b>[☑ 1×1 Panel Module] Toggle:</b> Prioritizes 1000×1000mm standard modules to maximize manufacturing cost savings and panel compatibility.<br>
+                ● <b>Wide Table Customization:</b> Customize specific tier segmentations for each tank height via the Setting panel.
+              </span>
             </p>
           </div>
 
+          <!-- Technical SVG Diagram 1: Structural Cross Section -->
+          <div class="manual-diagram-box">
+            <svg viewBox="0 0 860 210" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="concGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#475569"/><stop offset="100%" stop-color="#334155"/></linearGradient>
+                <linearGradient id="skidGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/></linearGradient>
+              </defs>
+
+              <!-- Top Dimension: L = 3000 + 3000 -->
+              <line x1="70" y1="20" x2="790" y2="20" stroke="#38bdf8" stroke-width="1.5"/>
+              <line x1="70" y1="12" x2="70" y2="28" stroke="#38bdf8" stroke-width="1.5"/>
+              <line x1="430" y1="12" x2="430" y2="28" stroke="#38bdf8" stroke-width="1.5"/>
+              <line x1="790" y1="12" x2="790" y2="28" stroke="#38bdf8" stroke-width="1.5"/>
+              <text class="txt-ko" x="250" y="16" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">1구획: L1 = 3000 mm</text>
+              <text class="txt-en" x="250" y="16" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Comp 1: L1 = 3000 mm</text>
+              <text class="txt-ko" x="610" y="16" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">2구획: L2 = 3000 mm</text>
+              <text class="txt-en" x="610" y="16" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Comp 2: L2 = 3000 mm</text>
+
+              <!-- Tank Shell Left & Right -->
+              <rect x="70" y="32" width="356" height="88" fill="rgba(2,132,199,0.08)" stroke="#0284c7" stroke-width="1.5"/>
+              <rect x="434" y="32" width="356" height="88" fill="rgba(2,132,199,0.08)" stroke="#0284c7" stroke-width="1.5"/>
+
+              <!-- Internal Baffle Wall -->
+              <rect x="426" y="30" width="8" height="92" fill="#ef4444" stroke="#f87171" stroke-width="1"/>
+              <circle cx="430" cy="50" r="12" fill="#ef4444"/>
+              <text x="430" y="54" fill="#fff" font-family="sans-serif" font-size="9" font-weight="bold" text-anchor="middle">BW</text>
+              <line x1="430" y1="62" x2="430" y2="100" stroke="#f87171" stroke-width="2"/>
+              <text class="txt-ko" x="430" y="112" fill="#f87171" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">내부 격벽 (Baffle)</text>
+              <text class="txt-en" x="430" y="112" fill="#f87171" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">Internal Baffle Wall</text>
+
+              <!-- Water tank height H -->
+              <line x1="808" y1="32" x2="808" y2="120" stroke="#38bdf8" stroke-width="1.5"/>
+              <line x1="802" y1="32" x2="814" y2="32" stroke="#38bdf8" stroke-width="1.5"/>
+              <line x1="802" y1="120" x2="814" y2="120" stroke="#38bdf8" stroke-width="1.5"/>
+              <text x="832" y="80" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold">H=3m</text>
+
+              <!-- Steel Skid Beam (H or Channel) -->
+              <rect x="60" y="122" width="740" height="16" rx="2" fill="url(#skidGrad)" stroke="#b45309" stroke-width="1.2"/>
+              <text class="txt-ko" x="160" y="134" fill="#fff" font-family="sans-serif" font-size="10" font-weight="bold">스틸 스키드 베이스: [-125×65×6/8t (자동 규칙 선정)</text>
+              <text class="txt-en" x="160" y="134" fill="#fff" font-family="sans-serif" font-size="10" font-weight="bold">Steel Skid Frame: [-125×65×6/8t (Auto Selected)</text>
+
+              <!-- Concrete Foundation Piers (4 strips) -->
+              <polygon points="100,140 180,140 170,188 110,188" fill="url(#concGrad)" stroke="#64748b" stroke-width="1.5"/>
+              <circle cx="140" cy="144" r="3.5" fill="#f59e0b"/>
+              <polygon points="300,140 380,140 370,188 310,188" fill="url(#concGrad)" stroke="#64748b" stroke-width="1.5"/>
+              <circle cx="340" cy="144" r="3.5" fill="#f59e0b"/>
+              <polygon points="500,140 580,140 570,188 510,188" fill="url(#concGrad)" stroke="#64748b" stroke-width="1.5"/>
+              <circle cx="540" cy="144" r="3.5" fill="#f59e0b"/>
+              <polygon points="700,140 780,140 770,188 710,188" fill="url(#concGrad)" stroke="#64748b" stroke-width="1.5"/>
+              <circle cx="740" cy="144" r="3.5" fill="#f59e0b"/>
+
+              <!-- Pitch Dimension -->
+              <line x1="140" y1="198" x2="340" y2="198" stroke="#94a3b8" stroke-width="1.2"/>
+              <line x1="140" y1="193" x2="140" y2="203" stroke="#94a3b8" stroke-width="1.2"/>
+              <line x1="340" y1="193" x2="340" y2="203" stroke="#94a3b8" stroke-width="1.2"/>
+              <text class="txt-ko" x="240" y="202" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">피치: @1000 mm</text>
+              <text class="txt-en" x="240" y="202" fill="#cbd5e1" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">Pitch: @1000 mm</text>
+
+              <!-- Foundation Callout -->
+              <line x1="580" y1="165" x2="630" y2="165" stroke="#94a3b8" stroke-width="1"/>
+              <text class="txt-ko" x="635" y="168" fill="#94a3b8" font-family="sans-serif" font-size="10">콘크리트 패드 (W400/300×H475) &amp; 앵커볼트</text>
+              <text class="txt-en" x="635" y="168" fill="#94a3b8" font-family="sans-serif" font-size="10">Concrete Pad (W400/300×H475) &amp; Anchor</text>
+            </svg>
+            <div class="manual-diagram-caption">
+              <span>📐</span>
+              <span class="txt-ko"><b>구조 상세 단면도:</b> 길이 다구획 분할(격벽 생성), 탱크 높이에 따른 스틸 스키드 자동 선정(75A/125C/150C), 1000mm 피치 콘크리트 기초 연동</span>
+              <span class="txt-en"><b>Structural Section Detail:</b> Compartment Partitioning (Baffle Wall), Height-based Skid Frame Selection (75A/125C/150C), 1000mm Pitch Concrete Pads</span>
+            </div>
+          </div>
+
+          <!-- Card 5: Skid Frame Auto Rules -->
           <div class="manual-card">
             <h4>
               <span>🏗️</span>
-              <span class="txt-ko">스틸 스키드 프레임 (Base Frame) 자동 선택 규칙</span>
-              <span class="txt-en">Steel Skid Base Frame Auto-Selection Rules</span>
+              <span class="txt-ko">스틸 스키드 프레임 (Base Frame) 자동 선택 규칙 &amp; 수동 변경</span>
+              <span class="txt-en">Steel Skid Base Frame Auto-Selection Rules &amp; Manual Override</span>
             </h4>
             <p>
-              <span class="txt-ko">수조 내 수압과 하중에 대응하여 구조적 안전성을 확보하기 위해 탱크 높이에 따라 스키드 형강 규격이 자동 선택됩니다:</span>
-              <span class="txt-en">To ensure structural safety against hydrostatic pressure, skid frame steel profiles are automatically selected based on height:</span>
+              <span class="txt-ko">수조 내 수압과 자중 하중에 대응하여 완벽한 구조적 안전성을 확보하도록 탱크 높이에 맞춰 스키드 형강 규격이 실시간 자동 선택됩니다:</span>
+              <span class="txt-en">To ensure structural safety against hydrostatic pressure and weight, skid frame steel profiles are automatically selected based on tank height:</span>
             </p>
             <table class="manual-table">
               <thead>
@@ -2161,7 +2446,7 @@ canvas.drag{cursor:grabbing}
                   <th><span class="txt-ko">탱크 높이 (H)</span><span class="txt-en">Tank Height (H)</span></th>
                   <th><span class="txt-ko">적용 형강</span><span class="txt-en">Applied Steel</span></th>
                   <th><span class="txt-ko">상세 규격</span><span class="txt-en">Specification</span></th>
-                  <th><span class="txt-ko">비고</span><span class="txt-en">Remarks</span></th>
+                  <th><span class="txt-ko">구조적 특징 및 비고</span><span class="txt-en">Structural Characteristics</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -2169,29 +2454,86 @@ canvas.drag{cursor:grabbing}
                   <td><b>1.0m ~ 2.5mH</b></td>
                   <td><span class="manual-badge">75 앵글 (Angle)</span></td>
                   <td>L 75×75×6t</td>
-                  <td><span class="txt-ko">소형·저수위 탱크 경량화</span><span class="txt-en">Lightweight for low tanks</span></td>
+                  <td><span class="txt-ko">소형·저수위 탱크 경량화 (중간 부재 앵글 안쪽 삽입 가공)</span><span class="txt-en">Lightweight for low tanks (Sub-beams inserted inside)</span></td>
                 </tr>
                 <tr>
                   <td><b>3.0m ~ 4.0mH</b></td>
                   <td><span class="manual-badge">125 채널 (Channel)</span></td>
                   <td>[-125×65×6/8t</td>
-                  <td><span class="txt-ko">중형 표준 물탱크 구조 기본값</span><span class="txt-en">Industry standard default</span></td>
+                  <td><span class="txt-ko">중형 표준 물탱크 업계 기본 규격 (최대 보급형)</span><span class="txt-en">Industry standard default for medium-sized tanks</span></td>
                 </tr>
                 <tr>
                   <td><b>4.5m ~ 10.0mH</b></td>
                   <td><span class="manual-badge">150 채널 (Channel)</span></td>
                   <td>[-150×75×6.5/10t</td>
-                  <td><span class="txt-ko">대형·고수압 탱크 고강도 보강</span><span class="txt-en">Heavy-duty for high pressure</span></td>
+                  <td><span class="txt-ko">대형·고수압 탱크 고강도 보강 (내하중 극대화)</span><span class="txt-en">Heavy-duty for high hydrostatic pressure</span></td>
                 </tr>
               </tbody>
             </table>
             <div class="manual-tip">
               <span>💡</span>
-              <span class="txt-ko"><b>[규칙 설정]</b> 버튼을 누르면 높이 구간별 적용 프레임을 원하는 조건으로 자유롭게 추가·수정할 수 있으며, 수동 라디오 버튼으로 고정할 수도 있습니다.</span>
-              <span class="txt-en">Click <b>[Frame Rules]</b> to edit custom height thresholds and profile mappings, or manually override using radio buttons.</span>
+              <span class="txt-ko">
+                ● <b>수동 지정:</b> <code>[⚡ 자동]</code> 체크박스를 해제하면 원하는 규격(50, 75, 125, 150 등)으로 강제 고정할 수 있습니다.<br>
+                ● <b>[⚙️ 설정] 버튼:</b> 클릭 시 높이 구간별 임계값(Threshold)과 프레임 매핑을 회사 사양에 맞춰 자유롭게 수정하고 저장할 수 있습니다.
+              </span>
+              <span class="txt-en">
+                ● <b>Manual Override:</b> Uncheck <code>[⚡ Auto]</code> to manually select any profile (50, 75, 125, 150).<br>
+                ● <b>[⚙️ Set] Button:</b> Customize height thresholds and profile mappings to match company standards.
+              </span>
             </div>
           </div>
 
+          <!-- Card 6: Practical Input Scenarios -->
+          <div class="manual-card">
+            <h4>
+              <span>📋</span>
+              <span class="txt-ko">실무 상황별 입력 예시 가이드</span>
+              <span class="txt-en">Practical Engineering Input Scenarios</span>
+            </h4>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="background:rgba(2,132,199,0.06);border:1px solid rgba(2,132,199,0.25);border-radius:6px;padding:8px 12px">
+                <div style="font-weight:700;color:var(--accent);font-size:12px;margin-bottom:4px">
+                  <span class="txt-ko">예시 A: 30톤 기본 단일 급수탱크 (L 4.0m × W 2.5m × H 3.0m)</span>
+                  <span class="txt-en">Scenario A: 30-Ton Standard Single Tank (L 4.0m × W 2.5m × H 3.0m)</span>
+                </div>
+                <div style="font-size:11.5px;color:var(--fg);line-height:1.5">
+                  <span class="txt-ko">
+                    ① [길이]에 <code>4.0</code> 입력 ➔ 단일 구획 사각 수조 구성<br>
+                    ② [폭]에 <code>2.5</code> 입력 (▲/▼ 버튼으로 2.5m 맞춤)<br>
+                    ③ [높이]를 <code>3.0m (3단)</code>으로 선택<br>
+                    ➔ 프레임이 <b>125 채널</b>로 자동 선정되며, 총 저수용량 30.0 Ton 자동 계산 완료!
+                  </span>
+                  <span class="txt-en">
+                    ① Enter <code>4.0</code> in [Length] ➔ Single chamber rectangular tank<br>
+                    ② Enter <code>2.5</code> in [Width] using steppers<br>
+                    ③ Select <code>3.0m (3 tiers)</code> in [Height]<br>
+                    ➔ Skid auto-switches to <b>125 Channel</b>, and gross capacity 30.0 Ton calculated instantly!
+                  </span>
+                </div>
+              </div>
+
+              <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);border-radius:6px;padding:8px 12px">
+                <div style="font-weight:700;color:#10b981;font-size:12px;margin-bottom:4px">
+                  <span class="txt-ko">예시 B: 소화/급수 겸용 2구획 격벽 수조 (소화 27톤 + 급수 18톤)</span>
+                  <span class="txt-en">Scenario B: Dual Compartment Fire &amp; Potable Water (27 Ton + 18 Ton)</span>
+                </div>
+                <div style="font-size:11.5px;color:var(--fg);line-height:1.5">
+                  <span class="txt-ko">
+                    ① [길이]에 <code>3.0 + 2.0</code> 입력 ➔ 상단 초록 뱃지에 <b>[합계: 5.0m]</b> 표시 &amp; L=3.0m 지점에 격벽 자동 배치<br>
+                    ② [폭] <code>3.0m</code>, [높이] <code>3.0m</code> 설정<br>
+                    ➔ 평면도·측면도에 격벽 상세 치수선 인출, 각 구획별 유효 용량 및 배관 노즐 독립 배치 가능!
+                  </span>
+                  <span class="txt-en">
+                    ① Enter <code>3.0 + 2.0</code> in [Length] ➔ Green badge shows <b>[Total: 5.0m]</b> &amp; Baffle placed at L=3.0m<br>
+                    ② Set [Width] <code>3.0m</code>, [Height] <code>3.0m</code><br>
+                    ➔ Partition dimensions and independent nozzle/piping configurations generated automatically!
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 7: Concrete Foundation Pad -->
           <div class="manual-card">
             <h4>
               <span>🧱</span>
@@ -2204,6 +2546,7 @@ canvas.drag{cursor:grabbing}
             </p>
           </div>
 
+          <!-- Card 8: Fabrication Standards -->
           <div class="manual-card">
             <h4>
               <span>🔩</span>
@@ -3877,7 +4220,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.7.28</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.7.29</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -3887,7 +4230,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.7.28</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.7.29</span></div>
     </div>
   </main>
 </div>
@@ -25430,7 +25773,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.7.28</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.7.29</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
