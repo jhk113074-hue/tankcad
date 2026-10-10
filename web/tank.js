@@ -1673,7 +1673,7 @@
         { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: ladderCount > 0 ? `${ladderCount} Set` : '-', spec: 'Vertical: 20x30x1.2T, W=270' },
         { no: 9, key: 'flangebar', name: 'Flange Bar', mat: 'HDG', qty: '1 Set', spec: 'L-65x30x3T etc.' },
         { no: 10, key: 'stay', name: 'Internal Stay', mat: 'SS316+PE', qty: '1 Set', spec: 'Φ-10.7 Tie-Rod(M12)' },
-        { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0} EA`, spec: 'JIS 10K Flange / Socket' }
+        { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0} EA`, spec: 'KS/JIS 10K FF Double Flange' }
       ];
     } else if (lang === 'ko') {
       return [
@@ -1687,7 +1687,7 @@
         { no: 8, key: 'exladder', name: '외부 사다리 (External Ladder)', mat: 'HDG', qty: ladderCount > 0 ? `${ladderCount}조` : '-', spec: '세로대: 20x30x1.2T, 폭 270' },
         { no: 9, key: 'flangebar', name: '플랜지 바 (Flange Bar)', mat: 'HDG', qty: '1식', spec: 'L-65x30x3T 등' },
         { no: 10, key: 'stay', name: '내부 스테이 (Internal Stay)', mat: 'SS316+PE', qty: '1식', spec: 'Φ-10.7 Tie-Rod(M12)' },
-        { no: 11, key: 'nozzle', name: '배관 노즐 (Nozzles)', mat: 'STS304', qty: `${nozzleList.length || 0}개`, spec: 'JIS 10K Flange / Socket' }
+        { no: 11, key: 'nozzle', name: '배관 노즐 (Nozzles)', mat: 'STS304', qty: `${nozzleList.length || 0}개`, spec: 'KS 10K FF 양면 플랜지 (Double Flange)' }
       ];
     } else { // bilingual
       return [
@@ -1701,7 +1701,7 @@
         { no: 8, key: 'exladder', name: 'External Ladder', mat: 'HDG', qty: ladderCount > 0 ? `${ladderCount} Set (조)` : '-', spec: 'Vertical: 20x30x1.2T, W=270' },
         { no: 9, key: 'flangebar', name: 'Flange Bar', mat: 'HDG', qty: '1 Set (1식)', spec: 'L-65x30x3T etc.' },
         { no: 10, key: 'stay', name: 'Internal Stay', mat: 'SS316+PE', qty: '1 Set (1식)', spec: 'Φ-10.7 Tie-Rod(M12)' },
-        { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0} EA`, spec: 'JIS 10K Flange / Socket' }
+        { no: 11, key: 'nozzle', name: 'Nozzles', mat: 'STS304', qty: `${nozzleList.length || 0} EA`, spec: 'KS/JIS 10K FF Double Flange (양면플랜지)' }
       ];
     }
   }
@@ -1985,8 +1985,11 @@
         if (isFlg) {
           const yPlate1 = yBase - spec.neckLen;
           const yPlate0 = yPlate1 + spec.flgThick;
-          ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'NOZZLE');
-          ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'NOZZLE');
+          const yBaseFlg = yBase - spec.flgThick;
+          // 양면 플랜지 (Double Flange): Base Flange + Spool Pipe + Outer Flange
+          chain([[cx - spec.rf, yBase], [cx + spec.rf, yBase], [cx + spec.rf, yBaseFlg], [cx - spec.rf, yBaseFlg]], 'NOZZLE', true);
+          ln([cx - spec.r, yBaseFlg], [cx - spec.r, yPlate0], 'NOZZLE');
+          ln([cx + spec.r, yBaseFlg], [cx + spec.r, yPlate0], 'NOZZLE');
           chain([[cx - spec.rf, yPlate1], [cx + spec.rf, yPlate1], [cx + spec.rf, yPlate0], [cx - spec.rf, yPlate0]], 'NOZZLE', true);
           drawLeader(ents, [cx, yPlate1], [cx + dx, ey], [ex, ey], [label], nozTextH, toRight ? 'left' : 'right', 'NOZZLE', null, { face: 'front', view: 'plan' });
         } else {
@@ -2012,8 +2015,11 @@
         if (isFlg) {
           const yPlate1 = yBase + spec.neckLen;
           const yPlate0 = yPlate1 - spec.flgThick;
-          ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'NOZZLE');
-          ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'NOZZLE');
+          const yBaseFlg = yBase + spec.flgThick;
+          // 양면 플랜지 (Double Flange): Base Flange + Spool Pipe + Outer Flange
+          chain([[cx - spec.rf, yBase], [cx + spec.rf, yBase], [cx + spec.rf, yBaseFlg], [cx - spec.rf, yBaseFlg]], 'NOZZLE', true);
+          ln([cx - spec.r, yBaseFlg], [cx - spec.r, yPlate0], 'NOZZLE');
+          ln([cx + spec.r, yBaseFlg], [cx + spec.r, yPlate0], 'NOZZLE');
           chain([[cx - spec.rf, yPlate0], [cx + spec.rf, yPlate0], [cx + spec.rf, yPlate1], [cx - spec.rf, yPlate1]], 'NOZZLE', true);
           const ey = yPlate1 + Math.round(1.5 * N) + stagger;
           const dx = toRight ? Math.round(2.5 * N) : -Math.round(2.5 * N);
@@ -2049,8 +2055,11 @@
         if (isFlg) {
           const xPlate1 = xBase - spec.neckLen;
           const xPlate0 = xPlate1 + spec.flgThick;
-          ln([xBase, cy - spec.r], [xPlate0, cy - spec.r], 'NOZZLE');
-          ln([xBase, cy + spec.r], [xPlate0, cy + spec.r], 'NOZZLE');
+          const xBaseFlg = xBase - spec.flgThick;
+          // 양면 플랜지 (Double Flange): Base Flange + Spool Pipe + Outer Flange
+          chain([[xBase, cy - spec.rf], [xBase, cy + spec.rf], [xBaseFlg, cy + spec.rf], [xBaseFlg, cy - spec.rf]], 'NOZZLE', true);
+          ln([xBaseFlg, cy - spec.r], [xPlate0, cy - spec.r], 'NOZZLE');
+          ln([xBaseFlg, cy + spec.r], [xPlate0, cy + spec.r], 'NOZZLE');
           chain([[xPlate1, cy - spec.rf], [xPlate0, cy - spec.rf], [xPlate0, cy + spec.rf], [xPlate1, cy + spec.rf]], 'NOZZLE', true);
           drawLeader(ents, [xPlate1, cy], [elbowX, ey], [shelfEndX, ey], [label], nozTextH, 'right', 'NOZZLE', null, { face: 'left', view: 'plan' });
         } else {
@@ -2076,8 +2085,11 @@
         if (isFlg) {
           const xPlate1 = xBase + spec.neckLen;
           const xPlate0 = xPlate1 - spec.flgThick;
-          ln([xBase, cy - spec.r], [xPlate0, cy - spec.r], 'NOZZLE');
-          ln([xBase, cy + spec.r], [xPlate0, cy + spec.r], 'NOZZLE');
+          const xBaseFlg = xBase + spec.flgThick;
+          // 양면 플랜지 (Double Flange): Base Flange + Spool Pipe + Outer Flange
+          chain([[xBase, cy - spec.rf], [xBase, cy + spec.rf], [xBaseFlg, cy + spec.rf], [xBaseFlg, cy - spec.rf]], 'NOZZLE', true);
+          ln([xBaseFlg, cy - spec.r], [xPlate0, cy - spec.r], 'NOZZLE');
+          ln([xBaseFlg, cy + spec.r], [xPlate0, cy + spec.r], 'NOZZLE');
           chain([[xPlate0, cy - spec.rf], [xPlate1, cy - spec.rf], [xPlate1, cy + spec.rf], [xPlate0, cy + spec.rf]], 'NOZZLE', true);
           const ey = cy + (toTop ? Math.round(2.0 * N) : -Math.round(2.0 * N)) + stagger;
           const elbowX = xPlate1 + Math.round(1.5 * N);
@@ -4117,9 +4129,16 @@
       if (isFlg) {
         const xPlate1 = xBase - spec.neckLen;
         const xPlate0 = xPlate1 + spec.flgThick;
-        ln([xBase, elev - spec.r], [xPlate0, elev - spec.r], 'NOZZLE');
-        ln([xBase, elev + spec.r], [xPlate0, elev + spec.r], 'NOZZLE');
+        const xBaseFlg = xBase - spec.flgThick;
+        // 양면 플랜지 (Double Flange): 1. Base Flange, 2. Spool Pipe, 3. Outer Flange
+        rect(xBaseFlg, elev - spec.rf, xBase, elev + spec.rf, 'NOZZLE');
+        ln([xBaseFlg, elev - spec.r], [xPlate0, elev - spec.r], 'NOZZLE');
+        ln([xBaseFlg, elev + spec.r], [xPlate0, elev + spec.r], 'NOZZLE');
         rect(xPlate1, elev - spec.rf, xPlate0, elev + spec.rf, 'NOZZLE');
+        ln([xBaseFlg - 3, elev - spec.rf * 0.75], [xBase + 3, elev - spec.rf * 0.75], 'CENTER', 4);
+        ln([xBaseFlg - 3, elev + spec.rf * 0.75], [xBase + 3, elev + spec.rf * 0.75], 'CENTER', 4);
+        ln([xPlate1 - 3, elev - spec.rf * 0.75], [xPlate0 + 3, elev - spec.rf * 0.75], 'CENTER', 4);
+        ln([xPlate1 - 3, elev + spec.rf * 0.75], [xPlate0 + 3, elev + spec.rf * 0.75], 'CENTER', 4);
       } else {
         const xEnd = xBase - spec.sockLen;
         rect(xEnd, elev - spec.sockR, xBase, elev + spec.sockR, 'NOZZLE');
@@ -4168,9 +4187,16 @@
       if (isFlg) {
         const xPlate1 = xBase + spec.neckLen;
         const xPlate0 = xPlate1 - spec.flgThick;
-        ln([xBase, elev - spec.r], [xPlate0, elev - spec.r], 'NOZZLE');
-        ln([xBase, elev + spec.r], [xPlate0, elev + spec.r], 'NOZZLE');
+        const xBaseFlg = xBase + spec.flgThick;
+        // 양면 플랜지 (Double Flange): 1. Base Flange, 2. Spool Pipe, 3. Outer Flange
+        rect(xBase, elev - spec.rf, xBaseFlg, elev + spec.rf, 'NOZZLE');
+        ln([xBaseFlg, elev - spec.r], [xPlate0, elev - spec.r], 'NOZZLE');
+        ln([xBaseFlg, elev + spec.r], [xPlate0, elev + spec.r], 'NOZZLE');
         rect(xPlate0, elev - spec.rf, xPlate1, elev + spec.rf, 'NOZZLE');
+        ln([xBase - 3, elev - spec.rf * 0.75], [xBaseFlg + 3, elev - spec.rf * 0.75], 'CENTER', 4);
+        ln([xBase - 3, elev + spec.rf * 0.75], [xBaseFlg + 3, elev + spec.rf * 0.75], 'CENTER', 4);
+        ln([xPlate0 - 3, elev - spec.rf * 0.75], [xPlate1 + 3, elev - spec.rf * 0.75], 'CENTER', 4);
+        ln([xPlate0 - 3, elev + spec.rf * 0.75], [xPlate1 + 3, elev + spec.rf * 0.75], 'CENTER', 4);
       } else {
         const xEnd = xBase + spec.sockLen;
         rect(xBase, elev - spec.sockR, xEnd, elev + spec.sockR, 'NOZZLE');
@@ -4216,9 +4242,16 @@
       if (isFlg) {
         const yPlate1 = yBase + spec.neckLen;
         const yPlate0 = yPlate1 - spec.flgThick;
-        ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'NOZZLE');
-        ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'NOZZLE');
+        const yBaseFlg = yBase + spec.flgThick;
+        // 양면 플랜지 (Double Flange)
+        rect(cx - spec.rf, yBase, cx + spec.rf, yBaseFlg, 'NOZZLE');
+        ln([cx - spec.r, yBaseFlg], [cx - spec.r, yPlate0], 'NOZZLE');
+        ln([cx + spec.r, yBaseFlg], [cx + spec.r, yPlate0], 'NOZZLE');
         rect(cx - spec.rf, yPlate0, cx + spec.rf, yPlate1, 'NOZZLE');
+        ln([cx - spec.rf * 0.75, yBase - 3], [cx - spec.rf * 0.75, yBaseFlg + 3], 'CENTER', 4);
+        ln([cx + spec.rf * 0.75, yBase - 3], [cx + spec.rf * 0.75, yBaseFlg + 3], 'CENTER', 4);
+        ln([cx - spec.rf * 0.75, yPlate0 - 3], [cx - spec.rf * 0.75, yPlate1 + 3], 'CENTER', 4);
+        ln([cx + spec.rf * 0.75, yPlate0 - 3], [cx + spec.rf * 0.75, yPlate1 + 3], 'CENTER', 4);
       } else {
         const yEnd = yBase + spec.sockLen;
         rect(cx - spec.sockR, yBase, cx + spec.sockR, yEnd, 'NOZZLE');
@@ -4265,9 +4298,16 @@
       if (isFlg) {
         const yPlate1 = yBase - spec.neckLen;
         const yPlate0 = yPlate1 + spec.flgThick;
-        ln([cx - spec.r, yBase], [cx - spec.r, yPlate0], 'NOZZLE');
-        ln([cx + spec.r, yBase], [cx + spec.r, yPlate0], 'NOZZLE');
+        const yBaseFlg = yBase - spec.flgThick;
+        // 양면 플랜지 (Double Flange)
+        rect(cx - spec.rf, yBaseFlg, cx + spec.rf, yBase, 'NOZZLE');
+        ln([cx - spec.r, yBaseFlg], [cx - spec.r, yPlate0], 'NOZZLE');
+        ln([cx + spec.r, yBaseFlg], [cx + spec.r, yPlate0], 'NOZZLE');
         rect(cx - spec.rf, yPlate1, cx + spec.rf, yPlate0, 'NOZZLE');
+        ln([cx - spec.rf * 0.75, yBaseFlg - 3], [cx - spec.rf * 0.75, yBase + 3], 'CENTER', 4);
+        ln([cx + spec.rf * 0.75, yBaseFlg - 3], [cx + spec.rf * 0.75, yBase + 3], 'CENTER', 4);
+        ln([cx - spec.rf * 0.75, yPlate1 - 3], [cx - spec.rf * 0.75, yPlate0 + 3], 'CENTER', 4);
+        ln([cx + spec.rf * 0.75, yPlate1 - 3], [cx + spec.rf * 0.75, yPlate0 + 3], 'CENTER', 4);
       } else {
         const yEnd = yBase - spec.sockLen;
         rect(cx - spec.sockR, yEnd, cx + spec.sockR, yBase, 'NOZZLE');
@@ -9035,7 +9075,7 @@
           n.mark,
           svcName,
           n.size,
-          n.type === 'FLANGE' ? 'FLG 10K' : 'SOCKET',
+          n.type === 'SOCKET' ? (lang === 'ko' ? '양면소켓' : 'SOCKET') : (lang === 'ko' ? '양면플랜지' : 'DBL FLG'),
           elevStr,
           faceNameMap[n.face] || n.face.toUpperCase()
         ];
