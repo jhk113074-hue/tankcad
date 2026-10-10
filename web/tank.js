@@ -9550,12 +9550,13 @@
 
       const FLG_W = 70; // 최외곽 측판 플랜지 폭 (70mm)
 
-      // 1. 하부 스키드 프레임 (최외곽 플랜지 폭 포함)
+      // 1. 하부 스키드 프레임 (Steel Skid: 1M 간격 보강 빔, 최외곽 플랜지 폭 포함)
       const frmVal = opt.frame || opt.frm || 75;
       secEnts.push({ t: 'line', a: [-FLG_W, -frmVal], b: [totalL + FLG_W, -frmVal], layer: 'FRAME' });
       secEnts.push({ t: 'line', a: [-FLG_W, 0], b: [totalL + FLG_W, 0], layer: 'FRAME' });
+      const bHalf = 37.5; // 75mm 찬넬/각관 빔 (저판 조립평면구간 76.92mm 직접 지지)
       for (let sx = 0; sx <= totalL; sx += 1000) {
-        secEnts.push({ t: 'line', a: [sx, -frmVal], b: [sx, 0], layer: 'FRAME' });
+        rectEnts(sx - bHalf, -frmVal, bHalf * 2, frmVal, 'FRAME', secEnts);
       }
 
       // 2. 수조 외곽 및 측판 본체 라인
@@ -9734,21 +9735,63 @@
           // 형상 높이 70mm MAX 수직 치수선
           dimLinear(secEnts, [drainX - sumpHalfW, 0], [drainX - sumpHalfW, -DRAIN_SHAPE_H], -Math.round(10 * N), true, `${DRAIN_SHAPE_H} (형상MAX)`, Math.round(2.0 * N), 'DIM');
         } else {
-          // 표준 저판 판넬 (평판 + 배수 보강 엠보싱)
-          secEnts.push({ t: 'line', a: [x0, 0], b: [x1, 0], layer: 'PANEL' });
-          const embIn = Math.min(80, cw * 0.15);
-          secEnts.push({ t: 'line', a: [x0 + embIn, 0], b: [x0 + ms, 12], layer: 'PANEL_DETAIL' });
-          secEnts.push({ t: 'line', a: [x0 + ms, 12], b: [x1 - embIn, 0], layer: 'PANEL_DETAIL' });
+          // ★★★ 사용자 도면(media_1791615527521_e85751cc.png) 완벽 반영: SMC 1000x1000 저판 판넬 ★★★
+          // - 외곽 SIZE 기준 POINT: x0, x1 (1000mm)
+          // - 조립 평면구간: 76.92mm (양측: Steel Skid 상부 1M 간격 거치면)
+          // - 중앙 볼록 돔(아치) 형상: 돔 높이 110mm (하향 플랜지 70mm 기준 전고 180mm)
+          const flatW = (cw === 1000) ? 76.92 : Math.round(cw * 0.07692);
+          const domeH = (cw === 1000) ? 110 : Math.round(110 * (cw / 1000));
+          const xa = x0 + flatW;
+          const xb = x1 - flatW;
+          const xm = (x0 + x1) / 2;
 
+          // 1. 조립 평면구간 (Flat Assembly Zones: 76.92mm - Steel Skid 1M 간격 지지면)
+          secEnts.push({ t: 'line', a: [x0, 0], b: [xa, 0], layer: 'PANEL' });
+          secEnts.push({ t: 'line', a: [xb, 0], b: [x1, 0], layer: 'PANEL' });
+
+          // 2. 중앙 볼록 돔 곡선 (Upward Convex Parabolic Dome Profile: H=110mm, 전고 180mm)
+          const domePts = [];
+          const numSteps = 12;
+          for (let s = 0; s <= numSteps; s++) {
+            const frac = s / numSteps;
+            const px = xa + (xb - xa) * frac;
+            const u = 2 * frac - 1; // -1 to +1
+            const py = domeH * (1 - u * u); // Parabolic dome profile
+            domePts.push([px, py]);
+          }
+          for (let s = 0; s < domePts.length - 1; s++) {
+            secEnts.push({ t: 'line', a: domePts[s], b: domePts[s + 1], layer: 'PANEL' });
+          }
+
+          // 3. 판넬 두께 이면선 (Dashed Hidden Underside Profile: t=10mm)
+          const tWall = 10;
+          for (let s = 0; s < domePts.length - 1; s++) {
+            const pa = [domePts[s][0], Math.max(0, domePts[s][1] - tWall)];
+            const pb = [domePts[s + 1][0], Math.max(0, domePts[s + 1][1] - tWall)];
+            secEnts.push({ t: 'line', a: pa, b: pb, layer: 'PANEL_DETAIL' });
+          }
+
+          // 4. 중앙 원형 체결 보스/홀 기호 (Center Boss / Tie Hole)
+          secEnts.push({ t: 'circle', c: [xm, 22], r: 16, layer: 'PANEL_DETAIL' });
+          secEnts.push({ t: 'line', a: [xm - 22, 22], b: [xm + 22, 22], layer: 'PANEL_DETAIL' });
+
+          // 5. 판넬 제원 식별 텍스트
           secEnts.push({
             t: 'text',
-            p: [x0 + ms, 16],
+            p: [xm, domeH + 12],
             h: Math.round(1.7 * N),
-            s: `${cw} 저판 (플랜지 ${BTM_FLG_H}mm)`,
+            s: `${cw} 저판 (돔 110mm, 평면 ${flatW}mm)`,
             align: 'center',
             valign: 'bottom',
             layer: 'PANEL_DETAIL'
           });
+
+          // 조립 평면구간 치수 (76.92) 및 돔 높이 치수 (180전고)
+          if (cw === 1000 && (j === 1 || (drainColIdx !== 0 && j === 0))) {
+            dimLinear(secEnts, [x1 - flatW, 0], [x1, 0], -Math.round(8 * N), false, '76.92', Math.round(1.8 * N), 'DIM');
+            dimLinear(secEnts, [xm, 0], [xm, domeH], Math.round(10 * N), true, `${domeH} (돔H)`, Math.round(2.0 * N), 'DIM');
+            dimLinear(secEnts, [x1, -BTM_FLG_H], [x1, domeH], Math.round(22 * N), true, '180 (전고)', Math.round(2.2 * N), 'DIM');
+          }
         }
 
         // 판넬 간 하향 조립 플랜지 (H=70mm) 및 체결 볼트 (j > 0)
@@ -9818,12 +9861,13 @@
       const midStdX = (totalL > 3000 && drainColIdx === 0) ? (mmap.xs[1] + mmap.xs[2]) / 2 : totalL * 0.55;
       drawLeader(
         secEnts,
-        [midStdX, 0],
-        [midStdX + Math.round(10 * N), -Math.round(16 * N)],
-        [midStdX + Math.round(34 * N), -Math.round(16 * N)],
+        [midStdX, 110],
+        [midStdX + Math.round(10 * N), 110 + Math.round(14 * N)],
+        [midStdX + Math.round(34 * N), 110 + Math.round(14 * N)],
         [
-          lang === 'ko' ? `표준 저판 판넬 (플랜지 H=${BTM_FLG_H}mm)` : `Std Floor Panel (Flange H=${BTM_FLG_H}mm)`,
-          lang === 'ko' ? `실사수량: V_dead = ${deadTon.toFixed(1)} Ton [${deadRatio.toFixed(1)}%] (H_dead = ${lwlFireElev}mm)` : `Dead Water: V_dead = ${deadTon.toFixed(1)} T [${deadRatio.toFixed(1)}%]`
+          lang === 'ko' ? `[저판 판넬] 1000×1000mm (플랜지 H=${BTM_FLG_H}mm, 돔 H=110mm, 전고 180mm)` : `Floor Panel (Flg 70mm, Dome 110mm, Total 180mm)`,
+          lang === 'ko' ? `조립 평면구간 76.92mm (Steel Skid 1M 간격 거치)` : `76.92mm Flat Zone on 1M Steel Skid`,
+          lang === 'ko' ? `돔 체적 배제 효과 반영 실체류 사수량: 약 4.9 Ton (공칭 ${deadTon.toFixed(1)} Ton)` : `Net Trapped Water: ~4.9 Ton (Nominal ${deadTon.toFixed(1)} Ton)`
         ],
         Math.round(2.2 * N),
         'left',
@@ -9858,27 +9902,34 @@
       }
 
       // 3. 물 (WATER) 시각화 및 수역 해치 제도 (Clear Visual Water Representation)
-      // A. 사수 구역 (하부 0 ~ lwlFireElev 및 드레인 판넬 125mm 형상 내부) 반투명 담수 채우기
+      // A. 사수 구역 (하부 0 ~ lwlFireElev 및 저판 돔/드레인 형상 반영) 반투명 담수 채우기
       const waterPts = [[0, 0]];
-      const rimW = Math.min(100, drainPanelW * 0.12);
-      const sumpW = 140;
-      if (drainColIdx === 0) {
-        waterPts.push(
-          [xdp0 + rimW, 0],
-          [drainX - sumpW, -DRAIN_SHAPE_H],
-          [drainX + sumpW, -DRAIN_SHAPE_H],
-          [xdp1 - rimW, 0]
-        );
-      } else {
-        waterPts.push(
-          [xdp0, 0],
-          [xdp0 + rimW, 0],
-          [drainX - sumpW, -DRAIN_SHAPE_H],
-          [drainX + sumpW, -DRAIN_SHAPE_H],
-          [xdp1 - rimW, 0],
-          [xdp1, 0]
-        );
-      }
+      mmap.cols.forEach((cw, j) => {
+        const x0 = mmap.xs[j], x1 = mmap.xs[j + 1];
+        if (j === drainColIdx) {
+          const rimW = Math.min(100, cw * 0.12);
+          const sumpW = 140;
+          waterPts.push(
+            [x0 + rimW, 0],
+            [drainX - sumpW, -DRAIN_SHAPE_H],
+            [drainX + sumpW, -DRAIN_SHAPE_H],
+            [x1 - rimW, 0]
+          );
+        } else {
+          const flatW = (cw === 1000) ? 76.92 : Math.round(cw * 0.07692);
+          const domeH = (cw === 1000) ? 110 : Math.round(110 * (cw / 1000));
+          const xa = x0 + flatW, xb = x1 - flatW;
+          waterPts.push([xa, 0]);
+          for (let s = 1; s < 8; s++) {
+            const frac = s / 8;
+            const px = xa + (xb - xa) * frac;
+            const u = 2 * frac - 1;
+            const py = Math.min(lwlFireElev, domeH * (1 - u * u));
+            waterPts.push([px, py]);
+          }
+          waterPts.push([xb, 0]);
+        }
+      });
       waterPts.push([totalL, 0], [totalL, lwlFireElev], [0, lwlFireElev]);
       secEnts.push({
         t: 'poly',
