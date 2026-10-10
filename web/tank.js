@@ -7964,16 +7964,16 @@
       const yMid = (yBot + yTop) / 2;
 
       // 서브빔 단면 폭 (50 SHS: 50mm, 75/125/150: 75mm)
-      // 레벨링(상면, 기준면)을 오른쪽(X = th)으로 일치시켜 수평(Flush) 유지
+      // 레벨링(기준면)을 왼쪽(X = 0)으로 일치시켜 수평(Flush) 유지
       const subH = isSHS ? 50 : 75;
-      const subX1 = th;
-      const subX0 = th - subH;
+      const subX0 = 0;
+      const subX1 = subH;
       const tp = 6.0; // 6t 엔드 플레이트 두께
       const twSub = isSHS ? 3.2 : (isAngle ? 6.0 : 5.0); // 웨브 두께 (5t / 6t)
       const tfSub = isSHS ? 3.2 : (isAngle ? 6.0 : 5.0); // 플랜지 두께 (5t / 6t)
       const stepW = 57.5; // DWG 실측 몸체 잔여 폭 (17.5mm cutout)
       const stepH = flgW; // 단차 높이 (주재 플랜지 폭 70~75mm)
-      const xStep = subX1 - stepW;
+      const xStep = subX0 + stepW;
 
       // 서브빔 타입 판별: A타입(양단 직선), B타입(한쪽 단차), C타입(양단 단차)
       const isTypeA = isSHS || (sub.type === 'A타입');
@@ -8010,14 +8010,14 @@
           ents.push({ t: 'line', a: [subX0, yBot], b: [subX0, yBot + tp], layer: 'FRAME_SUB' });
           ents.push({ t: 'line', a: [subX1, yBot], b: [subX1, yBot + tp], layer: 'FRAME_SUB' });
         } else {
-          // 하단 단차: 돌출부(xStep ~ subX1)는 yBot까지, 홈/단차(subX0 ~ xStep)는 yBot + stepH로 찬넬 플랜지 안착
-          ents.push({ t: 'line', a: [xStep, yBot], b: [subX1, yBot], layer: 'FRAME_SUB' });
-          ents.push({ t: 'line', a: [xStep, yBot + tp], b: [subX1, yBot + tp], layer: 'FRAME_SUB' });
+          // 하단 단차: 돌출부(subX0 ~ xStep)는 yBot까지, 홈/단차(xStep ~ subX1)는 yBot + stepH로 찬넬 플랜지 안착
+          ents.push({ t: 'line', a: [subX0, yBot], b: [xStep, yBot], layer: 'FRAME_SUB' });
+          ents.push({ t: 'line', a: [subX0, yBot + tp], b: [xStep, yBot + tp], layer: 'FRAME_SUB' });
+          ents.push({ t: 'line', a: [subX0, yBot], b: [subX0, yBot + tp], layer: 'FRAME_SUB' });
           ents.push({ t: 'line', a: [xStep, yBot], b: [xStep, yBot + tp], layer: 'FRAME_SUB' });
-          ents.push({ t: 'line', a: [subX1, yBot], b: [subX1, yBot + tp], layer: 'FRAME_SUB' });
 
           ents.push({ t: 'line', a: [xStep, yBot + tp], b: [xStep, yBot + stepH], layer: 'FRAME_SUB' });
-          ents.push({ t: 'line', a: [subX0, yBot + stepH], b: [xStep, yBot + stepH], layer: 'FRAME_SUB' });
+          ents.push({ t: 'line', a: [xStep, yBot + stepH], b: [subX1, yBot + stepH], layer: 'FRAME_SUB' });
         }
 
         // 상단 (yTop) 단차 또는 평평한 엔드플레이트
@@ -8027,26 +8027,26 @@
           ents.push({ t: 'line', a: [subX0, yTop - tp], b: [subX0, yTop], layer: 'FRAME_SUB' });
           ents.push({ t: 'line', a: [subX1, yTop - tp], b: [subX1, yTop], layer: 'FRAME_SUB' });
         } else {
-          // 상단 단차: 돌출부(xStep ~ subX1)는 yTop까지, 홈/단차(subX0 ~ xStep)는 yTop - stepH로 찬넬 플랜지 안착
-          ents.push({ t: 'line', a: [xStep, yTop], b: [subX1, yTop], layer: 'FRAME_SUB' });
-          ents.push({ t: 'line', a: [xStep, yTop - tp], b: [subX1, yTop - tp], layer: 'FRAME_SUB' });
+          // 상단 단차: 돌출부(subX0 ~ xStep)는 yTop까지, 홈/단차(xStep ~ subX1)는 yTop - stepH로 찬넬 플랜지 안착
+          ents.push({ t: 'line', a: [subX0, yTop], b: [xStep, yTop], layer: 'FRAME_SUB' });
+          ents.push({ t: 'line', a: [subX0, yTop - tp], b: [xStep, yTop - tp], layer: 'FRAME_SUB' });
+          ents.push({ t: 'line', a: [subX0, yTop - tp], b: [subX0, yTop], layer: 'FRAME_SUB' });
           ents.push({ t: 'line', a: [xStep, yTop - tp], b: [xStep, yTop], layer: 'FRAME_SUB' });
-          ents.push({ t: 'line', a: [subX1, yTop - tp], b: [subX1, yTop], layer: 'FRAME_SUB' });
 
           ents.push({ t: 'line', a: [xStep, yTop - tp], b: [xStep, yTop - stepH], layer: 'FRAME_SUB' });
-          ents.push({ t: 'line', a: [subX0, yTop - stepH], b: [xStep, yTop - stepH], layer: 'FRAME_SUB' });
+          ents.push({ t: 'line', a: [xStep, yTop - stepH], b: [subX1, yTop - stepH], layer: 'FRAME_SUB' });
         }
 
         // 서브빔 몸체 외곽선 및 두께선
-        // 우측 (레벨링 면): subX1에서 yBot+tp ~ yTop-tp 까지 완전 일직선
-        ents.push({ t: 'line', a: [subX1, yBot + tp], b: [subX1, yTop - tp], layer: 'FRAME_SUB' });
-        ents.push({ t: 'line', a: [subX1 - tfSub, yBot + tp], b: [subX1 - tfSub, yTop - tp], layer: 'FRAME_SUB' });
+        // 좌측 (레벨링 면): subX0에서 yBot+tp ~ yTop-tp 까지 완전 일직선
+        ents.push({ t: 'line', a: [subX0, yBot + tp], b: [subX0, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0 + tfSub, yBot + tp], b: [subX0 + tfSub, yTop - tp], layer: 'FRAME_SUB' });
 
-        // 좌측 (단차 가공면): subX0에서 단차 턱 사이 연결
-        const y0Start = stepAtBot ? (yBot + stepH) : (yBot + tp);
-        const y0End = stepAtTop ? (yTop - stepH) : (yTop - tp);
-        ents.push({ t: 'line', a: [subX0, y0Start], b: [subX0, y0End], layer: 'FRAME_SUB' });
-        ents.push({ t: 'line', a: [subX0 + twSub, y0Start], b: [subX0 + twSub, y0End], layer: 'FRAME_SUB' });
+        // 우측 (단차 가공면): subX1에서 단차 턱 사이 연결
+        const y1Start = stepAtBot ? (yBot + stepH) : (yBot + tp);
+        const y1End = stepAtTop ? (yTop - stepH) : (yTop - tp);
+        ents.push({ t: 'line', a: [subX1, y1Start], b: [subX1, y1End], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1 - twSub, y1Start], b: [subX1 - twSub, y1End], layer: 'FRAME_SUB' });
       }
 
       // 부재 명칭 표기: 사용자 요청 ("홀은 없애주세요. 품명만 남겨주세요. 부품명은 부품안에 넣어주세요.")
