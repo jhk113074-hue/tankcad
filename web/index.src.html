@@ -1634,7 +1634,7 @@ canvas.drag{cursor:grabbing}
           <h3 id="manualDialogTitle" style="margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">
             <span class="txt-ko">YSACC TANK CAD 사용자 가이드 &amp; 사용 매뉴얼</span>
             <span class="txt-en">YSACC TANK CAD User Guide &amp; Operation Manual</span>
-            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.6.43</span>
+            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.7.27</span>
           </h3>
           <span class="modeless-drag-hint">
             <span class="txt-ko">✥ 상단바를 잡고 자유롭게 이동 가능</span>
@@ -2091,6 +2091,28 @@ canvas.drag{cursor:grabbing}
               <span class="txt-en">Supports concrete foundation piers with 400mm top width, 300mm bottom width, 475/600mm height, 1000mm pitch spacing, and anchor bolts, automatically dimensioned in Plan and Foundation drawings.</span>
             </p>
           </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>🔩</span>
+              <span class="txt-ko">스틸 스키드 프레임 부재 가공 및 조립 시방 (75 앵글·125/150 채널)</span>
+              <span class="txt-en">Steel Skid Fabrication &amp; Joint Assembly Standards</span>
+            </h4>
+            <p>
+              <span class="txt-ko">
+                ● <b>중간 부재 삽입 가공:</b> 125/150 채널뿐만 아니라 <b>75 앵글(L-75×75×6t)도 중간 보조보(Sub-beam)가 앵글 안쪽으로 삽입</b>되어 상부 플랜지가 탱크 바닥 패널과 완벽한 수평 평면(Flush Level)을 이루도록 정밀 가공 단면이 도면화됩니다.<br>
+                ● <b>9090 코너 브라켓 (WBR-7575Z / WBR-0120CZE):</b> 스키드 최외곽 W방향 메인 부재 모서리에 체결되어 직각 코너의 비틀림 강성을 유지합니다.<br>
+                ● <b>이형탱크 단차 코너 규칙:</b> 기둥 간섭 등으로 패널이 삭제된 이형 탱크의 '계단형 단차 모서리'는 W방향 주재가 없어 실제 현장에서 볼트 체결이 불가능하므로, 9090 코너 브라켓이 자동으로 생략되어 실제 현장 조립 조건과 100% 일치합니다.<br>
+                ● <b>W방향 주재 이음판 (Splice Plate):</b> W방향 주재 연결 시 125 채널은 <code>WBR-9021CZ</code>, 150 채널은 <code>WBR-1022CZ</code> 표준 이음판이 자동으로 적용됩니다.
+              </span>
+              <span class="txt-en">
+                ● <b>Sub-Beam Insertion:</b> For both 125/150 Channels and <b>75 Angle (L-75×75×6t)</b>, intermediate sub-beams are installed inside the profile web so top surfaces form a perfectly flush horizontal plane under the bottom floor panels.<br>
+                ● <b>9090 Corner Brackets:</b> Mounted on outer perimeter W-direction main beams (WBR-7575Z / WBR-0120CZE) to secure orthogonal corners.<br>
+                ● <b>Irregular Step Corner Rule:</b> At stepped inner corners where no W-direction main beam exists, 9090 corner brackets are automatically omitted to match physical bolt fastening feasibility.<br>
+                ● <b>W-Beam Splice Plates:</b> Automatically specifies <code>WBR-9021CZ</code> for 125 Channel and <code>WBR-1022CZ</code> for 150 Channel.
+              </span>
+            </p>
+          </div>
         </div>
 
         <!-- Section 2: 평면 및 이형 탱크 편집 -->
@@ -2370,6 +2392,44 @@ canvas.drag{cursor:grabbing}
               </span>
             </p>
           </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>🔘</span>
+              <span class="txt-ko">KS 10K FF 양면플랜지 (Double Flange) 표준화</span>
+              <span class="txt-en">KS 10K FF Double Flange Standard</span>
+            </h4>
+            <p>
+              <span class="txt-ko">
+                ● <b>양면플랜지 표현 원칙:</b> 모든 플랜지 타입 배관 노즐(FLANGE)은 단면이 아닌 <b>양면플랜지(Double Flange)</b>로 표현됩니다. 탱크 외벽의 외부 배관 연결용 메인 플랜지와 수조 내벽의 백킹 플랜지가 완벽한 한 쌍을 이루며 조립됩니다.<br>
+                ● <b>볼트홀 관통선 상세:</b> 플랜지 체결 볼트홀은 은선(Hidden) 및 중심선(Centerline)을 포함한 관통홀(Through-hole)로 정밀하게 도면화됩니다.<br>
+                ● <b>일람표 및 BOM 연동:</b> 노즐일람표, 부품표(BOM), 단면도 주기에서 일괄적으로 <code>양면플랜지 (KS 10K FF)</code>로 규격화되어 일관된 공사 발주가 가능합니다.
+              </span>
+              <span class="txt-en">
+                ● <b>Double Flange Standard:</b> All flange-type nozzles are rendered as <b>Double Flanges</b> consisting of an exterior piping flange and an interior backing flange.<br>
+                ● <b>Through-Bolt Holes:</b> Bolt holes feature engineering through-hole details with hidden lines and pitch centerlines.<br>
+                ● <b>BOM Synchronization:</b> Unified across Schedule, BOM, and drawings under the specification <code>Double Flange (KS 10K FF)</code>.
+              </span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>💧</span>
+              <span class="txt-ko">1000×1000mm 바닥 드레인 패널 &amp; 사수량 (Dead Water) 정밀 산출</span>
+              <span class="txt-en">1000x1000 Bottom Drain Panel &amp; Dead Water Separation</span>
+            </h4>
+            <p>
+              <span class="txt-ko">
+                ● <b>드레인 패널 제원:</b> 바닥 드레인 패널은 1,000×1,000mm 표준 모듈, 외곽 직립 플랜지 70mm, 드레인 포켓 최대 깊이 70mm 형상으로 정밀 모델링됩니다.<br>
+                ● <b>사수량(Dead Water Zone) 분리:</b> 배수구(DRAIN) 및 최저수위(LWL) 하부에 남는 잔수/사수량을 정확히 체적 계산하여 유효 저수량과 분리 집계하며, 단면도에 별도의 구분 색상과 해칭으로 명확하게 시각화합니다.
+              </span>
+              <span class="txt-en">
+                ● <b>Drain Panel Geometry:</b> Standard 1000x1000mm module with 70mm perimeter flange and maximum 70mm pocket depth.<br>
+                ● <b>Dead Water Volume:</b> Precisely calculates the undrainable bottom water volume below LWL/drain socket, visualized with distinct color and hatching on cross-section views.
+              </span>
+            </p>
+          </div>
         </div>
 
         <!-- Section 4: 부품 사양 명세표 (BOM) & 풍선 기호 -->
@@ -2581,20 +2641,22 @@ canvas.drag{cursor:grabbing}
             <p>
               <span class="txt-ko">
                 ● <b>도면 전환:</b> 상단 도면 뷰 선택 드롭다운에서 <b>[🌊 실담수량 산출도 (WATER CAPACITY DWG)]</b>를 선택하거나, 측면 편집(Tab 3)에서 <b>[🌊 실담수량 산출도 바로보기]</b> 버튼을 누르면 즉시 전환됩니다.<br>
-                ● <b>저판 플랜지 및 볼트 조립선 상세:</b> 바닥판넬과 측면판넬 조립 시 <b>저판 직립 플랜지 높이 70~80mm (H=75mm)</b>가 형성되고 <b>바닥으로부터 30~35mm (EL.+35mm)</b> 지점에서 볼트가 체결됩니다. 따라서 측면 피팅 플랜지(Fitting Flange, OUTLET/소화구 등)는 플랜지 간섭을 피하기 위해 <b>EL. +100mm 이상</b>에 취부되도록 설계 제약이 자동 검증됩니다.<br>
-                ● <b>수위 및 수심 단면도:</b> INLET(유입구), OVERFLOW(월류구/최고수위 HWL), OUTLET(유출구/최저수위 LWL), DRAIN(배수구 EL.+0)의 설치 표고가 직관적인 수위선과 ▽ 레벨 기호로 표시됩니다.<br>
+                ● <b>5단계 수위(WATER-LEVEL) 심볼 체계:</b> OVERFLOW(월류구/최고수위 HWL), 정상운전수위(NWL), OUTLET(유출구/최저수위 LWL), <b>소화용수 전용 수위(Fire Reserve Level)</b>, DRAIN(바닥 퇴수면 EL.+0)의 5단 수위가 정밀한 ▽ 레벨 기호 및 표고 수치로 표현됩니다.<br>
+                ● <b>소화용수량(Fire Fighting Water) 연동:</b> 일반 급수 유출구와 소화 배관 흡입구 사이의 전용 소화 저수량이 별도 계산되어 수조 단면에 구분 표기됩니다.<br>
+                ● <b>저판·지붕 패널 디테일 &amp; 양면플랜지:</b> 1000×1000 저판 돔 및 직립 플랜지(70mm), 천장 루프 패널 결합선, 모든 배관의 <b>KS 10K FF 양면플랜지(Double Flange)</b>와 관통 볼트선이 실물 규격으로 도면화됩니다.<br>
                 ● <b>유효 담수 영역 표시:</b> LWL부터 HWL까지의 <b>실담수량(유효 용량 Ton)</b> 및 담수율(%)이 수조 단면 중앙 뱃지에 강조되며, 하부 사수량(Dead Water Zone) 및 상부 여유고(Freeboard)가 수심 치수선과 함께 분리 계산됩니다.<br>
                 ● <b>표준 흑백 CAD 도면 (Monochrome):</b> 도면 인쇄 및 인허가 제출 시 시인성을 위해 컬러 솔리드 채움을 배제하고 표준 엔지니어링 해칭선과 선명한 CAD 레이어 선으로 작성됩니다.<br>
-                ● <b>정밀 산출 내역서 표 (SCHEDULE):</b> 바닥 유효 면적(A), 저판 플랜지/볼트선 제원, 각 노즐 표고, 유효수심(H_eff), 실담수량(V_eff), 다구획 분할 실담수량 등 인허가 제출용 18개 핵심 사양이 일목요연하게 표로 출력됩니다.<br>
+                ● <b>정밀 산출 내역서 표 (SCHEDULE):</b> 바닥 유효 면적(A), 저판 플랜지/볼트선 제원, 각 노즐 표고, 유효수심(H_eff), 실담수량(V_eff), 다구획 분할 실담수량 등 인허가 제출용 핵심 사양이 일목요연하게 표로 자동 출력됩니다.<br>
                 ● <b>CAD/DXF 내보내기:</b> AutoCAD에서 바로 출력할 수 있는 A1 정규 도면틀 및 표제란이 포함된 DXF/DWG로 즉시 저장됩니다.
               </span>
               <span class="txt-en">
                 ● <b>Switch Sheet:</b> Select <b>[🌊 Water Capacity Dwg]</b> from the top sheet dropdown or click <b>[🌊 View Water Capacity DWG]</b> in Side Elevation Tab 3.<br>
-                ● <b>Bottom Flange &amp; Bolt Joint Structure:</b> The bottom panel features an upright flange of 70~80mm (H=75mm) with the bolt assembly line at 30~35mm from floor (EL.+35mm). Side fitting flanges (OUTLET, etc.) are restricted to <b>EL. >= +100mm</b> to avoid joint bolt interference.<br>
-                ● <b>Water Level Elevation:</b> Clear visualization of INLET, OVERFLOW (HWL), OUTLET (LWL), and DRAIN (EL.+0) elevations with level triangle markers.<br>
+                ● <b>5-Tier Water Level Symbols:</b> OverFlow (HWL), Normal Water Level (NWL), Outlet (LWL), <b>Fire Reserve Water Level</b>, and Drain (EL.+0) with precision inverted triangle level markers.<br>
+                ● <b>Fire Water Storage Reserve:</b> Automatically computes dedicated fire water volume between domestic outlet and fire suction nozzles.<br>
+                ● <b>Panel Joint &amp; Double Flanges:</b> Full modeling of 1000x1000 bottom panel dome, 70mm flanges, roof panel joints, and <b>KS 10K FF Double Flanges</b> with through-bolts.<br>
                 ● <b>Effective Storage Zone:</b> The exact effective water volume (Ton / m³) and effective ratio (%) between LWL and HWL are displayed in the tank cross-section, with separate dead water and freeboard dimensioning.<br>
                 ● <b>Monochrome CAD Standard:</b> Pure monochrome engineering hatching without solid color fills, optimized for black-and-white drafting and blueprint printing.<br>
-                ● <b>Engineering Schedule Table:</b> Complete 18-row calculation sheet including Floor Net Area (A), Flange/Bolt Line Dims, Nozzle Elevations, Effective Depth (H_eff), Net Effective Capacity (V_eff), and Compartment breakdown for submittal.<br>
+                ● <b>Engineering Schedule Table:</b> Complete calculation sheet including Floor Net Area (A), Flange/Bolt Line Dims, Nozzle Elevations, Effective Depth (H_eff), Net Effective Capacity (V_eff), and Compartment breakdown.<br>
                 ● <b>AutoCAD Export:</b> Export directly to standard DXF/DWG format ready for permits and approvals.
               </span>
             </p>
@@ -2609,13 +2671,19 @@ canvas.drag{cursor:grabbing}
             <p>
               <span class="txt-ko">
                 ● <b>도면 전환:</b> 상단 도면 뷰 선택 드롭다운에서 <b>[🏗️ 기초조립도 / 스틸스키드 (STEEL SKID DWG)]</b>를 선택하거나, 사양(Tab 1) 하부 프레임 영역의 <b>[🏗️ 기초조립도 / 스틸스키드 바로보기]</b> 버튼을 누르면 즉시 전환됩니다.<br>
-                ● <b>스틸 스키드 프레임 조립도 (STEEL SKID DRAWING):</b> 탱크 바닥면 전체의 베이스 프레임 배치, 주재 및 부재 분할(1000/1500/2000/2500) 길이, 부재별 치수선, 부품 목록(PART LIST - FRAME 규격, 부재별 수량, YSACC 표준 품번 WFF-0961AMZ/WFF-0993AMZ/WFF-1051AMZ 등 매핑), 부속 철물(WBR-7575Z / WBR-0120CZE 연결 브라켓, WBR-5010Z 스키드 클램프), 제작 시방 NOTE(SS41 용융아연도금 80μ 이상, 공차, 사상)가 일체로 도면화됩니다.<br>
-                ● <b>프레임 단면 및 기초 상세도 (FRAME CROSS DWG):</b> [-125x65x6t / L-75x75x6t 부재의 정밀 단면, 통로 순간격(935mm) 및 그리드 간격(1000mm) 치수선, 하부 콘크리트 패드(Plinth H=475mm/525mm, W=400mm), M12 기초 앙카 볼트 매립 상세, WBR-5010Z 스키드 클램프 체결 상세가 지시선과 함께 고해상도로 표현됩니다.<br>
+                ● <b>스틸 스키드 프레임 조립도 (STEEL SKID DRAWING):</b> 탱크 바닥면 전체의 베이스 프레임 배치, 주재 및 부재 분할(1000/1500/2000/2500) 길이, 부재별 치수선, 부품 목록(PART LIST - FRAME 규격, 부재별 수량, YSACC 표준 품번 WFF/WFB 매핑), 부속 철물(WBR-7575Z / WBR-0120CZE 코너 브라켓, WBR-5010Z 스키드 클램프, WBR-9021CZ/1022CZ 스플라이스 플레이트), 제작 시방 NOTE(SS41 용융아연도금 80μ 이상, 공차, 사상)가 일체로 도면화됩니다.<br>
+                ● <b>75 앵글 &amp; 125/150 채널 가공 시방 완벽 반영:</b> 125/150 채널뿐만 아니라 <b>75 앵글도 중간 부재가 안쪽으로 삽입</b>되어 상부 플랜지가 완전 평면(Flush)을 이루도록 단면도가 작성됩니다.<br>
+                ● <b>이형탱크 단차 코너 브라켓 규칙:</b> 외곽 W방향 주재가 없는 이형 단차부 코너는 실제 볼트 체결 여건에 맞춰 9090 코너 브라켓이 자동 생략됩니다.<br>
+                ● <b>부재명 표기 각도:</b> 조립 제작 도면의 판독성을 위해 보조보 부재명 텍스트는 <b>270° 하향(위에서 아래로 읽기)</b> 방향으로 정렬 배치됩니다.<br>
+                ● <b>프레임 단면 및 기초 상세도 (FRAME CROSS DWG):</b> 프레임 정밀 단면, 통로 순간격(935mm) 및 그리드 간격(1000mm) 치수선, 하부 콘크리트 패드(Plinth H=475mm/525mm, W=400mm), M12 기초 앙카 볼트 매립 상세, WBR-5010Z 스키드 클램프 체결 상세가 지시선과 함께 고해상도로 표현됩니다.<br>
                 ● <b>AutoCAD 실무 완벽 호환:</b> YSACC 생산 BOM 프로그램 및 Steel Skid.dwg 표준과 100% 일치하며, A1 표준 도면틀 및 표제란과 함께 2D CAD(DXF/DWG)로 즉시 출력됩니다.
               </span>
               <span class="txt-en">
                 ● <b>Switch Sheet:</b> Select <b>[🏗️ Steel Skid Dwg]</b> from the top sheet dropdown or click <b>[🏗️ View Steel Skid DWG]</b> in Specs Tab 1.<br>
-                ● <b>Steel Skid Assembly Drawing:</b> Full base frame layout with member segmentation (1000/1500/2000/2500mm), dimension lines, PART LIST with YSACC BOM Part Codes (WFF-0961AMZ, WFF-0993AMZ, WFF-1051AMZ), connection brackets (WBR-7575Z / WBR-0120CZE), anchor clamps (WBR-5010Z), and fabrication NOTE block (Hot-dip galvanized >=80μ, tolerances).<br>
+                ● <b>Steel Skid Assembly Drawing:</b> Full base frame layout with member segmentation (1000/1500/2000/2500mm), dimension lines, PART LIST with YSACC BOM Part Codes (WFF/WFB), connection brackets (WBR-7575Z / WBR-0120CZE), anchor clamps (WBR-5010Z), splice plates (WBR-9021CZ / WBR-1022CZ), and fabrication NOTE block.<br>
+                ● <b>75 Angle &amp; 125/150 Channel Assembly:</b> Intermediate sub-beams fit inside the angle/channel profile for a perfectly flush top plane under panels.<br>
+                ● <b>Irregular Step Corner Bracket Rule:</b> 9090 corner brackets are automatically omitted at stepped cutout corners lacking a W-direction main beam.<br>
+                ● <b>Sub-beam Text Orientation:</b> Rotated 270° (top-to-bottom reading) for shop drafting readability.<br>
                 ● <b>Frame Cross Section &amp; Foundation Detail:</b> Precise channel/angle cross-section profiles, net channel clearance (935mm), grid intervals (1000mm), concrete plinths (400x475mm), embedded M12 anchor bolts, and WBR-5010Z clamp brackets.<br>
                 ● <b>Production CAD Compatibility:</b> 100% aligned with YSACC manufacturing BOM and Steel Skid.dwg standards, directly exportable to DXF/DWG with standard A1 title block.
               </span>
@@ -2699,6 +2767,54 @@ canvas.drag{cursor:grabbing}
             <p>
               <span class="txt-ko"><b>A.</b> 상단 폰트 선택 바에서 <b>RomanS.shx</b> 또는 <b>Arial.ttf</b>를 선택한 후 내보내기 하시면 표준 AutoCAD 환경에서 글꼴 깨짐 없이 완벽하게 표시됩니다.</span>
               <span class="txt-en"><b>A.</b> Select <b>RomanS.shx</b> or <b>Arial.ttf</b> in the drawing options bar before exporting to ensure 100% font compatibility in AutoCAD.</span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>❓</span>
+              <span class="txt-ko">Q. 노즐 플랜지는 단면 플랜지인가요 양면 플랜지인가요?</span>
+              <span class="txt-en">Q. Are nozzle flanges single-sided or double flanges?</span>
+            </h4>
+            <p>
+              <span class="txt-ko"><b>A.</b> 모든 배관 플랜지는 <b>KS 10K FF 양면플랜지(Double Flange)</b>로 도면화됩니다. 탱크 외벽의 외부 배관 체결 플랜지와 내부 백킹 플랜지가 한 쌍으로 구성되며, 관통 체결 볼트선이 단면도 및 부품표(BOM)에 완벽하게 일치 반영됩니다.</span>
+              <span class="txt-en"><b>A.</b> All piping nozzle flanges are standardized as <b>KS 10K FF Double Flanges</b>. A matching exterior connection flange and interior backing flange with through-bolts are rendered across sections and BOM.</span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>❓</span>
+              <span class="txt-ko">Q. 스틸 스키드의 75 앵글도 중간 부재가 안쪽으로 조립되나요?</span>
+              <span class="txt-en">Q. Are sub-beams installed inside 75 Angle skid profiles as well?</span>
+            </h4>
+            <p>
+              <span class="txt-ko"><b>A.</b> 네, 맞습니다. 125/150 채널과 동일하게 <b>75 앵글(L-75×75×6t)도 중간 위치 부재(서브빔)가 앵글 안쪽으로 삽입</b>되어 상부 지지면이 완전한 수평 평면(Flush Level)을 이루도록 제작 단면도가 정밀하게 변경 반영되었습니다.</span>
+              <span class="txt-en"><b>A.</b> Yes. Intermediate sub-beams fit inside the 75 Angle profile web just like 125/150 Channels, forming a perfectly flush top surface for tank floor panels.</span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>❓</span>
+              <span class="txt-ko">Q. 이형탱크 단차 코너에 9090 브라켓이 나타나지 않는 이유는 무엇인가요?</span>
+              <span class="txt-en">Q. Why are 9090 brackets omitted at irregular step corners?</span>
+            </h4>
+            <p>
+              <span class="txt-ko"><b>A.</b> 기둥 간섭 등으로 패널이 삭제된 이형 탱크의 '단차 모서리'는 W방향 주재가 지나가지 않아 물리적으로 볼트를 체결할 모재가 없습니다. 실제 현장 제작 조립 여건에 부합하도록 W방향 주재가 없는 단차 코너는 9090 브라켓이 자동으로 생략됩니다.</span>
+              <span class="txt-en"><b>A.</b> Stepped corners carved out by structural obstacles have no W-direction main beam to bolt to. 9090 corner brackets are automatically omitted at these corners to match physical assembly reality.</span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>❓</span>
+              <span class="txt-ko">Q. 실담수량 산출도에서 일반 유효수량과 소화용수량은 어떻게 계산되나요?</span>
+              <span class="txt-en">Q. How are domestic effective volume and fire water reserves computed?</span>
+            </h4>
+            <p>
+              <span class="txt-ko"><b>A.</b> 최고수위(HWL)부터 일반 급수 유출구(LWL)까지가 일반 유효수량(V_eff)으로 계산되고, LWL부터 하부 소화 배관 흡입구 표고까지의 전용 저류층은 <b>소화용수량(V_fire)</b>으로 분리 산출되어 인허가용 산출표에 각각 명확히 구분 출력됩니다.</span>
+              <span class="txt-en"><b>A.</b> Volume between HWL and LWL is calculated as domestic effective volume, while the storage zone below LWL down to the fire suction elevation is calculated separately as dedicated Fire Water Reserve.</span>
             </p>
           </div>
         </div>
