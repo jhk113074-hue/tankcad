@@ -7964,10 +7964,11 @@
       const yMid = (yBot + yTop) / 2;
 
       // 서브빔 단면 폭 (50 SHS: 50mm, 75/125/150: 75mm)
-      // C Channel과 부재의 중심부와 레벨링: C Channel 중심선(th / 2)과 서브빔 중심선 일치
+      // Channel 상부와 부재의 상부를 일치시켜 물탱크 판넬 수평 안착 (Right Leveling, subX1 = th)
+      // 홈(단차)은 C Channel/Angle 플랜지(날개)와의 간섭을 피하기 위해 subX1 쪽에 형성
       const subH = isSHS ? 50 : 75;
-      const subX0 = isSHS ? 0 : (th - subH) / 2;
-      const subX1 = isSHS ? 50 : (th + subH) / 2;
+      const subX1 = th;
+      const subX0 = isSHS ? 0 : (th - subH);
       const tp = 6.0; // 6t 엔드 플레이트 두께
       const twSub = isSHS ? 3.2 : (isAngle ? 6.0 : 5.0); // 웨브 두께 (5t / 6t)
       const tfSub = isSHS ? 3.2 : (isAngle ? 6.0 : 5.0); // 플랜지 두께 (5t / 6t)
