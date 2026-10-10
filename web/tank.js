@@ -6731,14 +6731,9 @@
         const hasTankLeft = (cStart > 0) && ((i > 0 && G.map.has(i - 1, cStart - 1)) || (i < G.nr && G.map.has(i, cStart - 1)));
         const hasTankRight = (cEnd < G.nc - 1) && ((i > 0 && G.map.has(i - 1, cEnd + 1)) || (i < G.nr && G.map.has(i, cEnd + 1)));
 
-        // N형도 외곽 L방향 주재는 표준 부재 그대로 (연장/신규 품번 없음)
-        const extL = 0;
-        const extR = 0;
-
-        segColSpans.forEach((nominalSpan, k) => {
-          let cutLen = nominalSpan - 10;
-          if (k === 0) cutLen += extL;
-          if (k === segColSpans.length - 1) cutLen += extR;
+        // N형도 외곽 L방향 주재는 표준 부재 그대로 (연장/신규 품번 없음, 1M=0990, 1.5M=1490, 2M=1990)
+        segColSpans.forEach((nominalSpan) => {
+          const cutLen = nominalSpan - 10;
           const codeStr = cutLen < 1000 ? (cutLen < 100 ? '00' + cutLen : '0' + cutLen) : String(cutLen);
           const code = 'WFF-' + codeStr + fSuf;
           lBeamCounts[code] = (lBeamCounts[code] || 0) + 1;
@@ -7359,10 +7354,7 @@
       if (m.hor) {
         const nominalSpan = (m.colSpans && m.colSpans[k]) ? m.colSpans[k] : (sl > 10 ? (sl + 10) : sl);
         // 양끝단 5mm씩(총 10mm) 공간을 확보하여 연결부 커팅 오차 방지 (1M=0990, 1.5M=1490, 2M=1990)
-        let cutLen = nominalSpan - 10;
-        // N형: 코너 연장분(플랜지폭) 가산
-        if (k === 0 && m.extL) cutLen += m.extL;
-        if (k === m.segs.length - 1 && m.extR) cutLen += m.extR;
+        const cutLen = nominalSpan - 10;
         const codeStr = cutLen < 1000 ? (cutLen < 100 ? `00${cutLen}` : `0${cutLen}`) : String(cutLen);
         let txtY;
         if (m.lat === 0x20000) txtY = m.y - st * 0.65;
