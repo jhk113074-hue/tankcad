@@ -142,4 +142,85 @@ assert(sheet4.tank.effDepth > 0, 'Default effDepth should be > 0');
 assert(Number(sheet4.tank.effTon) > 0, 'Default effTon should be > 0');
 console.log('Test 4 passed! Default calculations:', sheet4.tank);
 
+// Test 5: Top INLET Nozzle and VIEW 3 Plan scaling / blocks verification
+const opt5 = {
+  length: [6000],
+  width: [4000],
+  height: [3000],
+  material: 'SMC',
+  sheetKind: 'capacity',
+  nozzles: [
+    { mark: 'N1', name: 'INLET', size: '100A', type: 'FLANGE', face: 'top', elev: 'TOP', use: true },
+    { mark: 'N2', name: 'OUTLET', size: '100A', type: 'FLANGE', face: 'front', elev: 400, use: true },
+    { mark: 'N3', name: 'OVERFLOW', size: '100A', type: 'FLANGE', face: 'right', elev: 2700, use: true },
+    { mark: 'N4', name: 'DRAIN', size: '50A', type: 'SOCKET', face: 'bottom', elev: 0, use: true }
+  ]
+};
+
+const sheet5 = TankCore.buildSheet(opt5, {}, {});
+const hasTopInletLeader = sheet5.ents.some(e => e.t === 'text' && e.s && e.s.includes('상부 천정'));
+assert(hasTopInletLeader, 'Top INLET leader callout must exist on roof when face is top');
+
+const hasPlanAreaBadge = sheet5.ents.some(e => e.t === 'text' && e.s && e.s.includes('유효 담수 면적'));
+assert(hasPlanAreaBadge, 'VIEW 3 Plan view water surface area badge must exist');
+
+assert(sheet5.blocks && Object.keys(sheet5.blocks).length > 0, 'Sheet blocks dictionary must be populated');
+console.log('Test 5 passed! Top INLET and View 3 Plan auto-scaling & blocks verified.');
+
+// Test 6: Fire Water Calculation (소방용수 배관 포함 시 유효용량 분할 산출)
+const opt6 = {
+  length: [6000],
+  width: [4000],
+  height: [3000],
+  material: 'SMC',
+  sheetKind: 'capacity',
+  nozzles: [
+    { mark: 'N1', name: 'INLET', size: '100A', type: 'FLANGE', face: 'top', elev: 'TOP', use: true },
+    { mark: 'N2', name: 'OUTLET', size: '100A', type: 'FLANGE', face: 'front', elev: 400, use: true },
+    { mark: 'N3', name: 'OVERFLOW', size: '100A', type: 'FLANGE', face: 'right', elev: 2700, use: true },
+    { mark: 'N4', name: 'DRAIN', size: '50A', type: 'SOCKET', face: 'bottom', elev: 0, use: true },
+    { mark: 'N5', name: 'FIRE', size: '150A', type: 'FLANGE', face: 'front', elev: 200, use: true }
+  ]
+};
+
+const sheet6 = TankCore.buildSheet(opt6, {}, {});
+assert(sheet6, 'Sheet 6 should be generated');
+console.log('Tank 6 Fire Water data:', sheet6.tank);
+
+// 1. Water level and depth assertions
+assert.strictEqual(sheet6.tank.hasFireWater, true, 'hasFireWater must be true');
+assert.strictEqual(sheet6.tank.hwl, 2700, 'HWL must be 2700');
+assert.strictEqual(sheet6.tank.lwlDom, 400, 'LWL Domestic must be 400');
+assert.strictEqual(sheet6.tank.lwlFire, 200, 'LWL Fire must be 200');
+assert.strictEqual(sheet6.tank.fireDepth, 200, 'Fire depth must be 400 - 200 = 200mm');
+assert.strictEqual(sheet6.tank.domDepth, 2300, 'Domestic depth must be 2700 - 400 = 2300mm');
+assert.strictEqual(sheet6.tank.effDepth, 2500, 'Total effective depth must be 2700 - 200 = 2500mm');
+
+// 2. Water volume (Ton) assertions: Area = 24 m2
+// Fire ton = 24 * 0.2 = 4.8 Ton
+// Dom ton = 24 * 2.3 = 55.2 Ton
+// Total eff ton = 24 * 2.5 = 60.0 Ton
+assert.strictEqual(sheet6.tank.fireTon, '4.8', 'Fire water volume must be 4.8 Ton');
+assert.strictEqual(sheet6.tank.domTon, '55.2', 'Domestic water volume must be 55.2 Ton');
+assert.strictEqual(sheet6.tank.effTon, '60.0', 'Total effective water volume must be 60.0 Ton');
+assert.strictEqual(sheet6.tank.effRatio, '83.3', 'Effective ratio must be 83.3%');
+
+// 3. Visual entities assertions
+const hasLwlDomText = sheet6.ents.some(e => e.t === 'text' && e.s && e.s.includes('LWL(생활)'));
+assert(hasLwlDomText, 'LWL(생활) level text must exist');
+
+const hasLwlFireText = sheet6.ents.some(e => e.t === 'text' && e.s && e.s.includes('LWL(소방)'));
+assert(hasLwlFireText, 'LWL(소방) level text must exist');
+
+const hasFireNozzleLeader = sheet6.ents.some(e => e.t === 'text' && e.s && e.s.includes('소방흡입구'));
+assert(hasFireNozzleLeader, 'Fire suction nozzle leader callout must exist');
+
+const hasFireRowInTable = sheet6.ents.some(e => e.t === 'text' && e.s && e.s.includes('소방 유효수량'));
+assert(hasFireRowInTable, 'Fire water volume row must exist in schedule table');
+
+const hasDomRowInTable = sheet6.ents.some(e => e.t === 'text' && e.s && e.s.includes('생활 유효수량'));
+assert(hasDomRowInTable, 'Domestic water volume row must exist in schedule table');
+
+console.log('Test 6 passed! Fire water separation and calculation verified.');
+
 console.log('ALL UNIT TESTS PASSED SUCCESSFULLY!');

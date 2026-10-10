@@ -683,7 +683,10 @@ canvas.drag{cursor:grabbing}
                 <span class="txt-ko">실담수량 &amp; 유효수위 산출도 바로보기</span>
                 <span class="txt-en">View Water Capacity &amp; Water Level DWG</span>
               </div>
-              <div class="cap-action-sub">INLET · OUTLET · OVERFLOW 연동 실시간 유효용량 산출</div>
+              <div class="cap-action-sub">
+                <span class="txt-ko">INLET · OUTLET · OVERFLOW · FIRE(소방용수) 실시간 연동 산출</span>
+                <span class="txt-en">Live calculation linked to INLET, OUTLET, OVERFLOW &amp; FIRE nozzles</span>
+              </div>
             </div>
           </div>
           <div class="cap-action-arrow">
@@ -715,8 +718,8 @@ canvas.drag{cursor:grabbing}
             </div>
           </div>
           <div style="font-size:11px;color:var(--dim);line-height:1.4;">
-            <span class="txt-ko">※ 설정된 여유고에 따라 최고수위(HWL = H - H_free) 및 실담수량(Ton)이 자동 산출됩니다.</span>
-            <span class="txt-en">※ Effective water level (HWL = H - H_free) &amp; net water storage (Ton) are recalculated automatically.</span>
+            <span class="txt-ko">※ 설정된 여유고 및 소방용수 배관(FF) 유무에 따라 생활용수/소방용수 및 실담수량(Ton)이 자동 분할 산출됩니다.</span>
+            <span class="txt-en">※ Domestic, fire water reserve &amp; net water storage (Ton) are calculated automatically based on freeboard &amp; fire nozzle.</span>
           </div>
         </div>
 
@@ -8134,7 +8137,24 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     const isCustom = anyRemoved ? (isEn ? ' (Custom/L-Shape)' : ' (이형)') : '';
     const specText = `${fmt(m.width)}W × ${fmt(m.length)}L × ${fmt(h)}H mm` + isCustom;
 
-    $('topSpecBadge').innerHTML = `<b>${specText}</b> · ${ton} Ton (${document.querySelector('input[name=mat]:checked').value})`;
+    const effStr = (p.tank && p.tank.effTon)
+      ? (p.tank.hasFireWater
+          ? (isEn ? ` · Net: ${p.tank.effTon}T (Dom ${p.tank.domTon}T / Fire ${p.tank.fireTon}T)` : ` · 실담수 ${p.tank.effTon}T (생활 ${p.tank.domTon}T / 소방 ${p.tank.fireTon}T)`)
+          : (isEn ? ` · Net: ${p.tank.effTon} Ton (${p.tank.effRatio}%)` : ` · 실담수 ${p.tank.effTon} Ton (${p.tank.effRatio}%)`))
+      : '';
+    $('topSpecBadge').innerHTML = `<b>${specText}</b> · ${ton} Ton (${document.querySelector('input[name=mat]:checked').value})${effStr}`;
+
+    if ($('curEffSummary')) {
+      if (p.tank && p.tank.hasFireWater) {
+        $('curEffSummary').innerHTML = isEn
+          ? `HWL = EL.+${p.tank.hwl} | Net: <b>${p.tank.effTon}T</b> (Dom ${p.tank.domTon}T + Fire ${p.tank.fireTon}T)`
+          : `HWL = EL.+${p.tank.hwl} | 실담수: <b>${p.tank.effTon} Ton</b> (생활 ${p.tank.domTon}T / 소방 ${p.tank.fireTon}T)`;
+      } else if (p.tank && p.tank.effTon) {
+        $('curEffSummary').innerHTML = isEn
+          ? `HWL = EL.+${p.tank.hwl} | Net: <b>${p.tank.effTon} Ton</b> (${p.tank.effRatio}%)`
+          : `HWL = EL.+${p.tank.hwl} | 실담수: <b>${p.tank.effTon} Ton</b> (${p.tank.effRatio}%)`;
+      }
+    }
 
     const dimStr = p.tank ? p.tank.dimStr : specText;
     $('kv').innerHTML =
@@ -8142,6 +8162,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       '<span>' + (isEn ? 'Height' : '높이') + '</span><b>' + (h ? fmt(h) + ' mm' : '-') + '</b>' +
       '<span>' + (isEn ? 'Title Block Size' : '표제란 규격') + '</span><b>' + dimStr + '</b>' +
       '<span>' + (isEn ? 'Designed Capacity' : '설계 용량') + '</span><b>' + ton + ' Ton</b>' +
+      (p.tank && p.tank.effTon ? '<span>' + (isEn ? 'Net Effective Storage' : '실담수량 (유효용량)') + '</span><b>' + p.tank.effTon + ' Ton (' + p.tank.effRatio + '%)' + (p.tank.hasFireWater ? (isEn ? ` [Dom ${p.tank.domTon}T + Fire ${p.tank.fireTon}T]` : ` [생활 ${p.tank.domTon}T + 소방 ${p.tank.fireTon}T]`) : '') + '</b>' : '') +
       (p.scale ? '<span>' + (isEn ? 'Drawing Scale' : '도면 축척') + '</span><b>1 : ' + p.scale + '</b>' : '') +
       '<span>' + (isEn ? 'Base Area' : '바닥 면적') + '</span><b>' + activeAreaM2.toFixed(2) + ' m²' + (anyRemoved ? (isEn ? ` (${total} panels)` : ` (패널 ${total}장)`) : '') + '</b>' +
       (h ? '<span>' + (isEn ? 'Effective Volume' : '유효 체적') + '</span><b>' + ton + ' m³</b>' : '') +
