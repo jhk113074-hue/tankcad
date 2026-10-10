@@ -693,6 +693,33 @@ canvas.drag{cursor:grabbing}
           </div>
         </div>
 
+        <!-- 상판 여유고(Freeboard) 및 유효수위 설정 카드 -->
+        <div class="box" style="margin:10px 0;padding:10px 12px;background:var(--bg-sub);border:1px solid var(--line);border-radius:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px;">
+              <span>🌊</span>
+              <span class="txt-ko">상판 여유고 (Freeboard) 및 수위 설정</span>
+              <span class="txt-en">Freeboard &amp; Water Level</span>
+            </span>
+            <span style="font-size:11px;color:var(--dim);" id="curEffSummary">HWL = H - H_free</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <label style="font-size:11px;font-weight:600;white-space:nowrap;" id="lblSideFreeboard">상판 여유고 (H_free):</label>
+            <input type="number" id="sideInpFreeboard" value="300" min="50" max="1500" step="50" style="width:70px;padding:3px 5px;font-size:12px;font-weight:bold;text-align:center;border:1px solid var(--line);border-radius:4px;" placeholder="300">
+            <span style="font-size:11px;color:var(--dim);">mm</span>
+            <div style="display:flex;gap:4px;margin-left:auto;">
+              <button type="button" class="btn-sm" style="padding:2px 6px;font-size:10px;" onclick="setFreeboardQuick(200)">200</button>
+              <button type="button" class="btn-sm" style="padding:2px 6px;font-size:10px;" onclick="setFreeboardQuick(300)">300</button>
+              <button type="button" class="btn-sm" style="padding:2px 6px;font-size:10px;" onclick="setFreeboardQuick(400)">400</button>
+              <button type="button" class="btn-sm" style="padding:2px 6px;font-size:10px;" onclick="setFreeboardQuick(500)">500</button>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--dim);line-height:1.4;">
+            <span class="txt-ko">※ 설정된 여유고에 따라 최고수위(HWL = H - H_free) 및 실담수량(Ton)이 자동 산출됩니다.</span>
+            <span class="txt-en">※ Effective water level (HWL = H - H_free) &amp; net water storage (Ton) are recalculated automatically.</span>
+          </div>
+        </div>
+
         <!-- 1. 뷰 선택 세그먼트 (정면 / 우측면 / 배면 / 좌측면 / 상부 / 하부) -->
         <div class="face-seg-control">
           <label class="face-seg-btn">
@@ -1377,6 +1404,13 @@ canvas.drag{cursor:grabbing}
             <option value="capacity">🌊 실담수량 산출도 (WATER CAPACITY DWG)</option>
             <option value="skid_parts">⚙️ 스키드 부재 제작도 (실제 부품도)</option>
           </select>
+        </div>
+        <div class="vs-sep" id="sepFreeboard"></div>
+        <div class="vs-item" id="itemFreeboard" title="상판 여유고 (Freeboard H_free)">
+          <span class="vs-icon">📏</span>
+          <span style="font-size:11px;font-weight:600;margin-right:4px;" id="lblFreeboard">여유고:</span>
+          <input type="number" id="inpFreeboard" value="300" min="50" max="1500" step="50" style="width:58px;padding:2px 4px;font-size:12px;font-weight:bold;text-align:center;border:1px solid var(--line);border-radius:4px;" placeholder="300">
+          <span style="font-size:11px;color:var(--dim);margin-left:2px;">mm</span>
         </div>
         <div class="vs-sep"></div>
         <div class="vs-item" title="도면 축척 (Scale)">
@@ -5710,6 +5744,29 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   }
   window.openCapacityDrawing = openCapacityDrawing;
 
+  function setFreeboardQuick(val) {
+    const v = Math.max(50, Number(val) || 300);
+    if ($('inpFreeboard')) $('inpFreeboard').value = v;
+    if ($('sideInpFreeboard')) $('sideInpFreeboard').value = v;
+    schedule();
+  }
+  window.setFreeboardQuick = setFreeboardQuick;
+
+  if ($('inpFreeboard')) {
+    $('inpFreeboard').addEventListener('input', () => {
+      const v = $('inpFreeboard').value;
+      if ($('sideInpFreeboard') && $('sideInpFreeboard').value !== v) $('sideInpFreeboard').value = v;
+      schedule();
+    });
+  }
+  if ($('sideInpFreeboard')) {
+    $('sideInpFreeboard').addEventListener('input', () => {
+      const v = $('sideInpFreeboard').value;
+      if ($('inpFreeboard') && $('inpFreeboard').value !== v) $('inpFreeboard').value = v;
+      schedule();
+    });
+  }
+
   function openSkidDrawing() {
     const sk = $('sheetKind');
     if (sk) sk.value = 'frame';
@@ -7998,6 +8055,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         padMidW: $('padMidW') ? (Number($('padMidW').value) || 300) : 300,
         padLastW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
         padH: ($('padH') && $('padH').value !== '' && !isNaN($('padH').value)) ? Number($('padH').value) : (600 - (parseInt($('frm').value, 10) || 75)),
+      freeboard: ($('inpFreeboard') && $('inpFreeboard').value !== '' && !isNaN($('inpFreeboard').value)) ? Number($('inpFreeboard').value) : (($('sideInpFreeboard') && $('sideInpFreeboard').value !== '' && !isNaN($('sideInpFreeboard').value)) ? Number($('sideInpFreeboard').value) : 300),
+        freeboard: ($('inpFreeboard') && $('inpFreeboard').value !== '' && !isNaN($('inpFreeboard').value)) ? Number($('inpFreeboard').value) : (($('sideInpFreeboard') && $('sideInpFreeboard').value !== '' && !isNaN($('sideInpFreeboard').value)) ? Number($('sideInpFreeboard').value) : 300),
         padOverhang: Math.round(($('padFirstW') ? (Number($('padFirstW').value) || 400) : 400) / 2),
         slabT: ($('slabT') && $('slabT').value !== '' && !isNaN($('slabT').value)) ? Number($('slabT').value) : null,
         concreteFck: ($('concreteFck') && $('concreteFck').value) ? Number($('concreteFck').value) : 180,
@@ -8233,6 +8292,10 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       if (typeof st.sheetOn === 'boolean') $('sheetOn').checked = st.sheetOn;
       if (st.sheetKind) $('sheetKind').value = st.sheetKind;
 
+      if (st.freeboard !== undefined) {
+        if ($('inpFreeboard')) $('inpFreeboard').value = st.freeboard;
+        if ($('sideInpFreeboard')) $('sideInpFreeboard').value = st.freeboard;
+      }
       if (st.padFirstW && $('padFirstW')) $('padFirstW').value = st.padFirstW;
       if (st.padMidW && $('padMidW')) $('padMidW').value = st.padMidW;
       const defH = 600 - (parseInt($('frm').value, 10) || 75);
@@ -8537,7 +8600,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         NOZZLE: css('--cv-nozzle') || '#10b981',
         PAD: css('--cv-pad') || '#facc15',
         HIDDEN: css('--cv-hidden') || '#94a3b8',
-        CENTER: css('--cv-center') || '#f87171'
+        CENTER: css('--cv-center') || '#f87171',
+        WATER: css('--cv-water') || '#06b6d4'
       };
       const lw = {
         PANEL: 1.4,
@@ -8555,7 +8619,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         NOZZLE: 1.6,
         PAD: 1.2,
         HIDDEN: 1.0,
-        CENTER: 0.8
+        CENTER: 0.8,
+        WATER: 1.2
       };
       const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
 
@@ -9017,7 +9082,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       SHEET: '#111',
       BALLOON: '#e11d48',
       NOZZLE: '#059669',
-      PAD: '#ca8a04'
+      PAD: '#ca8a04',
+      WATER: '#0284c7'
     };
     const f = n => Math.round(n * 10) / 10; let s = '';
     const blocks = plan.blocks || (plan.ents && plan.ents.blocks) || {};
