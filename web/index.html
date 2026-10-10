@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.7.27</title>
+<title>YSACC TANK CAD v1.7.28</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -504,7 +504,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.7.27</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.7.28</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1634,7 +1634,7 @@ canvas.drag{cursor:grabbing}
           <h3 id="manualDialogTitle" style="margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">
             <span class="txt-ko">YSACC TANK CAD 사용자 가이드 &amp; 사용 매뉴얼</span>
             <span class="txt-en">YSACC TANK CAD User Guide &amp; Operation Manual</span>
-            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.7.27</span>
+            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.7.28</span>
           </h3>
           <span class="modeless-drag-hint">
             <span class="txt-ko">✥ 상단바를 잡고 자유롭게 이동 가능</span>
@@ -1910,6 +1910,111 @@ canvas.drag{cursor:grabbing}
               </div>
             </div>
           </div>
+
+          <!-- Hands-on Step-by-Step Tutorials -->
+          <div style="display:flex;align-items:center;gap:6px;margin-top:14px;border-bottom:1px dashed var(--line);padding-bottom:5px">
+            <span style="font-size:15px">🎯</span>
+            <h4 style="margin:0;font-size:13.5px;font-weight:700;color:var(--fg)">
+              <span class="txt-ko">실전 따라하기 튜토리얼 4선 (초보자 마스터 실습)</span>
+              <span class="txt-en">4 Hands-on Tutorials (Step-by-Step Practical Guide)</span>
+            </h4>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(360px, 1fr));gap:12px">
+            <!-- Tutorial 1 -->
+            <div class="manual-card" style="border-left:3px solid #0284c7">
+              <h4>
+                <span class="manual-badge">실습 1</span>
+                <span class="txt-ko">3분 완성! 기본 사각 물탱크 설계 &amp; DXF 다운로드</span>
+                <span class="txt-en">3-Min Tutorial: Standard Box Tank &amp; DXF Export</span>
+              </h4>
+              <p>
+                <span class="txt-ko">
+                  <b>목표:</b> 가로 4m × 세로 3m × 높이 2.5m 표준 물탱크의 조립도를 생성하고 AutoCAD DXF 파일로 내보냅니다.<br>
+                  <b>1단계 (치수 입력):</b> 좌측 <b>[입력]</b> 탭에서 길이(L)에 <code>4000</code>, 폭(W)에 <code>3000</code>, 높이(H)에 <code>2500</code>을 입력합니다. (높이에 따라 75 앵글 스키드가 자동 선정됩니다.)<br>
+                  <b>2단계 (배관 노즐 원클릭):</b> 좌측 <b>[측면편집]</b> 탭으로 이동 후 상단의 <b>[⚡ 1구획 기본배관]</b> 버튼을 누릅니다. IN(유입), OUT(유출), OVERFLOW, DRAIN(바닥)이 자동 배치됩니다.<br>
+                  <b>3단계 (도면 확인):</b> 우측 캔버스에서 마우스 휠로 확대/축소하고, 좌클릭 드래그로 이동하여 완성된 A1 조립도를 검토합니다.<br>
+                  <b>4단계 (CAD 저장):</b> 상단 우측의 <b>[💾 DXF 저장]</b> 버튼을 누르면 AutoCAD에서 바로 열리는 표준 CAD 도면 파일이 즉시 다운로드됩니다!
+                </span>
+                <span class="txt-en">
+                  <b>Goal:</b> Model a 4m(L) × 3m(W) × 2.5m(H) standard tank and export DXF.<br>
+                  <b>Step 1 (Specs):</b> In <b>[Specs] Tab</b>, enter L=<code>4000</code>, W=<code>3000</code>, H=<code>2500</code> (75 Angle skid auto-selected).<br>
+                  <b>Step 2 (Piping):</b> In <b>[Side Edit] Tab</b>, click <b>[⚡ 1-Click Preset Piping]</b> to auto-place IN, OUT, OVERFLOW, and DRAIN.<br>
+                  <b>Step 3 (Inspect):</b> Use mouse wheel to zoom and drag to pan across the A1 assembly drawing.<br>
+                  <b>Step 4 (Export):</b> Click <b>[💾 DXF]</b> on top toolbar to download layered CAD file ready for AutoCAD!
+                </span>
+              </p>
+            </div>
+
+            <!-- Tutorial 2 -->
+            <div class="manual-card" style="border-left:3px solid #ea580c">
+              <h4>
+                <span class="manual-badge">실습 2</span>
+                <span class="txt-ko">기둥 간섭 'ㄱ'자형 이형 물탱크 만들기</span>
+                <span class="txt-en">Tutorial 2: L-Shaped Irregular Tank with Pillar Cutout</span>
+              </h4>
+              <p>
+                <span class="txt-ko">
+                  <b>목표:</b> 기계실 기둥 간섭으로 우측 상단 모서리를 비운 'ㄱ'자형 수조를 만듭니다.<br>
+                  <b>1단계 (도구 선택):</b> 좌측 <b>[평면 편집]</b> 탭을 클릭하고, 편집 도구 칩에서 <b>[❌ 패널 삭제(Del)]</b>를 선택합니다.<br>
+                  <b>2단계 (셀 클릭 삭제):</b> 중앙 평면 격자에서 기둥 간섭 위치의 우측 상단 셀들을 마우스로 클릭하면 붉은색 ✕ 표시와 함께 셀이 삭제됩니다.<br>
+                  <b>3단계 (자동 연동 확인):</b> 우측 도면 뷰포트에서 외벽 둘레가 새로운 경계선에 맞춰 즉시 밀폐되고, 3D 조감도에서 <b>콘크리트 기초 패드가 계단형으로 자동 절단</b>되는 것을 확인합니다! (실수로 지운 셀은 다시 클릭하면 복원됩니다.)
+                </span>
+                <span class="txt-en">
+                  <b>Goal:</b> Carve out an L-shaped tank to bypass mechanical room pillars.<br>
+                  <b>Step 1 (Tool):</b> In <b>[Plan Edit] Tab</b>, select the <b>[❌ Delete (Del)]</b> tool chip.<br>
+                  <b>Step 2 (Click to Cut):</b> Click the top-right corner cells to delete them with a red ✕ marker.<br>
+                  <b>Step 3 (Live Sync):</b> Observe how perimeter walls automatically re-route and 3D concrete foundation plinths cut into stepped profiles in real time! (Click again to restore).
+                </span>
+              </p>
+            </div>
+
+            <!-- Tutorial 3 -->
+            <div class="manual-card" style="border-left:3px solid #10b981">
+              <h4>
+                <span class="manual-badge">실습 3</span>
+                <span class="txt-ko">2구획 격벽 분할 &amp; 실담수량(유효용량) 계산도 검토</span>
+                <span class="txt-en">Tutorial 3: Partition Baffle &amp; Water Capacity DWG</span>
+              </h4>
+              <p>
+                <span class="txt-ko">
+                  <b>목표:</b> 급수용과 소화용수를 분리하는 중간 칸막이(격벽)를 만들고 인허가용 용량계산도를 확인합니다.<br>
+                  <b>1단계 (격벽 입력):</b> 좌측 <b>[입력]</b> 탭의 길이(L) 입력 상자에 <code>3000 + 3000</code>처럼 <b>+</b> 기호로 입력합니다. 경계면에 <b>내부 격벽(Baffle Wall)</b>이 자동 생성됩니다.<br>
+                  <b>2단계 (도면 전환):</b> 상단 도면 시트 드롭다운에서 <b>[🌊 실담수량 산출도 (WATER CAPACITY DWG)]</b>를 선택합니다.<br>
+                  <b>3단계 (수위 및 계산서 검토):</b> 단면도에 표시된 5단계 수위선(HWL, NWL, LWL, 소화수위, EL.+0)과 우측 상단의 <b>18개 정밀 산출 내역서 표(SCHEDULE)</b>에서 유효수량과 사수량이 자동 분리 계산된 것을 확인합니다!
+                </span>
+                <span class="txt-en">
+                  <b>Goal:</b> Create a dual-compartment tank with an internal baffle and inspect capacity sheet.<br>
+                  <b>Step 1 (Baffle Input):</b> In <b>[Specs] Tab</b>, enter Length like <code>3000 + 3000</code> using <b>+</b> to create an internal baffle wall.<br>
+                  <b>Step 2 (Switch Sheet):</b> In top sheet dropdown, select <b>[🌊 Water Capacity Dwg]</b>.<br>
+                  <b>Step 3 (Inspect Levels):</b> Review 5-tier water levels (HWL, NWL, LWL, Fire Level, EL.+0) and the 18-row calculation schedule.
+                </span>
+              </p>
+            </div>
+
+            <!-- Tutorial 4 -->
+            <div class="manual-card" style="border-left:3px solid #8b5cf6">
+              <h4>
+                <span class="manual-badge">실습 4</span>
+                <span class="txt-ko">스틸 스키드 프레임 제작도 &amp; 부품표(BOM) 발주 검토</span>
+                <span class="txt-en">Tutorial 4: Steel Skid Fabrication &amp; BOM Review</span>
+              </h4>
+              <p>
+                <span class="txt-ko">
+                  <b>목표:</b> 하부 스틸 스키드의 조립도와 정밀 단면도, 실무 발주용 부품표(BOM)를 검토합니다.<br>
+                  <b>1단계 (도면 전환):</b> 상단 도면 시트 드롭다운에서 <b>[🏗️ 기초조립도 / 스틸스키드 (STEEL SKID DWG)]</b>를 선택합니다.<br>
+                  <b>2단계 (부재 및 시방 검토):</b> 바닥 프레임 전체 배치도에서 75앵글/125채널 부재의 270° 하향 각인 부재명, 최외곽 9090 코너 브라켓, 그리고 하단 단면도에서 <b>중간 보조보가 형강 안쪽으로 안착된 상세</b>를 확인합니다.<br>
+                  <b>3단계 (부품표 확인):</b> 상단 조작바의 <b>[📋 부품표 (BOM)]</b> 버튼을 누르면 부재별 표준 카탈로그 품번, 규격 및 수량이 실시간 자동 집계된 표가 열립니다. 필요 시 행을 직접 수정하거나 CSV로 다운로드할 수 있습니다!
+                </span>
+                <span class="txt-en">
+                  <b>Goal:</b> Inspect base skid layout, member details, and manufacturing BOM.<br>
+                  <b>Step 1 (Switch Sheet):</b> Select <b>[🏗️ Steel Skid Dwg]</b> from the top sheet dropdown.<br>
+                  <b>Step 2 (Inspect Members):</b> Verify catalog part codes, 270° text rotation, perimeter 9090 brackets, and sub-beams nested inside channel/angle profiles.<br>
+                  <b>Step 3 (BOM Modal):</b> Click <b>[📋 BOM]</b> on top toolbar to open live bill of materials with quantities, specs, and CSV export.
+                </span>
+              </p>
+            </div>
+          </div>
         </div>
 
         <!-- Section 1: 탱크 치수, 구조, 기초 및 스키드 -->
@@ -2002,23 +2107,30 @@ canvas.drag{cursor:grabbing}
           <div class="manual-card">
             <h4>
               <span>📏</span>
-              <span class="txt-ko">탱크 치수(L, W, H) 입력 및 구획(Compartment) 분할</span>
-              <span class="txt-en">Dimensions (L, W, H) &amp; Compartment Partitioning</span>
+              <span class="txt-ko">탱크 치수(L, W, H) 입력 &amp; 0.5m 증감 버튼 조작법</span>
+              <span class="txt-en">Dimensions (L, W, H) &amp; 0.5m Stepper Controls</span>
             </h4>
             <p>
               <span class="txt-ko">
-                <b>길이 (LENGTH):</b> 단일 치수(예: <code>4000</code>) 또는 <code>+</code> 기호로 구분하여 여러 칸에 입력(예: <code>3000 + 3000</code>)할 수 있습니다. 복수 입력 시 해당 경계면에 <b>내부 격벽(Baffle 칸막이)</b>이 자동 생성되며 2구획/다구획 탱크로 도면화됩니다.<br>
-                <b>폭 (WIDTH):</b> 단일 치수(m 단위 또는 mm 단위)를 입력합니다.<br>
-                <b>높이 (HEIGHT):</b> 총 높이(예: <code>3000</code>)에 따라 1단부터 5단까지 규격 세그먼트가 자동 분할됩니다.<br>
-                <b>1×1 패널 모듈:</b> 체크 시 1000×1000 및 1000×500 판넬 조합 모듈로 구성됩니다.
+                ● <b>조작 위치:</b> 좌측 사이드바 최상단의 <b>[입력] 탭</b>에서 탱크의 길이(L), 폭(W), 높이(H)를 설정합니다.<br>
+                ● <b>0.5m(500mm) 화살표 버튼:</b> 입력창 우측의 <b>▲ / ▼</b> 화살표를 클릭하여 500mm 단위로 빠르고 간편하게 치수를 증감할 수 있습니다.<br>
+                ● <b>직접 숫자 타이핑:</b> 입력 상자를 클릭하여 밀리미터 단위(예: <code>4000</code>) 또는 미터 단위(예: <code>4.0</code>)를 직접 키보드로 입력할 수 있습니다.<br>
+                ● <b>다구획 칸막이(Baffle) 분할 문법:</b> 길이에 <code>3000 + 3000</code>처럼 <b>+</b> 기호로 연결하여 입력하면, 해당 분할선에 <b>내부 격벽(Baffle Wall)</b>이 자동으로 생성되어 2구획(소화/급수 등) 수조로 도면화됩니다.<br>
+                ● <b>높이(H)와 단(Tier) 자동 분할:</b> 총 높이에 따라 1단부터 5단까지 SMC 판넬 단수가 자동으로 계산되며, 상단 헤더에 총 저수용량(Ton)이 실시간 표시됩니다.
               </span>
               <span class="txt-en">
-                <b>Length (L):</b> Enter a single dimension (e.g., <code>4000</code>) or split with <code>+</code> (e.g., <code>3000 + 3000</code>). Multiple entries automatically create an <b>Internal Baffle Partition Wall</b> for multi-compartment tanks.<br>
-                <b>Width (W):</b> Enter overall width in meters or millimeters.<br>
-                <b>Height (H):</b> Automatically segmented into 1 to 5 panel tiers.<br>
-                <b>1×1 Panel Module:</b> Combines 1000×1000 and 1000×500 standard panel modules.
+                ● <b>Location:</b> Configure Length (L), Width (W), and Height (H) in the <b>[Specs] Tab</b>.<br>
+                ● <b>0.5m (500mm) Steppers:</b> Click the <b>▲ / ▼</b> arrow buttons inside input boxes to increment/decrement by 500mm effortlessly.<br>
+                ● <b>Direct Typing:</b> Click and type directly in millimeters (e.g., <code>4000</code>) or meters (e.g., <code>4.0</code>).<br>
+                ● <b>Partition Wall Syntax:</b> Enter length as <code>3000 + 3000</code> using <b>+</b> to automatically install an <b>Internal Baffle Partition Wall</b>.<br>
+                ● <b>Tier Auto-Segmentation:</b> Height is automatically segmented into standard panel tiers, and gross capacity (Ton) updates live in header.
               </span>
             </p>
+            <div class="manual-tip">
+              <span>💡</span>
+              <span class="txt-ko"><b>꿀팁:</b> 3구획 이상도 <code>2000 + 3000 + 2000</code> 형태로 자유롭게 분할할 수 있습니다.</span>
+              <span class="txt-en"><b>Pro Tip:</b> Multi-compartments like <code>2000 + 3000 + 2000</code> are supported seamlessly.</span>
+            </div>
           </div>
 
           <div class="manual-card">
@@ -2227,17 +2339,27 @@ canvas.drag{cursor:grabbing}
           <div class="manual-card">
             <h4>
               <span>❌</span>
-              <span class="txt-ko">이형 패널 절단 (기둥/보 간섭 제외)</span>
-              <span class="txt-en">Panel Cutout for Structural Obstacles</span>
+              <span class="txt-ko">이형 패널 절단 (기둥/보 간섭 제외) &amp; 복원 방법</span>
+              <span class="txt-en">Panel Cutout for Structural Obstacles &amp; Restoration</span>
             </h4>
             <p>
-              <span class="txt-ko">건물 기계실 기둥(Pillar)이나 배관 비트 간섭으로 인해 직사각형이 아닌 'ㄱ'자, 'ㄷ'자 형태의 수조가 필요할 때 사용합니다. <b>[삭제(Del)]</b> 도구를 선택한 후 평면 격자에서 해당 위치의 셀을 클릭하면 즉시 삭제되며, 외벽 패널과 스키드 프레임이 새로운 경계면에 맞춰 실시간 재구성됩니다.</span>
-              <span class="txt-en">When dealing with mechanical room columns or structural obstacles, select the <b>[Delete (Del)]</b> tool and click grid cells to carve out L-shaped or U-shaped irregular tanks. Perimeter walls and skid beams automatically re-route.</span>
+              <span class="txt-ko">
+                ● <b>조작 위치:</b> 좌측 <b>[평면 편집] 탭</b>을 클릭하고, 편집 도구 칩에서 <b>[❌ 패널 삭제(Del)]</b>를 선택합니다.<br>
+                ● <b>패널 삭제:</b> 평면 격자에서 건물 기둥이나 배관 비트가 지나가는 셀을 마우스로 클릭하면 붉은색 ✕ 표시와 함께 즉시 삭제됩니다.<br>
+                ● <b>패널 복원:</b> 삭제된 ✕ 셀을 다시 한번 마우스로 클릭하면 원래의 정상 패널로 즉시 복원됩니다.<br>
+                ● <b>4대 실시간 자동 연동:</b> 패널이 삭제되는 즉시 ① 수조 외벽이 새로운 경계선을 따라 자동 밀폐되고, ② 3D 조감도에서 <b>콘크리트 기초 패드가 계단형(Stepped)으로 자동 절단</b>되며, ③ W방향 주재가 없는 단차 모서리는 9090 코너 브라켓이 자동 생략되고, ④ 유효 저수량(Ton)이 정확하게 실시간 차감 계산됩니다.
+              </span>
+              <span class="txt-en">
+                ● <b>Location:</b> In <b>[Plan Edit] Tab</b>, select the <b>[❌ Delete (Del)]</b> tool chip.<br>
+                ● <b>Delete Cell:</b> Click any grid cell interfering with building columns to remove it (marked with red ✕).<br>
+                ● <b>Restore Cell:</b> Click the deleted cell again to restore it back to a normal panel.<br>
+                ● <b>4-Way Live Sync:</b> Real-time ① wall perimeter re-closure, ② 3D stepped concrete pad cutting, ③ automatic omission of 9090 corner brackets at step edges lacking W-beams, and ④ live capacity recalculation.
+              </span>
             </p>
             <div class="manual-tip">
               <span>💡</span>
-              <span class="txt-ko"><b>3D 기초 패드 자동 연동:</b> 삭제된 구간 아래의 콘크리트 기초 패드는 3D 등각도에서 계단형(Stepped)으로 자동 절단되어 실제 시공과 100% 일치합니다.</span>
-              <span class="txt-en"><b>3D Foundation Sync:</b> Concrete foundation strips beneath cutout cells are automatically trimmed into stepped profiles in 3D isometric view.</span>
+              <span class="txt-ko"><b>화면 제어:</b> 평면 격자 상단의 <b>[+] / [-] / [⛶ 맞춤]</b> 버튼으로 격자 크기를 자유롭게 확대/축소할 수 있습니다.</span>
+              <span class="txt-en"><b>Grid Zoom:</b> Use <b>[+] / [-] / [Fit]</b> buttons above the grid to adjust cell sizes comfortably.</span>
             </div>
           </div>
 
@@ -2249,14 +2371,14 @@ canvas.drag{cursor:grabbing}
             </h4>
             <p>
               <span class="txt-ko">
-                ● <b>맨홀 (Manhole):</b> 천장 상부 점검용 맨홀 위치를 클릭하여 배치합니다. 하단 방향 버튼(상/하/좌/우/자동)으로 열림 및 접근 방향을 지정할 수 있습니다.<br>
-                ● <b>내/외부 사다리 (Ladder):</b> 맨홀 위치에 맞춰 외벽 접근용 사다리 심볼이 평면도 및 입면도에 정확한 방향으로 투영됩니다.<br>
-                ● <b>통기관 (Air Vent):</b> 공기 순환 및 수압 평형을 위한 벤트 심볼을 원하는 상부 칸에 자유롭게 설치합니다.
+                ● <b>맨홀 (Manhole):</b> 도구에서 <b>[🚪 맨홀(MH)]</b>을 선택하고 천장 판넬 격자에서 원하는 칸을 클릭합니다. 하단의 방향 선택 버튼(<b>상 / 하 / 좌 / 우 / 자동</b>)을 눌러 점검구 열림 및 외벽 접근 방향을 자유롭게 회전할 수 있습니다.<br>
+                ● <b>사다리 (Ladder):</b> 맨홀 위치에 맞춰 외벽 접근용 사다리 심볼이 평면도 및 입면도에 정확한 방향으로 투영 연동됩니다.<br>
+                ● <b>통기관 (Air Vent):</b> 도구에서 <b>[🌪️ 통기관(VENT)]</b>을 선택하고 상부 칸을 클릭하여 신선 공기 흡배기 벤트를 배치합니다.
               </span>
               <span class="txt-en">
-                ● <b>Manhole (MH):</b> Click roof cells to place maintenance manholes. Direction radios (Top/Bottom/Left/Right/Auto) control hatch access.<br>
-                ● <b>Ladder (LAD):</b> Automatically projects internal and external ladders in Plan and Elevation views aligned with manholes.<br>
-                ● <b>Air Vent (VENT):</b> Click roof cells to position air vents for pressure equalization.
+                ● <b>Manhole (MH):</b> Select <b>[🚪 Manhole]</b> tool chip and click desired roof cell. Use direction radios (<b>Top / Bottom / Left / Right / Auto</b>) to orient hatch opening.<br>
+                ● <b>Ladder (LAD):</b> External access ladders are automatically projected in Plan and Elevation views aligned with manhole orientation.<br>
+                ● <b>Air Vent (VENT):</b> Select <b>[🌪️ Air Vent]</b> tool chip to place roof ventilation ports.
               </span>
             </p>
           </div>
@@ -2525,8 +2647,28 @@ canvas.drag{cursor:grabbing}
               <span class="txt-en">AutoCAD Standard BOM Integration</span>
             </h4>
             <p>
-              <span class="txt-ko">A1 표준 조립도 우측 하단에 수록되는 공사 및 견적용 정규 부품 명세표입니다. 기초 패드, 스키드 베이스, 바닥/측면/천장 판넬, 내부 환봉 스테이, 외부 보강 프레임, 볼트/너트류가 규격 및 수량과 함께 자동 집계됩니다. 상단 툴바의 <b>[📋 부품표]</b> 모달창에서 직접 항목을 추가, 수정, 삭제할 수 있습니다.</span>
-              <span class="txt-en">Standard bill of materials positioned at the lower right of the A1 assembly drawing. Summarizes foundation piers, skid beams, panels, stay rods, exterior frames, and hardware. Click <b>[📋 BOM]</b> in the toolbar to edit rows, specs, and quantities.</span>
+              <span class="txt-ko">A1 표준 조립도 우측 하단에 수록되는 공사 및 견적용 정규 부품 명세표입니다. 기초 패드, 스키드 베이스, 바닥/측면/천장 판넬, 내부 환봉 스테이, 외부 보강 프레임, 볼트/너트류가 규격 및 수량과 함께 자동 집계됩니다. 상단 툴바의 <b>[📋 부품표]</b> 모달창에서 직접 항목을 추가, 수정, 삭제할 수 있으며 CSV로 내보낼 수도 있습니다.</span>
+              <span class="txt-en">Standard bill of materials positioned at the lower right of the A1 assembly drawing. Summarizes foundation piers, skid beams, panels, stay rods, exterior frames, and hardware. Click <b>[📋 BOM]</b> in the toolbar to edit rows, specs, and quantities, or export CSV.</span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>🏷️</span>
+              <span class="txt-ko">표제란 (Title Block) 프로젝트 정보 입력 및 도면 반영</span>
+              <span class="txt-en">Title Block Project Info &amp; Drawing Sync</span>
+            </h4>
+            <p>
+              <span class="txt-ko">
+                ● <b>조작 방법:</b> 상단 조작바의 <b>[🏷️ 표제란]</b> 버튼을 누르면 대화상자가 열립니다.<br>
+                ● <b>입력 항목:</b> 프로젝트명(Project Name), 고객사/발주처(Customer), 설계사(Designer), 도면번호(DWG No.), 척도(Scale), 특기사항을 입력합니다.<br>
+                ● <b>실시간 반영:</b> 입력 즉시 A1 표준 조립도, 실담수량 산출도, 스틸 스키드 제작도 등 모든 도면 우측 하단의 정규 표제란 블록에 깔끔하게 인쇄 연동됩니다.
+              </span>
+              <span class="txt-en">
+                ● <b>How to Open:</b> Click <b>[🏷️ Title Block]</b> in the top toolbar.<br>
+                ● <b>Fields:</b> Enter Project, Customer, Designer, DWG No., Scale, Date, and Notes.<br>
+                ● <b>Live Sync:</b> Instantly reflected in the title block of Assembly, Capacity, and Skid drawings.
+              </span>
             </p>
           </div>
         </div>
@@ -2690,6 +2832,26 @@ canvas.drag{cursor:grabbing}
             </p>
           </div>
 
+          <div class="manual-card" style="border-left:3px solid #10b981">
+            <h4>
+              <span>⚙️</span>
+              <span class="txt-ko">스틸 스키드 부재 제작 가공도 (SKID PARTS FABRICATION DWG)</span>
+              <span class="txt-en">Skid Parts Fabrication DWG</span>
+            </h4>
+            <p>
+              <span class="txt-ko">
+                ● <b>도면 전환:</b> 상단 도면 시트 선택 드롭다운에서 <b>[⚙️ 스키드 부재 제작도 (SKID PARTS DWG)]</b>를 선택합니다.<br>
+                ● <b>단품 가공 상세:</b> 스틸 스키드를 구성하는 각 부재(W방향 주재 WFF-xxxxASZL/R, L방향 주재 WFF-xxxxCLZ, 서브빔 WFB-xxxxAMZ Type A/B/C 등)의 볼트홀 타공 위치, 단부 노치 가공, 길이 치수선이 공장 제작 규격으로 1:1 완벽하게 도면화됩니다.<br>
+                ● <b>BOM 수량 연동:</b> 본 프로젝트에서 실제로 소요되는 부재만 선별되어 그리드 형태로 정돈 배치되며 부재별 수량이 명기됩니다.
+              </span>
+              <span class="txt-en">
+                ● <b>Switch Sheet:</b> Select <b>[⚙️ Skid Parts DWG]</b> from the top sheet dropdown.<br>
+                ● <b>Piece Fabrication Details:</b> Hole drilling patterns, end notch cuts, and piece dimensions for all W-beams, L-beams, and sub-beams modeled 1:1 for shop fabrication.<br>
+                ● <b>BOM Synchronized:</b> Only the parts required for the current tank are neatly arranged in a drawing grid with exact quantities.
+              </span>
+            </p>
+          </div>
+
           <div class="manual-card">
             <h4>
               <span>💾</span>
@@ -2815,6 +2977,18 @@ canvas.drag{cursor:grabbing}
             <p>
               <span class="txt-ko"><b>A.</b> 최고수위(HWL)부터 일반 급수 유출구(LWL)까지가 일반 유효수량(V_eff)으로 계산되고, LWL부터 하부 소화 배관 흡입구 표고까지의 전용 저류층은 <b>소화용수량(V_fire)</b>으로 분리 산출되어 인허가용 산출표에 각각 명확히 구분 출력됩니다.</span>
               <span class="txt-en"><b>A.</b> Volume between HWL and LWL is calculated as domestic effective volume, while the storage zone below LWL down to the fire suction elevation is calculated separately as dedicated Fire Water Reserve.</span>
+            </p>
+          </div>
+
+          <div class="manual-card">
+            <h4>
+              <span>❓</span>
+              <span class="txt-ko">Q. 마우스 휠 조작 중 도면이 화면 밖으로 사라졌을 때는 어떻게 하나요?</span>
+              <span class="txt-en">Q. What should I do if the drawing goes off-screen during zooming?</span>
+            </h4>
+            <p>
+              <span class="txt-ko"><b>A.</b> 캔버스 빈 영역을 마우스 왼쪽 버튼으로 <b>빠르게 더블클릭 (Double Click)</b>하시면 현재 화면 크기에 맞춰 도면 전체가 정중앙으로 자동 맞춤(Auto Zoom Fit) 복원됩니다. 상단 조작바의 화면 맞춤 기능을 통해서도 즉시 원복할 수 있습니다.</span>
+              <span class="txt-en"><b>A.</b> Simply <b>Double-Click</b> anywhere on the canvas to auto-fit the full sheet to screen center, or use the auto-fit control on the viewport toolbar.</span>
             </p>
           </div>
         </div>
@@ -3703,7 +3877,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.7.27</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.7.28</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -3713,7 +3887,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.7.27</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.7.28</span></div>
     </div>
   </main>
 </div>
@@ -25256,7 +25430,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.7.27</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.7.28</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
