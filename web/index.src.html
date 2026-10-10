@@ -571,9 +571,12 @@ canvas.drag{cursor:grabbing}
           <div style="flex:1;display:flex;align-items:center;gap:4px">
             <select id="frm" style="flex:1">
               <option value="50">50 (SHS)</option>
-              <option value="75" selected>75 (앵글)</option>
-              <option value="125">125 (채널)</option>
-              <option value="150">150 (채널)</option>
+              <option value="75" selected>75 (앵글)(O)</option>
+              <option value="125">125 (채널)(O)</option>
+              <option value="150">150 (채널)(O)</option>
+              <option value="75N">75 (앵글)(N)</option>
+              <option value="125N">125 (채널)(N)</option>
+              <option value="150N">150 (채널)(N)</option>
             </select>
             <label class="chk-b11-pill" title="수조 높이에 맞춰 베이스 프레임을 자동 선택합니다" style="padding:4px 6px;margin:0">
               <input type="checkbox" id="chkAutoFrame" checked>
@@ -4002,9 +4005,14 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
     }
     if ($('frm') && $('frm').options && $('frm').options.length >= 4) {
       $('frm').options[0].textContent = '50 (SHS)';
-      $('frm').options[1].textContent = currentLang === 'en' ? '75 (Angle)' : '75 (앵글)';
-      $('frm').options[2].textContent = currentLang === 'en' ? '125 (Channel)' : '125 (채널)';
-      $('frm').options[3].textContent = currentLang === 'en' ? '150 (Channel)' : '150 (채널)';
+      $('frm').options[1].textContent = currentLang === 'en' ? '75 (Angle)(O)' : '75 (앵글)(O)';
+      $('frm').options[2].textContent = currentLang === 'en' ? '125 (Channel)(O)' : '125 (채널)(O)';
+      $('frm').options[3].textContent = currentLang === 'en' ? '150 (Channel)(O)' : '150 (채널)(O)';
+      if ($('frm').options.length >= 7) {
+        $('frm').options[4].textContent = currentLang === 'en' ? '75 (Angle)(N)' : '75 (앵글)(N)';
+        $('frm').options[5].textContent = currentLang === 'en' ? '125 (Channel)(N)' : '125 (채널)(N)';
+        $('frm').options[6].textContent = currentLang === 'en' ? '150 (Channel)(N)' : '150 (채널)(N)';
+      }
     }
     if ($('miniType') && $('miniType').options && $('miniType').options.length >= 2) {
       $('miniType').options[0].textContent = 'FLANGE 10K';
@@ -4992,17 +5000,32 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   }
 
   function getFrameSpecLabel(frm) {
-    const num = Number(frm) || 75;
+    const num = parseInt(frm, 10) || 75;
+    const vTag = (num === 50) ? '' : (/N$/i.test(String(frm)) ? '(N)' : '(O)');
     if (num === 50) return currentLang === 'en' ? '50 (SHS 50x50x3.2t)' : '50 (각파이프 50×50×3.2t)';
-    if (num === 75) return currentLang === 'en' ? '75 (Angle 75x75x6t)' : '75 (앵글 75×75×6t)';
-    if (num === 125) return currentLang === 'en' ? '125 (Channel 125x65x6t)' : '125 (채널 125×65×6t)';
-    if (num === 150) return currentLang === 'en' ? '150 (Channel 150x75x6.5t)' : '150 (채널 150×75×6.5t)';
+    if (num === 75) return currentLang === 'en' ? `75 (Angle 75x75x6t)${vTag}` : `75 (앵글 75×75×6t)${vTag}`;
+    if (num === 125) return currentLang === 'en' ? `125 (Channel 125x65x6t)${vTag}` : `125 (채널 125×65×6t)${vTag}`;
+    if (num === 150) return currentLang === 'en' ? `150 (Channel 150x75x6.5t)${vTag}` : `150 (채널 150×75×6.5t)${vTag}`;
     return `${num} Frame`;
+  }
+
+  // 프레임 선택값('125' / '125N')에서 O/N 구분 추출
+  function getFrmVariant() {
+    return ($('frm') && /N$/i.test($('frm').value)) ? 'N' : 'O';
+  }
+  function fmtFrameBadge(val) {
+    const num = parseInt(val, 10) || 75;
+    const parts = getFrameSpecLabel(num).split(' ');
+    const typeName = (parts[1] || '프레임').replace(/^\(/, '');
+    const v = (num === 50) ? '' : (/N$/i.test(String(val)) ? '(N)' : '(O)');
+    return `${num} (${typeName})${v}`;
   }
 
   function applyAutoSkidFrame(force = false) {
     const hVal = Number($('H') ? $('H').value : 3000) / 1000;
     const recFrame = C.getFrameForHeight ? C.getFrameForHeight(hVal, activeSkidRules) : 75;
+    // 자동 선정 시에도 사용자가 선택한 O/N 구분은 유지 (50 SHS는 구분 없음)
+    const recVal = (Number(recFrame) !== 50 && getFrmVariant() === 'N') ? `${recFrame}N` : String(recFrame);
 
     if ($('skidRuleSummaryShort') && C.formatSkidRuleSummary) {
       $('skidRuleSummaryShort').textContent = C.formatSkidRuleSummary(activeSkidRules);
@@ -5012,20 +5035,17 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
     const curFrm = $('frm') ? $('frm').value : '75';
     if ($('skidCurrentFrameBadge')) {
-      const parts = getFrameSpecLabel(curFrm).split(' ');
-      $('skidCurrentFrameBadge').textContent = `${curFrm} (${parts[1] || '프레임'})`;
+      $('skidCurrentFrameBadge').textContent = fmtFrameBadge(curFrm);
     }
     if ($('modalSkidRecFrame')) {
-      const parts = getFrameSpecLabel(recFrame).split(' ');
-      $('modalSkidRecFrame').textContent = `${recFrame} (${parts[1] || '프레임'})`;
+      $('modalSkidRecFrame').textContent = fmtFrameBadge(recVal);
     }
 
     if (autoSelectFrameEnabled || force) {
-      if ($('frm') && $('frm').value !== String(recFrame)) {
-        $('frm').value = String(recFrame);
+      if ($('frm') && $('frm').value !== recVal) {
+        $('frm').value = recVal;
         if ($('skidCurrentFrameBadge')) {
-          const parts = getFrameSpecLabel(recFrame).split(' ');
-          $('skidCurrentFrameBadge').textContent = `${recFrame} (${parts[1] || '프레임'})`;
+          $('skidCurrentFrameBadge').textContent = fmtFrameBadge(recVal);
         }
       }
     }
@@ -7546,7 +7566,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   function updatePadBadges() {
     const pf = $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400;
     const pm = $('padMidW') ? (Number($('padMidW').value) || 300) : 300;
-    const frm = $('frm') ? (Number($('frm').value) || 75) : 75;
+    const frm = $('frm') ? (parseInt($('frm').value, 10) || 75) : 75;
     const defPh = 600 - frm;
     const ov = Math.round(pf / 2);
     const H = Number($('H') ? $('H').value : 3000) || 3000;
@@ -7583,7 +7603,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
   }
 
   $('frm').addEventListener('change', () => {
-    const frm = Number($('frm').value) || 75;
+    const frm = parseInt($('frm').value, 10) || 75;
     if (!isPadHCustom && $('padH')) {
       $('padH').value = 600 - frm;
       $('padH').dataset.lastDef = 600 - frm;
@@ -7643,7 +7663,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
   if ($('btnResetPadH')) {
     $('btnResetPadH').addEventListener('click', () => {
-      const frm = Number($('frm').value) || 75;
+      const frm = parseInt($('frm').value, 10) || 75;
       if ($('padH')) {
         $('padH').value = 600 - frm;
         $('padH').dataset.lastDef = 600 - frm;
@@ -7972,11 +7992,11 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       renderGrid(m0);
       updateNozzleUi(m0);
       const opt = {
-        length: L, width: W, height: H, hseg: C.heightSegs(H[0], $('b11').checked), b11: $('b11').checked, removed: [...removed].map(k => k.split(',').map(Number)), marks: Object.assign({}, marks), ladders: Object.assign({}, ladders), manholeDirs: Object.assign({}, manholeDirs), pillars: [...pillars].map(k => k.split(',').map(Number)), frame: Number($('frm').value), material: document.querySelector('input[name=mat]:checked').value,
+        length: L, width: W, height: H, hseg: C.heightSegs(H[0], $('b11').checked), b11: $('b11').checked, removed: [...removed].map(k => k.split(',').map(Number)), marks: Object.assign({}, marks), ladders: Object.assign({}, ladders), manholeDirs: Object.assign({}, manholeDirs), pillars: [...pillars].map(k => k.split(',').map(Number)), frame: parseInt($('frm').value, 10), frameVariant: /N$/i.test($('frm').value) ? 'N' : 'O', material: document.querySelector('input[name=mat]:checked').value,
         padFirstW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
         padMidW: $('padMidW') ? (Number($('padMidW').value) || 300) : 300,
         padLastW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
-        padH: ($('padH') && $('padH').value !== '' && !isNaN($('padH').value)) ? Number($('padH').value) : (600 - (Number($('frm').value) || 75)),
+        padH: ($('padH') && $('padH').value !== '' && !isNaN($('padH').value)) ? Number($('padH').value) : (600 - (parseInt($('frm').value, 10) || 75)),
         padOverhang: Math.round(($('padFirstW') ? (Number($('padFirstW').value) || 400) : 400) / 2),
         slabT: ($('slabT') && $('slabT').value !== '' && !isNaN($('slabT').value)) ? Number($('slabT').value) : null,
         concreteFck: ($('concreteFck') && $('concreteFck').value) ? Number($('concreteFck').value) : 180,
@@ -8068,7 +8088,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       '<span>' + (isEn ? 'Width Segments (W)' : '폭 분할 (W)') + '</span><b>' + m.rows.join(' + ') + '</b>' +
       '<span>' + (isEn ? 'Length Segments (L)' : '길이 분할 (L)') + '</span><b>' + m.cols.join(' + ') + '</b>' +
       '<span>' + (isEn ? 'Plan Panels Count' : '평면 패널 수') + '</span><b>' + total + (isEn ? ' Panels' : ' 장') + (anyRemoved ? (isEn ? ` (${m.removed.size} removed)` : ` (${m.removed.size}장 삭제)`) : '') + '</b>' +
-      '<span>' + (isEn ? 'Foundation Pad Spec' : '기초패드 규격') + '</span><b>' + (isEn ? 'Edge ' : '최외각 ') + ($('padFirstW') ? $('padFirstW').value : 400) + ' mm · ' + (isEn ? 'Mid ' : '일반 ') + ($('padMidW') ? $('padMidW').value : 300) + ' mm (H:' + (($('padH') && $('padH').value !== '') ? $('padH').value : (600 - (Number($('frm').value) || 75))) + ')</b>';
+      '<span>' + (isEn ? 'Foundation Pad Spec' : '기초패드 규격') + '</span><b>' + (isEn ? 'Edge ' : '최외각 ') + ($('padFirstW') ? $('padFirstW').value : 400) + ' mm · ' + (isEn ? 'Mid ' : '일반 ') + ($('padMidW') ? $('padMidW').value : 300) + ' mm (H:' + (($('padH') && $('padH').value !== '') ? $('padH').value : (600 - (parseInt($('frm').value, 10) || 75))) + ')</b>';
     $('cnt').innerHTML = Object.entries(cnt).sort().map(([k, v]) => '<tr><td>' + k + ' mm</td><td class="n">' + v + '</td></tr>').join('');
   }
 
@@ -8108,12 +8128,13 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       b11: $('b11').checked,
       mat: document.querySelector('input[name=mat]:checked') ? document.querySelector('input[name=mat]:checked').value : 'GRP',
       rf: document.querySelector('input[name=rf]:checked') ? Number(document.querySelector('input[name=rf]:checked').value) : 1,
-      frm: Number($('frm').value) || 75,
-      frame: Number($('frm').value) || 75,
+      frm: $('frm').value || '75',
+      frame: parseInt($('frm').value, 10) || 75,
+      frameVariant: /N$/i.test($('frm').value) ? 'N' : 'O',
       padFirstW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
       padMidW: $('padMidW') ? (Number($('padMidW').value) || 300) : 300,
       padLastW: $('padFirstW') ? (Number($('padFirstW').value) || 400) : 400,
-      padH: ($('padH') && $('padH').value !== '' && !isNaN($('padH').value)) ? Number($('padH').value) : (600 - (Number($('frm').value) || 75)),
+      padH: ($('padH') && $('padH').value !== '' && !isNaN($('padH').value)) ? Number($('padH').value) : (600 - (parseInt($('frm').value, 10) || 75)),
       slabT: ($('slabT') && $('slabT').value !== '') ? $('slabT').value : '',
       concreteFck: ($('concreteFck') && $('concreteFck').value) ? Number($('concreteFck').value) : 180,
       isPadHCustom: isPadHCustom,
@@ -8213,7 +8234,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
 
       if (st.padFirstW && $('padFirstW')) $('padFirstW').value = st.padFirstW;
       if (st.padMidW && $('padMidW')) $('padMidW').value = st.padMidW;
-      const defH = 600 - (Number($('frm').value) || 75);
+      const defH = 600 - (parseInt($('frm').value, 10) || 75);
       if (st.padH !== undefined && $('padH')) {
         $('padH').value = st.padH;
         isPadHCustom = (st.isPadHCustom !== undefined) ? st.isPadHCustom : (Number(st.padH) !== defH);
@@ -8312,11 +8333,11 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       if (st.H) params.set('H', st.H);
       if (st.mat && st.mat !== 'GRP') params.set('mat', st.mat);
       if (st.rf && st.rf !== 1) params.set('rf', st.rf);
-      if (st.frm && st.frm !== 75) params.set('frm', st.frm);
+      if (st.frm && String(st.frm) !== '75') params.set('frm', st.frm);
       if (st.b11) params.set('b11', '1');
       if (st.padFirstW && st.padFirstW !== 400) params.set('pf', st.padFirstW);
       if (st.padMidW && st.padMidW !== 300) params.set('pm', st.padMidW);
-      const defH = 600 - (st.frm || 75);
+      const defH = 600 - (parseInt(st.frm, 10) || 75);
       if (st.padH && st.padH !== defH) params.set('ph', st.padH);
       if (!st.useNozzles) params.set('pipes', '0');
       if (st.drawingLang && st.drawingLang !== 'bilingual') params.set('dlang', st.drawingLang);
@@ -8360,11 +8381,11 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
             b11: sp.get('b11') === '1',
             mat: sp.get('mat') || 'GRP',
             rf: sp.has('rf') ? Number(sp.get('rf')) : 1,
-            frm: sp.has('frm') ? Number(sp.get('frm')) : 75,
+            frm: sp.has('frm') ? sp.get('frm') : 75,
             padFirstW: sp.has('pf') ? Number(sp.get('pf')) : 400,
             padMidW: sp.has('pm') ? Number(sp.get('pm')) : 300,
             padLastW: sp.has('pf') ? Number(sp.get('pf')) : (sp.has('pl') ? Number(sp.get('pl')) : 400),
-            padH: sp.has('ph') ? Number(sp.get('ph')) : (600 - (sp.has('frm') ? Number(sp.get('frm')) : 75)),
+            padH: sp.has('ph') ? Number(sp.get('ph')) : (600 - (sp.has('frm') ? (parseInt(sp.get('frm'), 10) || 75) : 75)),
             isPadHCustom: sp.has('ph'),
             padOverhang: Math.round((sp.has('pf') ? Number(sp.get('pf')) : 400) / 2),
             useNozzles: sp.get('pipes') !== '0'

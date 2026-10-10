@@ -1537,6 +1537,44 @@
     return `Main: ${d.mainSpec}, Sub: ${d.subSpec}`;
   }
 
+  /* ---------- 기초 프레임 구분 (O: 기존형 / N: 신규형) ----------
+   * O(기존): W방향 주재 = 시작/끝단 돌출재(2060ASZL/R 등) + 중간 2000ASZ, 코너는 W방향 주재가 덮음
+   * N(신규): W방향 주재 = 판넬 모듈선 기준 0990/1490/1990 (양끝 5mm 여유, L방향과 동일 접미사 ALZ/CLZ/HCLZ),
+   *          코너는 외곽 L방향 주재가 W방향 주재 외측까지 연장되어 연결
+   */
+  function getFrameVariant(opt) {
+    if (!opt) return 'O';
+    if (opt.frameVariant === 'N' || opt.frameVariant === 'n') return 'N';
+    if (/N$/i.test(String(opt.frame || ''))) return 'N';
+    return 'O';
+  }
+  function frameLabel(frame, variant, lang = 'ko') {
+    const f = parseInt(frame, 10) || 75;
+    const v = variant === 'N' ? 'N' : 'O';
+    const base = f === 75 ? (lang === 'en' ? '75 Angle' : '75 앵글') : (f === 50 ? '50 SHS' : `${f} ${lang === 'en' ? 'Channel' : '채널'}`);
+    return f === 50 ? base : `${base}(${v})`;
+  }
+  // N형 W방향 주재 분할: 행(판넬 모듈) 배열 → [{ nominal, cut, y0Off }] (y0Off: 런 시작점 기준 부재 시작 오프셋)
+  function computeWSpansN(rows) {
+    const spans = computeColSpans(rows);
+    const out = [];
+    let acc = 0;
+    spans.forEach(s => {
+      out.push({ nominal: s, cut: s - 10, y0Off: acc + 5 });
+      acc += s;
+    });
+    return out;
+  }
+  const pad4Code = n => String(Math.round(n)).padStart(4, '0');
+  // '125N' / frameVariant 입력을 { frame: 125, frameVariant: 'N' } 형태로 정규화
+  function normFrameOpt(opt) {
+    if (!opt) return opt;
+    const v = getFrameVariant(opt);
+    const f = parseInt(opt.frame, 10);
+    if (opt.frameVariant === v && (opt.frame === undefined || typeof opt.frame === 'number')) return opt;
+    return { ...opt, frame: isNaN(f) ? opt.frame : f, frameVariant: v };
+  }
+
   /* ---------- 높이별 스틸 스키드 프레임 기본 선정 규칙 (Skid Frame Rules by Height) ---------- */
   const DEFAULT_SKID_RULES = [
     { id: 'skid_rule_1', minH: 1.0, maxH: 2.5, frame: 75, desc: '1.0m ~ 2.5mH' },
@@ -4468,6 +4506,7 @@
 
   /* ---------- 3D 등각 조감도 생성 (3D ISOMETRIC VIEW, TankIsometric) ---------- */
   function buildIsometric(opt, templates, sideT) {
+    opt = normFrameOpt(opt);
     const map = createMap(opt);
     const totalL = map.length, totalW = map.width;
     const H = (opt.height || []).reduce((a, b) => a + (b || 0), 0) || 3000;
@@ -4986,6 +5025,7 @@
       const overOut = flgW - lapIn;
       const overY = flgW - lapIn;
       const subW = (fNum === 75) ? 75 : 40;
+      const isNv = getFrameVariant(opt) === 'N';
 
       // 1. W방향 세로 주재 (FRAME_MAIN_W, Orange) - 시작 열 및 끝 열 외곽 테두리
       // 좌측 외곽 주재 (first)
@@ -4994,8 +5034,8 @@
         let startR = i;
         while (i < map.rows.length && map.has(i, 0)) i++;
         let endR = i - 1;
-        const yA = map.ys[startR] - overY;
-        const yB = map.ys[endR] + map.rows[endR] + overY;
+        const yA = map.ys[startR] + (isNv ? lapIn : -overY);
+        const yB = map.ys[endR] + map.rows[endR] + (isNv ? -lapIn : overY);
         const xA = -overOut, xB = xA + flgW;
         poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xA, yB, 0)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, (yA + yB) / 2, 0));
         poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yA, -th), toIso(xA, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, yA, -th / 2));
@@ -5008,8 +5048,8 @@
         let startR = i;
         while (i < map.rows.length && map.has(i, lastC)) i++;
         let endR = i - 1;
-        const yA = map.ys[startR] - overY;
-        const yB = map.ys[endR] + map.rows[endR] + overY;
+        const yA = map.ys[startR] + (isNv ? lapIn : -overY);
+        const yB = map.ys[endR] + map.rows[endR] + (isNv ? -lapIn : overY);
         const xA = map.xs[lastC] + map.cols[lastC] - lapIn, xB = xA + flgW;
         poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yB, 0), toIso(xA, yB, 0)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, (yA + yB) / 2, 0));
         poly([toIso(xA, yA, 0), toIso(xB, yA, 0), toIso(xB, yA, -th), toIso(xA, yA, -th)], 'FRAME_MAIN_W', true, true, getDepth((xA + xB) / 2, yA, -th / 2));
@@ -5085,8 +5125,10 @@
             (i < map.rows.length && map.has(i, cEnd + 1))
           );
 
-          const x0 = hasTankLeft ? (xLeft - flgW / 2) : (xLeft + lapIn);
-          const x1 = hasTankRight ? (xRight + flgW / 2) : (xRight - lapIn);
+          const extL = (isNv && cat !== 3 && !hasTankLeft && cStart === 0) ? flgW : 0;
+          const extR = (isNv && cat !== 3 && !hasTankRight && cEnd === map.cols.length - 1) ? flgW : 0;
+          const x0 = (hasTankLeft ? (xLeft - flgW / 2) : (xLeft + lapIn)) - extL;
+          const x1 = (hasTankRight ? (xRight + flgW / 2) : (xRight - lapIn)) + extR;
 
           let segY;
           if (cat === 1) segY = rowY - overY;
@@ -5099,6 +5141,9 @@
           poly([toIso(x0, y0, 0), toIso(x1, y0, 0), toIso(x1, y0, -th), toIso(x0, y0, -th)], 'FRAME_MAIN_L', true, true, getDepth((x0 + x1) / 2, y0, -th / 2));
           if (!hasTankRight) {
             poly([toIso(x1, y0, 0), toIso(x1, y1, 0), toIso(x1, y1, -th), toIso(x1, y0, -th)], 'FRAME_MAIN_L', true, true, getDepth(x1, (y0 + y1) / 2, -th / 2));
+          }
+          if (extL) {
+            poly([toIso(x0, y0, 0), toIso(x0, y1, 0), toIso(x0, y1, -th), toIso(x0, y0, -th)], 'FRAME_MAIN_L', true, true, getDepth(x0, (y0 + y1) / 2, -th / 2));
           }
         }
       }
@@ -6583,6 +6628,7 @@
 
   // 스틸 스키드 프레임 전용 부품 사양 명세표 (Skid Frame BOM / Part List)
   function buildSkidBOM(opt) {
+    opt = normFrameOpt(opt);
     const fNum = Number(opt.frame) || 75;
     const fSuf = (fNum === 75) ? 'ALZ' : (fNum === 150 ? 'HCLZ' : 'CLZ');
     const dSkid = getSkidDimensions(fNum);
@@ -6602,21 +6648,32 @@
     const sRow = 0, eRow = G.nr - 1, sCol = 0, eCol = G.nc - 1;
     const R = (r, c) => G.map.has(r, c) ? { t: G.map.ys[r], h: G.map.rows[r] } : null;
 
+    const isN = getFrameVariant(opt) === 'N';
     function countMainW(col, isRightSide) {
-      let nHeight = 0;
+      let nHeight = 0, runRows = [];
       for (let i = sRow; i <= eRow; i++) {
         let rc = R(i, col);
         if (!rc) {
-          if (nHeight) { addWSpans(nHeight, isRightSide); nHeight = 0; }
+          if (nHeight) { addWSpans(nHeight, isRightSide, runRows); nHeight = 0; runRows = []; }
           for (i = i + 1; i <= eRow; i++) { rc = R(i, col); if (!rc) continue; break; }
         }
-        if (rc) nHeight += rc.h;
+        if (rc) { nHeight += rc.h; runRows.push(rc.h); }
       }
-      if (nHeight) addWSpans(nHeight, isRightSide);
+      if (nHeight) addWSpans(nHeight, isRightSide, runRows);
     }
 
     let wSpliceCount = 0;
-    function addWSpans(hVal, isRight) {
+    function addWSpans(hVal, isRight, runRows) {
+      if (isN) {
+        // N형: 판넬 모듈 기준 0990/1490/1990 분할 (L방향 접미사 사용)
+        const segsN = computeWSpansN(runRows && runRows.length ? runRows : [hVal]);
+        wSpliceCount += Math.max(0, segsN.length - 1);
+        segsN.forEach(sg => {
+          const code = 'WFF-' + pad4Code(sg.cut) + fSuf;
+          wBeamCounts[code] = (wBeamCounts[code] || 0) + 1;
+        });
+        return;
+      }
       const totalH = Math.round(hVal + overY * 2);
       const spans = computeMainBeamSpans(hVal);
       const startSuf = isRight ? ((fNum === 150) ? 'CSZR' : 'ASZR') : ((fNum === 150) ? 'CSZL' : 'ASZL');
@@ -6658,15 +6715,34 @@
         const segCols = G.map.cols.slice(cStart, cEnd + 1);
         const segColSpans = computeColSpans(segCols);
 
-        segColSpans.forEach(nominalSpan => {
-          const cutLen = nominalSpan - 10;
+        const hasTankLeft = (cStart > 0) && ((i > 0 && G.map.has(i - 1, cStart - 1)) || (i < G.nr && G.map.has(i, cStart - 1)));
+        const hasTankRight = (cEnd < G.nc - 1) && ((i > 0 && G.map.has(i - 1, cEnd + 1)) || (i < G.nr && G.map.has(i, cEnd + 1)));
+
+        // N형: 외곽 L방향 주재(하부/상부 외곽행)는 스키드 코너까지 플랜지폭만큼 연장
+        let isOuterRow = false;
+        if (isN) {
+          let anyBoth = false, allAboveOnly = true, allBelowOnly = true;
+          for (let col = cStart; col <= cEnd; col++) {
+            const b = (i > 0) && G.map.has(i - 1, col);
+            const a = (i < G.nr) && G.map.has(i, col);
+            if (b && a) anyBoth = true;
+            if (b) allAboveOnly = false;
+            if (a) allBelowOnly = false;
+          }
+          isOuterRow = !anyBoth && (allAboveOnly || allBelowOnly);
+        }
+        const extL = (isOuterRow && !hasTankLeft && cStart === 0) ? flgW : 0;
+        const extR = (isOuterRow && !hasTankRight && cEnd === G.nc - 1) ? flgW : 0;
+
+        segColSpans.forEach((nominalSpan, k) => {
+          let cutLen = nominalSpan - 10;
+          if (k === 0) cutLen += extL;
+          if (k === segColSpans.length - 1) cutLen += extR;
           const codeStr = cutLen < 1000 ? (cutLen < 100 ? '00' + cutLen : '0' + cutLen) : String(cutLen);
           const code = 'WFF-' + codeStr + fSuf;
           lBeamCounts[code] = (lBeamCounts[code] || 0) + 1;
         });
 
-        const hasTankLeft = (cStart > 0) && ((i > 0 && G.map.has(i - 1, cStart - 1)) || (i < G.nr && G.map.has(i, cStart - 1)));
-        const hasTankRight = (cEnd < G.nc - 1) && ((i > 0 && G.map.has(i - 1, cEnd + 1)) || (i < G.nr && G.map.has(i, cEnd + 1)));
         if (!hasTankLeft && cStart === 0) bracketCount++;
         if (!hasTankRight && cEnd === G.nc - 1) bracketCount++;
       }
@@ -6824,6 +6900,7 @@
 
   // 스틸 스키드 프레임 조립도 (STEEL SKID DRAWING)
   function buildSkid(opt) {
+    opt = normFrameOpt(opt);
     const G = frameGeom(opt), { R, sRow, eRow, sCol, eCol, nLeft, nRight, nTop, nBottom } = G;
     const colSpans = computeColSpans(G.map.cols);
     const ents = [], rec = [], add = (x, y, w, h, lat, customColSpans, customLeft) => insideFrm(ents, x, y, w, h, lat, rec, customColSpans || colSpans, customLeft !== undefined ? customLeft : nLeft);
@@ -6882,7 +6959,51 @@
 
 
 
+    const isN = getFrameVariant(opt) === 'N';
+
+    // W방향 주재 이음부 연결 플레이트 (75 Angle: WBR-02150ZE / 125·150 Channel: WBR-9016CZE) - O/N 공용
+    function drawWSplice(x, w, jointY, type) {
+      const isAngle = (fNum === 75);
+      const spliceCode = isAngle ? 'WBR-02150ZE' : 'WBR-9016CZE';
+      const splL = isAngle ? 215 : 160;
+      const pw = isAngle ? 25 : 12;
+      const px0 = (type === 'first') ? (x + w - 6 - pw) : (x + 6);
+      const px1 = px0 + pw;
+      rectEnts(px0, jointY - splL / 2, pw, splL, 'FRAME_MAIN_W', ents);
+      const holeOffsets = isAngle ? [-87.5, -55, 55, 87.5] : [-55, 55];
+      const holeR = Math.max(3.0, Math.min(4.5, pw * 0.28));
+      holeOffsets.forEach(offY => {
+        ents.push({ t: 'circle', c: [(px0 + px1) / 2, jointY + offY], r: holeR, layer: 'FRAME_MAIN_W' });
+        ents.push({ t: 'line', a: [px0 - 2, jointY + offY], b: [px1 + 2, jointY + offY], layer: 'FRAME_MAIN_W' });
+      });
+      const sTxtH = Math.max(16, Math.min(22, Math.round(w * 0.32)));
+      ents.push({ t: 'text', p: [(type === 'first') ? (x - 16) : (x + w + 16), jointY], h: sTxtH, s: spliceCode, rot: 90, align: 'center', valign: 'middle', layer: 'FRAME_MAIN_W' });
+    }
+
+    // N형: 판넬 모듈선 기준 0990/1490/1990 분할 (런 시작 nY, 길이 spanW)
+    function addMainBeamN(x, nY, w, spanW, type) {
+      const runRows = [];
+      G.map.rows.forEach((rh, ri) => {
+        const ry = G.map.ys[ri];
+        if (ry >= nY - 0.5 && ry + rh <= nY + spanW + 0.5) runRows.push(rh);
+      });
+      const segs = computeWSpansN(runRows.length ? runRows : [spanW]);
+      const bTxtH = Math.max(26, Math.min(36, Math.round(w * 0.44)));
+      segs.forEach((sg, k) => {
+        const y0 = nY + sg.y0Off;
+        rectEnts(x, y0, w, sg.cut, 'FRAME_MAIN_W', ents);
+        const webX = (type === 'first') ? (x + w - 6) : (x + 6);
+        ents.push({ t: 'line', a: [webX, y0], b: [webX, y0 + sg.cut], layer: 'FRAME_MAIN_W' });
+        ents.push({ t: 'text', p: [x + w / 2, y0 + sg.cut / 2], h: bTxtH, s: `WFF-${pad4Code(sg.cut)}${mainSuf}`, rot: 90, align: 'center', layer: 'FRAME_MAIN_W' });
+        if (k < segs.length - 1) drawWSplice(x, w, nY + sg.y0Off + sg.cut + 5, type);
+      });
+    }
+
     function addMainBeam(x, y, w, h, type, spanW, isRightSide) {
+      if (isN) {
+        addMainBeamN(x, y + overY, w, spanW || (Math.round(h) - overY * 2), type);
+        return;
+      }
       rectEnts(x, y, w, h, 'FRAME_MAIN_W', ents);
       // 웨브 두께선 (6mm) - 외곽 Main beam은 탱크 밖으로 보도록 배치
       if (type === 'first') {
@@ -7155,9 +7276,8 @@
           (i < G.nr && G.map.has(i, cEnd + 1))
         );
 
-        const x0 = hasTankLeft ? (xLeft - flgW / 2) : (xLeft + lapIn);
-        const x1 = hasTankRight ? (xRight + flgW / 2) : (xRight - lapIn);
-        const segW = x1 - x0;
+        const x0b = hasTankLeft ? (xLeft - flgW / 2) : (xLeft + lapIn);
+        const x1b = hasTankRight ? (xRight + flgW / 2) : (xRight - lapIn);
 
         let segY, segLat;
         if (cat === 1) {
@@ -7176,9 +7296,17 @@
           segLat = isUp ? 0 : 0x10000;
         }
 
+        // N형: 외곽 L방향 주재가 W방향 주재 외측(스키드 코너)까지 연장 (연장량 = overOut + lapIn = 플랜지폭)
+        const extL = (isN && cat !== 3 && !hasTankLeft && cStart === 0) ? (overOut + lapIn) : 0;
+        const extR = (isN && cat !== 3 && !hasTankRight && cEnd === G.nc - 1) ? (overOut + lapIn) : 0;
+        const x0 = x0b - extL;
+        const x1 = x1b + extR;
+        const segW = x1 - x0;
+
         const segCols = G.map.cols.slice(cStart, cEnd + 1);
         const segColSpans = computeColSpans(segCols);
         add(x0, segY, segW, flgW, segLat, segColSpans, xLeft);
+        if (rec.length) { rec[rec.length - 1].extL = extL; rec[rec.length - 1].extR = extR; }
 
         // 4-B. W방향 외곽 주재(ASZ-FRAME / CSZ-FRAME)와 L방향 수평 주재 연결 브라켓
         // 75Angle & 125Channel: WBR-7575Z (또는 WBR-7575)
@@ -7195,7 +7323,7 @@
             dirY = (segLat === 0) ? -1 : 1;
             bY = (dirY === -1) ? segY : (segY + flgW);
           }
-          drawCornerBracket(ents, x0, bY, 75, 6, 1, dirY, 'FRAME');
+          drawCornerBracket(ents, x0b, bY, 75, 6, 1, dirY, 'FRAME');
         }
 
         if (!hasTankRight && cEnd === G.nc - 1) {
@@ -7210,7 +7338,7 @@
             dirY = (segLat === 0) ? -1 : 1;
             bY = (dirY === -1) ? segY : (segY + flgW);
           }
-          drawCornerBracket(ents, x1, bY, 75, 6, -1, dirY, 'FRAME');
+          drawCornerBracket(ents, x1b, bY, 75, 6, -1, dirY, 'FRAME');
         }
       }
     }
@@ -7227,7 +7355,10 @@
       if (m.hor) {
         const nominalSpan = (m.colSpans && m.colSpans[k]) ? m.colSpans[k] : (sl > 10 ? (sl + 10) : sl);
         // 양끝단 5mm씩(총 10mm) 공간을 확보하여 연결부 커팅 오차 방지 (1M=0990, 1.5M=1490, 2M=1990)
-        const cutLen = nominalSpan - 10;
+        let cutLen = nominalSpan - 10;
+        // N형: 코너 연장분(플랜지폭) 가산
+        if (k === 0 && m.extL) cutLen += m.extL;
+        if (k === m.segs.length - 1 && m.extR) cutLen += m.extR;
         const codeStr = cutLen < 1000 ? (cutLen < 100 ? `00${cutLen}` : `0${cutLen}`) : String(cutLen);
         let txtY;
         if (m.lat === 0x20000) txtY = m.y - st * 0.65;
@@ -7391,7 +7522,7 @@
     const skidBOM = buildSkidBOM(opt);
     const lx = Math.max(300, G.map.length * 0.10);
     const ly0 = yb4 - tH * 2.8;
-    ents.push({ t: 'text', p: [lx, ly0], h: tH * 1.05, s: `MEMBER SPECIFICATIONS - FRAME ${opt.frame || 125} (${dSkid.name})`, rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [lx, ly0], h: tH * 1.05, s: `MEMBER SPECIFICATIONS - FRAME ${opt.frame || 125} (${dSkid.name}) - TYPE ${isN ? 'N' : 'O'}`, rot: 0, align: 'left', layer: 'DIM' });
 
     // 1. W방향 주재
     const wItems = skidBOM.filter(b => b.key === 'main_w');
@@ -7468,7 +7599,9 @@
     noteY -= tH * 1.25;
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `7. L방향 주재: 500 판넬 배치 시 1.5M(1490${fSuf}) 적용, 양끝단 5mm(총 10mm) 커팅 여유 확보 [2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}]`, rot: 0, align: 'left', layer: 'FRAME_MAIN_L' });
     noteY -= tH * 1.25;
-    const wSpecSummary = (fNum === 75)
+    const wSpecSummary = isN
+      ? `${frameLabel(fNum, 'N', 'ko')}: W방향 주재를 판넬 모듈선 기준 2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}로 분할 (양끝단 5mm 여유, L방향 주재와 동일 부재), 끝단 돌출재(ASZL/R·CSZL/R) 미사용 — 스키드 코너는 외곽 L방향 주재를 플랜지폭(${flgW}mm)만큼 연장하여 마감`
+      : (fNum === 75)
       ? '75Angle: 시작/끝단 1570ASZL/R (1.5M), 2070ASZL/R (2M), 신규 1070ASZL/R (1M, 70mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0200ACZ (L=200, 4-Ø17H) / 단일재: 1140, 1640, 2140, 2640ASZ'
       : (fNum === 150)
         ? '150Channel: 시작/끝단 1570CSZL/R (1.5M), 2070CSZL/R (2M), 신규 1070CSZL/R (1M, 70mm 돌출) 대칭배치(한쪽 CSZL+CSZR 시 반대쪽 CSZR+CSZL), 중간 2000CSZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0150HCCZ (L=150, 4-Ø17H) / 단일재: 1140, 1640, 2140, 2640CSZ'
@@ -7482,6 +7615,7 @@
 
   // 기초 프레임 단면 및 조립 상세도 (FRAME CROSS DWG): 폭 방향 부재 단면 (Z-Z' SECTION)
   function buildSkidCross(opt) {
+    opt = normFrameOpt(opt);
     const d = getSkidDimensions(opt.frame);
     const th = d.mainH, ents = [];
     const flgW = d.mainW;
@@ -7992,7 +8126,7 @@
     return dents;
   }
   function buildSheet(opt, templates, sideT) {
-    opt = { ...opt };
+    opt = normFrameOpt({ ...opt });
     const usedBalloons = new Set();
     opt.usedBalloons = usedBalloons;
     const H = (opt.height || []).reduce((a, b) => a + (b || 0), 0);
