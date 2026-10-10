@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.7.20</title>
+<title>YSACC TANK CAD v1.7.21</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -504,7 +504,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.7.20</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.7.21</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1634,7 +1634,7 @@ canvas.drag{cursor:grabbing}
           <h3 id="manualDialogTitle" style="margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">
             <span class="txt-ko">YSACC TANK CAD 사용자 가이드 &amp; 사용 매뉴얼</span>
             <span class="txt-en">YSACC TANK CAD User Guide &amp; Operation Manual</span>
-            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.7.20</span>
+            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.7.21</span>
           </h3>
           <span class="modeless-drag-hint">
             <span class="txt-ko">✥ 상단바를 잡고 자유롭게 이동 가능</span>
@@ -3587,7 +3587,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.7.20</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.7.21</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -3597,7 +3597,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.7.20</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.7.21</span></div>
     </div>
   </main>
 </div>
@@ -16998,100 +16998,7 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
       }
     }
 
-    // 도면 하단 부재 규격 및 표준 제작 가공 시방 NOTE (치수선과 절대 겹치지 않도록 yb4 하단에 배치)
     const skidBOM = buildSkidBOM(opt);
-    const lx = Math.max(300, G.map.length * 0.10);
-    const ly0 = yb4 - tH * 2.8;
-    ents.push({ t: 'text', p: [lx, ly0], h: tH * 1.05, s: `MEMBER SPECIFICATIONS - FRAME ${opt.frame || 125} (${dSkid.name}) - TYPE ${isN ? 'N' : 'O'}`, rot: 0, align: 'left', layer: 'DIM' });
-
-    // 1. W방향 주재
-    const wItems = skidBOM.filter(b => b.key === 'main_w');
-    const wSummary = isN
-      ? `(N) W방향 전용 주재 없음 - L방향 공용 0990/1490/1990${fSuf} 사용 (수량은 MAIN BEAM (L)에 합산)`
-      : wItems.length > 0
-      ? wItems.map(b => `${b.spec.split(' ')[0]} (${b.qty})`).join(', ')
-      : dSkid.mainSpec;
-    ents.push({ t: 'text', p: [lx, ly0 - tH * 1.35], h: tH * 0.78, s: `MAIN BEAM (W) : ${wSummary} [${dSkid.mainSpec}, HDG]`, rot: 0, align: 'left', layer: 'FRAME_MAIN_W' });
-
-    // 2. L방향 주재
-    const lItems = skidBOM.filter(b => b.key === 'main_l');
-    const lSummary = lItems.length > 0
-      ? lItems.map(b => `${b.spec.split(' ')[0]} (${b.qty})`).join(', ')
-      : dSkid.mainSpec;
-    ents.push({ t: 'text', p: [lx, ly0 - tH * 2.60], h: tH * 0.78, s: `MAIN BEAM (L) : ${lSummary} [${dSkid.mainSpec}, HDG]`, rot: 0, align: 'left', layer: 'FRAME_MAIN_L' });
-
-    // 3. 서브빔 A, B, C
-    const isFrame150 = (Number(opt.frame) === 150);
-    const subAItem = skidBOM.find(b => b.key === 'sub_a');
-    const subBItem = skidBOM.find(b => b.key === 'sub_b');
-    const subCItem = skidBOM.find(b => b.key === 'sub_c');
-    const subACode = isFrame150 ? 'WFB-0956CMZ' : 'WFB-0962AMZ';
-    const subBCode = isFrame150 ? 'WFB-0993CMZ' : 'WFB-0994AMZ';
-    const subCCode = isFrame150 ? 'WFB-1061CMZ' : 'WFB-1053AMZ';
-    const subAQtyStr = subAItem ? ` : ${subAItem.qty}` : '';
-    const subBQtyStr = subBItem ? ` : ${subBItem.qty}` : '';
-    const subCQtyStr = subCItem ? ` : ${subCItem.qty}` : '';
-
-    const subALabel = isFrame150 ? `${subACode} (L=956, 외곽 배치용)${subAQtyStr}` : `${subACode} (L=962, 외곽 배치용)${subAQtyStr}`;
-    const subBLabel = isFrame150 ? `${subBCode} (L=993, 중간 배치용)${subBQtyStr}` : `${subBCode} (L=994, 중간 배치용)${subBQtyStr}`;
-    const subCLabel = isFrame150 ? `${subCCode} (L=1061, 중앙 마주보는 열)${subCQtyStr}` : `${subCCode} (L=1053, 중앙 마주보는 열)${subCQtyStr}`;
-
-    ents.push({ t: 'text', p: [lx, ly0 - tH * 3.85], h: tH * 0.78, s: `SUB-BEAM TYPE A : ${subALabel}`, rot: 0, align: 'left', layer: 'FRAME_SUB' });
-    ents.push({ t: 'text', p: [lx, ly0 - tH * 5.10], h: tH * 0.78, s: `SUB-BEAM TYPE B : ${subBLabel}`, rot: 0, align: 'left', layer: 'FRAME_SUB' });
-    ents.push({ t: 'text', p: [lx, ly0 - tH * 6.35], h: tH * 0.78, s: `SUB-BEAM TYPE C : ${subCLabel}`, rot: 0, align: 'left', layer: 'FRAME_SUB' });
-
-    let curLy = ly0 - tH * 7.60;
-    const stepCornerItems = skidBOM.filter(b => b.key === 'corner_step');
-    if (stepCornerItems.length > 0) {
-      const stepSummary = stepCornerItems.map(b => `${b.spec.split(' ')[0]} (${b.qty})`).join(', ');
-      ents.push({ t: 'text', p: [lx, curLy], h: tH * 0.78, s: `STEP CORNER BEAM : ${stepSummary}`, rot: 0, align: 'left', layer: 'FRAME_MAIN_L' });
-      curLy -= tH * 1.25;
-    }
-
-    const padItem = skidBOM.find(b => b.key === 'pad');
-    const padQtyStr = padItem ? ` : ${padItem.qty}` : '';
-    ents.push({ t: 'text', p: [lx, curLy], h: tH * 0.78, s: `FOUNDATION PAD : ${firstW}mm / ${midW}mm CONCRETE STRIP (OVERHANG ${padOv}mm)${padQtyStr}`, rot: 0, align: 'left', layer: 'DIM' });
-    curLy -= tH * 1.25;
-
-    const bracketItem = skidBOM.find(b => b.key === 'bracket');
-    const clampItem = skidBOM.find(b => b.key === 'clamp');
-    const spliceItem = skidBOM.find(b => b.key === 'splice');
-    const bracketCode = isFrame150 ? 'WBR-0120CZE' : 'WBR-7575Z';
-    const bQtyStr = bracketItem ? ` (${bracketItem.qty})` : '';
-    const cQtyStr = clampItem ? ` (${clampItem.qty})` : '';
-    const sQtyStr = spliceItem ? ` / ${spliceItem.spec.split(' ')[0]} 주재 연결재 (${spliceItem.qty})` : '';
-    ents.push({ t: 'text', p: [lx, curLy], h: tH * 0.78, s: `HARDWARE : ${bracketCode} 연결 브라켓${bQtyStr}${sQtyStr} / WBR-5010Z 클램프${cQtyStr}`, rot: 0, align: 'left', layer: 'DIM' });
-
-    // 표준 제작 가공 시방 NOTE (YSACC Foundation Standard - 기초.zip & Steel Skid.dwg)
-    const noteX = Math.max(lx + 3200, G.map.length * 0.52);
-    let noteY = ly0;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 1.0, s: '< N O T E >', rot: 0, align: 'left', layer: 'DIM' });
-    noteY -= tH * 1.3;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '1. 재질: SS41 + 용융아연도금 (80μ 이상) [Hot-Dip Galvanized]', rot: 0, align: 'left', layer: 'DIM' });
-    noteY -= tH * 1.25;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '2. 허용공차: Hole간 거리 ±1mm, 전체길이 ±0.5mm', rot: 0, align: 'left', layer: 'DIM' });
-    noteY -= tH * 1.25;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '3. 컷팅 및 용접부는 깨끗이 사상(Grinding)하고 수평 유지할 것', rot: 0, align: 'left', layer: 'DIM' });
-    noteY -= tH * 1.25;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '4. 조립기준: 외곽 찬넬 열림부 외측 배치, 수평 수직 직각도 유지', rot: 0, align: 'left', layer: 'DIM' });
-    noteY -= tH * 1.25;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '5. 기초체결: 콘크리트 패드 안착 및 앙카 고정 (WBR-5010Z 클램프 체결)', rot: 0, align: 'left', layer: 'DIM' });
-    noteY -= tH * 1.25;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '6. 색상구분: 주황색(ORANGE)=W방향 주재, 보라색(PURPLE)=L방향 주재, 청록색(TEAL)=부재(서브빔), 노란색(YELLOW)=콘크리트패드, 녹색(GREEN)=저면패널', rot: 0, align: 'left', layer: 'DIM' });
-    noteY -= tH * 1.25;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `7. L방향 주재: 500 판넬 배치 시 1.5M(1490${fSuf}) 적용, 양끝단 5mm(총 10mm) 커팅 여유 확보 [2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}]`, rot: 0, align: 'left', layer: 'FRAME_MAIN_L' });
-    noteY -= tH * 1.25;
-    const wSpecSummary = isN
-      ? `${frameLabel(fNum, 'N', 'ko')}: 자재 종류 축소를 위해 O형 W방향 전용 주재(ASZ/CSZ/HCSZ 계열) 미사용 — W방향도 L방향 표준 부재 2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}로 판넬 모듈선 기준 분할(양끝단 5mm 여유), 기존 부품에 W방향 체결용 Hole 추가 가공하여 L·W 공용 사용, 스키드 코너는 신규 부재 없이 코너 브라켓(${fNum === 150 ? 'WBR-0120CZE' : 'WBR-7575Z'})으로 연결`
-      : (fNum === 75)
-      ? '75Angle: 시작/끝단 1570ASZL/R (1.5M), 2070ASZL/R (2M), 신규 1070ASZL/R (1M, 70mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0200ACZ (L=200, 4-Ø17H) / 단일재: 1140, 1640, 2140, 2640ASZ'
-      : (fNum === 150)
-        ? '150Channel: 시작/끝단 1570HCSZL/R (1.5M), 2070HCSZL/R (2M), 신규 1070HCSZL/R (1M, 70mm 돌출) 대칭배치(한쪽 HCSZL+HCSZR 시 반대쪽 HCSZR+HCSZL), 중간 2000HCSZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0150HCCZ (L=150, 4-Ø17H) / 단일재: 1140, 1640, 2140, 2640HCSZ'
-        : '125Channel: 시작/끝단 1560CSZL/R (1.5M), 2060CSZL/R (2M), 신규 1060CSZL/R (1M, 60mm 돌출) 대칭배치(한쪽 CSZL+CSZR 시 반대쪽 CSZR+CSZL), 중간 2000CSZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0150CCZ (L=150, 4-Ø17H) / 단일재: 1120, 1620, 2120, 2640CSZ';
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `8. W방향 주재(테두리 전용): 외곽 테두리(시작 열 및 끝 열)에만 배치되며, 내부 중간 열에는 미배치 (부재만 배치). ${wSpecSummary}`, rot: 0, align: 'left', layer: 'FRAME_MAIN_W' });
-    noteY -= tH * 1.25;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '9. W방향 주재 이음(Splice): 75Angle은 WBR-02150ZE(L=215), 125Channel은 WBR-9021CZ(215x90x6t), 150Channel은 WBR-1022CZ(225x105x6t) 4-Ø17H 연결 적용', rot: 0, align: 'left', layer: 'DIM' });
-
     return { ents, G, bom: skidBOM };
   }
 
@@ -25230,7 +25137,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.7.20</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.7.21</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();

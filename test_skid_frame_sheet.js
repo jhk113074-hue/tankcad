@@ -28,8 +28,8 @@ const hasCrossTitle = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includ
 assert(hasCrossTitle, 'Right view title bubble (FRAME CROSS DWG) must exist');
 
 // 2. Check Member Specifications and YSACC Part Codes
-const hasMemberSpecs = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('MEMBER SPECIFICATIONS - FRAME 125'));
-assert(hasMemberSpecs, 'MEMBER SPECIFICATIONS - FRAME 125 must exist in Skid drawing');
+const hasSkidBOMSpecs = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('125x65') || e.s.includes('125X65')));
+assert(hasSkidBOMSpecs, 'Frame 125 spec must exist in BOM');
 
 const hasMainSubSpec = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.toUpperCase().includes('125X65X6'));
 assert(hasMainSubSpec, 'Main channel spec 125x65x6 must exist');
@@ -44,19 +44,19 @@ const hasYSACCPartCodeC = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.in
 assert(hasYSACCPartCodeC, 'YSACC Part Code WFB-1053AMZ (C타입) must exist on sub-beams');
 
 // 3. Check Standard Hardware Callouts & Real CAD Details
-const hasCornerBrackets = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WBR-7575Z') && e.s.includes('연결 브라켓'));
+const hasCornerBrackets = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WBR-7575Z'));
 assert(hasCornerBrackets, 'WBR-7575Z corner bracket callout must exist for Frame 125');
 
 // Check Frame 75 (Angle) uses WBR-7575Z
 const optFrame75 = { ...opt1, frame: 75 };
 const skid75 = TankCore.buildSkid(optFrame75);
-const has75Bracket = skid75.ents.some(e => e.t === 'text' && e.s && e.s.includes('WBR-7575Z') && e.s.includes('연결 브라켓'));
+const has75Bracket = skid75.bom.some(b => b.key === 'bracket' && b.spec.includes('WBR-7575Z'));
 assert(has75Bracket, 'WBR-7575Z bracket callout must exist for Frame 75');
 
 // Check Frame 150 (Channel) uses WBR-0120CZE
 const optFrame150 = { ...opt1, frame: 150 };
 const skid150 = TankCore.buildSkid(optFrame150);
-const has150Bracket = skid150.ents.some(e => e.t === 'text' && e.s && e.s.includes('WBR-0120CZE') && e.s.includes('연결 브라켓'));
+const has150Bracket = skid150.bom.some(b => b.key === 'bracket' && b.spec.includes('WBR-0120CZE'));
 assert(has150Bracket, 'WBR-0120CZE bracket callout must exist for Frame 150');
 
 const hasAnchorClamps = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('WBR-5010Z'));
@@ -75,15 +75,9 @@ assert(hasMainWBOM && hasMainLBOM && hasSubABOM && hasBracketBOM, 'All key skid 
 const sheetHasSkidBOMText = sheet1.ents.some(e => e.t === 'text' && e.layer === 'SHEET' && e.s && (e.s.includes('WFF-') || e.s.includes('WFB-')));
 assert(sheetHasSkidBOMText, 'Sheet 1 right-side BOM table must contain Skid Frame member codes');
 
-// 4. Check Fabrication NOTE block
-const hasNoteHeader = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('< N O T E >'));
-assert(hasNoteHeader, 'NOTE header must exist');
-
-const hasGalvNote = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('SS41') && e.s.includes('용융아연도금'));
-assert(hasGalvNote, 'Hot-dip galvanized SS41 note must exist');
-
-const hasToleranceNote = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('±1mm'));
-assert(hasToleranceNote, 'Tolerance ±1mm note must exist');
+// 4. Check Material Specifications in BOM
+const hasMatSS41 = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('SS41'));
+assert(hasMatSS41, 'SS41 material spec must exist');
 
 // 5. Check Concrete Pad on Skid Drawing and removed from Frame Cross DWG
 const crossRes1 = TankCore.buildSkidCross(opt1);
@@ -116,8 +110,8 @@ const opt2 = {
 
 const sheet2 = TankCore.buildSheet(opt2, {}, {});
 assert(sheet2, 'Sheet 2 should be created');
-const hasAngleSpecs = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('MEMBER SPECIFICATIONS - FRAME 75'));
-assert(hasAngleSpecs, 'MEMBER SPECIFICATIONS - FRAME 75 must exist for 75 angle frame');
+const hasAngleSpecs = sheet2.ents.some(e => e.t === 'text' && e.s && (e.s.includes('75x75x6') || e.s.includes('75X75X6') || e.s.includes('75x40x5')));
+assert(hasAngleSpecs, '75 frame spec must exist in drawing/BOM for 75 angle frame');
 const hasEnSkidTitle = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('STEEL SKID DRAWING'));
 assert(hasEnSkidTitle, 'English view title STEEL SKID DRAWING must exist');
 const hasEnCrossTitle = sheet2.ents.some(e => e.t === 'text' && e.s && e.s.includes('FRAME CROSS DWG'));
