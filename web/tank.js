@@ -6860,8 +6860,8 @@
           lBeamCounts[code] = (lBeamCounts[code] || 0) + 1;
         });
 
-        if (!hasTankLeft && cStart === 0) bracketCount++;
-        if (!hasTankRight && cEnd === G.nc - 1) bracketCount++;
+        if (!hasTankLeft) bracketCount++;
+        if (!hasTankRight) bracketCount++;
       }
     }
     Object.entries(wNCounts).forEach(([code, q]) => { lBeamCounts[code] = (lBeamCounts[code] || 0) + q; });
@@ -7452,10 +7452,9 @@
         add(x0, segY, segW, flgW, segLat, segColSpans, xLeft);
         if (rec.length) { rec[rec.length - 1].extL = extL; rec[rec.length - 1].extR = extR; }
 
-        // 4-B. W방향 외곽 주재(ASZ-FRAME / CSZ-FRAME)와 L방향 수평 주재 연결 브라켓
-        // 75Angle & 125Channel: WBR-7575Z (또는 WBR-7575)
-        // 150Channel: WBR-0120CZE
-        if (!hasTankLeft && cStart === 0) {
+        // 4-B. W방향 외곽 주재(ASZ-FRAME / CSZ-FRAME)와 L방향 수평 주재 연결 브라켓 (L9090 / WBR-7575Z / WBR-0120CZE)
+        // 이형탱크 단차 코너를 포함하여 외곽 경계에 노출된 모든 코너에 브라켓 체결
+        if (!hasTankLeft) {
           let bY = segY, dirY = 1;
           if (cat === 1) {
             bY = segY + flgW;
@@ -7470,7 +7469,7 @@
           drawCornerBracket(ents, x0b, bY, 75, 6, 1, dirY, 'FRAME');
         }
 
-        if (!hasTankRight && cEnd === G.nc - 1) {
+        if (!hasTankRight) {
           let bY = segY, dirY = 1;
           if (cat === 1) {
             bY = segY + flgW;
