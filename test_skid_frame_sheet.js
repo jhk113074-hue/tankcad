@@ -208,16 +208,25 @@ assert(sheet3, 'Sheet 3 (skid_parts) should be created');
 assert(sheet3.ents && sheet3.ents.length > 200, 'Skid parts sheet should have > 200 entities');
 console.log('Sheet 3 entities count:', sheet3.ents.length);
 
-const hasTypeATitle = sheet3.ents.some(e => e.t === 'text' && e.s && e.s.includes('A타입 제작도'));
+// 125 Channel (O): Steel_Skin_Drawing(35mm).dwg 실제 부품도가 BOM 사용 부품 기준으로 배치되어야 함
+const realLabels = sheet3.ents.filter(e => e.t === 'text' && /^\d\d\. W(FF|BR)-/.test(e.s || '')).map(e => e.s);
+assert(realLabels.some(s => s.includes('WFF-1990CLZ')), 'Real part drawing WFF-1990CLZ must be placed on skid parts sheet');
+assert(realLabels.some(s => /CSZ[LR]?$/.test(s)), 'Real W-direction main beam (CSZ) drawing must be placed for 125 Channel');
+assert(realLabels.some(s => s.includes('WBR-7575Z')), 'Corner bracket WBR-7575Z drawing must be placed');
+assert(sheet3.ents.some(e => e.t === 'text' && (e.s || '').includes('Steel_Skin_Drawing')), 'Source note for real part drawings must exist');
+
+// 50 SHS (부품도 라이브러리 미대상): 기존 A/B/C타입 제작도 배치 유지
+const sheet3b = TankCore.buildSheet({ ...opt3, frame: 50 }, {}, {});
+const hasTypeATitle = sheet3b.ents.some(e => e.t === 'text' && e.s && e.s.includes('A타입 제작도'));
 assert(hasTypeATitle, 'Type A fabrication drawing title must exist');
 
-const hasTypeBTitle = sheet3.ents.some(e => e.t === 'text' && e.s && e.s.includes('B타입 제작도'));
+const hasTypeBTitle = sheet3b.ents.some(e => e.t === 'text' && e.s && e.s.includes('B타입 제작도'));
 assert(hasTypeBTitle, 'Type B fabrication drawing title must exist');
 
-const hasTypeCTitle = sheet3.ents.some(e => e.t === 'text' && e.s && e.s.includes('C타입 제작도'));
+const hasTypeCTitle = sheet3b.ents.some(e => e.t === 'text' && e.s && e.s.includes('C타입 제작도'));
 assert(hasTypeCTitle, 'Type C fabrication drawing title must exist');
 
-const hasMainBeamTitle = sheet3.ents.some(e => e.t === 'text' && e.s && (e.s.includes('주재') || e.s.includes('ㄷ-125')));
+const hasMainBeamTitle = sheet3b.ents.some(e => e.t === 'text' && e.s && (e.s.includes('주재') || e.s.includes('ㄷ-125')));
 assert(hasMainBeamTitle, 'Main beam fabrication drawing title must exist');
 
 // 8. Test 4: Irregular / L-shaped Skid Frame with removed cells

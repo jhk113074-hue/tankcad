@@ -11,6 +11,11 @@
   if (!SKID_PARTS_DATA && typeof require !== 'undefined') {
     try { SKID_PARTS_DATA = require('./skid_parts_data.js'); } catch (e) {}
   }
+  // 실제 스틸 스키드 부품도 라이브러리 (Steel_Skin_Drawing(35mm).dwg 추출: 75 Angle / 125 Channel / 150 Channel (O)형)
+  let SKID_PARTS_LIB = (typeof globalThis !== 'undefined' && globalThis.SKID_PARTS_LIB) || (typeof window !== 'undefined' && window.SKID_PARTS_LIB) || null;
+  if (!SKID_PARTS_LIB && typeof require !== 'undefined') {
+    try { SKID_PARTS_LIB = require('./skid_parts_lib.js'); } catch (e) {}
+  }
 
   /* ---------- glFunc.cpp: 패널 분할 (1300 / 1000 / 500 모듈) ---------- */
   // 4-인자 버전(nHalf 사용): gFrontSplit == gSideSplit
@@ -8985,6 +8990,79 @@
       const areaW = tx0 - x0;
       const areaH = y1 - y0;
       const partsData = SKID_PARTS_DATA || (typeof globalThis !== 'undefined' && globalThis.SKID_PARTS_DATA) || (typeof window !== 'undefined' && window.SKID_PARTS_DATA) || (typeof root !== 'undefined' && root.SKID_PARTS_DATA);
+      const partsLib = SKID_PARTS_LIB || (typeof globalThis !== 'undefined' && globalThis.SKID_PARTS_LIB) || (typeof window !== 'undefined' && window.SKID_PARTS_LIB) || null;
+
+      // ── 실제 부품도 (Steel_Skin_Drawing(35mm).dwg) : 현재 BOM에 사용되는 부품만 격자 배치 ──
+      const realItems = [], missingCodes = [];
+      if (partsLib && [75, 125, 150].includes(parseInt(opt.frame, 10))) {
+        const libKey = code => {
+          const c = String(code || '').replace(/\s+/g, '').toUpperCase();
+          const cands = [c, c.replace(/^WFB-/, 'WFF-'), c.replace(/E$/, ''), c.replace(/^WFB-/, 'WFF-').replace(/E$/, '')];
+          return cands.find(k => partsLib[k]) || null;
+        };
+        const seen = new Set();
+        buildSkidBOM(opt).forEach(b => {
+          if (b.key === 'pad') return;
+          const code = String(b.spec || '').split(' ')[0];
+          const k = libKey(code);
+          if (k) {
+            if (!seen.has(k)) { seen.add(k); realItems.push({ code, key: k, qty: b.qty, name: b.name, part: partsLib[k] }); }
+          } else if (code && !missingCodes.includes(code)) missingCodes.push(code);
+        });
+      }
+      if (realItems.length) {
+        const noteBand = 12;
+        const gridH = areaH - noteBand - 4;
+        const gx0 = x0 + 4, gy1 = y1 - 4, gw = areaW - 8;
+        const n = realItems.length;
+        let cols = 1, bestScore = -1;
+        for (let c = 1; c <= n; c++) {
+          const r = Math.ceil(n / c);
+          const sc = Math.min((gw / c) / 2.5, (gridH / r) / 1.6);
+          if (sc > bestScore) { bestScore = sc; cols = c; }
+        }
+        const rowsN = Math.ceil(n / cols);
+        const cw = gw / cols, ch = gridH / rowsN;
+        const layerOf = (kind, l) => (l && l !== 'FRAME') ? l : (kind === 'mainW' ? 'FRAME_MAIN_W' : (kind === 'mainL' ? 'FRAME_MAIN_L' : (kind === 'sub' ? 'FRAME_SUB' : 'FRAME')));
+        realItems.forEach((it, idx) => {
+          const ci = idx % cols, ri = Math.floor(idx / cols);
+          const cx0 = gx0 + ci * cw, cyTop = gy1 - ri * ch, cy0 = cyTop - ch;
+          // 셀 테두리 (부품 카탈로그 격자)
+          line([cx0, cy0], [cx0 + cw, cy0]); line([cx0, cyTop], [cx0 + cw, cyTop]);
+          line([cx0, cy0], [cx0, cyTop]); line([cx0 + cw, cy0], [cx0 + cw, cyTop]);
+          // 품번 / 수량 / 명칭
+          const labH = Math.max(2.0, Math.min(3.2, ch * 0.07));
+          text(cx0 + 2, cyTop - 2 - labH, labH, `${String(idx + 1).padStart(2, '0')}. ${it.key}`, 'left');
+          text(cx0 + cw - 2, cyTop - 2 - labH, labH * 0.85, it.qty, 'right');
+          text(cx0 + 2, cyTop - 3.5 - labH * 1.9, labH * 0.7, it.name, 'left');
+          // 부품도 축소 배치
+          const p = it.part;
+          const availW = (cw - 6) * N, availH = (ch - 6 - labH * 2.6) * N;
+          const s = Math.min(availW / Math.max(1, p.w), availH / Math.max(1, p.h));
+          const tcx = P(cx0 + cw / 2), tcy = P(cy0 + 3 + (ch - 6 - labH * 2.6) / 2);
+          const tr = pt => [tcx + (pt[0] - p.w / 2) * s, tcy + (pt[1] - p.h / 2) * s];
+          p.ents.forEach(e => {
+            const L = layerOf(p.kind, e.layer);
+            if (e.t === 'line') ents.push({ t: 'line', a: tr(e.a), b: tr(e.b), layer: L });
+            else if (e.t === 'poly') ents.push({ t: 'poly', pts: e.pts.map(tr), closed: !!e.closed, layer: L });
+            else if (e.t === 'solid') ents.push({ t: 'solid', p: e.p.map(tr), layer: L });
+            else if (e.t === 'circle') ents.push({ t: 'circle', c: tr(e.c), r: e.r * s, layer: L });
+            else if (e.t === 'arc') ents.push({ t: 'arc', c: tr(e.c), r: e.r * s, a0: e.a0, a1: e.a1, layer: L });
+            else if (e.t === 'text') ents.push({ t: 'text', p: tr(e.p), h: Math.max(e.h * s, 0.7 * N), s: e.s, rot: e.rot || 0, align: e.align || 'left', valign: e.valign || 'baseline', layer: L });
+          });
+        });
+        // 주기
+        const isNp = getFrameVariant(opt) === 'N';
+        const nb = y0 + noteBand - 2;
+        text(x0 + 5, nb, 2.6, lang === 'en'
+          ? `NOTE: Part drawings from Steel_Skin_Drawing(35mm).dwg (${frameLabel(opt.frame, 'O', 'en')} catalog). Only parts used in this BOM are shown.`
+          : `주기: 부품도는 Steel_Skin_Drawing(35mm).dwg 실제 제작도(${frameLabel(opt.frame, 'O', 'ko')} 기준)에서 발췌 — 현재 BOM 사용 부품만 표기`, 'left');
+        const extra = [];
+        if (isNp) extra.push(lang === 'en' ? '(N) type: common L/W beams need additional W-direction holes (drawings are O-type base)' : '(N)형: L·W 공용 주재는 W방향 체결용 Hole 추가 가공 필요 (부품도는 O형 기준)');
+        if (missingCodes.length) extra.push((lang === 'en' ? 'No drawing in catalog: ' : '부품도 미등록: ') + missingCodes.join(', '));
+        if (extra.length) text(x0 + 5, nb - 4.2, 2.2, extra.join('  /  '), 'left');
+        return { map: mmap, ents, scale: N, elev: false, tank: { dimStr, ton, activeAreaM2: activeAreaMm2 / 1e6 } };
+      }
       if (partsData) {
         // 4분할 사분면 배치 (A타입, B타입, C타입, 주재 ㄷ-125)
         const quads = [

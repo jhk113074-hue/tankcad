@@ -1375,7 +1375,7 @@ canvas.drag{cursor:grabbing}
             <option value="frame">🏗️ 기초조립도 / 스틸스키드 (STEEL SKID DWG)</option>
             <option value="detail">상세도 (DETAILS DWG)</option>
             <option value="capacity">🌊 실담수량 산출도 (WATER CAPACITY DWG)</option>
-            <option value="skid_parts">⚙️ 스키드 부재 제작도 (A·B·C타입 &amp; 주재)</option>
+            <option value="skid_parts">⚙️ 스키드 부재 제작도 (실제 부품도)</option>
           </select>
         </div>
         <div class="vs-sep"></div>
@@ -3566,6 +3566,7 @@ canvas.drag{cursor:grabbing}
 </div>
 
 <script>/*__SKID_PARTS_DATA__*/</script>
+<script>/*__SKID_PARTS_LIB__*/</script>
 <script>/*__TANK_JS__*/</script>
 <script>
 let TEMPLATES = /*__TEMPLATES__*/;
@@ -3991,7 +3992,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       $('sheetKind').options[4].textContent = currentLang === 'en' ? 'Details Dwg' : '상세도 (DETAILS DWG)';
       $('sheetKind').options[5].textContent = currentLang === 'en' ? '🌊 Water Capacity Dwg (Effective Storage)' : '🌊 실담수량 산출도 (WATER CAPACITY DWG)';
       if ($('sheetKind').options[6]) {
-        $('sheetKind').options[6].textContent = currentLang === 'en' ? '⚙️ Skid Parts Dwg (Type A·B·C & Main)' : '⚙️ 스키드 부재 제작도 (A·B·C타입 & 주재)';
+        $('sheetKind').options[6].textContent = currentLang === 'en' ? '⚙️ Skid Parts Dwg (Actual Part Drawings)' : '⚙️ 스키드 부재 제작도 (실제 부품도)';
       }
     }
     if ($('drawingLangSel') && $('drawingLangSel').options && $('drawingLangSel').options.length >= 3) {
