@@ -7300,12 +7300,7 @@
         ents.push({ t: 'line', a: [xA, yA], b: [xA, yB], layer: 'FRAME_MAIN_L' });
         ents.push({ t: 'line', a: [xB, yA], b: [xB, yB], layer: 'FRAME_MAIN_L' });
 
-        // 개공홀
-        const holeOffsets = (fNum === 75) ? [50, 82.5, 117.5, 150] : [50, 100];
-        holeOffsets.forEach(hOff => {
-          const hX = isRight ? (xA + hOff) : (xB - hOff);
-          ents.push({ t: 'circle', c: [hX, (yA + yB) / 2], r: 8.5, layer: 'FRAME_MAIN_L' });
-        });
+        // 개공홀 삭제: 사용자 요청 (홀은 없애주세요. 품명만 남겨주세요)
 
         // 부품명 텍스트 (가로 배치 rot: 0)
         ents.push({
@@ -7347,25 +7342,9 @@
 
           // 하단 연결 플레이트 (yBayBot ~ yBayBot + 6)
           rectEnts(plX0, yBayBot, plActualW, plTh, 'FRAME_SUB', ents);
-          if (hasLeft) {
-            ents.push({ t: 'circle', c: [colX - 55, yBayBot + plTh / 2], r: 3.5, layer: 'FRAME_SUB' });
-            ents.push({ t: 'line', a: [colX - 55, yBayBot - 3], b: [colX - 55, yBayBot + plTh + 3], layer: 'FRAME_SUB' });
-          }
-          if (hasRight) {
-            ents.push({ t: 'circle', c: [colX + 55, yBayBot + plTh / 2], r: 3.5, layer: 'FRAME_SUB' });
-            ents.push({ t: 'line', a: [colX + 55, yBayBot - 3], b: [colX + 55, yBayBot + plTh + 3], layer: 'FRAME_SUB' });
-          }
 
           // 상단 연결 플레이트 (yBayTop - 6 ~ yBayTop)
           rectEnts(plX0, yBayTop - plTh, plActualW, plTh, 'FRAME_SUB', ents);
-          if (hasLeft) {
-            ents.push({ t: 'circle', c: [colX - 55, yBayTop - plTh / 2], r: 3.5, layer: 'FRAME_SUB' });
-            ents.push({ t: 'line', a: [colX - 55, yBayTop - plTh - 3], b: [colX - 55, yBayTop + 3], layer: 'FRAME_SUB' });
-          }
-          if (hasRight) {
-            ents.push({ t: 'circle', c: [colX + 55, yBayTop - plTh / 2], r: 3.5, layer: 'FRAME_SUB' });
-            ents.push({ t: 'line', a: [colX + 55, yBayTop - plTh - 3], b: [colX + 55, yBayTop + 3], layer: 'FRAME_SUB' });
-          }
 
           // 2) 플레이트 사이의 서브빔 찬넬 본체 (C-75x40x5t)
           const bY0 = yBayBot + plTh, bY1 = yBayTop - plTh;
@@ -7519,11 +7498,10 @@
         // 양끝단 5mm씩(총 10mm) 공간을 확보하여 연결부 커팅 오차 방지 (1M=0990, 1.5M=1490, 2M=1990)
         const cutLen = nominalSpan - 10;
         const codeStr = cutLen < 1000 ? (cutLen < 100 ? `00${cutLen}` : `0${cutLen}`) : String(cutLen);
-        let txtY;
-        if (m.lat === 0x20000) txtY = m.y - st * 0.65;
-        else if (m.lat === 0x40000) txtY = m.y + m.h + st * 0.75;
-        else txtY = m.y + flgW / 2;
-        ents.push({ t: 'text', p: [m.x + mid, txtY], h: st * 0.60, s: `WFF-${codeStr}${fSuf}`, rot: 0, align: 'center', valign: 'middle', layer: 'FRAME_MAIN_L' });
+        // 사용자 요청: 부품명은 부품 안에 배치 (외곽/중간 모든 가로 주재 정중앙에 배치)
+        const txtY = m.y + m.h / 2;
+        const txtH = Math.min(st * 0.55, m.h * 0.48);
+        ents.push({ t: 'text', p: [m.x + mid, txtY], h: txtH, s: `WFF-${codeStr}${fSuf}`, rot: 0, align: 'center', valign: 'middle', layer: 'FRAME_MAIN_L' });
       }
     }));
 

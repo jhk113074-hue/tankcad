@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.6.95</title>
+<title>YSACC TANK CAD v1.6.96</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -504,7 +504,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.95</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.96</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1597,7 +1597,7 @@ canvas.drag{cursor:grabbing}
           <h3 id="manualDialogTitle" style="margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">
             <span class="txt-ko">YSACC TANK CAD 사용자 가이드 &amp; 사용 매뉴얼</span>
             <span class="txt-en">YSACC TANK CAD User Guide &amp; Operation Manual</span>
-            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.6.95</span>
+            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.6.96</span>
           </h3>
           <span class="modeless-drag-hint">
             <span class="txt-ko">✥ 상단바를 잡고 자유롭게 이동 가능</span>
@@ -3550,7 +3550,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.95</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.96</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -3560,7 +3560,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.95</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.96</span></div>
     </div>
   </main>
 </div>
@@ -16533,12 +16533,7 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
         ents.push({ t: 'line', a: [xA, yA], b: [xA, yB], layer: 'FRAME_MAIN_L' });
         ents.push({ t: 'line', a: [xB, yA], b: [xB, yB], layer: 'FRAME_MAIN_L' });
 
-        // 개공홀
-        const holeOffsets = (fNum === 75) ? [50, 82.5, 117.5, 150] : [50, 100];
-        holeOffsets.forEach(hOff => {
-          const hX = isRight ? (xA + hOff) : (xB - hOff);
-          ents.push({ t: 'circle', c: [hX, (yA + yB) / 2], r: 8.5, layer: 'FRAME_MAIN_L' });
-        });
+        // 개공홀 삭제: 사용자 요청 (홀은 없애주세요. 품명만 남겨주세요)
 
         // 부품명 텍스트 (가로 배치 rot: 0)
         ents.push({
@@ -16580,25 +16575,9 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
 
           // 하단 연결 플레이트 (yBayBot ~ yBayBot + 6)
           rectEnts(plX0, yBayBot, plActualW, plTh, 'FRAME_SUB', ents);
-          if (hasLeft) {
-            ents.push({ t: 'circle', c: [colX - 55, yBayBot + plTh / 2], r: 3.5, layer: 'FRAME_SUB' });
-            ents.push({ t: 'line', a: [colX - 55, yBayBot - 3], b: [colX - 55, yBayBot + plTh + 3], layer: 'FRAME_SUB' });
-          }
-          if (hasRight) {
-            ents.push({ t: 'circle', c: [colX + 55, yBayBot + plTh / 2], r: 3.5, layer: 'FRAME_SUB' });
-            ents.push({ t: 'line', a: [colX + 55, yBayBot - 3], b: [colX + 55, yBayBot + plTh + 3], layer: 'FRAME_SUB' });
-          }
 
           // 상단 연결 플레이트 (yBayTop - 6 ~ yBayTop)
           rectEnts(plX0, yBayTop - plTh, plActualW, plTh, 'FRAME_SUB', ents);
-          if (hasLeft) {
-            ents.push({ t: 'circle', c: [colX - 55, yBayTop - plTh / 2], r: 3.5, layer: 'FRAME_SUB' });
-            ents.push({ t: 'line', a: [colX - 55, yBayTop - plTh - 3], b: [colX - 55, yBayTop + 3], layer: 'FRAME_SUB' });
-          }
-          if (hasRight) {
-            ents.push({ t: 'circle', c: [colX + 55, yBayTop - plTh / 2], r: 3.5, layer: 'FRAME_SUB' });
-            ents.push({ t: 'line', a: [colX + 55, yBayTop - plTh - 3], b: [colX + 55, yBayTop + 3], layer: 'FRAME_SUB' });
-          }
 
           // 2) 플레이트 사이의 서브빔 찬넬 본체 (C-75x40x5t)
           const bY0 = yBayBot + plTh, bY1 = yBayTop - plTh;
@@ -16752,11 +16731,10 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
         // 양끝단 5mm씩(총 10mm) 공간을 확보하여 연결부 커팅 오차 방지 (1M=0990, 1.5M=1490, 2M=1990)
         const cutLen = nominalSpan - 10;
         const codeStr = cutLen < 1000 ? (cutLen < 100 ? `00${cutLen}` : `0${cutLen}`) : String(cutLen);
-        let txtY;
-        if (m.lat === 0x20000) txtY = m.y - st * 0.65;
-        else if (m.lat === 0x40000) txtY = m.y + m.h + st * 0.75;
-        else txtY = m.y + flgW / 2;
-        ents.push({ t: 'text', p: [m.x + mid, txtY], h: st * 0.60, s: `WFF-${codeStr}${fSuf}`, rot: 0, align: 'center', valign: 'middle', layer: 'FRAME_MAIN_L' });
+        // 사용자 요청: 부품명은 부품 안에 배치 (외곽/중간 모든 가로 주재 정중앙에 배치)
+        const txtY = m.y + m.h / 2;
+        const txtH = Math.min(st * 0.55, m.h * 0.48);
+        ents.push({ t: 'text', p: [m.x + mid, txtY], h: txtH, s: `WFF-${codeStr}${fSuf}`, rot: 0, align: 'center', valign: 'middle', layer: 'FRAME_MAIN_L' });
       }
     }));
 
@@ -24143,7 +24121,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.95</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.96</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();

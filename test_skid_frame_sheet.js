@@ -379,7 +379,7 @@ assert.strictEqual(corner75Text.rot, 0, 'WFF-0200ACZ must be horizontal (rot: 0)
 assert(Math.abs(corner75Text.p[0] - 3095) < 5, 'WFF-0200ACZ must be centered in X around 3095 (starting from where 0990 ends)');
 
 const holes75 = skidUser.ents.filter(e => e.layer === 'FRAME_MAIN_L' && e.t === 'circle' && e.c[0] >= 2995);
-assert.strictEqual(holes75.length, 4, '4 solid holes (Ø17 holes) must exist for WFF-0200ACZ');
+assert.strictEqual(holes75.length, 0, 'Holes removed per user request (leave only part name)');
 
 // Frame 125: WFF-0150CCZ
 const optUser125 = { length: [4000], width: [4000], height: [3000], frame: 125, removed: [[3, 3]], sheetKind: 'frame' };
