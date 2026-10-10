@@ -7599,7 +7599,7 @@
         } else {
           subCode = isF150 ? (isShort ? 'WFB-0493CMZ' : 'WFB-0993CMZ') : (isShort ? 'WFB-0494AMZ' : 'WFB-0994AMZ');
         }
-        ents.push({ t: 'text', p: [colX, (rY0 + rY1) / 2], h: st * 0.60, s: subCode, rot: 90, align: 'center', valign: 'middle', layer: 'FRAME_SUB' });
+        ents.push({ t: 'text', p: [colX, (rY0 + rY1) / 2], h: st * 0.60, s: subCode, rot: 270, align: 'center', valign: 'middle', layer: 'FRAME_SUB' });
       }
     }
 
@@ -8037,7 +8037,7 @@
         p: [subX0 + subH / 2, yMid],
         h: subTextH,
         s: sub.code,
-        rot: 90,
+        rot: 270,
         align: 'center',
         valign: 'middle',
         layer: 'FRAME_SUB'

@@ -436,6 +436,7 @@ const subTopLines = subLines125.filter(e => e.a[0] === 125 && e.b[0] === 125);
 assert(subTopLines.length > 0, 'Sub-beam top surface line must be at X=125 (flush with Channel top flange / right leveling)');
 const subTexts125 = cross125.ents.filter(e => e.layer === 'FRAME_SUB' && e.t === 'text');
 assert(subTexts125.every(t => t.p[0] === 87.5), 'Sub-beam part texts must be centered at X=87.5 (th - subH / 2)');
+assert(subTexts125.every(t => t.rot === 270), 'Sub-beam part texts must be rotated 270 deg (flipped vertically)');
 
 console.log('--- Testing W-direction Main Beam Splice Connectors (WBR-02150ZE / WBR-9021CZ) ---');
 // 1. Frame 75 (75 Angle): WBR-02150ZE
