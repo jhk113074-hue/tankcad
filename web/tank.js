@@ -7962,15 +7962,99 @@
 
       // 서브빔 단면 폭 (50 SHS: 50mm, 75/125/150: 75mm)
       const subH = isSHS ? 50 : 75, subX0 = (th - subH) / 2, subX1 = subX0 + subH;
-      ents.push({ t: 'line', a: [subX0, yBot], b: [subX0, yTop], layer: 'FRAME_SUB' });
-      ents.push({ t: 'line', a: [subX1, yBot], b: [subX1, yTop], layer: 'FRAME_SUB' });
-      ents.push({ t: 'line', a: [subX0, yBot], b: [subX1, yBot], layer: 'FRAME_SUB' });
-      ents.push({ t: 'line', a: [subX0, yTop], b: [subX1, yTop], layer: 'FRAME_SUB' });
-      if (!isSHS) {
-        ents.push({ t: 'line', a: [subX0 + 5, yBot], b: [subX0 + 5, yTop], layer: 'FRAME_SUB' });
-      } else {
-        ents.push({ t: 'line', a: [subX0 + 3.2, yBot], b: [subX0 + 3.2, yTop], layer: 'FRAME_SUB' });
-        ents.push({ t: 'line', a: [subX1 - 3.2, yBot], b: [subX1 - 3.2, yTop], layer: 'FRAME_SUB' });
+      const tp = 6.0; // 6t 엔드 플레이트 두께
+      const twSub = isSHS ? 3.2 : (isAngle ? 6.0 : 5.0); // 웨브 두께 (5t / 6t)
+      const tfSub = isSHS ? 3.2 : (isAngle ? 6.0 : 5.0); // 플랜지 두께 (5t / 6t)
+      const stepW = 57.5; // DWG 실측 단차 폭 (우측 17.5mm cutout)
+      const stepH = flgW; // 단차 높이 (주재 플랜지 폭 70~75mm)
+      const xStep = subX0 + stepW;
+
+      // 서브빔 타입 판별: A타입(양단 직선), B타입(한쪽 단차), C타입(양단 단차)
+      const isTypeA = isSHS || (sub.type === 'A타입');
+      const isTypeC = !isSHS && (sub.type === 'C타입');
+      const isTypeB = !isSHS && !isTypeA && !isTypeC;
+
+      if (isSHS) {
+        // 50X50 SQ PIPE: 양단 6t 플레이트 + 외곽선 + 3.2T 관 두께선
+        ents.push({ t: 'line', a: [subX0, yBot], b: [subX1, yBot], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yBot + tp], b: [subX1, yBot + tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yBot], b: [subX0, yBot + tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1, yBot], b: [subX1, yBot + tp], layer: 'FRAME_SUB' });
+
+        ents.push({ t: 'line', a: [subX0, yTop], b: [subX1, yTop], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yTop - tp], b: [subX1, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yTop - tp], b: [subX0, yTop], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1, yTop - tp], b: [subX1, yTop], layer: 'FRAME_SUB' });
+
+        ents.push({ t: 'line', a: [subX0, yBot + tp], b: [subX0, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1, yBot + tp], b: [subX1, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0 + 3.2, yBot + tp], b: [subX0 + 3.2, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1 - 3.2, yBot + tp], b: [subX1 - 3.2, yTop - tp], layer: 'FRAME_SUB' });
+      } else if (isTypeA) {
+        // A타입: 양단 6t 엔드 플레이트 + 찬넬 플랜지/웨브 5t 외곽 및 두께선
+        ents.push({ t: 'line', a: [subX0, yBot], b: [subX1, yBot], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yBot + tp], b: [subX1, yBot + tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yBot], b: [subX0, yBot + tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1, yBot], b: [subX1, yBot + tp], layer: 'FRAME_SUB' });
+
+        ents.push({ t: 'line', a: [subX0, yTop], b: [subX1, yTop], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yTop - tp], b: [subX1, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yTop - tp], b: [subX0, yTop], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1, yTop - tp], b: [subX1, yTop], layer: 'FRAME_SUB' });
+
+        ents.push({ t: 'line', a: [subX0, yBot + tp], b: [subX0, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0 + tfSub, yBot + tp], b: [subX0 + tfSub, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1, yBot + tp], b: [subX1, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1 - twSub, yBot + tp], b: [subX1 - twSub, yTop - tp], layer: 'FRAME_SUB' });
+      } else if (isTypeB) {
+        // B타입: 하단 6t 엔드 플레이트 + 상단 단차(xStep 우측 cutout stepH) + 6t 플레이트
+        ents.push({ t: 'line', a: [subX0, yBot], b: [subX1, yBot], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yBot + tp], b: [subX1, yBot + tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yBot], b: [subX0, yBot + tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1, yBot], b: [subX1, yBot + tp], layer: 'FRAME_SUB' });
+
+        // 상단 돌출부 6t 플레이트 (x = subX0 ~ xStep)
+        ents.push({ t: 'line', a: [subX0, yTop], b: [xStep, yTop], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yTop - tp], b: [xStep, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yTop - tp], b: [subX0, yTop], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [xStep, yTop - tp], b: [xStep, yTop], layer: 'FRAME_SUB' });
+
+        // 상단 단차 (cutout)
+        ents.push({ t: 'line', a: [xStep, yTop - tp], b: [xStep, yTop - stepH], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [xStep, yTop - stepH], b: [subX1, yTop - stepH], layer: 'FRAME_SUB' });
+
+        // 찬넬 몸체 외곽 및 두께선
+        ents.push({ t: 'line', a: [subX0, yBot + tp], b: [subX0, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0 + tfSub, yBot + tp], b: [subX0 + tfSub, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1, yBot + tp], b: [subX1, yTop - stepH], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1 - twSub, yBot + tp], b: [subX1 - twSub, yTop - stepH], layer: 'FRAME_SUB' });
+      } else if (isTypeC) {
+        // C타입: 상하단 모두 단차(xStep 우측 cutout stepH) + 돌출부 6t 엔드 플레이트
+        // 하단 돌출부 6t 플레이트 (x = subX0 ~ xStep)
+        ents.push({ t: 'line', a: [subX0, yBot], b: [xStep, yBot], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yBot + tp], b: [xStep, yBot + tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yBot], b: [subX0, yBot + tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [xStep, yBot], b: [xStep, yBot + tp], layer: 'FRAME_SUB' });
+
+        // 하단 단차
+        ents.push({ t: 'line', a: [xStep, yBot + tp], b: [xStep, yBot + stepH], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [xStep, yBot + stepH], b: [subX1, yBot + stepH], layer: 'FRAME_SUB' });
+
+        // 상단 돌출부 6t 플레이트 (x = subX0 ~ xStep)
+        ents.push({ t: 'line', a: [subX0, yTop], b: [xStep, yTop], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yTop - tp], b: [xStep, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0, yTop - tp], b: [subX0, yTop], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [xStep, yTop - tp], b: [xStep, yTop], layer: 'FRAME_SUB' });
+
+        // 상단 단차
+        ents.push({ t: 'line', a: [xStep, yTop - tp], b: [xStep, yTop - stepH], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [xStep, yTop - stepH], b: [subX1, yTop - stepH], layer: 'FRAME_SUB' });
+
+        // 찬넬 몸체 외곽 및 두께선
+        ents.push({ t: 'line', a: [subX0, yBot + tp], b: [subX0, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX0 + tfSub, yBot + tp], b: [subX0 + tfSub, yTop - tp], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1, yBot + stepH], b: [subX1, yTop - stepH], layer: 'FRAME_SUB' });
+        ents.push({ t: 'line', a: [subX1 - twSub, yBot + stepH], b: [subX1 - twSub, yTop - stepH], layer: 'FRAME_SUB' });
       }
 
       // 부재 명칭 표기: 사용자 요청 ("홀은 없애주세요. 품명만 남겨주세요. 부품명은 부품안에 넣어주세요.")
