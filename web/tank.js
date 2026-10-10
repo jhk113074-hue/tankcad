@@ -1566,6 +1566,11 @@
     return out;
   }
   const pad4Code = n => String(Math.round(n)).padStart(4, '0');
+  // W방향 주재(O형) 품번 접미사: 75 Angle=ASZ, 125 Channel=CSZ, 150 Channel=HCSZ (L방향: ALZ / CLZ / HCLZ)
+  function wMainFamily(frame) {
+    const f = parseInt(frame, 10);
+    return f === 150 ? 'HCSZ' : (f === 125 ? 'CSZ' : 'ASZ');
+  }
   // '125N' / frameVariant 입력을 { frame: 125, frameVariant: 'N' } 형태로 정규화
   function normFrameOpt(opt) {
     if (!opt) return opt;
@@ -6677,14 +6682,16 @@
       }
       const totalH = Math.round(hVal + overY * 2);
       const spans = computeMainBeamSpans(hVal);
-      const startSuf = isRight ? ((fNum === 150) ? 'CSZR' : 'ASZR') : ((fNum === 150) ? 'CSZL' : 'ASZL');
-      const endSuf = isRight ? ((fNum === 150) ? 'CSZL' : 'ASZL') : ((fNum === 150) ? 'CSZR' : 'ASZR');
-      const sSufMid = (fNum === 150) ? 'CSZ' : 'ASZ';
-      const sSufSingle = (fNum === 150) ? 'CSZ' : 'ASZ';
+      // 품번 체계: 75 Angle=ASZ/ALZ, 125 Channel=CSZ/CLZ, 150 Channel=HCSZ/HCLZ
+      const wFam = wMainFamily(fNum);
+      const startSuf = wFam + (isRight ? 'R' : 'L');
+      const endSuf = wFam + (isRight ? 'L' : 'R');
+      const sSufMid = wFam;
+      const sSufSingle = wFam;
       const pad4 = n => String(Math.round(n)).padStart(4, '0');
 
       if (spans.length === 1 && spans[0].type === 'single') {
-        const code = (fNum === 125 && totalH === 2620) ? 'WFF-2640ASZ' : ('WFF-' + pad4(totalH) + sSufSingle);
+        const code = (fNum === 125 && totalH === 2620) ? ('WFF-2640' + wFam) : ('WFF-' + pad4(totalH) + sSufSingle);
         wBeamCounts[code] = (wBeamCounts[code] || 0) + 1;
       } else {
         wSpliceCount += (spans.length - 1);
@@ -7011,10 +7018,12 @@
 
       // 한쪽이 ASZL+ASZR이면 반대쪽은 ASZR+ASZL로 대칭 배치
       const isRight = (isRightSide !== undefined) ? isRightSide : (type === 'last');
-      const startSuf = isRight ? ((fNum === 150) ? 'CSZR' : 'ASZR') : ((fNum === 150) ? 'CSZL' : 'ASZL');
-      const endSuf = isRight ? ((fNum === 150) ? 'CSZL' : 'ASZL') : ((fNum === 150) ? 'CSZR' : 'ASZR');
-      const sSufMid = (fNum === 150) ? 'CSZ' : 'ASZ';
-      const sSufSingle = (fNum === 150) ? 'CSZ' : 'ASZ';
+      // 품번 체계: 75 Angle=ASZ/ALZ, 125 Channel=CSZ/CLZ, 150 Channel=HCSZ/HCLZ
+      const wFam = wMainFamily(fNum);
+      const startSuf = wFam + (isRight ? 'R' : 'L');
+      const endSuf = wFam + (isRight ? 'L' : 'R');
+      const sSufMid = wFam;
+      const sSufSingle = wFam;
       const pad4 = n => String(Math.round(n)).padStart(4, '0');
 
       if (spans.length === 1 && spans[0].type === 'single') {
@@ -7592,12 +7601,12 @@
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `7. L방향 주재: 500 판넬 배치 시 1.5M(1490${fSuf}) 적용, 양끝단 5mm(총 10mm) 커팅 여유 확보 [2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}]`, rot: 0, align: 'left', layer: 'FRAME_MAIN_L' });
     noteY -= tH * 1.25;
     const wSpecSummary = isN
-      ? `${frameLabel(fNum, 'N', 'ko')}: 자재 종류 축소를 위해 O형 W방향 전용 주재(ASZ/CSZ 계열) 미사용 — W방향도 L방향 표준 부재 2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}로 판넬 모듈선 기준 분할(양끝단 5mm 여유), 기존 부품에 W방향 체결용 Hole 추가 가공하여 L·W 공용 사용, 스키드 코너는 신규 부재 없이 코너 브라켓(${fNum === 150 ? 'WBR-0120CZE' : 'WBR-7575Z'})으로 연결`
+      ? `${frameLabel(fNum, 'N', 'ko')}: 자재 종류 축소를 위해 O형 W방향 전용 주재(ASZ/CSZ/HCSZ 계열) 미사용 — W방향도 L방향 표준 부재 2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}로 판넬 모듈선 기준 분할(양끝단 5mm 여유), 기존 부품에 W방향 체결용 Hole 추가 가공하여 L·W 공용 사용, 스키드 코너는 신규 부재 없이 코너 브라켓(${fNum === 150 ? 'WBR-0120CZE' : 'WBR-7575Z'})으로 연결`
       : (fNum === 75)
       ? '75Angle: 시작/끝단 1570ASZL/R (1.5M), 2070ASZL/R (2M), 신규 1070ASZL/R (1M, 70mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0200ACZ (L=200, 4-Ø17H) / 단일재: 1140, 1640, 2140, 2640ASZ'
       : (fNum === 150)
-        ? '150Channel: 시작/끝단 1570CSZL/R (1.5M), 2070CSZL/R (2M), 신규 1070CSZL/R (1M, 70mm 돌출) 대칭배치(한쪽 CSZL+CSZR 시 반대쪽 CSZR+CSZL), 중간 2000CSZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0150HCCZ (L=150, 4-Ø17H) / 단일재: 1140, 1640, 2140, 2640CSZ'
-        : '125Channel: 시작/끝단 1560ASZL/R (1.5M), 2060ASZL/R (2M), 신규 1060ASZL/R (1M, 60mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0150CCZ (L=150, 4-Ø17H) / 단일재: 1120, 1620, 2120, 2640ASZ';
+        ? '150Channel: 시작/끝단 1570HCSZL/R (1.5M), 2070HCSZL/R (2M), 신규 1070HCSZL/R (1M, 70mm 돌출) 대칭배치(한쪽 HCSZL+HCSZR 시 반대쪽 HCSZR+HCSZL), 중간 2000HCSZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0150HCCZ (L=150, 4-Ø17H) / 단일재: 1140, 1640, 2140, 2640HCSZ'
+        : '125Channel: 시작/끝단 1560CSZL/R (1.5M), 2060CSZL/R (2M), 신규 1060CSZL/R (1M, 60mm 돌출) 대칭배치(한쪽 CSZL+CSZR 시 반대쪽 CSZR+CSZL), 중간 2000CSZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0150CCZ (L=150, 4-Ø17H) / 단일재: 1120, 1620, 2120, 2640CSZ';
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `8. W방향 주재(테두리 전용): 외곽 테두리(시작 열 및 끝 열)에만 배치되며, 내부 중간 열에는 미배치 (부재만 배치). ${wSpecSummary}`, rot: 0, align: 'left', layer: 'FRAME_MAIN_W' });
     noteY -= tH * 1.25;
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '9. W방향 주재 이음(Splice): 75Angle은 WBR-02150ZE(L=215, 4-Ø17H), 125/150Channel은 WBR-9016CZE(160x90x6t PL, 4-Ø17H) 찬넬간 연결 적용', rot: 0, align: 'left', layer: 'DIM' });
