@@ -306,4 +306,34 @@ assert(hasFlangeDimText, 'Flange height dimension text must exist on the left');
 
 console.log('Test 8 passed! Water tank flange resting on top of Steel Skid verified.');
 
+// Test 9: VIEW 1-A DETAIL "A" (측판 및 저판 조립 상세도) Verification
+const hasDetailATitle = sheet7.ents.some(e => e.t === 'text' && e.s && (e.s.includes('상세 A') || e.s.includes('DETAIL A')) && e.s.includes('측판·저판 조립 상세도'));
+assert(hasDetailATitle, 'DETAIL A View Title bubble must exist on the sheet');
+
+const hasDetailACallout1 = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('1단 측판 판넬'));
+assert(hasDetailACallout1, 'DETAIL A side panel callout must exist');
+
+const hasDetailACallout2 = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('저판 조립 평면구간 76.92mm'));
+assert(hasDetailACallout2, 'DETAIL A 76.92mm flat zone callout must exist');
+
+const hasDetailACallout3 = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('EPDM 실링재'));
+assert(hasDetailACallout3, 'DETAIL A EPDM sealing tape callout must exist');
+
+const hasDetailACallout4 = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('SUS304 M10 조립 볼트'));
+assert(hasDetailACallout4, 'DETAIL A SUS304 bolt & nut callout must exist');
+
+const hasDetailACallout5 = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('Steel Skid 지지 찬넬'));
+assert(hasDetailACallout5, 'DETAIL A Steel Skid channel frame callout must exist');
+
+console.log('Test 9 passed! DETAIL "A" (Side & Bottom Panel Joint Detail) verified.');
+
+// Test 10: Double Flange (양면플랜지) Verification
+const hasDoubleFlangeNozzleCallout = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('양면플랜지'));
+assert(hasDoubleFlangeNozzleCallout, 'Nozzle leader callouts must specify 양면플랜지 (Double Flange)');
+
+const hasDoubleFlangeScheduleRow = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('양면 플랜지 (Double Flange)'));
+assert(hasDoubleFlangeScheduleRow, 'Calculation schedule table must include 양면 플랜지 (Double Flange) row');
+
+console.log('Test 10 passed! Double-sided pipe flanges (양면플랜지) verified.');
+
 console.log('ALL UNIT TESTS PASSED SUCCESSFULLY!');
