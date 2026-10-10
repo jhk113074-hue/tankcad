@@ -221,6 +221,23 @@ assert(hasFireRowInTable, 'Fire water volume row must exist in schedule table');
 const hasDomRowInTable = sheet6.ents.some(e => e.t === 'text' && e.s && e.s.includes('생활 유효수량'));
 assert(hasDomRowInTable, 'Domestic water volume row must exist in schedule table');
 
+// 4. Badge Box containment assertions (모든 글씨가 박스 내부에 완벽히 포함되는지 검증)
+const secBadgePoly = sheet6.ents.find(e => e.t === 'poly' && e.fillColor === 'rgba(9, 13, 22, 0.94)');
+assert(secBadgePoly, 'VIEW 1 section badge masking poly must exist');
+const [bx0, by0] = secBadgePoly.pts[0];
+const [bx1, by1] = secBadgePoly.pts[2];
+const secBadgeW = bx1 - bx0;
+const secBadgeH = by1 - by0;
+console.log('VIEW 1 Badge Box W:', secBadgeW, 'H:', secBadgeH);
+assert(secBadgeW >= 2800, 'VIEW 1 Badge width must be wide enough (>= 2800mm) to contain 4 text lines');
+
+const planBadgePoly = sheet6.ents.find(e => e.t === 'poly' && e.fillColor === 'rgba(9, 13, 22, 0.92)');
+assert(planBadgePoly, 'VIEW 3 plan badge masking poly must exist');
+const [pb0, pb1] = [planBadgePoly.pts[0][0], planBadgePoly.pts[2][0]];
+const planBadgeW = pb1 - pb0;
+console.log('VIEW 3 Plan Badge Box W:', planBadgeW);
+assert(planBadgeW >= 1200, 'VIEW 3 Plan badge width must be wide enough (>= 1200mm) to contain plan text');
+
 console.log('Test 6 passed! Fire water separation and calculation verified.');
 
 console.log('ALL UNIT TESTS PASSED SUCCESSFULLY!');

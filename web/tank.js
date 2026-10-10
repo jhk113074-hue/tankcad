@@ -8669,6 +8669,27 @@
     const drainNoz = nozzleList.find(n => n.name === 'DRAIN' || (n.desc && n.desc.includes('배수')) || n.key === 'drain');
     const fireNoz = nozzleList.find(n => (n.name === 'FIRE' || (n.desc && (n.desc.includes('소화') || n.desc.includes('소방'))) || n.key === 'fire') && n.use !== false);
 
+    // 텍스트 너비 정밀 추정 헬퍼 (배지 내 글씨가 테두리 밖으로 벗어나는 현상 원천 방지)
+    const estimateTextWidth = (str, h) => {
+      if (!str) return 0;
+      let len = 0;
+      for (let i = 0; i < str.length; i++) {
+        const code = str.charCodeAt(i);
+        if ((code >= 0xac00 && code <= 0xd7a3) || (code >= 0x1100 && code <= 0x11ff) || (code >= 0x3000 && code <= 0x9fff) || (code >= 0xff01 && code <= 0xff60)) {
+          len += 1.05;
+        } else if (code >= 65 && code <= 90) {
+          len += 0.70;
+        } else if (code >= 48 && code <= 57) {
+          len += 0.62;
+        } else if (code === 32) {
+          len += 0.35;
+        } else {
+          len += 0.55;
+        }
+      }
+      return len * h;
+    };
+
     // 바닥판넬-측면판넬 조립 기준: 바닥으로부터 30~35mm에서 볼트 조립, 저판플랜지 70~80mm 형성
     const BTM_FLG_H = 75;    // 저판 플랜지 높이 (70~80mm)
     const BTM_BOLT_H = 35;   // 볼트 체결선 (30~35mm)
@@ -9756,9 +9777,55 @@
         });
       }
 
-      // 중앙 강조 실담수량 뱃지 크기 및 위치 (Effective Capacity Center Badge)
-      const badgeW = Math.min(totalL * 0.72, Math.max(2200, 75 * N));
-      const badgeH = Math.min(effDepth * 0.65, Math.max(900, 30 * N));
+      // 중앙 강조 실담수량 뱃지 내용 정의 및 치수 동적 산출 (모든 글씨가 박스 내부에 완벽히 포함되도록 보장)
+      let badgeLines = [];
+      if (hasFireWater && fireDepth > 0) {
+        badgeLines = [
+          { s: lang === 'ko' ? '■ 총 실담수량 (NET EFFECTIVE WATER CAPACITY) ■' : '■ NET EFFECTIVE WATER CAPACITY ■', h: Math.round(2.8 * N) },
+          { s: `V_eff = ${effTon.toFixed(1)} Ton (㎥)  [${effRatio.toFixed(1)} %]`, h: Math.round(4.0 * N) },
+          { s: lang === 'ko' ? `생활용수 V_dom = ${domTon.toFixed(1)} Ton (${domRatio.toFixed(1)}%) | 소방용수 V_fire = ${fireTon.toFixed(1)} Ton (${fireRatio.toFixed(1)}%)` : `Domestic V_dom = ${domTon.toFixed(1)} T | Fire V_fire = ${fireTon.toFixed(1)} T`, h: Math.round(2.3 * N) },
+          { s: lang === 'ko' ? `총유효수심 H_eff = ${effDepth.toLocaleString()} mm (생활 ${domDepth.toLocaleString()}mm + 소방 ${fireDepth.toLocaleString()}mm)` : `Total H_eff = ${effDepth.toLocaleString()} mm (Dom ${domDepth}mm + Fire ${fireDepth}mm)`, h: Math.round(2.2 * N) }
+        ];
+      } else {
+        badgeLines = [
+          { s: lang === 'ko' ? '■ 실담수량 (NET EFFECTIVE WATER CAPACITY) ■' : '■ NET EFFECTIVE WATER CAPACITY ■', h: Math.round(3.2 * N) },
+          { s: `V_eff = ${effTon.toFixed(1)} Ton (㎥)  [${effRatio.toFixed(1)} %]`, h: Math.round(4.6 * N) },
+          { s: lang === 'ko' ? `유효 수심 H_eff = ${effDepth.toLocaleString()} mm (HWL - LWL)` : `Effective Depth H_eff = ${effDepth.toLocaleString()} mm`, h: Math.round(2.6 * N) }
+        ];
+      }
+
+      let rawMaxTextW = 0;
+      badgeLines.forEach(l => {
+        const w = estimateTextWidth(l.s, l.h);
+        if (w > rawMaxTextW) rawMaxTextW = w;
+      });
+
+      const maxBadgeW = Math.min(totalL * 0.88, Math.max(1200, totalL - 300));
+      const maxBadgeH = Math.min(effDepth * 0.85, Math.max(700, effDepth - 100));
+
+      const padX = Math.round(10 * N);
+      let targetBadgeW = rawMaxTextW + padX * 2;
+      let textScale = 1.0;
+
+      if (targetBadgeW > maxBadgeW) {
+        textScale = Math.max(0.55, (maxBadgeW - padX * 2) / rawMaxTextW);
+        badgeLines.forEach(l => { l.h = Math.round(l.h * textScale); });
+        rawMaxTextW = 0;
+        badgeLines.forEach(l => {
+          const w = estimateTextWidth(l.s, l.h);
+          if (w > rawMaxTextW) rawMaxTextW = w;
+        });
+        targetBadgeW = Math.min(maxBadgeW, rawMaxTextW + padX * 2);
+      }
+
+      const badgeW = Math.max(targetBadgeW, 75 * N * textScale);
+      const lineCount = badgeLines.length;
+      const totalTextH = badgeLines.reduce((acc, l) => acc + l.h, 0);
+      const lineGap = Math.round((lineCount === 4 ? 3.0 : 4.0) * N * textScale);
+      const padY = Math.round(5.5 * N * textScale);
+      const contentH = totalTextH + lineGap * (lineCount - 1) + padY * 2;
+      const badgeH = Math.min(maxBadgeH, Math.max(contentH, (lineCount === 4 ? 38 : 30) * N * textScale));
+
       const bcx = totalL / 2;
       const bcy = lwlFireElev + effDepth / 2;
       const bx0 = bcx - badgeW / 2, bx1 = bcx + badgeW / 2;
@@ -9821,16 +9888,21 @@
       secEnts.push({ t: 'line', a: [bx1 - pad, by1 - pad], b: [bx0 + pad, by1 - pad], layer: 'SHEET' });
       secEnts.push({ t: 'line', a: [bx0 + pad, by1 - pad], b: [bx0 + pad, by0 + pad], layer: 'SHEET' });
 
-      if (hasFireWater && fireDepth > 0) {
-        secEnts.push({ t: 'text', p: [bcx, bcy + badgeH * 0.30], h: Math.round(3.0 * N), s: lang === 'ko' ? '■ 총 실담수량 (NET EFFECTIVE WATER CAPACITY) ■' : '■ NET EFFECTIVE WATER CAPACITY ■', align: 'center', valign: 'middle', layer: 'SHEET' });
-        secEnts.push({ t: 'text', p: [bcx, bcy + badgeH * 0.08], h: Math.round(4.4 * N), s: `V_eff = ${effTon.toFixed(1)} Ton (㎥)  [${effRatio.toFixed(1)} %]`, align: 'center', valign: 'middle', layer: 'SHEET' });
-        secEnts.push({ t: 'text', p: [bcx, bcy - badgeH * 0.14], h: Math.round(2.6 * N), s: lang === 'ko' ? `생활용수 V_dom = ${domTon.toFixed(1)} Ton (${domRatio.toFixed(1)}%) | 소방용수 V_fire = ${fireTon.toFixed(1)} Ton (${fireRatio.toFixed(1)}%)` : `Domestic V_dom = ${domTon.toFixed(1)} T | Fire V_fire = ${fireTon.toFixed(1)} T`, align: 'center', valign: 'middle', layer: 'SHEET' });
-        secEnts.push({ t: 'text', p: [bcx, bcy - badgeH * 0.32], h: Math.round(2.3 * N), s: lang === 'ko' ? `총유효수심 H_eff = ${effDepth.toLocaleString()} mm (생활 ${domDepth.toLocaleString()}mm + 소방 ${fireDepth.toLocaleString()}mm)` : `Total H_eff = ${effDepth.toLocaleString()} mm (Dom ${domDepth}mm + Fire ${fireDepth}mm)`, align: 'center', valign: 'middle', layer: 'SHEET' });
-      } else {
-        secEnts.push({ t: 'text', p: [bcx, bcy + badgeH * 0.28], h: Math.round(3.4 * N), s: lang === 'ko' ? '■ 실담수량 (NET EFFECTIVE WATER CAPACITY) ■' : '■ NET EFFECTIVE WATER CAPACITY ■', align: 'center', valign: 'middle', layer: 'SHEET' });
-        secEnts.push({ t: 'text', p: [bcx, bcy], h: Math.round(4.8 * N), s: `V_eff = ${effTon.toFixed(1)} Ton (㎥)  [${effRatio.toFixed(1)} %]`, align: 'center', valign: 'middle', layer: 'SHEET' });
-        secEnts.push({ t: 'text', p: [bcx, bcy - badgeH * 0.28], h: Math.round(2.8 * N), s: lang === 'ko' ? `유효 수심 H_eff = ${effDepth.toLocaleString()} mm (HWL - LWL)` : `Effective Depth H_eff = ${effDepth.toLocaleString()} mm`, align: 'center', valign: 'middle', layer: 'SHEET' });
-      }
+      // 텍스트 배치: 상단 padY부터 하단 padY까지 여유 있게 수직 균등 분할
+      const startY = by1 - padY - badgeLines[0].h / 2;
+      const endY = by0 + padY + badgeLines[lineCount - 1].h / 2;
+      const stepY = lineCount > 1 ? (startY - endY) / (lineCount - 1) : 0;
+      badgeLines.forEach((l, idx) => {
+        secEnts.push({
+          t: 'text',
+          p: [bcx, startY - idx * stepY],
+          h: l.h,
+          s: l.s,
+          align: 'center',
+          valign: 'middle',
+          layer: 'SHEET'
+        });
+      });
 
       // F. 구역 설명 텍스트
       secEnts.push({
@@ -10267,8 +10339,30 @@
           const midY = (totalW / 2) * fitScale3 + centerDy3;
           const cA = compAreas[s] || (cL * totalW / 1e6);
           const cT = compTons[s] || (cA * effDepth / 1000);
-          const bW = Math.min(cL * 0.7 * fitScale3, 45 * N * fitScale3);
-          const bH = Math.min(totalW * 0.4 * fitScale3, 20 * N * fitScale3);
+
+          const compLines = [
+            { s: lang === 'ko' ? `【 ${s + 1}구획 】 A${s + 1} = ${cA.toFixed(2)} ㎡` : `【 COMP.${s + 1} 】 A${s + 1} = ${cA.toFixed(2)} ㎡`, h: Math.round(2.6 * N * fitScale3) },
+            { s: lang === 'ko' ? `실담수량: ${cT.toFixed(1)} Ton` : `Net Cap.: ${cT.toFixed(1)} Ton`, h: Math.round(3.0 * N * fitScale3) }
+          ];
+
+          let rawCompW = Math.max(estimateTextWidth(compLines[0].s, compLines[0].h), estimateTextWidth(compLines[1].s, compLines[1].h));
+          const maxCompW = cL * fitScale3 * 0.88;
+          const maxCompH = totalW * fitScale3 * 0.65;
+          const padCompX = Math.round(7 * N * fitScale3);
+          let targetCompW = rawCompW + padCompX * 2;
+          let scaleComp = 1.0;
+          if (targetCompW > maxCompW) {
+            scaleComp = Math.max(0.55, (maxCompW - padCompX * 2) / rawCompW);
+            compLines.forEach(l => { l.h = Math.round(l.h * scaleComp); });
+            rawCompW = Math.max(estimateTextWidth(compLines[0].s, compLines[0].h), estimateTextWidth(compLines[1].s, compLines[1].h));
+            targetCompW = Math.min(maxCompW, rawCompW + padCompX * 2);
+          }
+
+          const bW = Math.max(targetCompW, 45 * N * fitScale3 * scaleComp);
+          const padCompY = Math.round(4.5 * N * fitScale3 * scaleComp);
+          const lineGapComp = Math.round(3.5 * N * fitScale3 * scaleComp);
+          const contentHComp = compLines[0].h + compLines[1].h + lineGapComp + padCompY * 2;
+          const bH = Math.min(maxCompH, Math.max(contentHComp, 22 * N * fitScale3 * scaleComp));
 
           ents.push({
             t: 'poly',
@@ -10283,15 +10377,60 @@
           ents.push({ t: 'line', a: [midX + bW / 2, midY + bH / 2], b: [midX - bW / 2, midY + bH / 2], layer: 'SHEET' });
           ents.push({ t: 'line', a: [midX - bW / 2, midY + bH / 2], b: [midX - bW / 2, midY - bH / 2], layer: 'SHEET' });
 
-          ents.push({ t: 'text', p: [midX, midY + bH * 0.25], h: Math.round(2.6 * N * fitScale3), s: lang === 'ko' ? `【 ${s + 1}구획 】 A${s + 1} = ${cA.toFixed(2)} ㎡` : `【 COMP.${s + 1} 】 A${s + 1} = ${cA.toFixed(2)} ㎡`, align: 'center', valign: 'middle', layer: 'SHEET' });
-          ents.push({ t: 'text', p: [midX, midY - bH * 0.25], h: Math.round(3.0 * N * fitScale3), s: lang === 'ko' ? `실담수량: ${cT.toFixed(1)} Ton` : `Net Cap.: ${cT.toFixed(1)} Ton`, align: 'center', valign: 'middle', layer: 'SHEET' });
+          const startYComp = midY + bH / 2 - padCompY - compLines[0].h / 2;
+          const endYComp = midY - bH / 2 + padCompY + compLines[1].h / 2;
+
+          ents.push({ t: 'text', p: [midX, startYComp], h: compLines[0].h, s: compLines[0].s, align: 'center', valign: 'middle', layer: 'SHEET' });
+          ents.push({ t: 'text', p: [midX, endYComp], h: compLines[1].h, s: compLines[1].s, align: 'center', valign: 'middle', layer: 'SHEET' });
           curXp += cL;
         }
       } else {
         const midX = P(cx3);
         const midY = P(cy3);
-        const bW = Math.min(totalL * 0.65 * fitScale3, 55 * N * fitScale3);
-        const bH = Math.min(totalW * 0.35 * fitScale3, 22 * N * fitScale3);
+
+        const planBadgeLines = [
+          { s: lang === 'ko' ? '■ 유효 담수 면적 (WATER SURFACE AREA) ■' : '■ WATER SURFACE AREA ■', h: Math.round(2.6 * N * fitScale3) },
+          { s: `A_net = ${areaM2.toFixed(2)} ㎡`, h: Math.round(3.4 * N * fitScale3) },
+          {
+            s: (hasFireWater && fireDepth > 0)
+              ? (lang === 'ko' ? `실담수량: ${effTon.toFixed(1)} T (생활 ${domTon.toFixed(1)}T + 소방 ${fireTon.toFixed(1)}T)` : `Net Cap.: ${effTon.toFixed(1)} T (Dom ${domTon.toFixed(1)}T + Fire ${fireTon.toFixed(1)}T)`)
+              : (lang === 'ko' ? `실담수량: ${effTon.toFixed(1)} Ton (${effRatio.toFixed(1)}%)` : `Net Cap.: ${effTon.toFixed(1)} Ton (${effRatio.toFixed(1)}%)`),
+            h: Math.round((hasFireWater && fireDepth > 0 ? 2.3 : 2.7) * N * fitScale3)
+          }
+        ];
+
+        let rawMaxW3 = 0;
+        planBadgeLines.forEach(l => {
+          const w = estimateTextWidth(l.s, l.h);
+          if (w > rawMaxW3) rawMaxW3 = w;
+        });
+
+        const planTankW = totalL * fitScale3;
+        const planTankH = totalW * fitScale3;
+        const maxPlanBadgeW = Math.min(planTankW * 0.88, Math.max(1200 * fitScale3, planTankW - 200 * fitScale3));
+        const maxPlanBadgeH = Math.min(planTankH * 0.70, Math.max(600 * fitScale3, planTankH - 100 * fitScale3));
+
+        const padX3 = Math.round(8 * N * fitScale3);
+        let targetBW = rawMaxW3 + padX3 * 2;
+        let scale3 = 1.0;
+
+        if (targetBW > maxPlanBadgeW) {
+          scale3 = Math.max(0.55, (maxPlanBadgeW - padX3 * 2) / rawMaxW3);
+          planBadgeLines.forEach(l => { l.h = Math.round(l.h * scale3); });
+          rawMaxW3 = 0;
+          planBadgeLines.forEach(l => {
+            const w = estimateTextWidth(l.s, l.h);
+            if (w > rawMaxW3) rawMaxW3 = w;
+          });
+          targetBW = Math.min(maxPlanBadgeW, rawMaxW3 + padX3 * 2);
+        }
+
+        const bW = Math.max(targetBW, 65 * N * fitScale3 * scale3);
+        const padY3 = Math.round(5 * N * fitScale3 * scale3);
+        const lineGap3 = Math.round(3.5 * N * fitScale3 * scale3);
+        const totalTextH3 = planBadgeLines.reduce((acc, l) => acc + l.h, 0);
+        const contentH3 = totalTextH3 + lineGap3 * (planBadgeLines.length - 1) + padY3 * 2;
+        const bH = Math.min(maxPlanBadgeH, Math.max(contentH3, 26 * N * fitScale3 * scale3));
 
         ents.push({
           t: 'poly',
@@ -10306,13 +10445,21 @@
         ents.push({ t: 'line', a: [midX + bW / 2, midY + bH / 2], b: [midX - bW / 2, midY + bH / 2], layer: 'SHEET' });
         ents.push({ t: 'line', a: [midX - bW / 2, midY + bH / 2], b: [midX - bW / 2, midY - bH / 2], layer: 'SHEET' });
 
-        ents.push({ t: 'text', p: [midX, midY + bH * 0.28], h: Math.round(2.6 * N * fitScale3), s: lang === 'ko' ? '■ 유효 담수 면적 (WATER SURFACE AREA) ■' : '■ WATER SURFACE AREA ■', align: 'center', valign: 'middle', layer: 'SHEET' });
-        ents.push({ t: 'text', p: [midX, midY + (hasFireWater ? bH * 0.06 : 0)], h: Math.round(3.4 * N * fitScale3), s: `A_net = ${areaM2.toFixed(2)} ㎡`, align: 'center', valign: 'middle', layer: 'SHEET' });
-        if (hasFireWater && fireDepth > 0) {
-          ents.push({ t: 'text', p: [midX, midY - bH * 0.16], h: Math.round(2.4 * N * fitScale3), s: lang === 'ko' ? `실담수량: ${effTon.toFixed(1)} T (생활 ${domTon.toFixed(1)}T + 소방 ${fireTon.toFixed(1)}T)` : `Net Cap.: ${effTon.toFixed(1)} T (Dom ${domTon.toFixed(1)}T + Fire ${fireTon.toFixed(1)}T)`, align: 'center', valign: 'middle', layer: 'SHEET' });
-        } else {
-          ents.push({ t: 'text', p: [midX, midY - bH * 0.28], h: Math.round(2.8 * N * fitScale3), s: lang === 'ko' ? `실담수량: ${effTon.toFixed(1)} Ton (${effRatio.toFixed(1)}%)` : `Net Cap.: ${effTon.toFixed(1)} Ton (${effRatio.toFixed(1)}%)`, align: 'center', valign: 'middle', layer: 'SHEET' });
-        }
+        const startY3 = midY + bH / 2 - padY3 - planBadgeLines[0].h / 2;
+        const endY3 = midY - bH / 2 + padY3 + planBadgeLines[2].h / 2;
+        const stepY3 = (startY3 - endY3) / 2;
+
+        planBadgeLines.forEach((l, idx) => {
+          ents.push({
+            t: 'text',
+            p: [midX, startY3 - idx * stepY3],
+            h: l.h,
+            s: l.s,
+            align: 'center',
+            valign: 'middle',
+            layer: 'SHEET'
+          });
+        });
       }
 
       const titlePlanY = Math.max(y0 + 10, (bPlan[1] * fitScale3 + centerDy3) / N - 14.0);
