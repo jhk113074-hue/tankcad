@@ -9550,14 +9550,38 @@
 
       const FLG_W = 70; // 최외곽 측판 플랜지 폭 (70mm)
 
-      // 1. 하부 스키드 프레임 (Steel Skid: 1M 간격 보강 빔, 최외곽 플랜지 폭 포함)
+      // 1. 하부 스키드 프레임 (Steel Skid: 1M 간격 지지 빔)
+      // ★ 사용자 요구사항: "Steel skid 위에 물탱크 플랜지가 올라와야 합니다"
+      // -> 물탱크 저판 하향 플랜지(H=70mm)가 스틸 스키드 상부면(EL. -70mm) 위에 올라와서 직접 안착 거치됨.
       const frmVal = opt.frame || opt.frm || 75;
-      secEnts.push({ t: 'line', a: [-FLG_W, -frmVal], b: [totalL + FLG_W, -frmVal], layer: 'FRAME' });
-      secEnts.push({ t: 'line', a: [-FLG_W, 0], b: [totalL + FLG_W, 0], layer: 'FRAME' });
-      const bHalf = 37.5; // 75mm 찬넬/각관 빔 (저판 조립평면구간 76.92mm 직접 지지)
+      const skidTop = -BTM_FLG_H; // EL. -70mm (물탱크 플랜지 안착 기준면)
+      const skidBtm = skidTop - frmVal; // EL. -145mm (스틸 스키드 하단면)
+      const bHalf = 37.5; // 75mm 찬넬/각관 빔 (1M 간격 플랜지 안착부 직접 지지)
+
+      // 스키드 상/하단 연속 기준선
+      secEnts.push({ t: 'line', a: [-FLG_W, skidBtm], b: [totalL + FLG_W, skidBtm], layer: 'FRAME' });
+      secEnts.push({ t: 'line', a: [-FLG_W, skidTop], b: [totalL + FLG_W, skidTop], layer: 'FRAME' });
+
+      // 1M 간격 스틸 스키드 빔 (폭 75mm, 높이 frmVal)
       for (let sx = 0; sx <= totalL; sx += 1000) {
-        rectEnts(sx - bHalf, -frmVal, bHalf * 2, frmVal, 'FRAME', secEnts);
+        rectEnts(sx - bHalf, skidBtm, bHalf * 2, frmVal, 'FRAME', secEnts);
       }
+
+      // 스틸 스키드 프레임 및 플랜지 상부 안착 지시선 (Callout)
+      const skidCallX = (totalL >= 3000) ? 1000 : 0;
+      drawLeader(
+        secEnts,
+        [skidCallX + bHalf, skidTop],
+        [skidCallX + bHalf + Math.round(10 * N), skidTop - Math.round(8 * N)],
+        [skidCallX + bHalf + Math.round(30 * N), skidTop - Math.round(8 * N)],
+        [
+          lang === 'ko' ? `Steel Skid 프레임 (H=${frmVal}mm, 1M 간격 배치)` : `Steel Skid Frame (H=${frmVal}mm, 1M Spacing)`,
+          lang === 'ko' ? `★ 물탱크 저판 플랜지(H=${BTM_FLG_H}mm)가 Skid 상부면에 안착` : `Tank Flanges (H=${BTM_FLG_H}mm) Rest on Skid Top`
+        ],
+        Math.round(2.2 * N),
+        'left',
+        'PANEL_DETAIL'
+      );
 
       // 2. 수조 외곽 및 측판 본체 라인
       secEnts.push({ t: 'line', a: [0, 0], b: [totalL, 0], layer: 'PANEL' });
@@ -9806,22 +9830,22 @@
         }
       });
 
-      // 좌측 저판 직립 플랜지 (X = -FLG_W ~ 0, H=70mm)
-      secEnts.push({ t: 'line', a: [-FLG_W, 0], b: [-FLG_W, BTM_FLG_H], layer: 'PANEL' });
-      secEnts.push({ t: 'line', a: [-FLG_W, BTM_FLG_H], b: [0, BTM_FLG_H], layer: 'PANEL' });
+      // 좌측 저판+측판 외곽 하향 플랜지 (X = -FLG_W ~ 0, H=70mm, Steel Skid 상부 안착)
+      secEnts.push({ t: 'line', a: [-FLG_W, 0], b: [-FLG_W, skidTop], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [-FLG_W, skidTop], b: [0, skidTop], layer: 'PANEL' });
 
-      // 우측 저판 직립 플랜지 (X = totalL ~ totalL + FLG_W, H=70mm)
-      secEnts.push({ t: 'line', a: [totalL + FLG_W, 0], b: [totalL + FLG_W, BTM_FLG_H], layer: 'PANEL' });
-      secEnts.push({ t: 'line', a: [totalL, BTM_FLG_H], b: [totalL + FLG_W, BTM_FLG_H], layer: 'PANEL' });
+      // 우측 저판+측판 외곽 하향 플랜지 (X = totalL ~ totalL + FLG_W, H=70mm, Steel Skid 상부 안착)
+      secEnts.push({ t: 'line', a: [totalL + FLG_W, 0], b: [totalL + FLG_W, skidTop], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [totalL, skidTop], b: [totalL + FLG_W, skidTop], layer: 'PANEL' });
 
-      // 볼트 체결 중심선 (EL. +35mm)
-      secEnts.push({ t: 'line', a: [-FLG_W - 8, BTM_BOLT_H], b: [18, BTM_BOLT_H], layer: 'PANEL_DETAIL' });
-      secEnts.push({ t: 'circle', c: [-FLG_W / 2, BTM_BOLT_H], r: 3.5, layer: 'PANEL_DETAIL' });
-      secEnts.push({ t: 'line', a: [-FLG_W / 2, BTM_BOLT_H - 6], b: [-FLG_W / 2, BTM_BOLT_H + 6], layer: 'PANEL_DETAIL' });
+      // 외곽 플랜지 볼트 체결 중심선 (EL. -35mm)
+      secEnts.push({ t: 'line', a: [-FLG_W - 8, -BTM_BOLT_H], b: [18, -BTM_BOLT_H], layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'circle', c: [-FLG_W / 2, -BTM_BOLT_H], r: 3.5, layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'line', a: [-FLG_W / 2, -BTM_BOLT_H - 6], b: [-FLG_W / 2, -BTM_BOLT_H + 6], layer: 'PANEL_DETAIL' });
 
-      secEnts.push({ t: 'line', a: [totalL - 18, BTM_BOLT_H], b: [totalL + FLG_W + 8, BTM_BOLT_H], layer: 'PANEL_DETAIL' });
-      secEnts.push({ t: 'circle', c: [totalL + FLG_W / 2, BTM_BOLT_H], r: 3.5, layer: 'PANEL_DETAIL' });
-      secEnts.push({ t: 'line', a: [totalL + FLG_W / 2, BTM_BOLT_H - 6], b: [totalL + FLG_W / 2, BTM_BOLT_H + 6], layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'line', a: [totalL - 18, -BTM_BOLT_H], b: [totalL + FLG_W + 8, -BTM_BOLT_H], layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'circle', c: [totalL + FLG_W / 2, -BTM_BOLT_H], r: 3.5, layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'line', a: [totalL + FLG_W / 2, -BTM_BOLT_H - 6], b: [totalL + FLG_W / 2, -BTM_BOLT_H + 6], layer: 'PANEL_DETAIL' });
 
       // 측면 피팅 플랜지 취부 한계선 점선 (EL. +100mm)
       secEnts.push({ t: 'line', a: [-FLG_W - 5, MIN_SIDE_FITTING_ELEV], b: [30, MIN_SIDE_FITTING_ELEV], layer: 'PANEL_DETAIL' });
@@ -9830,11 +9854,12 @@
       // 저판 플랜지 및 볼트선 지시선 (Callout)
       drawLeader(
         secEnts,
-        [-FLG_W / 2, BTM_BOLT_H],
-        [-FLG_W - Math.round(10 * N), -Math.round(6 * N)],
-        [-FLG_W - Math.round(28 * N), -Math.round(6 * N)],
+        [-FLG_W / 2, -BTM_BOLT_H],
+        [-FLG_W - Math.round(10 * N), -BTM_BOLT_H - Math.round(6 * N)],
+        [-FLG_W - Math.round(28 * N), -BTM_BOLT_H - Math.round(6 * N)],
         [
-          lang === 'ko' ? `저판+측판 조립 플랜지 H=${BTM_FLG_H}mm (볼트선 EL.+${BTM_BOLT_H}mm)` : `Btm+Side Flange H=${BTM_FLG_H}mm (Bolt EL.+${BTM_BOLT_H}mm)`,
+          lang === 'ko' ? `저판+측판 조립 플랜지 H=${BTM_FLG_H}mm (볼트선 EL.-${BTM_BOLT_H}mm)` : `Btm+Side Flange H=${BTM_FLG_H}mm (Bolt EL.-${BTM_BOLT_H}mm)`,
+          lang === 'ko' ? `Steel Skid 상부(EL.-${BTM_FLG_H}mm) 위에 완벽 안착` : `Directly Rested on Skid Top (EL.-${BTM_FLG_H}mm)`,
           lang === 'ko' ? `측면 피팅 취부: EL.+${MIN_SIDE_FITTING_ELEV}mm 이상` : `Side Fitting: EL. >= +${MIN_SIDE_FITTING_ELEV}mm`
         ],
         Math.round(2.3 * N),
@@ -10381,6 +10406,10 @@
       const pDrainTip = drawCapBottomNozzle(drainX, drainNoz, -DRAIN_SHAPE_H);
       drawLeader(secEnts, pDrainTip, [pDrainTip[0] - Math.round(6 * N), pDrainTip[1] - Math.round(6 * N)], [pDrainTip[0] - Math.round(22 * N), pDrainTip[1] - Math.round(6 * N)], [lang === 'ko' ? `[N4] 배수구 (${drainNoz ? drainNoz.size : '50A'})` : `[N4] DRAIN (${drainNoz ? drainNoz.size : '50A'})`, lang === 'ko' ? `EL. -${DRAIN_SHAPE_H} mm (드레인판넬 최저점)` : `EL. -${DRAIN_SHAPE_H} mm (Drain Sump)`], Math.round(2.4 * N), 'right', 'NOZZLE');
 
+      // 하부 스키드 및 저판 플랜지 수직 치수선 (좌측)
+      dimLinear(secEnts, [-FLG_W, skidBtm], [-FLG_W, skidTop], -Math.round(22 * N), true, `${frmVal} (스키드)`, Math.round(2.0 * N), 'DIM');
+      dimLinear(secEnts, [-FLG_W, skidTop], [-FLG_W, 0], -Math.round(22 * N), true, `${BTM_FLG_H} (플랜지)`, Math.round(2.0 * N), 'DIM');
+
       // 6. 수직 및 수평 치수선 (Dimensions)
       if (hasFireWater && fireDepth > 0) {
         dimLinear(secEnts, [-FLG_W, 0], [-FLG_W, lwlFireElev], -Math.round(22 * N), true, `${lwlFireElev} (사수)`, Math.round(2.3 * N), 'DIM');
@@ -10398,14 +10427,14 @@
       if (lenSecs.length > 1) {
         let cx0 = 0;
         lenSecs.forEach(cLen => {
-          dimLinear(secEnts, [cx0, 0], [cx0 + cLen, 0], -Math.round(18 * N), false, String(cLen), Math.round(2.5 * N), 'DIM');
+          dimLinear(secEnts, [cx0, skidBtm], [cx0 + cLen, skidBtm], -Math.round(18 * N), false, String(cLen), Math.round(2.5 * N), 'DIM');
           cx0 += cLen;
         });
       }
-      dimLinear(secEnts, [0, 0], [totalL, 0], -Math.round(lenSecs.length > 1 ? 28 * N : 20 * N), false, `${totalL} (전장 L)`, Math.round(2.8 * N), 'DIM');
+      dimLinear(secEnts, [0, skidBtm], [totalL, skidBtm], -Math.round(lenSecs.length > 1 ? 28 * N : 20 * N), false, `${totalL} (전장 L)`, Math.round(2.8 * N), 'DIM');
 
       translateEnts(secEnts, dx1, dy1);
-      const titleSecY = (dy1 - Math.round(lenSecs.length > 1 ? 38 * N : 30 * N)) / N;
+      const titleSecY = (dy1 + skidBtm - Math.round(lenSecs.length > 1 ? 38 * N : 30 * N)) / N;
       drawViewTitleBubble(cx1, titleSecY, 1, 1, lang === 'ko' ? '수위 및 수심 단면도 (WATER LEVEL ELEVATION)' : 'WATER LEVEL & DEPTH ELEVATION', N);
 
       // ==========================================

@@ -294,4 +294,16 @@ assert(hasDeadWaterScheduleText, 'Dead water volume with 실사수량 must exist
 
 console.log('Test 7 passed! 1000x1000mm Drain panel (H=70mm MAX, Flg=70mm) and dead water verified.');
 
+// Test 8: Steel Skid Frame & Tank Flange Contact Verification (스틸 스키드 상부 플랜지 안착 검증)
+const hasSkidFlangeLeader = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('물탱크 저판 플랜지') && e.s.includes('Skid 상부'));
+assert(hasSkidFlangeLeader, 'Leader callout asserting tank bottom flange resting on top of Steel Skid must exist');
+
+const hasSkidDimText = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('(스키드)'));
+assert(hasSkidDimText, 'Skid height dimension text must exist on the left');
+
+const hasFlangeDimText = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('(플랜지)'));
+assert(hasFlangeDimText, 'Flange height dimension text must exist on the left');
+
+console.log('Test 8 passed! Water tank flange resting on top of Steel Skid verified.');
+
 console.log('ALL UNIT TESTS PASSED SUCCESSFULLY!');
