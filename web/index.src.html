@@ -8763,6 +8763,13 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
               ctx.save();
               ctx.strokeStyle = aciMap[e.color] || col[e.layer] || '#fff';
               ctx.lineWidth = lw[e.layer] || 1;
+              if (e.layer === 'HIDDEN') {
+                ctx.setLineDash([4, 3]);
+              } else if (e.layer === 'CENTER') {
+                ctx.setLineDash([14, 3, 2, 3]);
+              } else {
+                ctx.setLineDash([]);
+              }
               ctx.beginPath();
               ctx.moveTo(tx(e.a[0] + ox), ty(e.a[1] + oy));
               ctx.lineTo(tx(e.b[0] + ox), ty(e.b[1] + oy));
@@ -8811,7 +8818,8 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
         texts.forEach(e => {
           if (!e || !e.p) return;
           const px = Math.max(3, (e.h || 10) * view.s); if (px < 3) return;
-          ctx.fillStyle = col[e.layer] || '#cbd5e1';
+          const aciMap = { 1: '#ef4444', 2: '#eab308', 3: '#22c55e', 4: '#06b6d4', 5: '#2563eb', 6: '#d946ef', 7: '#cbd5e1' };
+          ctx.fillStyle = (e.color && aciMap[e.color]) ? aciMap[e.color] : (col[e.layer] || '#cbd5e1');
           const fontFam = getCadFontCss();
           const isBold = ((e.layer === 'SHEET' && e.h >= 5.5 * plan.scale) || e.layer === 'BALLOON') ? 'bold ' : '';
           ctx.font = isBold + px + 'px ' + fontFam;

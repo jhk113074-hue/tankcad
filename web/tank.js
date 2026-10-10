@@ -9567,22 +9567,6 @@
         rectEnts(sx - bHalf, skidBtm, bHalf * 2, frmVal, 'FRAME', secEnts);
       }
 
-      // 스틸 스키드 프레임 및 플랜지 상부 안착 지시선 (Callout)
-      const skidCallX = (totalL >= 3000) ? 1000 : 0;
-      drawLeader(
-        secEnts,
-        [skidCallX + bHalf, skidTop],
-        [skidCallX + bHalf + Math.round(10 * N), skidTop - Math.round(8 * N)],
-        [skidCallX + bHalf + Math.round(30 * N), skidTop - Math.round(8 * N)],
-        [
-          lang === 'ko' ? `Steel Skid 프레임 (H=${frmVal}mm, 1M 간격 배치)` : `Steel Skid Frame (H=${frmVal}mm, 1M Spacing)`,
-          lang === 'ko' ? `★ 물탱크 저판 플랜지(H=${BTM_FLG_H}mm)가 Skid 상부면에 안착` : `Tank Flanges (H=${BTM_FLG_H}mm) Rest on Skid Top`
-        ],
-        Math.round(2.2 * N),
-        'left',
-        'PANEL_DETAIL'
-      );
-
       // 2. 수조 외곽 및 측판 본체 라인
       secEnts.push({ t: 'line', a: [0, 0], b: [totalL, 0], layer: 'PANEL' });
       secEnts.push({ t: 'line', a: [totalL, 0], b: [totalL, H], layer: 'PANEL' });
@@ -9593,7 +9577,7 @@
       secEnts.push({ t: 'line', a: [-FLG_W, 0], b: [-FLG_W, H], layer: 'PANEL' });
       secEnts.push({ t: 'line', a: [totalL + FLG_W, 0], b: [totalL + FLG_W, H], layer: 'PANEL' });
 
-      // 2-0. 상부 측판+천정판넬 조립부 최외곽 상세 (요청: "측판+천정의 조립이 있는 최외곽은 그려주세요")
+      // 2-0. 상부 측판+천정판넬 조립부 최외곽 상세
       // 좌측 상부 직립 플랜지 (X = -FLG_W ~ 0)
       secEnts.push({ t: 'line', a: [-FLG_W, H], b: [-FLG_W, H + TOP_FLG_H], layer: 'PANEL' });
       secEnts.push({ t: 'line', a: [-FLG_W, H + TOP_FLG_H], b: [0, H + TOP_FLG_H], layer: 'PANEL' });
@@ -9601,29 +9585,14 @@
       secEnts.push({ t: 'line', a: [totalL + FLG_W, H], b: [totalL + FLG_W, H + TOP_FLG_H], layer: 'PANEL' });
       secEnts.push({ t: 'line', a: [totalL, H + TOP_FLG_H], b: [totalL + FLG_W, H + TOP_FLG_H], layer: 'PANEL' });
 
-      // 상부 볼트 체결 중심선 (EL. +(H + 35)mm)
-      secEnts.push({ t: 'line', a: [-FLG_W - 8, H + TOP_BOLT_H], b: [18, H + TOP_BOLT_H], layer: 'PANEL_DETAIL' });
-      secEnts.push({ t: 'circle', c: [-FLG_W / 2, H + TOP_BOLT_H], r: 3.5, layer: 'PANEL_DETAIL' });
-      secEnts.push({ t: 'line', a: [-FLG_W / 2, H + TOP_BOLT_H - 6], b: [-FLG_W / 2, H + TOP_BOLT_H + 6], layer: 'PANEL_DETAIL' });
+      // 상부 외곽 플랜지 체결 홀: 관통 중심선 및 관통 은선 (Centerline & Through Hidden Lines)
+      secEnts.push({ t: 'line', a: [-FLG_W - 12, H + TOP_BOLT_H], b: [12, H + TOP_BOLT_H], layer: 'CENTER', color: 4 });
+      secEnts.push({ t: 'line', a: [-FLG_W, H + TOP_BOLT_H + 6], b: [0, H + TOP_BOLT_H + 6], layer: 'HIDDEN', color: 4 });
+      secEnts.push({ t: 'line', a: [-FLG_W, H + TOP_BOLT_H - 6], b: [0, H + TOP_BOLT_H - 6], layer: 'HIDDEN', color: 4 });
 
-      secEnts.push({ t: 'line', a: [totalL - 18, H + TOP_BOLT_H], b: [totalL + FLG_W + 8, H + TOP_BOLT_H], layer: 'PANEL_DETAIL' });
-      secEnts.push({ t: 'circle', c: [totalL + FLG_W / 2, H + TOP_BOLT_H], r: 3.5, layer: 'PANEL_DETAIL' });
-      secEnts.push({ t: 'line', a: [totalL + FLG_W / 2, H + TOP_BOLT_H - 6], b: [totalL + FLG_W / 2, H + TOP_BOLT_H + 6], layer: 'PANEL_DETAIL' });
-
-      // 상부 측판+천정판넬 최외곽 조립 지시선 (Callout)
-      drawLeader(
-        secEnts,
-        [-FLG_W / 2, H + TOP_BOLT_H],
-        [-FLG_W - Math.round(10 * N), H + TOP_BOLT_H + Math.round(6 * N)],
-        [-FLG_W - Math.round(28 * N), H + TOP_BOLT_H + Math.round(6 * N)],
-        [
-          lang === 'ko' ? `측판+천정 조립 플랜지 H=${TOP_FLG_H}mm (볼트선 EL.+${(H + TOP_BOLT_H).toLocaleString()}mm)` : `Side+Roof Flange H=${TOP_FLG_H}mm (Bolt EL.+${(H + TOP_BOLT_H).toLocaleString()}mm)`,
-          lang === 'ko' ? `최외곽 조립부 (Outermost Side+Roof Flange)` : `Outermost Side & Roof Assembly`
-        ],
-        Math.round(2.3 * N),
-        'right',
-        'PANEL_DETAIL'
-      );
+      secEnts.push({ t: 'line', a: [totalL - 12, H + TOP_BOLT_H], b: [totalL + FLG_W + 12, H + TOP_BOLT_H], layer: 'CENTER', color: 4 });
+      secEnts.push({ t: 'line', a: [totalL, H + TOP_BOLT_H + 6], b: [totalL + FLG_W, H + TOP_BOLT_H + 6], layer: 'HIDDEN', color: 4 });
+      secEnts.push({ t: 'line', a: [totalL, H + TOP_BOLT_H - 6], b: [totalL + FLG_W, H + TOP_BOLT_H - 6], layer: 'HIDDEN', color: 4 });
 
       // 천정판넬 베이스 플랜지 띠 (최외곽 플랜지 포함 연속 연결: -FLG_W ~ totalL + FLG_W)
       const T_ROOF = 30;
@@ -9634,11 +9603,15 @@
         const x0 = mmap.xs[j], x1 = mmap.xs[j + 1];
         const ms = cw / 2;
 
-        // 천정판넬 간 수직 접합 플랜지 및 볼트 (j > 0)
+        // 천정판넬 간 수직 접합 플랜지 및 관통 볼트 홀 (j > 0)
         if (j > 0) {
-          secEnts.push({ t: 'line', a: [x0, H], b: [x0, H + TOP_FLG_H], layer: 'PANEL' });
-          secEnts.push({ t: 'line', a: [x0 - 15, H + TOP_BOLT_H], b: [x0 + 15, H + TOP_BOLT_H], layer: 'PANEL_DETAIL' });
-          secEnts.push({ t: 'circle', c: [x0, H + TOP_BOLT_H], r: 3.0, layer: 'PANEL_DETAIL' });
+          secEnts.push({ t: 'line', a: [x0 - 5, H], b: [x0 - 5, H + TOP_FLG_H], layer: 'PANEL' });
+          secEnts.push({ t: 'line', a: [x0 + 5, H], b: [x0 + 5, H + TOP_FLG_H], layer: 'PANEL' });
+          secEnts.push({ t: 'line', a: [x0 - 15, H + TOP_FLG_H], b: [x0 + 15, H + TOP_FLG_H], layer: 'PANEL' });
+          // 관통 볼트 중심선 및 관통 은선 (Centerline & Through Hidden Lines)
+          secEnts.push({ t: 'line', a: [x0 - 18, H + TOP_BOLT_H], b: [x0 + 18, H + TOP_BOLT_H], layer: 'CENTER', color: 4 });
+          secEnts.push({ t: 'line', a: [x0 - 5, H + TOP_BOLT_H + 6], b: [x0 + 5, H + TOP_BOLT_H + 6], layer: 'HIDDEN', color: 4 });
+          secEnts.push({ t: 'line', a: [x0 - 5, H + TOP_BOLT_H - 6], b: [x0 + 5, H + TOP_BOLT_H - 6], layer: 'HIDDEN', color: 4 });
         }
 
         // 천정판넬 돔 프로파일 (피라미드/사다리꼴 엠보싱)
@@ -9745,26 +9718,12 @@
           secEnts.push({ t: 'line', a: [x0 + rimW, 0], b: [drainX - 80, -DRAIN_SHAPE_H], layer: 'PANEL_DETAIL' });
           secEnts.push({ t: 'line', a: [x1 - rimW, 0], b: [drainX + 80, -DRAIN_SHAPE_H], layer: 'PANEL_DETAIL' });
 
-          // 드레인 판넬 식별 텍스트
-          secEnts.push({
-            t: 'text',
-            p: [drainX, -DRAIN_SHAPE_H * 0.45],
-            h: Math.round(1.8 * N),
-            s: `${cw}×1000 드레인 판넬 (H=${DRAIN_SHAPE_H}mm MAX)`,
-            align: 'center',
-            valign: 'middle',
-            layer: 'PANEL_DETAIL'
-          });
-
           // 형상 높이 70mm MAX 수직 치수선 (드레인 피트 우측 내부 안전 영역에 배치하여 외벽 간섭 완벽 방지)
           const dimDrainX = (drainX - sumpHalfW - 10 * N < 0) ? (drainX + sumpHalfW) : (drainX - sumpHalfW);
           const dimDrainOffset = (drainX - sumpHalfW - 10 * N < 0) ? Math.round(5 * N) : -Math.round(5 * N);
           dimLinear(secEnts, [dimDrainX, 0], [dimDrainX, -DRAIN_SHAPE_H], dimDrainOffset, true, `${DRAIN_SHAPE_H} (형상MAX)`, Math.round(2.0 * N), 'DIM');
         } else {
-          // ★★★ 사용자 도면(media_1791615527521_e85751cc.png) 완벽 반영: SMC 1000x1000 저판 판넬 ★★★
-          // - 외곽 SIZE 기준 POINT: x0, x1 (1000mm)
-          // - 조립 평면구간: 76.92mm (양측: Steel Skid 상부 1M 간격 거치면)
-          // - 중앙 볼록 돔(아치) 형상: 돔 높이 110mm (하향 플랜지 70mm 기준 전고 180mm)
+          // SMC 1000x1000 저판 판넬 단면 (외곽 1000mm, 조립평면구간 76.92mm, 중앙 돔 H=110mm)
           const flatW = (cw === 1000) ? 76.92 : Math.round(cw * 0.07692);
           const domeH = (cw === 1000) ? 110 : Math.round(110 * (cw / 1000));
           const xa = x0 + flatW;
@@ -9796,39 +9755,18 @@
             const pb = [domePts[s + 1][0], Math.max(0, domePts[s + 1][1] - tWall)];
             secEnts.push({ t: 'line', a: pa, b: pb, layer: 'PANEL_DETAIL' });
           }
-
-          // 4. 중앙 원형 체결 보스/홀 기호 (Center Boss / Tie Hole)
-          secEnts.push({ t: 'circle', c: [xm, 22], r: 16, layer: 'PANEL_DETAIL' });
-          secEnts.push({ t: 'line', a: [xm - 22, 22], b: [xm + 22, 22], layer: 'PANEL_DETAIL' });
-
-          // 5. 판넬 제원 식별 텍스트
-          secEnts.push({
-            t: 'text',
-            p: [xm, domeH + 12],
-            h: Math.round(1.7 * N),
-            s: `${cw} 저판 (돔 110mm, 평면 ${flatW}mm)`,
-            align: 'center',
-            valign: 'bottom',
-            layer: 'PANEL_DETAIL'
-          });
-
-          // 조립 평면구간 치수 (76.92) 및 돔 높이 치수 (180전고)
-          if (cw === 1000 && (j === 1 || (drainColIdx !== 0 && j === 0))) {
-            dimLinear(secEnts, [x1 - flatW, 0], [x1, 0], -Math.round(8 * N), false, '76.92', Math.round(1.8 * N), 'DIM');
-            dimLinear(secEnts, [xm, 0], [xm, domeH], Math.round(10 * N), true, `${domeH} (돔H)`, Math.round(2.0 * N), 'DIM');
-            dimLinear(secEnts, [x1, -BTM_FLG_H], [x1, domeH], Math.round(22 * N), true, '180 (전고)', Math.round(2.2 * N), 'DIM');
-          }
         }
 
-        // 판넬 간 하향 조립 플랜지 (H=70mm) 및 체결 볼트 (j > 0)
+        // 판넬 간 하향 조립 플랜지 (H=70mm) 및 체결 볼트 홀 (j > 0)
         if (j > 0) {
           secEnts.push({ t: 'line', a: [x0 - 5, 0], b: [x0 - 5, -DN_FLG_H], layer: 'PANEL' });
           secEnts.push({ t: 'line', a: [x0 + 5, 0], b: [x0 + 5, -DN_FLG_H], layer: 'PANEL' });
           secEnts.push({ t: 'line', a: [x0 - 15, -DN_FLG_H], b: [x0 + 15, -DN_FLG_H], layer: 'PANEL' });
 
-          // 플랜지 볼트 체결선 (EL. -35mm)
-          secEnts.push({ t: 'line', a: [x0 - 18, -BTM_BOLT_H], b: [x0 + 18, -BTM_BOLT_H], layer: 'PANEL_DETAIL' });
-          secEnts.push({ t: 'circle', c: [x0, -BTM_BOLT_H], r: 3.5, layer: 'PANEL_DETAIL' });
+          // 플랜지 볼트 체결 홀: 관통 중심선 및 관통 은선 (Centerline & Through Hidden Lines)
+          secEnts.push({ t: 'line', a: [x0 - 18, -BTM_BOLT_H], b: [x0 + 18, -BTM_BOLT_H], layer: 'CENTER', color: 4 });
+          secEnts.push({ t: 'line', a: [x0 - 5, -BTM_BOLT_H + 6], b: [x0 + 5, -BTM_BOLT_H + 6], layer: 'HIDDEN', color: 4 });
+          secEnts.push({ t: 'line', a: [x0 - 5, -BTM_BOLT_H - 6], b: [x0 + 5, -BTM_BOLT_H - 6], layer: 'HIDDEN', color: 4 });
         }
       });
 
@@ -9840,34 +9778,18 @@
       secEnts.push({ t: 'line', a: [totalL + FLG_W, 0], b: [totalL + FLG_W, skidTop], layer: 'PANEL' });
       secEnts.push({ t: 'line', a: [totalL, skidTop], b: [totalL + FLG_W, skidTop], layer: 'PANEL' });
 
-      // 외곽 플랜지 볼트 체결 중심선 (EL. -35mm)
-      secEnts.push({ t: 'line', a: [-FLG_W - 8, -BTM_BOLT_H], b: [18, -BTM_BOLT_H], layer: 'PANEL_DETAIL' });
-      secEnts.push({ t: 'circle', c: [-FLG_W / 2, -BTM_BOLT_H], r: 3.5, layer: 'PANEL_DETAIL' });
-      secEnts.push({ t: 'line', a: [-FLG_W / 2, -BTM_BOLT_H - 6], b: [-FLG_W / 2, -BTM_BOLT_H + 6], layer: 'PANEL_DETAIL' });
+      // 외곽 플랜지 볼트 체결 홀: 관통 중심선 및 관통 은선 (Centerline & Through Hidden Lines)
+      secEnts.push({ t: 'line', a: [-FLG_W - 12, -BTM_BOLT_H], b: [12, -BTM_BOLT_H], layer: 'CENTER', color: 4 });
+      secEnts.push({ t: 'line', a: [-FLG_W, -BTM_BOLT_H + 6], b: [0, -BTM_BOLT_H + 6], layer: 'HIDDEN', color: 4 });
+      secEnts.push({ t: 'line', a: [-FLG_W, -BTM_BOLT_H - 6], b: [0, -BTM_BOLT_H - 6], layer: 'HIDDEN', color: 4 });
 
-      secEnts.push({ t: 'line', a: [totalL - 18, -BTM_BOLT_H], b: [totalL + FLG_W + 8, -BTM_BOLT_H], layer: 'PANEL_DETAIL' });
-      secEnts.push({ t: 'circle', c: [totalL + FLG_W / 2, -BTM_BOLT_H], r: 3.5, layer: 'PANEL_DETAIL' });
-      secEnts.push({ t: 'line', a: [totalL + FLG_W / 2, -BTM_BOLT_H - 6], b: [totalL + FLG_W / 2, -BTM_BOLT_H + 6], layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'line', a: [totalL - 12, -BTM_BOLT_H], b: [totalL + FLG_W + 12, -BTM_BOLT_H], layer: 'CENTER', color: 4 });
+      secEnts.push({ t: 'line', a: [totalL, -BTM_BOLT_H + 6], b: [totalL + FLG_W, -BTM_BOLT_H + 6], layer: 'HIDDEN', color: 4 });
+      secEnts.push({ t: 'line', a: [totalL, -BTM_BOLT_H - 6], b: [totalL + FLG_W, -BTM_BOLT_H - 6], layer: 'HIDDEN', color: 4 });
 
       // 측면 피팅 플랜지 취부 한계선 점선 (EL. +100mm)
       secEnts.push({ t: 'line', a: [-FLG_W - 5, MIN_SIDE_FITTING_ELEV], b: [30, MIN_SIDE_FITTING_ELEV], layer: 'PANEL_DETAIL' });
       secEnts.push({ t: 'line', a: [totalL - 30, MIN_SIDE_FITTING_ELEV], b: [totalL + FLG_W + 5, MIN_SIDE_FITTING_ELEV], layer: 'PANEL_DETAIL' });
-
-      // 저판 플랜지 및 볼트선 지시선 (Callout)
-      drawLeader(
-        secEnts,
-        [-FLG_W / 2, -BTM_BOLT_H],
-        [-FLG_W - Math.round(10 * N), -BTM_BOLT_H - Math.round(6 * N)],
-        [-FLG_W - Math.round(28 * N), -BTM_BOLT_H - Math.round(6 * N)],
-        [
-          lang === 'ko' ? `저판+측판 조립 플랜지 H=${BTM_FLG_H}mm (볼트선 EL.-${BTM_BOLT_H}mm)` : `Btm+Side Flange H=${BTM_FLG_H}mm (Bolt EL.-${BTM_BOLT_H}mm)`,
-          lang === 'ko' ? `Steel Skid 상부(EL.-${BTM_FLG_H}mm) 위에 완벽 안착` : `Directly Rested on Skid Top (EL.-${BTM_FLG_H}mm)`,
-          lang === 'ko' ? `측면 피팅 취부: EL.+${MIN_SIDE_FITTING_ELEV}mm 이상` : `Side Fitting: EL. >= +${MIN_SIDE_FITTING_ELEV}mm`
-        ],
-        Math.round(2.3 * N),
-        'right',
-        'PANEL_DETAIL'
-      );
 
       // ★ VIEW 1 모서리 상세 참조 버블 (DETAIL "A" Reference Callout)
       secEnts.push({
@@ -9888,38 +9810,6 @@
         Math.round(2.5 * N),
         'left',
         'SHEET'
-      );
-
-      // 드레인 판넬 상세 지시선 (Callout)
-      drawLeader(
-        secEnts,
-        [drainX, -DRAIN_SHAPE_H],
-        [drainX - Math.round(10 * N), -DRAIN_SHAPE_H - Math.round(14 * N)],
-        [drainX - Math.round(32 * N), -DRAIN_SHAPE_H - Math.round(14 * N)],
-        [
-          lang === 'ko' ? `드레인 판넬: ${drainPanelW}×1000mm (플랜지 H=${BTM_FLG_H}mm + 형상 H=${DRAIN_SHAPE_H}mm MAX)` : `Drain Panel (Flange ${BTM_FLG_H}mm + Shape ${DRAIN_SHAPE_H}mm MAX)`,
-          lang === 'ko' ? `바닥 잔수 완전 배출 (역원추형 집수 피트)` : `Complete Drain via Shape Sump`
-        ],
-        Math.round(2.2 * N),
-        'right',
-        'PANEL_DETAIL'
-      );
-
-      // 표준 저판 및 실사수량 지시선 (Callout)
-      const midStdX = (totalL > 3000 && drainColIdx === 0) ? (mmap.xs[1] + mmap.xs[2]) / 2 : totalL * 0.55;
-      drawLeader(
-        secEnts,
-        [midStdX, 110],
-        [midStdX + Math.round(10 * N), 110 + Math.round(14 * N)],
-        [midStdX + Math.round(34 * N), 110 + Math.round(14 * N)],
-        [
-          lang === 'ko' ? `[저판 판넬] 1000×1000mm (플랜지 H=${BTM_FLG_H}mm, 돔 H=110mm, 전고 180mm)` : `Floor Panel (Flg 70mm, Dome 110mm, Total 180mm)`,
-          lang === 'ko' ? `조립 평면구간 76.92mm (Steel Skid 1M 간격 거치)` : `76.92mm Flat Zone on 1M Steel Skid`,
-          lang === 'ko' ? `돔 체적 배제 효과 반영 실체류 사수량: 약 4.9 Ton (공칭 ${deadTon.toFixed(1)} Ton)` : `Net Trapped Water: ~4.9 Ton (Nominal ${deadTon.toFixed(1)} Ton)`
-        ],
-        Math.round(2.2 * N),
-        'left',
-        'PANEL_DETAIL'
       );
 
       // 판넬 종방향 분할선 (Col Seams)
@@ -9983,9 +9873,10 @@
         t: 'poly',
         pts: waterPts,
         fill: true,
-        fillColor: 'rgba(2, 132, 199, 0.22)',
+        fillColor: 'rgba(234, 179, 8, 0.28)', // 사수 구역 전용 컬러 (Amber/Yellow #eab308)
         stroke: false,
-        layer: 'WATER'
+        layer: 'WATER',
+        color: 2
       });
 
       // B. 소방용수 구역 및 생활용수 구역 반투명 담수 채우기
@@ -10075,7 +9966,25 @@
       const by0 = bcy - badgeH / 2, by1 = bcy + badgeH / 2;
       const pad = Math.round(1.5 * N);
 
-      // C. 수역 CAD 대각 해칭선 (45도 물 해치 - 뱃지 영역 클리핑)
+      // C. 수역 CAD 대각 해칭선 (45도 물 해치 - 뱃지 영역 클리핑 및 사수 수역 색상 분리)
+      const deadWaterTopY = (hasFireWater && fireDepth > 0) ? lwlFireElev : lwlElev;
+      const pushHatchSegment = (p1, p2) => {
+        const y1 = p1[1], y2 = p2[1];
+        if (y2 <= deadWaterTopY) {
+          // 전체가 사수 구역 내부 (color: 2 - Yellow/Amber)
+          secEnts.push({ t: 'line', a: p1, b: p2, layer: 'WATER', color: 2 });
+        } else if (y1 >= deadWaterTopY) {
+          // 전체가 유효수 구역 (color: 4 - Cyan)
+          secEnts.push({ t: 'line', a: p1, b: p2, layer: 'WATER', color: 4 });
+        } else {
+          // 사수 수위면(deadWaterTopY)을 관통하는 경우 2개 세그먼트로 분할하여 색상 구분
+          const tMid = (deadWaterTopY - y1) / (y2 - y1);
+          const xMid = p1[0] + (p2[0] - p1[0]) * tMid;
+          secEnts.push({ t: 'line', a: p1, b: [xMid, deadWaterTopY], layer: 'WATER', color: 2 });
+          secEnts.push({ t: 'line', a: [xMid, deadWaterTopY], b: p2, layer: 'WATER', color: 4 });
+        }
+      };
+
       const hatchStep = 240;
       const c_min = Math.floor((0 - totalL) / hatchStep) * hatchStep;
       const c_max = Math.ceil((hwlElev - 0) / hatchStep) * hatchStep;
@@ -10092,13 +10001,13 @@
         const xb_out = Math.min(bx1, by1 - c);
         if (xb_out > xb_in && xb_in < x_end && xb_out > x_start) {
           if (xb_in > x_start) {
-            secEnts.push({ t: 'line', a: [x_start, Math.max(0, y_start)], b: [xb_in, xb_in + c], layer: 'WATER', color: 4 });
+            pushHatchSegment([x_start, Math.max(0, y_start)], [xb_in, xb_in + c]);
           }
           if (x_end > xb_out) {
-            secEnts.push({ t: 'line', a: [xb_out, xb_out + c], b: [x_end, y_end], layer: 'WATER', color: 4 });
+            pushHatchSegment([xb_out, xb_out + c], [x_end, y_end]);
           }
         } else {
-          secEnts.push({ t: 'line', a: [x_start, Math.max(0, y_start)], b: [x_end, y_end], layer: 'WATER', color: 4 });
+          pushHatchSegment([x_start, Math.max(0, y_start)], [x_end, y_end]);
         }
       }
 
@@ -10147,7 +10056,7 @@
         });
       });
 
-      // F. 구역 설명 텍스트
+      // F. 구역 설명 텍스트 (사수 구역은 옐로우/골드 컬러 적용)
       secEnts.push({
         t: 'text',
         p: [totalL / 2, Math.max((T_BTM + lwlFireElev) / 2, 45)],
@@ -10155,7 +10064,8 @@
         s: lang === 'ko' ? `[사수 구역 / DEAD WATER] H_dead = ${lwlFireElev} mm  (실사수량 V = ${deadTon.toFixed(1)} Ton [${deadRatio.toFixed(1)}%])` : `[DEAD WATER ZONE] H_dead = ${lwlFireElev} mm  (V = ${deadTon.toFixed(1)} Ton [${deadRatio.toFixed(1)}%])`,
         align: 'center',
         valign: 'middle',
-        layer: 'SHEET'
+        layer: 'SHEET',
+        color: 2
       });
 
       if (hasFireWater && fireDepth >= 100 && (lwlDomElev <= by0 || totalL > 5000)) {
@@ -10571,8 +10481,8 @@
         ents.push({ t: 'poly', pts: pts.map(trD), fill, fillColor, stroke: false, layer });
       };
 
-      // 1. 담수 (Water) 영역
-      polyD([[0, 0], [135, 0], [135, 65], [0, 65]], true, 'rgba(6, 182, 212, 0.16)', 'WATER');
+      // 1. 담수 (Water) 영역: 저판부는 사수(Dead Water) 구역 색상(Amber/Yellow) 적용
+      polyD([[0, 0], [135, 0], [135, 65], [0, 65]], true, 'rgba(234, 179, 8, 0.24)', 'WATER');
 
       // 2. 1단 측판 판넬 (Side Panel: t=10mm, 플랜지 폭 70mm, 하향 H=70mm)
       // - 측판 수직 벽체 (내면 X=0, 외면 X=-10)
@@ -10630,11 +10540,11 @@
       lineD([2.5, -62], [2.5, -8], 'PANEL_DETAIL');
 
       // 5. SUS304 M10 볼트 & 너트 체결부 (Fastener Assembly at EL. -35mm)
-      // 볼트 중심선
-      lineD([-86, -35], [34, -35], 'PANEL_DETAIL');
-      // 볼트 구멍 (Phi 12mm)
-      lineD([-70, -29], [10, -29], 'PANEL_DETAIL');
-      lineD([-70, -41], [10, -41], 'PANEL_DETAIL');
+      // 볼트 중심선 (Centerline)
+      lineD([-86, -35], [34, -35], 'CENTER', 4);
+      // 볼트 구멍 (Phi 12mm 관통 은선 / Through Hidden Lines)
+      lineD([-70, -29], [10, -29], 'HIDDEN', 4);
+      lineD([-70, -41], [10, -41], 'HIDDEN', 4);
       // 볼트 머리 (Hex Bolt Head)
       lineD([-78, -43.5], [-70, -43.5], 'PANEL_DETAIL');
       lineD([-78, -26.5], [-70, -26.5], 'PANEL_DETAIL');
@@ -11433,7 +11343,7 @@
       else if (e.t === 'line') {
         g(0, 'LINE'); g(8, layer);
         if (e.color) g(62, e.color);
-        if (e.ltype || layer === 'HIDDEN') g(6, e.ltype || 'HIDDEN');
+        if (e.ltype || layer === 'HIDDEN' || layer === 'CENTER') g(6, e.ltype || (layer === 'HIDDEN' ? 'HIDDEN' : 'CENTER'));
         g(10, n(e.a[0])); g(20, n(e.a[1])); g(30, 0);
         g(11, n(e.b[0])); g(21, n(e.b[1])); g(31, 0);
       }
@@ -11454,14 +11364,14 @@
           for (let i = 0; i < e.pts.length - 1; i++) {
             g(0, 'LINE'); g(8, layer);
             if (e.color) g(62, e.color);
-            if (e.ltype || layer === 'HIDDEN') g(6, e.ltype || 'HIDDEN');
+            if (e.ltype || layer === 'HIDDEN' || layer === 'CENTER') g(6, e.ltype || (layer === 'HIDDEN' ? 'HIDDEN' : 'CENTER'));
             g(10, n(e.pts[i][0])); g(20, n(e.pts[i][1])); g(30, 0);
             g(11, n(e.pts[i + 1][0])); g(21, n(e.pts[i + 1][1])); g(31, 0);
           }
           if (e.close && e.pts.length > 2) {
             g(0, 'LINE'); g(8, layer);
             if (e.color) g(62, e.color);
-            if (e.ltype || layer === 'HIDDEN') g(6, e.ltype || 'HIDDEN');
+            if (e.ltype || layer === 'HIDDEN' || layer === 'CENTER') g(6, e.ltype || (layer === 'HIDDEN' ? 'HIDDEN' : 'CENTER'));
             g(10, n(e.pts[e.pts.length - 1][0])); g(20, n(e.pts[e.pts.length - 1][1])); g(30, 0);
             g(11, n(e.pts[0][0])); g(21, n(e.pts[0][1])); g(31, 0);
           }
@@ -11471,7 +11381,7 @@
         const nn = a => ((a % 360) + 360) % 360;
         g(0, 'ARC'); g(8, layer);
         if (e.color) g(62, e.color);
-        if (e.ltype || layer === 'HIDDEN') g(6, e.ltype || 'HIDDEN');
+        if (e.ltype || layer === 'HIDDEN' || layer === 'CENTER') g(6, e.ltype || (layer === 'HIDDEN' ? 'HIDDEN' : 'CENTER'));
         g(10, n(e.c[0])); g(20, n(e.c[1])); g(30, 0);
         g(40, n(e.r));
         g(50, n(nn(e.a0))); g(51, n(nn(e.a1)));
@@ -11479,7 +11389,7 @@
       else if (e.t === 'circle') {
         g(0, 'CIRCLE'); g(8, layer);
         if (e.color) g(62, e.color);
-        if (e.ltype || layer === 'HIDDEN') g(6, e.ltype || 'HIDDEN');
+        if (e.ltype || layer === 'HIDDEN' || layer === 'CENTER') g(6, e.ltype || (layer === 'HIDDEN' ? 'HIDDEN' : 'CENTER'));
         g(10, n(e.c[0])); g(20, n(e.c[1])); g(30, 0);
         g(40, n(e.r));
       }
@@ -11525,6 +11435,7 @@
         }
 
         g(0, 'TEXT'); g(8, layer);
+        if (e.color) g(62, e.color);
         g(7, 'STANDARD');
         g(10, n(x10)); g(20, n(y10)); g(30, 0);
         g(40, n(e.h));

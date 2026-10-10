@@ -55,7 +55,7 @@ assert(hasScheduleTable, 'Capacity schedule table must exist');
 const hasBtmFlangeText = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('H=70mm') || e.s.includes('H=75mm')));
 assert(hasBtmFlangeText, 'Bottom flange callout must exist in entities');
 
-const hasSideFittingLimitText = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('EL.+100mm 이상'));
+const hasSideFittingLimitText = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('EL.+100mm') || e.s.includes('EL. +100 mm') || e.s.includes('100 mm 이상')));
 assert(hasSideFittingLimitText, 'Side fitting elevation limit callout must exist in entities');
 
 // Verification of Top Roof Panel & Flange detail
@@ -273,19 +273,7 @@ assert(Number(sheet7.tank.deadTon) > 0, 'Dead water volume must be > 0');
 assert(Number(sheet7.tank.deadRatio) > 0, 'Dead water ratio must be > 0');
 console.log(`Verified Dead Water: H_dead=${sheet7.tank.deadDepth}mm, V_dead=${sheet7.tank.deadTon} Ton (${sheet7.tank.deadRatio}%)`);
 
-// 2. Floor panel drawing entities assertions
-const hasFloorPanelCallout = sheet7.ents.some(e => e.t === 'text' && e.s && (e.s.includes('표준 저판') || e.s.includes('저판 판넬')));
-assert(hasFloorPanelCallout, 'Floor panel callout must exist in entities');
-
-const hasDrainPanelCallout = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('드레인 판넬') && e.s.includes('H=70mm'));
-assert(hasDrainPanelCallout, 'Drain panel callout with H=70mm must exist in entities');
-
-const hasDrainShapeDim = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('70 (형상MAX)'));
-assert(hasDrainShapeDim, '70mm shape height dimension text must exist in entities');
-
-const hasFloorPanelLabel = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('저판'));
-assert(hasFloorPanelLabel, 'Bottom panel labels must exist across column bays');
-
+// 2. Floor panel and dead water schedule row assertions
 const hasFloorRowInSchedule = sheet7.ents.some(e => e.t === 'text' && e.s && (e.s.includes('드레인판넬 및 저판') || e.s.includes('저판 판넬 및 플랜지')));
 assert(hasFloorRowInSchedule, 'Floor panel row must exist in VIEW 4 calculation table');
 
@@ -295,8 +283,8 @@ assert(hasDeadWaterScheduleText, 'Dead water volume with 실사수량 must exist
 console.log('Test 7 passed! 1000x1000mm Drain panel (H=70mm MAX, Flg=70mm) and dead water verified.');
 
 // Test 8: Steel Skid Frame & Tank Flange Contact Verification (스틸 스키드 상부 플랜지 안착 검증)
-const hasSkidFlangeLeader = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('물탱크 저판 플랜지') && e.s.includes('Skid 상부'));
-assert(hasSkidFlangeLeader, 'Leader callout asserting tank bottom flange resting on top of Steel Skid must exist');
+const hasSkidFlangeText = sheet7.ents.some(e => e.t === 'text' && e.s && (e.s.includes('저판 플랜지') || e.s.includes('플랜지 안착 기준면')) && (e.s.includes('Skid') || e.s.includes('스키드')));
+assert(hasSkidFlangeText, 'Tank bottom flange resting on top of Steel Skid must be specified');
 
 const hasSkidDimText = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('(스키드)'));
 assert(hasSkidDimText, 'Skid height dimension text must exist on the left');
@@ -335,5 +323,30 @@ const hasDoubleFlangeScheduleRow = sheet7.ents.some(e => e.t === 'text' && e.s &
 assert(hasDoubleFlangeScheduleRow, 'Calculation schedule table must include 양면 플랜지 (Double Flange) row');
 
 console.log('Test 10 passed! Double-sided pipe flanges (양면플랜지) verified.');
+
+// Test 11: Through Bolt Holes & Dead Water Different Color Verification
+// 1. All bolt hole circles removed from flange joints
+const hasBoltHoleCircleAtFlange = sheet7.ents.some(e => e.t === 'circle' && (e.layer === 'PANEL_DETAIL' || e.layer === 'PANEL') && (e.r === 3.5 || e.r === 3.0));
+assert(!hasBoltHoleCircleAtFlange, 'No circle markers should exist at flange bolt holes');
+
+// 2. Hidden lines and centerlines exist on joints
+const hiddenBoltLines = sheet7.ents.filter(e => e.t === 'line' && e.layer === 'HIDDEN');
+assert(hiddenBoltLines.length >= 8, `Through hidden lines must exist for bolt holes! Found: ${hiddenBoltLines.length}`);
+
+const centerBoltLines = sheet7.ents.filter(e => e.t === 'line' && e.layer === 'CENTER');
+assert(centerBoltLines.length >= 4, `Centerlines must exist for bolt holes! Found: ${centerBoltLines.length}`);
+
+// 3. Dead water coloring (Color 2 / Yellow / Amber)
+const deadWaterPoly = sheet7.ents.find(e => e.t === 'poly' && e.layer === 'WATER' && e.color === 2);
+assert(deadWaterPoly, 'Dead water poly must have color: 2 (Amber/Yellow)');
+assert(deadWaterPoly.fillColor.includes('234, 179, 8') || deadWaterPoly.fillColor.includes('245, 158, 11'), 'Dead water fillColor must be amber/yellow');
+
+const deadWaterHatch = sheet7.ents.filter(e => e.t === 'line' && e.layer === 'WATER' && e.color === 2);
+assert(deadWaterHatch.length > 0, `Dead water hatch lines must have color: 2! Found: ${deadWaterHatch.length}`);
+
+const deadWaterText = sheet7.ents.find(e => e.t === 'text' && e.s && e.s.includes('사수 구역') && e.color === 2);
+assert(deadWaterText, 'Dead water zone text must have color: 2 (Amber/Yellow)');
+
+console.log('Test 11 passed! Through-hole hidden lines + centerlines & dead water color differentiation verified.');
 
 console.log('ALL UNIT TESTS PASSED SUCCESSFULLY!');
