@@ -5252,11 +5252,12 @@
       draw3DCornerBracket(lapIn, totalW - lapIn, 1, -1);
       draw3DCornerBracket(totalL - lapIn, totalW - lapIn, -1, -1);
 
-      // 5. W방향 주재 이음 플레이트 (W-direction Splice Plate: WBR-02150ZE / WBR-9016CZE) 3D 정밀 작도
+      // 5. W방향 주재 이음 플레이트 (W-direction Splice Plate: 75 Angle=WBR-02150ZE / 125 Channel=WBR-9021CZ / 150 Channel=WBR-1022CZ) 3D 정밀 작도
       if (map.width >= 3000) {
         const isAngle = (fNum === 75);
-        const splH = isAngle ? 65 : 90;
-        const splL = isAngle ? 215 : 160;
+        const isF150 = (fNum === 150);
+        const splH = isAngle ? 65 : (isF150 ? 105 : 90);
+        const splL = isAngle ? 215 : (isF150 ? 225 : 215);
         const splTh = 6;
         for (let i = 1; i < map.rows.length; i++) {
           const jointY = map.ys[i];
@@ -5271,7 +5272,7 @@
             // 플레이트 외측면 (카메라를 향해 명확히 노출)
             poly([toIso(spX1, spY0, spZ1), toIso(spX1, spY1, spZ1), toIso(spX1, spY1, spZ0), toIso(spX1, spY0, spZ0)], 'FRAME_MAIN_W', true, true, spDepth);
             // 4-Ø17 볼트 머리 (2x2 배치)
-            const bOffs = isAngle ? [-55, 55] : [-40, 40];
+            const bOffs = isAngle ? [-55, 55] : (isF150 ? [-87.5, 87.5] : [-82.5, 82.5]);
             bOffs.forEach(dy => {
               isoCircle(spX1, jointY + dy, spZ1 - splH * 0.28, 4.5, 'YZ', 'FRAME_MAIN_W', spDepth - 2, 10);
               isoCircle(spX1, jointY + dy, spZ1 - splH * 0.72, 4.5, 'YZ', 'FRAME_MAIN_W', spDepth - 2, 10);
@@ -6924,11 +6925,19 @@
       });
     });
 
-    // W방향 주재 연결 플레이트 (Splice Joint: 75Angle은 WBR-02150ZE, 125/150Channel은 WBR-9016CZE)
+    // W방향 주재 연결 플레이트 (Splice Joint: 75Angle=WBR-02150ZE, 125Channel=WBR-9021CZ, 150Channel=WBR-1022CZ)
     if (wSpliceCount > 0) {
-      const isAngle = (fNum === 75);
-      const spliceCode = isAngle ? 'WBR-02150ZE' : 'WBR-9016CZE';
-      const spliceSpec = isAngle ? 'WBR-02150ZE [L=215mm, 4-Ø17H]' : 'WBR-9016CZE [160x90x6t PL, 4-Ø17H]';
+      let spliceCode, spliceSpec;
+      if (fNum === 75) {
+        spliceCode = 'WBR-02150ZE';
+        spliceSpec = 'WBR-02150ZE [L=215mm, 4-Ø17H]';
+      } else if (fNum === 150) {
+        spliceCode = 'WBR-1022CZ';
+        spliceSpec = 'WBR-1022CZ [225x105x6t PL, 4-Ø17H]';
+      } else {
+        spliceCode = 'WBR-9021CZ';
+        spliceSpec = 'WBR-9021CZ [215x90x6t PL, 4-Ø17H]';
+      }
       boms.push({
         no: no++,
         key: 'splice',
@@ -7078,16 +7087,20 @@
 
     const isN = getFrameVariant(opt) === 'N';
 
-    // W방향 주재 이음부 연결 플레이트 (75 Angle: WBR-02150ZE / 125·150 Channel: WBR-9016CZE) - O/N 공용
+    // W방향 주재 이음부 연결 플레이트 (75 Angle=WBR-02150ZE / 125 Channel=WBR-9021CZ / 150 Channel=WBR-1022CZ) - O/N 공용
     function drawWSplice(x, w, jointY, type) {
       const isAngle = (fNum === 75);
-      const spliceCode = isAngle ? 'WBR-02150ZE' : 'WBR-9016CZE';
-      const splL = isAngle ? 215 : 160;
+      const isF150 = (fNum === 150);
+      const spliceCode = isAngle ? 'WBR-02150ZE' : (isF150 ? 'WBR-1022CZ' : 'WBR-9021CZ');
+      const splL = isAngle ? 215 : (isF150 ? 225 : 215);
       const pw = isAngle ? 25 : 12;
       const px0 = (type === 'first') ? (x + w - 6 - pw) : (x + 6);
       const px1 = px0 + pw;
       rectEnts(px0, jointY - splL / 2, pw, splL, 'FRAME_MAIN_W', ents);
-      const holeOffsets = isAngle ? [-87.5, -55, 55, 87.5] : [-55, 55];
+      // WBR-02150ZE: 20+32.5+110+32.5+20=215mm (중심 기준 ±55, ±87.5)
+      // WBR-9021CZ: 25 + 165 + 25 = 215mm (중심 기준 ±82.5)
+      // WBR-1022CZ: 25 + 175 + 25 = 225mm (중심 기준 ±87.5)
+      const holeOffsets = isAngle ? [-87.5, -55, 55, 87.5] : (isF150 ? [-87.5, 87.5] : [-82.5, 82.5]);
       const holeR = Math.max(3.0, Math.min(4.5, pw * 0.28));
       holeOffsets.forEach(offY => {
         ents.push({ t: 'circle', c: [(px0 + px1) / 2, jointY + offY], r: holeR, layer: 'FRAME_MAIN_W' });
@@ -7193,10 +7206,11 @@
               layer: 'FRAME_MAIN_W'
             });
 
-            // 2. 주재 연결 플레이트/브라켓 (75 Angle: WBR-02150ZE / 125·150 Channel: WBR-9016CZE)
+            // 2. 주재 연결 플레이트/브라켓 (75 Angle=WBR-02150ZE / 125 Channel=WBR-9021CZ / 150 Channel=WBR-1022CZ)
             const isAngle = (fNum === 75);
-            const spliceCode = isAngle ? 'WBR-02150ZE' : 'WBR-9016CZE';
-            const splL = isAngle ? 215 : 160;
+            const isF150 = (fNum === 150);
+            const spliceCode = isAngle ? 'WBR-02150ZE' : (isF150 ? 'WBR-1022CZ' : 'WBR-9021CZ');
+            const splL = isAngle ? 215 : (isF150 ? 225 : 215);
             const splHalf = splL / 2;
             const pw = isAngle ? 25 : 12;
             const px0 = (type === 'first') ? (x + w - 6 - pw) : (x + 6);
@@ -7208,8 +7222,9 @@
 
             // 3. 4-Ø17 볼트 홀 및 중심선 표시
             // WBR-02150ZE: 20 + 32.5 + 110 + 32.5 + 20 = 215mm (중심 기준 ±55, ±87.5)
-            // WBR-9016CZE: 25 + 110 + 25 = 160mm (중심 기준 ±55)
-            const holeOffsets = isAngle ? [-87.5, -55, 55, 87.5] : [-55, 55];
+            // WBR-9021CZ: 25 + 165 + 25 = 215mm (중심 기준 ±82.5)
+            // WBR-1022CZ: 25 + 175 + 25 = 225mm (중심 기준 ±87.5)
+            const holeOffsets = isAngle ? [-87.5, -55, 55, 87.5] : (isF150 ? [-87.5, 87.5] : [-82.5, 82.5]);
             const holeR = Math.max(3.0, Math.min(4.5, pw * 0.28));
             holeOffsets.forEach(offY => {
               ents.push({
@@ -7735,7 +7750,7 @@
         : '125Channel: 시작/끝단 1560CSZL/R (1.5M), 2060CSZL/R (2M), 신규 1060CSZL/R (1M, 60mm 돌출) 대칭배치(한쪽 CSZL+CSZR 시 반대쪽 CSZR+CSZL), 중간 2000CSZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0150CCZ (L=150, 4-Ø17H) / 단일재: 1120, 1620, 2120, 2640CSZ';
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `8. W방향 주재(테두리 전용): 외곽 테두리(시작 열 및 끝 열)에만 배치되며, 내부 중간 열에는 미배치 (부재만 배치). ${wSpecSummary}`, rot: 0, align: 'left', layer: 'FRAME_MAIN_W' });
     noteY -= tH * 1.25;
-    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '9. W방향 주재 이음(Splice): 75Angle은 WBR-02150ZE(L=215, 4-Ø17H), 125/150Channel은 WBR-9016CZE(160x90x6t PL, 4-Ø17H) 찬넬간 연결 적용', rot: 0, align: 'left', layer: 'DIM' });
+    ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: '9. W방향 주재 이음(Splice): 75Angle은 WBR-02150ZE(L=215), 125Channel은 WBR-9021CZ(215x90x6t), 150Channel은 WBR-1022CZ(225x105x6t) 4-Ø17H 연결 적용', rot: 0, align: 'left', layer: 'DIM' });
 
     return { ents, G, bom: skidBOM };
   }

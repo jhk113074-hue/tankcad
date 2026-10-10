@@ -435,7 +435,7 @@ const cross75 = TankCore.buildSkidCross({ width: [4000], length: [4000], height:
 const lines75 = cross75.ents.filter(e => e.layer === 'FRAME_MAIN_L' && e.t === 'line');
 assert.strictEqual(lines75.length, 30, '75 Angle must be drawn as L-shape (6 lines per member, not 8-line channel)');
 
-console.log('--- Testing W-direction Main Beam Splice Connectors (WBR-02150ZE / WBR-9016CZE) ---');
+console.log('--- Testing W-direction Main Beam Splice Connectors (WBR-02150ZE / WBR-9021CZ) ---');
 // 1. Frame 75 (75 Angle): WBR-02150ZE
 const optSplice75 = { width: [4000], length: [4000], height: [2000], frame: 75, sheetKind: 'frame' };
 const skidSplice75 = TankCore.buildSkid(optSplice75);
@@ -449,25 +449,28 @@ const spliceText75 = skidSplice75.ents.filter(e => e.layer === 'FRAME_MAIN_W' &&
 assert.strictEqual(spliceText75.length, 2, 'There must be 2 WBR-02150ZE text labels on plan view');
 assert(spliceText75.every(t => t.rot === 90), 'WBR-02150ZE text must have rot: 90');
 
-// 2. Frame 125 (125 Channel): WBR-9016CZE
+// 2. Frame 125 (125 Channel): WBR-9021CZ
 const optSplice125 = { width: [4000], length: [4000], height: [2000], frame: 125, sheetKind: 'frame' };
 const skidSplice125 = TankCore.buildSkid(optSplice125);
 const bomSplice125 = skidSplice125.bom;
 const spliceItem125 = bomSplice125.find(b => b.key === 'splice');
 assert(spliceItem125, 'BOM for Frame 125 must contain splice item');
-assert(spliceItem125.spec.includes('WBR-9016CZE'), 'Frame 125 splice spec must be WBR-9016CZE');
+assert(spliceItem125.spec.includes('WBR-9021CZ'), 'Frame 125 splice spec must be WBR-9021CZ');
 assert.strictEqual(spliceItem125.qty, '2 EA', '4000x4000 tank has 2 outer W beams with 1 splice each = 2 EA');
 
-const spliceText125 = skidSplice125.ents.filter(e => e.layer === 'FRAME_MAIN_W' && e.t === 'text' && e.s === 'WBR-9016CZE');
-assert.strictEqual(spliceText125.length, 2, 'There must be 2 WBR-9016CZE text labels on plan view');
+const spliceText125 = skidSplice125.ents.filter(e => e.layer === 'FRAME_MAIN_W' && e.t === 'text' && e.s === 'WBR-9021CZ');
+assert.strictEqual(spliceText125.length, 2, 'There must be 2 WBR-9021CZ text labels on plan view');
 
-// 3. Frame 150 (150 Channel): WBR-9016CZE
+// 3. Frame 150 (150 Channel): WBR-1022CZ
 const optSplice150 = { width: [4000], length: [4000], height: [2000], frame: 150, sheetKind: 'frame' };
 const skidSplice150 = TankCore.buildSkid(optSplice150);
 const bomSplice150 = skidSplice150.bom;
 const spliceItem150 = bomSplice150.find(b => b.key === 'splice');
 assert(spliceItem150, 'BOM for Frame 150 must contain splice item');
-assert(spliceItem150.spec.includes('WBR-9016CZE'), 'Frame 150 splice spec must be WBR-9016CZE');
+assert(spliceItem150.spec.includes('WBR-1022CZ'), 'Frame 150 splice spec must be WBR-1022CZ');
+
+const spliceText150 = skidSplice150.ents.filter(e => e.layer === 'FRAME_MAIN_W' && e.t === 'text' && e.s === 'WBR-1022CZ');
+assert.strictEqual(spliceText150.length, 2, 'There must be 2 WBR-1022CZ text labels on plan view');
 
 console.log('✅ ALL STEEL SKID & FOUNDATION TESTS PASSED SUCCESSFULLY!');
 
