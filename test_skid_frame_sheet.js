@@ -432,6 +432,11 @@ const cross75 = TankCore.buildSkidCross({ width: [4000], length: [4000], height:
 // 75 Angle has 5 beams * 6 lines = 30 lines (L-shape polygon)
 const lines75 = cross75.ents.filter(e => e.layer === 'FRAME_MAIN_L' && e.t === 'line');
 assert.strictEqual(lines75.length, 30, '75 Angle must be drawn as L-shape (6 lines per member, not 8-line channel)');
+const angle75FlangeLines = lines75.filter(e => e.a[0] === 75 && e.b[0] === 75);
+assert(angle75FlangeLines.length > 0, '75 Angle vertical flange must be at X=75');
+const sub75Lines = cross75.ents.filter(e => e.layer === 'FRAME_SUB' && e.t === 'line');
+const insideSubLines = sub75Lines.filter(e => e.a[1] === 968.5 || e.b[1] === 968.5 || e.a[1] === 1043.5 || e.b[1] === 1043.5);
+assert(insideSubLines.length > 0, 'Intermediate sub-beam must enter inside 75 Angle like 125/150 Channel');
 
 // 125 Channel Cross Section: Sub-beam top surface must be flush with Channel top flange at X=125 (Right Leveling for tank panel)
 const cross125 = TankCore.buildSkidCross({ width: [4000], length: [4000], height: [2000], frame: 125 });

@@ -7825,24 +7825,26 @@
         }
       } else if (isAngle) {
         // 75 Angle (L-형 앵글 L-75x75x6T)
+        // 수직 플랜지(날개)를 우측(X = th)에 배치하여 125/150 Channel과 동일하게
+        // 중간 서브빔(B/C타입)이 Angle 안쪽(수평 플랜지 상면)으로 진입·안착되도록 구성
         const isUp = yToe > yWeb;
         const yFlangeInner = isUp ? yWeb + tw : yWeb - tw;
         const pts = [
-          [0, yToe],
           [0, yWeb],
           [th, yWeb],
-          [th, yFlangeInner],
-          [tw, yFlangeInner],
-          [tw, yToe]
+          [th, yToe],
+          [th - tw, yToe],
+          [th - tw, yFlangeInner],
+          [0, yFlangeInner]
         ];
 
         // 2개 사각형으로 분할한 DXF 솔리드
         const rect1 = isUp
-          ? [[0, yWeb], [tw, yWeb], [tw, yToe], [0, yToe]]
-          : [[0, yToe], [tw, yToe], [tw, yWeb], [0, yWeb]];
+          ? [[th - tw, yWeb], [th, yWeb], [th, yToe], [th - tw, yToe]]
+          : [[th - tw, yToe], [th, yToe], [th, yWeb], [th - tw, yWeb]];
         const rect2 = isUp
-          ? [[tw, yWeb], [th, yWeb], [th, yFlangeInner], [tw, yFlangeInner]]
-          : [[tw, yFlangeInner], [th, yFlangeInner], [th, yWeb], [tw, yWeb]];
+          ? [[0, yWeb], [th - tw, yWeb], [th - tw, yFlangeInner], [0, yFlangeInner]]
+          : [[0, yFlangeInner], [th - tw, yFlangeInner], [th - tw, yWeb], [0, yWeb]];
 
         ents.push({
           t: 'poly',
