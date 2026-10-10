@@ -240,4 +240,55 @@ assert(planBadgeW >= 1200, 'VIEW 3 Plan badge width must be wide enough (>= 1200
 
 console.log('Test 6 passed! Fire water separation and calculation verified.');
 
+// Test 7: Floor Panel Detail & Dead Water Verification (저판 판넬 단면, 드레인 포켓, 사수량 산출 검증)
+const opt7 = {
+  length: [6500],
+  width: [7000],
+  height: [2500],
+  material: 'SMC',
+  sheetKind: 'capacity',
+  freeboard: 300,
+  nozzles: [
+    { mark: 'N1', name: 'INLET', size: '100A', type: 'FLANGE', face: 'top', elev: 'TOP', use: true },
+    { mark: 'N2', name: 'OUTLET', size: '150A', type: 'FLANGE', face: 'front', elev: 400, use: true },
+    { mark: 'N3', name: 'OVERFLOW', size: '100A', type: 'FLANGE', face: 'right', elev: 2200, use: true },
+    { mark: 'N4', name: 'DRAIN', size: '50A', type: 'SOCKET', face: 'bottom', elev: 0, use: true },
+    { mark: 'N5', name: 'FIRE', size: '40A', type: 'FLANGE', face: 'front', elev: 150, use: true }
+  ]
+};
+
+const sheet7 = TankCore.buildSheet(opt7, {}, {});
+assert(sheet7, 'Sheet 7 should be generated');
+console.log('Tank 7 Floor Panel & Dead Water data:', sheet7.tank);
+
+// 1. Dead water calculations
+assert.strictEqual(sheet7.tank.deadDepth, 150, 'Dead depth must be exactly 150mm (LWL Fire)');
+assert.strictEqual(sheet7.tank.hwl, 2200, 'HWL must be 2200mm');
+assert.strictEqual(sheet7.tank.lwlDom, 400, 'LWL Domestic must be 400mm');
+assert.strictEqual(sheet7.tank.lwlFire, 150, 'LWL Fire must be 150mm');
+assert.strictEqual(sheet7.tank.effDepth, 2050, 'Effective depth must be 2200 - 150 = 2050mm');
+
+// Dead ton and dead ratio assertions
+assert(Number(sheet7.tank.deadTon) > 0, 'Dead water volume must be > 0');
+assert(Number(sheet7.tank.deadRatio) > 0, 'Dead water ratio must be > 0');
+console.log(`Verified Dead Water: H_dead=${sheet7.tank.deadDepth}mm, V_dead=${sheet7.tank.deadTon} Ton (${sheet7.tank.deadRatio}%)`);
+
+// 2. Floor panel drawing entities assertions
+const hasFloorPanelCallout = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('저판 판넬') && e.s.includes('t=25mm'));
+assert(hasFloorPanelCallout, 'Floor panel callout with t=25mm must exist in entities');
+
+const hasDrainPocketCallout = sheet7.ents.some(e => e.t === 'text' && e.s && (e.s.includes('드레인 집수 포켓') || e.s.includes('DRAIN SUMP PIT')));
+assert(hasDrainPocketCallout, 'Drain sump pit callout must exist in entities');
+
+const hasFloorPanelLabel = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('저판'));
+assert(hasFloorPanelLabel, 'Bottom panel labels must exist across column bays');
+
+const hasFloorRowInSchedule = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('저판 판넬 및 플랜지'));
+assert(hasFloorRowInSchedule, 'Floor panel row must exist in VIEW 4 calculation table');
+
+const hasDeadWaterScheduleText = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('하부 사수량')) && sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('실사수량'));
+assert(hasDeadWaterScheduleText, 'Dead water volume with 실사수량 must exist in VIEW 4 table');
+
+console.log('Test 7 passed! Floor panel registration and actual dead water verification completed.');
+
 console.log('ALL UNIT TESTS PASSED SUCCESSFULLY!');

@@ -8769,6 +8769,7 @@
     const effRatio = grossTon > 0 ? Number((effTon / grossTon * 100).toFixed(1)) : 0;
     const domRatio = grossTon > 0 ? Number((domTon / grossTon * 100).toFixed(1)) : 0;
     const fireRatio = grossTon > 0 ? Number((fireTon / grossTon * 100).toFixed(1)) : 0;
+    const deadRatio = grossTon > 0 ? Number((deadTon / grossTon * 100).toFixed(1)) : 0;
 
     let ty = y0;
     const colLabelW = 55, colValW = tw - colLabelW;
@@ -9671,13 +9672,75 @@
         }
       });
 
-      // 2-1. 바닥판넬-측면판넬 조립부 최외곽 상세 (저판 플랜지 H=75mm, 볼트선 EL.+35mm)
-      // 좌측 저판 직립 플랜지 (X = -FLG_W ~ 0)
+      // 2-1. 바닥판넬(저판, FLOOR PANELS) 상세 형상 작도 (요청: "여기에 저판(바닥판)을 등록(그려서)해서 실제적으로 얼마나 사수가 생기는지 확인해주세요")
+      const T_BTM = 25; // 저판 판넬 유효 두께 (25mm)
+      const DN_FLG_H = 45; // 저판 판넬 간 하향 플랜지 깊이 (45mm, 스키드 프레임 사이 체결)
+
+      // 저판 하단 외곽선 (스키드 프레임 거치선 EL. 0)
+      secEnts.push({ t: 'line', a: [-FLG_W, 0], b: [totalL + FLG_W, 0], layer: 'PANEL' });
+
+      // 저판 판넬 두께 중심선 (EL. +T_BTM/2)
+      secEnts.push({ t: 'line', a: [0, T_BTM / 2], b: [totalL, T_BTM / 2], layer: 'PANEL_DETAIL' });
+
+      // 배수구 드레인 포켓 (Drain Sump Pit) 형상 정의
+      const drainX = totalL * 0.15;
+      const pitHalfW = 100;
+      const pitX0 = drainX - pitHalfW, pitX1 = drainX + pitHalfW;
+
+      // 저판 상단 내측면 (바닥면: Y = T_BTM, 드레인 포켓 구간은 Y = 0으로 오목 함몰)
+      secEnts.push({ t: 'line', a: [0, T_BTM], b: [pitX0 - 15, T_BTM], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [pitX0 - 15, T_BTM], b: [pitX0, 0], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [pitX0, 0], b: [pitX1, 0], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [pitX1, 0], b: [pitX1 + 15, T_BTM], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [pitX1 + 15, T_BTM], b: [totalL, T_BTM], layer: 'PANEL' });
+
+      // 각 컬럼(Col)별 저판 판넬 및 하향 접합 플랜지 제도
+      mmap.cols.forEach((cw, j) => {
+        const x0 = mmap.xs[j], x1 = mmap.xs[j + 1];
+        const ms = cw / 2;
+
+        // 판넬 간 하향 조립 플랜지 및 체결 볼트 (j > 0)
+        if (j > 0) {
+          // 수직 조립선
+          secEnts.push({ t: 'line', a: [x0, 0], b: [x0, T_BTM], layer: 'PANEL' });
+          // 하향 플랜지 (스키드 프레임 틈새 Y = 0 ~ -DN_FLG_H)
+          secEnts.push({ t: 'line', a: [x0 - 5, 0], b: [x0 - 5, -DN_FLG_H], layer: 'PANEL' });
+          secEnts.push({ t: 'line', a: [x0 + 5, 0], b: [x0 + 5, -DN_FLG_H], layer: 'PANEL' });
+          secEnts.push({ t: 'line', a: [x0 - 14, -DN_FLG_H], b: [x0 + 14, -DN_FLG_H], layer: 'PANEL' });
+
+          // 플랜지 볼트 체결 중심선 및 볼트원 (EL. -25mm)
+          secEnts.push({ t: 'line', a: [x0 - 18, -25], b: [x0 + 18, -25], layer: 'PANEL_DETAIL' });
+          secEnts.push({ t: 'circle', c: [x0, -25], r: 3.0, layer: 'PANEL_DETAIL' });
+        }
+
+        // 저판 판넬 내부 배수 엠보싱 / 리브선 (드레인 포켓과 겹치지 않는 구간)
+        if (pitX1 < x0 || pitX0 > x1) {
+          const embIn = Math.min(80, cw * 0.15);
+          secEnts.push({ t: 'line', a: [x0 + embIn, T_BTM], b: [x0 + ms, T_BTM + 6], layer: 'PANEL_DETAIL' });
+          secEnts.push({ t: 'line', a: [x0 + ms, T_BTM + 6], b: [x1 - embIn, T_BTM], layer: 'PANEL_DETAIL' });
+        }
+
+        // 저판 판넬 식별 텍스트
+        secEnts.push({
+          t: 'text',
+          p: [x0 + ms, T_BTM / 2],
+          h: Math.round(1.7 * N),
+          s: `${cw} 저판`,
+          align: 'center',
+          valign: 'middle',
+          layer: 'PANEL_DETAIL'
+        });
+      });
+
+      // 좌측 저판 직립 플랜지 (X = -FLG_W ~ 0, H=75mm)
       secEnts.push({ t: 'line', a: [-FLG_W, 0], b: [-FLG_W, BTM_FLG_H], layer: 'PANEL' });
       secEnts.push({ t: 'line', a: [-FLG_W, BTM_FLG_H], b: [0, BTM_FLG_H], layer: 'PANEL' });
-      // 우측 저판 직립 플랜지 (X = totalL ~ totalL + FLG_W)
+      secEnts.push({ t: 'line', a: [0, T_BTM], b: [0, BTM_FLG_H], layer: 'PANEL' });
+
+      // 우측 저판 직립 플랜지 (X = totalL ~ totalL + FLG_W, H=75mm)
       secEnts.push({ t: 'line', a: [totalL + FLG_W, 0], b: [totalL + FLG_W, BTM_FLG_H], layer: 'PANEL' });
       secEnts.push({ t: 'line', a: [totalL, BTM_FLG_H], b: [totalL + FLG_W, BTM_FLG_H], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [totalL, T_BTM], b: [totalL, BTM_FLG_H], layer: 'PANEL' });
 
       // 볼트 체결 중심선 (EL. +35mm)
       secEnts.push({ t: 'line', a: [-FLG_W - 8, BTM_BOLT_H], b: [18, BTM_BOLT_H], layer: 'PANEL_DETAIL' });
@@ -9704,6 +9767,35 @@
         ],
         Math.round(2.3 * N),
         'right',
+        'PANEL_DETAIL'
+      );
+
+      // 저판 바닥판넬 및 드레인 포켓 상세 지시선 (Callout)
+      drawLeader(
+        secEnts,
+        [pitX0, 0],
+        [pitX0 - Math.round(10 * N), -Math.round(16 * N)],
+        [pitX0 - Math.round(28 * N), -Math.round(16 * N)],
+        [
+          lang === 'ko' ? `저판 드레인 집수 포켓 (DRAIN SUMP PIT)` : `BTM DRAIN SUMP PIT`,
+          lang === 'ko' ? `바닥 잔수 완전 배출 (EL.+0mm 드레인 직결)` : `Complete Drain at EL.+0mm`
+        ],
+        Math.round(2.2 * N),
+        'right',
+        'PANEL_DETAIL'
+      );
+
+      drawLeader(
+        secEnts,
+        [totalL * 0.48, T_BTM],
+        [totalL * 0.48 + Math.round(10 * N), -Math.round(16 * N)],
+        [totalL * 0.48 + Math.round(34 * N), -Math.round(16 * N)],
+        [
+          lang === 'ko' ? `저판 판넬: SMC/STS 바닥판넬 (t=${T_BTM}mm, 하향 플랜지)` : `Btm Floor Panel (t=${T_BTM}mm, Dn-Flange)`,
+          lang === 'ko' ? `실사수량: V_dead = ${deadTon.toFixed(1)} Ton [${deadRatio.toFixed(1)}%] (H_dead = ${lwlFireElev}mm)` : `Dead Water: V_dead = ${deadTon.toFixed(1)} T [${deadRatio.toFixed(1)}%]`
+        ],
+        Math.round(2.2 * N),
+        'left',
         'PANEL_DETAIL'
       );
 
@@ -9735,10 +9827,19 @@
       }
 
       // 3. 물 (WATER) 시각화 및 수역 해치 제도 (Clear Visual Water Representation)
-      // A. 사수 구역 (하부 0 ~ lwlFireElev) 반투명 담수 채우기
+      // A. 사수 구역 (하부 T_BTM ~ lwlFireElev) 반투명 담수 채우기
       secEnts.push({
         t: 'poly',
-        pts: [[0, 0], [totalL, 0], [totalL, lwlFireElev], [0, lwlFireElev]],
+        pts: [[0, T_BTM], [totalL, T_BTM], [totalL, lwlFireElev], [0, lwlFireElev]],
+        fill: true,
+        fillColor: 'rgba(2, 132, 199, 0.22)',
+        stroke: false,
+        layer: 'WATER'
+      });
+      // 드레인 포켓 내부 담수 채우기 (Y = 0 ~ T_BTM)
+      secEnts.push({
+        t: 'poly',
+        pts: [[pitX0 - 15, T_BTM], [pitX0, 0], [pitX1, 0], [pitX1 + 15, T_BTM]],
         fill: true,
         fillColor: 'rgba(2, 132, 199, 0.22)',
         stroke: false,
@@ -9907,9 +10008,9 @@
       // F. 구역 설명 텍스트
       secEnts.push({
         t: 'text',
-        p: [totalL / 2, Math.max(lwlFireElev / 2, 45)],
+        p: [totalL / 2, Math.max((T_BTM + lwlFireElev) / 2, 45)],
         h: Math.round(2.5 * N),
-        s: lang === 'ko' ? `[사수 구역 / DEAD WATER] H_dead = ${lwlFireElev} mm  (V = ${deadTon.toFixed(1)} Ton)` : `[DEAD WATER ZONE] H_dead = ${lwlFireElev} mm  (V = ${deadTon.toFixed(1)} Ton)`,
+        s: lang === 'ko' ? `[사수 구역 / DEAD WATER] H_dead = ${lwlFireElev} mm  (실사수량 V = ${deadTon.toFixed(1)} Ton [${deadRatio.toFixed(1)}%])` : `[DEAD WATER ZONE] H_dead = ${lwlFireElev} mm  (V = ${deadTon.toFixed(1)} Ton [${deadRatio.toFixed(1)}%])`,
         align: 'center',
         valign: 'middle',
         layer: 'SHEET'
@@ -10183,9 +10284,8 @@
       }
 
       // 4. 하부 배수구 (DRAIN) 노즐
-      const drainX = totalL * 0.15;
       const pDrainTip = drawCapBottomNozzle(drainX, drainNoz);
-      drawLeader(secEnts, pDrainTip, [pDrainTip[0] - Math.round(6 * N), pDrainTip[1] - Math.round(6 * N)], [pDrainTip[0] - Math.round(18 * N), pDrainTip[1] - Math.round(6 * N)], [lang === 'ko' ? `[N4] 배수구 (${drainNoz ? drainNoz.size : '50A'})` : `[N4] DRAIN (${drainNoz ? drainNoz.size : '50A'})`, `EL. +0 mm (바닥)`], Math.round(2.4 * N), 'right', 'NOZZLE');
+      drawLeader(secEnts, pDrainTip, [pDrainTip[0] - Math.round(6 * N), pDrainTip[1] - Math.round(6 * N)], [pDrainTip[0] - Math.round(18 * N), pDrainTip[1] - Math.round(6 * N)], [lang === 'ko' ? `[N4] 배수구 (${drainNoz ? drainNoz.size : '50A'})` : `[N4] DRAIN (${drainNoz ? drainNoz.size : '50A'})`, lang === 'ko' ? 'EL. +0 mm (저판 드레인포켓)' : 'EL. +0 mm (BTM Sump)'], Math.round(2.4 * N), 'right', 'NOZZLE');
 
       // 6. 수직 및 수평 치수선 (Dimensions)
       if (hasFireWater && fireDepth > 0) {
@@ -10496,7 +10596,7 @@
         [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '총 공칭 용량 (V_gross)' : 'Total Gross Volume', `${grossTon.toFixed(2)} Ton (㎥)`, 'A × H (100%)'],
         [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '수조 구획 구분' : 'Compartment Type', lenSecs.length > 1 ? (lang === 'ko' ? `${lenSecs.length}구획 (${lenSecs.join('+')}mm)` : `${lenSecs.length}-Comp. (${lenSecs.join('+')}mm)`) : (lang === 'ko' ? '단일 구획 (Single)' : 'Single Comp.'), lang === 'ko' ? '격벽 설치' : 'Partition'],
 
-        [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '저판 플랜지 및 볼트선' : 'Btm Flange & Bolt Line', `플랜지 H=${BTM_FLG_H}mm (볼트선 EL.+${BTM_BOLT_H}mm)`, lang === 'ko' ? '바닥-측판 조립' : 'Flange Joint'],
+        [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '저판 판넬 및 플랜지' : 'Floor Panel & Flange', `저판 t=25mm, 플랜지 H=${BTM_FLG_H}mm (볼트 EL.+${BTM_BOLT_H}mm)`, lang === 'ko' ? '바닥-측판 조립' : 'Floor Joint'],
         [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '천정 플랜지 및 판넬' : 'Roof Flange & Panels', `플랜지 H=${TOP_FLG_H}mm (볼트선 EL.+${(H + TOP_BOLT_H).toLocaleString()}mm)`, lang === 'ko' ? '천정-측판 조립' : 'Roof Joint'],
         [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '측면 피팅 취부 한계' : 'Side Fitting Limit', `EL. +${MIN_SIDE_FITTING_ELEV} mm 이상 (플랜지 상부)`, lang === 'ko' ? '피팅간섭 방지' : 'Fitting Clearance'],
 
@@ -10509,7 +10609,7 @@
         [lang === 'ko' ? '노즐표고' : 'NOZZLE', lang === 'ko' ? '바닥 배수구 (DRAIN)' : 'Bottom Drain', `EL. +0 mm (${drainNoz ? drainNoz.size : '50A'})`, lang === 'ko' ? '바닥 잔수 배수' : 'Bottom Drain'],
 
         [lang === 'ko' ? '수심분석' : 'DEPTH', lang === 'ko' ? '상부 여유고 (H_free)' : 'Freeboard Height', `${freeDepth.toLocaleString()} mm (H - HWL)`, lang === 'ko' ? '공기층/넘침방지' : 'Air Gap'],
-        [lang === 'ko' ? '수심분석' : 'DEPTH', lang === 'ko' ? '하부 사수위 (H_dead)' : 'Dead Water Depth', `${deadDepth.toLocaleString()} mm (LWL)`, lang === 'ko' ? '흡입정/침전구간' : 'Dead Depth'],
+        [lang === 'ko' ? '수심분석' : 'DEPTH', lang === 'ko' ? '하부 사수위 (H_dead)' : 'Dead Water Depth', `${deadDepth.toLocaleString()} mm (LWL)`, lang === 'ko' ? '플랜지회피/사수심도' : 'Dead Depth'],
         ...(hasFireWater && fireDepth > 0 ? [
           [lang === 'ko' ? '수심분석' : 'DEPTH', lang === 'ko' ? '★ 소방 전용수심 (H_fire)' : '★ Fire Dedicated Depth', `★ ${fireDepth.toLocaleString()} mm (LWL_dom - LWL_fire)`, lang === 'ko' ? '법정 소방수심' : 'Fire Reserve'],
           [lang === 'ko' ? '수심분석' : 'DEPTH', lang === 'ko' ? '★ 생활 유효수심 (H_dom)' : '★ Dom Effective Depth', `★ ${domDepth.toLocaleString()} mm (HWL - LWL_dom)`, lang === 'ko' ? '생활 상시수심' : 'Domestic Depth']
@@ -10517,7 +10617,7 @@
         [lang === 'ko' ? '수심분석' : 'DEPTH', lang === 'ko' ? '★ 유효 수심 (H_eff)' : '★ Effective Depth', `★ ${effDepth.toLocaleString()} mm (${hasFireWater ? '소방 + 생활' : 'HWL - LWL'})`, lang === 'ko' ? '총 가용 수심' : 'Effective Depth'],
 
         [lang === 'ko' ? '용량산출' : 'VOLUME', lang === 'ko' ? '상부 비유효용적 (V_free)' : 'Freeboard Volume', `${freeTon.toFixed(2)} Ton (㎥)`, 'A × H_free'],
-        [lang === 'ko' ? '용량산출' : 'VOLUME', lang === 'ko' ? '하부 사수량 (V_dead)' : 'Dead Water Volume', `${deadTon.toFixed(2)} Ton (㎥)`, 'A × H_dead'],
+        [lang === 'ko' ? '용량산출' : 'VOLUME', lang === 'ko' ? '하부 사수량 (V_dead)' : 'Dead Water Volume', `${deadTon.toFixed(2)} Ton (㎥) [${deadRatio.toFixed(1)}%]`, lang === 'ko' ? 'A × H_dead (실사수량)' : 'A × H_dead'],
         ...(hasFireWater && fireDepth > 0 ? [
           [lang === 'ko' ? '용량산출' : 'VOLUME', lang === 'ko' ? '★ 소방 유효수량 (V_fire)' : '★ Fire Effective Vol.', `★ ${fireTon.toFixed(2)} Ton (㎥) [${fireRatio.toFixed(1)}%]`, lang === 'ko' ? '★ 법정 소방용수' : '★ Fire Reserve'],
           [lang === 'ko' ? '용량산출' : 'VOLUME', lang === 'ko' ? '★ 생활 유효수량 (V_dom)' : '★ Dom Effective Vol.', `★ ${domTon.toFixed(2)} Ton (㎥) [${domRatio.toFixed(1)}%]`, lang === 'ko' ? '★ 생활 급수용수' : '★ Domestic Cap.']
@@ -10563,6 +10663,9 @@
           domTon: domTon.toFixed(1),
           fireDepth,
           domDepth,
+          deadDepth,
+          deadTon: deadTon.toFixed(1),
+          deadRatio: deadRatio.toFixed(1),
           inlet: inletElev,
           effDepth,
           activeAreaM2: activeAreaMm2 / 1e6
