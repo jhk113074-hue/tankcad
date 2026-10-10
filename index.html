@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.6.94</title>
+<title>YSACC TANK CAD v1.6.95</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -504,7 +504,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.94</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.95</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1597,7 +1597,7 @@ canvas.drag{cursor:grabbing}
           <h3 id="manualDialogTitle" style="margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">
             <span class="txt-ko">YSACC TANK CAD 사용자 가이드 &amp; 사용 매뉴얼</span>
             <span class="txt-en">YSACC TANK CAD User Guide &amp; Operation Manual</span>
-            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.6.94</span>
+            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.6.95</span>
           </h3>
           <span class="modeless-drag-hint">
             <span class="txt-ko">✥ 상단바를 잡고 자유롭게 이동 가능</span>
@@ -3550,7 +3550,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.94</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.95</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -3560,7 +3560,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.94</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.95</span></div>
     </div>
   </main>
 </div>
@@ -14390,7 +14390,9 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
         }
       }
 
-      // 3. 중간 부재 (FRAME_SUB, Teal - 서브빔)
+      // 3. 중간 부재 (FRAME_SUB, Teal - 실물 서브빔 WFF-0990AMZ 양단 160mm 엔드플레이트 및 체결 볼트 정밀 3D 모델링)
+      const subH = (fNum === 50) ? 50 : 75;
+      const plW = 160, plTh = 6;
       for (let j = 1; j < map.cols.length; j++) {
         const colX = map.xs[j];
         for (let i = 0; i < map.rows.length; i++) {
@@ -14400,12 +14402,130 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
           const specTop = getRowBeamSpec(map, i + 1, colIdx, flgW, overY);
           const yBayBot = specBot.yB;
           const yBayTop = specTop.yA;
-          if (yBayTop <= yBayBot + 10) continue;
+          if (yBayTop <= yBayBot + 15) continue;
 
-          const subX0 = colX - subW / 2, subX1 = colX + subW / 2;
-          poly([toIso(subX0, yBayBot, 0), toIso(subX1, yBayBot, 0), toIso(subX1, yBayTop, 0), toIso(subX0, yBayTop, 0)], 'FRAME_SUB', true, true, getDepth(colX, (yBayBot + yBayTop) / 2, 0));
-          poly([toIso(subX1, yBayBot, 0), toIso(subX1, yBayTop, 0), toIso(subX1, yBayTop, -th), toIso(subX1, yBayBot, -th)], 'FRAME_SUB', true, true, getDepth(subX1, (yBayBot + yBayTop) / 2, -th / 2));
+          // 3-A. 하단 연결 엔드 플레이트 (End Plate: 160mm x 75mm x 6t, yBayBot ~ yBayBot + 6)
+          const pBotY0 = yBayBot, pBotY1 = yBayBot + plTh;
+          const plX0 = colX - plW / 2, plX1 = colX + plW / 2;
+          const botPlDepth = getDepth(colX, pBotY1, -subH / 2);
+          // 상면
+          poly([toIso(plX0, pBotY0, 0), toIso(plX1, pBotY0, 0), toIso(plX1, pBotY1, 0), toIso(plX0, pBotY1, 0)], 'FRAME_SUB', true, true, getDepth(colX, (pBotY0 + pBotY1) / 2, 0));
+          // 내측 전면 (Y = pBotY1, +Y 방향)
+          poly([toIso(plX0, pBotY1, 0), toIso(plX1, pBotY1, 0), toIso(plX1, pBotY1, -subH), toIso(plX0, pBotY1, -subH)], 'FRAME_SUB', true, true, botPlDepth);
+          // 우측 단면 (X = plX1)
+          poly([toIso(plX1, pBotY0, 0), toIso(plX1, pBotY1, 0), toIso(plX1, pBotY1, -subH), toIso(plX1, pBotY0, -subH)], 'FRAME_SUB', true, true, getDepth(plX1, (pBotY0 + pBotY1) / 2, -subH / 2));
+          // 2-Ø14 볼트 홀/볼트 머리 (M12)
+          isoCircle(colX - 55, pBotY1, -subH / 2, 4.5, 'XZ', 'FRAME_SUB', botPlDepth - 2, 10);
+          isoCircle(colX + 55, pBotY1, -subH / 2, 4.5, 'XZ', 'FRAME_SUB', botPlDepth - 2, 10);
+
+          // 3-B. 상단 연결 엔드 플레이트 (End Plate: 160mm x 75mm x 6t, yBayTop - 6 ~ yBayTop)
+          const pTopY0 = yBayTop - plTh, pTopY1 = yBayTop;
+          const topPlDepth = getDepth(colX, pTopY0, -subH / 2);
+          // 상면
+          poly([toIso(plX0, pTopY0, 0), toIso(plX1, pTopY0, 0), toIso(plX1, pTopY1, 0), toIso(plX0, pTopY1, 0)], 'FRAME_SUB', true, true, getDepth(colX, (pTopY0 + pTopY1) / 2, 0));
+          // 내측 배면 (Y = pTopY0, -Y 방향: 카메라를 향해 정면 노출!)
+          poly([toIso(plX0, pTopY0, 0), toIso(plX1, pTopY0, 0), toIso(plX1, pTopY0, -subH), toIso(plX0, pTopY0, -subH)], 'FRAME_SUB', true, true, topPlDepth);
+          // 우측 단면 (X = plX1)
+          poly([toIso(plX1, pTopY0, 0), toIso(plX1, pTopY1, 0), toIso(plX1, pTopY1, -subH), toIso(plX1, pTopY0, -subH)], 'FRAME_SUB', true, true, getDepth(plX1, (pTopY0 + pTopY1) / 2, -subH / 2));
+          // 2-Ø14 볼트 머리 (카메라를 향해 명확히 보임)
+          isoCircle(colX - 55, pTopY0, -subH / 2, 4.5, 'XZ', 'FRAME_SUB', topPlDepth - 2, 10);
+          isoCircle(colX + 55, pTopY0, -subH / 2, 4.5, 'XZ', 'FRAME_SUB', topPlDepth - 2, 10);
+
+          // 3-C. 찬넬 본체 (C-75x40x5t, pBotY1 ~ pTopY0)
+          const sX0 = colX - subW / 2, sX1 = colX + subW / 2;
+          const subMidY = (pBotY1 + pTopY0) / 2;
+          // 찬넬 상면 플랜지
+          poly([toIso(sX0, pBotY1, 0), toIso(sX1, pBotY1, 0), toIso(sX1, pTopY0, 0), toIso(sX0, pTopY0, 0)], 'FRAME_SUB', true, true, getDepth(colX, subMidY, 0));
+          // 찬넬 우측 웨브 면
+          poly([toIso(sX1, pBotY1, 0), toIso(sX1, pTopY0, 0), toIso(sX1, pTopY0, -subH), toIso(sX1, pBotY1, -subH)], 'FRAME_SUB', true, true, getDepth(sX1, subMidY, -subH / 2));
+          // 찬넬 하부 플랜지 립 라인
+          ln(toIso(sX0, pBotY1, -subH), toIso(sX0, pTopY0, -subH), 'FRAME_SUB', getDepth(sX0, subMidY, -subH));
+          ln(toIso(sX0, pBotY1, -subH), toIso(sX1, pBotY1, -subH), 'FRAME_SUB', getDepth(colX, pBotY1, -subH));
+          ln(toIso(sX0, pTopY0, -subH), toIso(sX1, pTopY0, -subH), 'FRAME_SUB', getDepth(colX, pTopY0, -subH));
+          // 찬넬 상부 플랜지 안쪽 라인
+          ln(toIso(sX0, pBotY1, -5), toIso(sX0, pTopY0, -5), 'FRAME_SUB', getDepth(sX0, subMidY, -5));
         }
+      }
+
+      // 4. 주재 코너 연결 브라켓 (Corner Bracket: WBR-7575Z / WBR-0120CZE) 3D 정밀 작도
+      const brkH = (fNum === 150) ? 120 : 75;
+      const brkL = 75, brkT = 6;
+      const draw3DCornerBracket = (bx, by, dirX, dirY) => {
+        const xA = bx, xB = bx + dirX * brkL;
+        const yA = by, yB = by + dirY * brkL;
+        const bDepth = getDepth(bx + dirX * 30, by + dirY * 30, -brkH / 2);
+        // X방향 및 Y방향 브라켓 상면
+        poly([
+          toIso(xA, yA, 0), toIso(xB, yA, 0),
+          toIso(xB, yA + dirY * brkT, 0), toIso(xA + dirX * brkT, yA + dirY * brkT, 0),
+          toIso(xA + dirX * brkT, yB, 0), toIso(xA, yB, 0)
+        ], 'FRAME', true, true, getDepth(bx + dirX * 20, by + dirY * 20, 0));
+        // X방향 수직면
+        poly([
+          toIso(xA, yA + dirY * brkT, 0), toIso(xB, yA + dirY * brkT, 0),
+          toIso(xB, yA + dirY * brkT, -brkH), toIso(xA, yA + dirY * brkT, -brkH)
+        ], 'FRAME', true, true, bDepth);
+        // Y방향 수직면
+        poly([
+          toIso(xA + dirX * brkT, yA, 0), toIso(xA + dirX * brkT, yB, 0),
+          toIso(xA + dirX * brkT, yB, -brkH), toIso(xA + dirX * brkT, yA, -brkH)
+        ], 'FRAME', true, true, bDepth);
+        // 볼트 머리
+        if (dirY < 0) {
+          isoCircle(bx + dirX * 45, yA + dirY * brkT, -brkH / 2, 5.0, 'XZ', 'FRAME', bDepth - 2, 10);
+        }
+        if (dirX > 0) {
+          isoCircle(xA + dirX * brkT, by + dirY * 45, -brkH / 2, 5.0, 'YZ', 'FRAME', bDepth - 2, 10);
+        }
+      };
+
+      // 외곽 4개 코너 브라켓
+      draw3DCornerBracket(lapIn, lapIn, 1, 1);
+      draw3DCornerBracket(totalL - lapIn, lapIn, -1, 1);
+      draw3DCornerBracket(lapIn, totalW - lapIn, 1, -1);
+      draw3DCornerBracket(totalL - lapIn, totalW - lapIn, -1, -1);
+
+      // 5. W방향 주재 이음 플레이트 (W-direction Splice Plate: WBR-02150ZE / WBR-9016CZE) 3D 정밀 작도
+      if (map.width >= 3000) {
+        const isAngle = (fNum === 75);
+        const splH = isAngle ? 65 : 90;
+        const splL = isAngle ? 215 : 160;
+        const splTh = 6;
+        for (let i = 1; i < map.rows.length; i++) {
+          const jointY = map.ys[i];
+          if (jointY >= 1500 && jointY <= totalW - 1500) {
+            // 우측 외곽 주재 외측 웨브 면 (X = totalL + overOut)에 접합 플레이트
+            const spX0 = totalL + overOut, spX1 = spX0 + splTh;
+            const spY0 = jointY - splL / 2, spY1 = jointY + splL / 2;
+            const spZ1 = -(th - splH) / 2, spZ0 = spZ1 - splH;
+            const spDepth = getDepth(spX1, jointY, (spZ0 + spZ1) / 2);
+            // 플레이트 상면
+            poly([toIso(spX0, spY0, spZ1), toIso(spX1, spY0, spZ1), toIso(spX1, spY1, spZ1), toIso(spX0, spY1, spZ1)], 'FRAME_MAIN_W', true, true, getDepth(spX1, jointY, spZ1));
+            // 플레이트 외측면 (카메라를 향해 명확히 노출)
+            poly([toIso(spX1, spY0, spZ1), toIso(spX1, spY1, spZ1), toIso(spX1, spY1, spZ0), toIso(spX1, spY0, spZ0)], 'FRAME_MAIN_W', true, true, spDepth);
+            // 4-Ø17 볼트 머리 (2x2 배치)
+            const bOffs = isAngle ? [-55, 55] : [-40, 40];
+            bOffs.forEach(dy => {
+              isoCircle(spX1, jointY + dy, spZ1 - splH * 0.28, 4.5, 'YZ', 'FRAME_MAIN_W', spDepth - 2, 10);
+              isoCircle(spX1, jointY + dy, spZ1 - splH * 0.72, 4.5, 'YZ', 'FRAME_MAIN_W', spDepth - 2, 10);
+            });
+          }
+        }
+      }
+
+      // 6. 스키드 앙카 클램프 (Anchor Clamp: WBR-5010Z, PL-50x35x6t, M12) 3D 정밀 작도
+      for (let j = 0; j <= map.cols.length; j++) {
+        const clX = (j < map.cols.length) ? map.xs[j] : totalL;
+        // 전면 하단 주재 (Y = -overY ~ 0) 하부 플랜지 위 앙카 클램프
+        const acX0 = clX - 25, acX1 = clX + 25;
+        const acY0 = -overY - 15, acY1 = -overY + 20;
+        const acZ0 = -th, acZ1 = -th + 6;
+        const acDepth = getDepth(clX, (acY0 + acY1) / 2, acZ1);
+        poly([toIso(acX0, acY0, acZ1), toIso(acX1, acY0, acZ1), toIso(acX1, acY1, acZ1), toIso(acX0, acY1, acZ1)], 'FRAME', true, true, acDepth);
+        poly([toIso(acX0, acY0, acZ1), toIso(acX1, acY0, acZ1), toIso(acX1, acY0, acZ0), toIso(acX0, acY0, acZ0)], 'FRAME', true, true, acDepth);
+        poly([toIso(acX1, acY0, acZ1), toIso(acX1, acY1, acZ1), toIso(acX1, acY1, acZ0), toIso(acX1, acY0, acZ0)], 'FRAME', true, true, acDepth);
+        // M12 앙카 볼트 머리
+        isoCircle(clX, acY0 + 17.5, acZ1, 5.0, 'XY', 'FRAME', acDepth - 2, 10);
       }
     } else {
       // 베이스 찬넬 림 (Skid Channel 100mm)
@@ -16449,8 +16569,51 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
         const yBayTop = specTop.yA;
         const bayH = yBayTop - yBayBot;
         if (bayH > 50) {
-          rectEnts(colX - subW / 2, yBayBot, subW, bayH, 'FRAME_SUB', ents);
-          ents.push({ t: 'line', a: [colX - subW / 2 + 5, yBayBot], b: [colX - subW / 2 + 5, yBayTop], layer: 'FRAME_SUB' });
+          // 실물 부품도(WFF-0990AMZ 등)에 기반한 정밀 서브빔 연결부 작도:
+          // 1) 양단 엔드 플레이트 (160mm x 75mm x 6t, 2-Ø14 볼트 홀)
+          // 이형 수조 단차 경계에서는 비어있는 제거 셀 쪽으로 플레이트가 돌출되지 않도록 경계 제약
+          const plW = 160, plTh = 6;
+          const hasLeft = !!rcL, hasRight = !!rcR;
+          const plX0 = hasLeft ? (colX - plW / 2) : (colX - subW / 2);
+          const plX1 = hasRight ? (colX + plW / 2) : (colX + subW / 2);
+          const plActualW = plX1 - plX0;
+
+          // 하단 연결 플레이트 (yBayBot ~ yBayBot + 6)
+          rectEnts(plX0, yBayBot, plActualW, plTh, 'FRAME_SUB', ents);
+          if (hasLeft) {
+            ents.push({ t: 'circle', c: [colX - 55, yBayBot + plTh / 2], r: 3.5, layer: 'FRAME_SUB' });
+            ents.push({ t: 'line', a: [colX - 55, yBayBot - 3], b: [colX - 55, yBayBot + plTh + 3], layer: 'FRAME_SUB' });
+          }
+          if (hasRight) {
+            ents.push({ t: 'circle', c: [colX + 55, yBayBot + plTh / 2], r: 3.5, layer: 'FRAME_SUB' });
+            ents.push({ t: 'line', a: [colX + 55, yBayBot - 3], b: [colX + 55, yBayBot + plTh + 3], layer: 'FRAME_SUB' });
+          }
+
+          // 상단 연결 플레이트 (yBayTop - 6 ~ yBayTop)
+          rectEnts(plX0, yBayTop - plTh, plActualW, plTh, 'FRAME_SUB', ents);
+          if (hasLeft) {
+            ents.push({ t: 'circle', c: [colX - 55, yBayTop - plTh / 2], r: 3.5, layer: 'FRAME_SUB' });
+            ents.push({ t: 'line', a: [colX - 55, yBayTop - plTh - 3], b: [colX - 55, yBayTop + 3], layer: 'FRAME_SUB' });
+          }
+          if (hasRight) {
+            ents.push({ t: 'circle', c: [colX + 55, yBayTop - plTh / 2], r: 3.5, layer: 'FRAME_SUB' });
+            ents.push({ t: 'line', a: [colX + 55, yBayTop - plTh - 3], b: [colX + 55, yBayTop + 3], layer: 'FRAME_SUB' });
+          }
+
+          // 2) 플레이트 사이의 서브빔 찬넬 본체 (C-75x40x5t)
+          const bY0 = yBayBot + plTh, bY1 = yBayTop - plTh;
+          rectEnts(colX - subW / 2, bY0, subW, bY1 - bY0, 'FRAME_SUB', ents);
+          ents.push({ t: 'line', a: [colX - subW / 2 + 5, bY0], b: [colX - subW / 2 + 5, bY1], layer: 'FRAME_SUB' });
+
+          // 용접 접합 비드선 (엔드 플레이트 - 찬넬 연결부)
+          if (hasLeft) {
+            ents.push({ t: 'line', a: [colX - subW / 2, bY0], b: [colX - subW / 2 - 5, bY0 + 5], layer: 'FRAME_SUB' });
+            ents.push({ t: 'line', a: [colX - subW / 2, bY1], b: [colX - subW / 2 - 5, bY1 - 5], layer: 'FRAME_SUB' });
+          }
+          if (hasRight) {
+            ents.push({ t: 'line', a: [colX + subW / 2, bY0], b: [colX + subW / 2 + 5, bY0 + 5], layer: 'FRAME_SUB' });
+            ents.push({ t: 'line', a: [colX + subW / 2, bY1], b: [colX + subW / 2 + 5, bY1 - 5], layer: 'FRAME_SUB' });
+          }
         }
       }
     }
@@ -23980,7 +24143,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.94</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.95</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
