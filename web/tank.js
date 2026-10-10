@@ -7964,7 +7964,8 @@
       const yMid = (yBot + yTop) / 2;
 
       // 서브빔 단면 폭 (50 SHS: 50mm, 75/125/150: 75mm)
-      const subH = isSHS ? 50 : 75, subX0 = (th - subH) / 2, subX1 = subX0 + subH;
+      // 상면(Top surface, x = 0)을 주재 Channel 상면과 완벽히 일치(Flush)시켜 수평을 이루도록 함
+      const subH = isSHS ? 50 : 75, subX0 = 0, subX1 = subH;
       const tp = 6.0; // 6t 엔드 플레이트 두께
       const twSub = isSHS ? 3.2 : (isAngle ? 6.0 : 5.0); // 웨브 두께 (5t / 6t)
       const tfSub = isSHS ? 3.2 : (isAngle ? 6.0 : 5.0); // 플랜지 두께 (5t / 6t)
@@ -8067,7 +8068,7 @@
       const subTextH = Math.min(26, Math.round(subH * 0.35));
       ents.push({
         t: 'text',
-        p: [th / 2, yMid],
+        p: [subH / 2, yMid],
         h: subTextH,
         s: sub.code,
         rot: 90,
