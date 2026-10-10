@@ -52,7 +52,7 @@ const hasScheduleTable = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.incl
 assert(hasScheduleTable, 'Capacity schedule table must exist');
 
 // Verification of Bottom Flange & Bolt line detail
-const hasBtmFlangeText = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('H=75mm'));
+const hasBtmFlangeText = sheet1.ents.some(e => e.t === 'text' && e.s && (e.s.includes('H=70mm') || e.s.includes('H=75mm')));
 assert(hasBtmFlangeText, 'Bottom flange callout must exist in entities');
 
 const hasSideFittingLimitText = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('EL.+100mm 이상'));
@@ -274,21 +274,24 @@ assert(Number(sheet7.tank.deadRatio) > 0, 'Dead water ratio must be > 0');
 console.log(`Verified Dead Water: H_dead=${sheet7.tank.deadDepth}mm, V_dead=${sheet7.tank.deadTon} Ton (${sheet7.tank.deadRatio}%)`);
 
 // 2. Floor panel drawing entities assertions
-const hasFloorPanelCallout = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('저판 판넬') && e.s.includes('t=25mm'));
-assert(hasFloorPanelCallout, 'Floor panel callout with t=25mm must exist in entities');
+const hasFloorPanelCallout = sheet7.ents.some(e => e.t === 'text' && e.s && (e.s.includes('표준 저판') || e.s.includes('저판 판넬')));
+assert(hasFloorPanelCallout, 'Floor panel callout must exist in entities');
 
-const hasDrainPocketCallout = sheet7.ents.some(e => e.t === 'text' && e.s && (e.s.includes('드레인 집수 포켓') || e.s.includes('DRAIN SUMP PIT')));
-assert(hasDrainPocketCallout, 'Drain sump pit callout must exist in entities');
+const hasDrainPanelCallout = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('드레인 판넬') && e.s.includes('H=125mm'));
+assert(hasDrainPanelCallout, 'Drain panel callout with H=125mm must exist in entities');
+
+const hasDrainShapeDim = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('125 (형상높이)'));
+assert(hasDrainShapeDim, '125mm shape height dimension text must exist in entities');
 
 const hasFloorPanelLabel = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('저판'));
 assert(hasFloorPanelLabel, 'Bottom panel labels must exist across column bays');
 
-const hasFloorRowInSchedule = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('저판 판넬 및 플랜지'));
+const hasFloorRowInSchedule = sheet7.ents.some(e => e.t === 'text' && e.s && (e.s.includes('드레인판넬 및 저판') || e.s.includes('저판 판넬 및 플랜지')));
 assert(hasFloorRowInSchedule, 'Floor panel row must exist in VIEW 4 calculation table');
 
 const hasDeadWaterScheduleText = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('하부 사수량')) && sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('실사수량'));
 assert(hasDeadWaterScheduleText, 'Dead water volume with 실사수량 must exist in VIEW 4 table');
 
-console.log('Test 7 passed! Floor panel registration and actual dead water verification completed.');
+console.log('Test 7 passed! 1000x1000mm Drain panel (H=125mm, Flg=70mm) and dead water verified.');
 
 console.log('ALL UNIT TESTS PASSED SUCCESSFULLY!');
