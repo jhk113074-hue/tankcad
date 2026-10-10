@@ -9791,26 +9791,8 @@
       secEnts.push({ t: 'line', a: [-FLG_W - 5, MIN_SIDE_FITTING_ELEV], b: [30, MIN_SIDE_FITTING_ELEV], layer: 'PANEL_DETAIL' });
       secEnts.push({ t: 'line', a: [totalL - 30, MIN_SIDE_FITTING_ELEV], b: [totalL + FLG_W + 5, MIN_SIDE_FITTING_ELEV], layer: 'PANEL_DETAIL' });
 
-      // ★ VIEW 1 모서리 상세 참조 버블 (DETAIL "A" Reference Callout)
-      secEnts.push({
-        t: 'circle',
-        c: [-FLG_W / 2, -BTM_FLG_H / 2],
-        r: Math.round(16 * N),
-        layer: 'PANEL_DETAIL'
-      });
-      drawLeader(
-        secEnts,
-        [-FLG_W / 2 + Math.round(11 * N), -BTM_FLG_H / 2 + Math.round(11 * N)],
-        [-FLG_W / 2 + Math.round(24 * N), Math.round(28 * N)],
-        [-FLG_W / 2 + Math.round(48 * N), Math.round(28 * N)],
-        [
-          'DETAIL "A"',
-          lang === 'ko' ? '측판·저판 조립 상세 (우측 확대도 참조)' : 'Side/Bottom Joint Detail'
-        ],
-        Math.round(2.5 * N),
-        'left',
-        'SHEET'
-      );
+
+
 
       // 판넬 종방향 분할선 (Col Seams)
       mmap.cols.forEach((cw, j) => {
@@ -10155,70 +10137,86 @@
 
         if (dir === 'left') {
           const xBase = xWall;
-          // [1] 외측 플랜지 (External Flange)
+          // 판넬 외면(xBase) 기준 외부로 돌출되는 양면플랜지 스풀 (Panel 외부에만 완전 배치, 내부 침범 0)
+          // 1. Base Flange (판넬 밀착 플랜지)
+          const xBaseFlgOuter = xBase - flgThick;
+          secEnts.push({ t: 'line', a: [xBase, elev - rf], b: [xBaseFlgOuter, elev - rf], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev - rf], b: [xBaseFlgOuter, elev + rf], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev + rf], b: [xBase, elev + rf], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBase, elev + rf], b: [xBase, elev - rf], layer: 'NOZZLE' });
+          // 볼트 구멍 은선 & 중심선 (Base Flange)
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter - 3, elev - rf * 0.75], b: [xBase + 3, elev - rf * 0.75], layer: 'CENTER', color: 4 });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter - 3, elev + rf * 0.75], b: [xBase + 3, elev + rf * 0.75], layer: 'CENTER', color: 4 });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev - rf * 0.75 - 5], b: [xBase, elev - rf * 0.75 - 5], layer: 'HIDDEN', color: 4 });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev - rf * 0.75 + 5], b: [xBase, elev - rf * 0.75 + 5], layer: 'HIDDEN', color: 4 });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev + rf * 0.75 - 5], b: [xBase, elev + rf * 0.75 - 5], layer: 'HIDDEN', color: 4 });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev + rf * 0.75 + 5], b: [xBase, elev + rf * 0.75 + 5], layer: 'HIDDEN', color: 4 });
+
+          // 2. Spool Pipe Neck (스풀 배관 목)
           const xFlgOuter = xBase - neckLen;
           const xFlgInner = xFlgOuter + flgThick;
-          secEnts.push({ t: 'line', a: [xBase, elev + r], b: [xFlgInner, elev + r], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xBase, elev - r], b: [xFlgInner, elev - r], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev + r], b: [xFlgInner, elev + r], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev - r], b: [xFlgInner, elev - r], layer: 'NOZZLE' });
+
+          // 3. Outer Flange (외부 배관 접속 플랜지)
           secEnts.push({ t: 'line', a: [xFlgOuter, elev - rf], b: [xFlgInner, elev - rf], layer: 'NOZZLE' });
           secEnts.push({ t: 'line', a: [xFlgInner, elev - rf], b: [xFlgInner, elev + rf], layer: 'NOZZLE' });
           secEnts.push({ t: 'line', a: [xFlgInner, elev + rf], b: [xFlgOuter, elev + rf], layer: 'NOZZLE' });
           secEnts.push({ t: 'line', a: [xFlgOuter, elev + rf], b: [xFlgOuter, elev - rf], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xFlgOuter - 4, elev - rf * 0.75], b: [xFlgInner + 4, elev - rf * 0.75], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xFlgOuter - 4, elev + rf * 0.75], b: [xFlgInner + 4, elev + rf * 0.75], layer: 'NOZZLE' });
-          const gL = Math.round(neckLen * 0.45);
-          secEnts.push({ t: 'line', a: [xBase, elev + rf * 0.85], b: [xBase - gL, elev + r], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xBase, elev - rf * 0.85], b: [xBase - gL, elev - r], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xBase, elev - rf * 0.85], b: [xBase, elev + rf * 0.85], layer: 'NOZZLE' });
+          // 볼트 구멍 은선 & 중심선 (Outer Flange)
+          secEnts.push({ t: 'line', a: [xFlgOuter - 4, elev - rf * 0.75], b: [xFlgInner + 4, elev - rf * 0.75], layer: 'CENTER', color: 4 });
+          secEnts.push({ t: 'line', a: [xFlgOuter - 4, elev + rf * 0.75], b: [xFlgInner + 4, elev + rf * 0.75], layer: 'CENTER', color: 4 });
+          secEnts.push({ t: 'line', a: [xFlgOuter, elev - rf * 0.75 - 5], b: [xFlgInner, elev - rf * 0.75 - 5], layer: 'HIDDEN', color: 4 });
+          secEnts.push({ t: 'line', a: [xFlgOuter, elev - rf * 0.75 + 5], b: [xFlgInner, elev - rf * 0.75 + 5], layer: 'HIDDEN', color: 4 });
+          secEnts.push({ t: 'line', a: [xFlgOuter, elev + rf * 0.75 - 5], b: [xFlgInner, elev + rf * 0.75 - 5], layer: 'HIDDEN', color: 4 });
+          secEnts.push({ t: 'line', a: [xFlgOuter, elev + rf * 0.75 + 5], b: [xFlgInner, elev + rf * 0.75 + 5], layer: 'HIDDEN', color: 4 });
 
-          // [2] 내측 플랜지 (Internal Flange - 양면 플랜지 구조)
-          const xInFlgOuter = xBase + innerLen;
-          const xInFlgInner = xInFlgOuter - flgThick;
-          secEnts.push({ t: 'line', a: [xBase, elev + r], b: [xInFlgInner, elev + r], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xBase, elev - r], b: [xInFlgInner, elev - r], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xInFlgInner, elev - rf], b: [xInFlgOuter, elev - rf], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xInFlgOuter, elev - rf], b: [xInFlgOuter, elev + rf], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xInFlgOuter, elev + rf], b: [xInFlgInner, elev + rf], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xInFlgInner, elev + rf], b: [xInFlgInner, elev - rf], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xInFlgInner - 4, elev - rf * 0.75], b: [xInFlgOuter + 4, elev - rf * 0.75], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xInFlgInner - 4, elev + rf * 0.75], b: [xInFlgOuter + 4, elev + rf * 0.75], layer: 'NOZZLE' });
-          const inGL = Math.round(innerLen * 0.45);
-          secEnts.push({ t: 'line', a: [xBase, elev + rf * 0.85], b: [xBase + inGL, elev + r], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xBase, elev - rf * 0.85], b: [xBase + inGL, elev - r], layer: 'NOZZLE' });
+          // 거셋 보강판 (Gussets)
+          const gL = Math.round((neckLen - flgThick * 2) * 0.45);
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev + rf * 0.85], b: [xBaseFlgOuter - gL, elev + r], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev - rf * 0.85], b: [xBaseFlgOuter - gL, elev - r], layer: 'NOZZLE' });
 
           return [xFlgOuter, elev];
         } else {
           const xBase = xWall;
-          // [1] 외측 플랜지 (External Flange)
+          // 판넬 외면(xBase) 기준 외부로 돌출되는 양면플랜지 스풀 (Panel 외부에만 완전 배치, 내부 침범 0)
+          // 1. Base Flange (판넬 밀착 플랜지)
+          const xBaseFlgOuter = xBase + flgThick;
+          secEnts.push({ t: 'line', a: [xBase, elev - rf], b: [xBaseFlgOuter, elev - rf], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev - rf], b: [xBaseFlgOuter, elev + rf], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev + rf], b: [xBase, elev + rf], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBase, elev + rf], b: [xBase, elev - rf], layer: 'NOZZLE' });
+          // 볼트 구멍 은선 & 중심선 (Base Flange)
+          secEnts.push({ t: 'line', a: [xBase - 3, elev - rf * 0.75], b: [xBaseFlgOuter + 3, elev - rf * 0.75], layer: 'CENTER', color: 4 });
+          secEnts.push({ t: 'line', a: [xBase - 3, elev + rf * 0.75], b: [xBaseFlgOuter + 3, elev + rf * 0.75], layer: 'CENTER', color: 4 });
+          secEnts.push({ t: 'line', a: [xBase, elev - rf * 0.75 - 5], b: [xBaseFlgOuter, elev - rf * 0.75 - 5], layer: 'HIDDEN', color: 4 });
+          secEnts.push({ t: 'line', a: [xBase, elev - rf * 0.75 + 5], b: [xBaseFlgOuter, elev - rf * 0.75 + 5], layer: 'HIDDEN', color: 4 });
+          secEnts.push({ t: 'line', a: [xBase, elev + rf * 0.75 - 5], b: [xBaseFlgOuter, elev + rf * 0.75 - 5], layer: 'HIDDEN', color: 4 });
+          secEnts.push({ t: 'line', a: [xBase, elev + rf * 0.75 + 5], b: [xBaseFlgOuter, elev + rf * 0.75 + 5], layer: 'HIDDEN', color: 4 });
+
+          // 2. Spool Pipe Neck (스풀 배관 목)
           const xFlgOuter = xBase + neckLen;
           const xFlgInner = xFlgOuter - flgThick;
-          secEnts.push({ t: 'line', a: [xBase, elev + r], b: [xFlgInner, elev + r], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xBase, elev - r], b: [xFlgInner, elev - r], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev + r], b: [xFlgInner, elev + r], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev - r], b: [xFlgInner, elev - r], layer: 'NOZZLE' });
+
+          // 3. Outer Flange (외부 배관 접속 플랜지)
           secEnts.push({ t: 'line', a: [xFlgInner, elev - rf], b: [xFlgOuter, elev - rf], layer: 'NOZZLE' });
           secEnts.push({ t: 'line', a: [xFlgOuter, elev - rf], b: [xFlgOuter, elev + rf], layer: 'NOZZLE' });
           secEnts.push({ t: 'line', a: [xFlgOuter, elev + rf], b: [xFlgInner, elev + rf], layer: 'NOZZLE' });
           secEnts.push({ t: 'line', a: [xFlgInner, elev + rf], b: [xFlgInner, elev - rf], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xFlgInner - 4, elev - rf * 0.75], b: [xFlgOuter + 4, elev - rf * 0.75], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xFlgInner - 4, elev + rf * 0.75], b: [xFlgOuter + 4, elev + rf * 0.75], layer: 'NOZZLE' });
-          const gL = Math.round(neckLen * 0.45);
-          secEnts.push({ t: 'line', a: [xBase, elev + rf * 0.85], b: [xBase + gL, elev + r], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xBase, elev - rf * 0.85], b: [xBase + gL, elev - r], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xBase, elev - rf * 0.85], b: [xBase, elev + rf * 0.85], layer: 'NOZZLE' });
+          // 볼트 구멍 은선 & 중심선 (Outer Flange)
+          secEnts.push({ t: 'line', a: [xFlgInner - 4, elev - rf * 0.75], b: [xFlgOuter + 4, elev - rf * 0.75], layer: 'CENTER', color: 4 });
+          secEnts.push({ t: 'line', a: [xFlgInner - 4, elev + rf * 0.75], b: [xFlgOuter + 4, elev + rf * 0.75], layer: 'CENTER', color: 4 });
+          secEnts.push({ t: 'line', a: [xFlgInner, elev - rf * 0.75 - 5], b: [xFlgOuter, elev - rf * 0.75 - 5], layer: 'HIDDEN', color: 4 });
+          secEnts.push({ t: 'line', a: [xFlgInner, elev - rf * 0.75 + 5], b: [xFlgOuter, elev - rf * 0.75 + 5], layer: 'HIDDEN', color: 4 });
+          secEnts.push({ t: 'line', a: [xFlgInner, elev + rf * 0.75 - 5], b: [xFlgOuter, elev + rf * 0.75 - 5], layer: 'HIDDEN', color: 4 });
+          secEnts.push({ t: 'line', a: [xFlgInner, elev + rf * 0.75 + 5], b: [xFlgOuter, elev + rf * 0.75 + 5], layer: 'HIDDEN', color: 4 });
 
-          // [2] 내측 플랜지 (Internal Flange - 양면 플랜지 구조)
-          const xInFlgOuter = xBase - innerLen;
-          const xInFlgInner = xInFlgOuter + flgThick;
-          secEnts.push({ t: 'line', a: [xBase, elev + r], b: [xInFlgInner, elev + r], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xBase, elev - r], b: [xInFlgInner, elev - r], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xInFlgOuter, elev - rf], b: [xInFlgInner, elev - rf], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xInFlgInner, elev - rf], b: [xInFlgInner, elev + rf], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xInFlgInner, elev + rf], b: [xInFlgOuter, elev + rf], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xInFlgOuter, elev + rf], b: [xInFlgOuter, elev - rf], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xInFlgOuter - 4, elev - rf * 0.75], b: [xInFlgInner + 4, elev - rf * 0.75], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xInFlgOuter - 4, elev + rf * 0.75], b: [xInFlgInner + 4, elev + rf * 0.75], layer: 'NOZZLE' });
-          const inGL = Math.round(innerLen * 0.45);
-          secEnts.push({ t: 'line', a: [xBase, elev + rf * 0.85], b: [xBase - inGL, elev + r], layer: 'NOZZLE' });
-          secEnts.push({ t: 'line', a: [xBase, elev - rf * 0.85], b: [xBase - inGL, elev - r], layer: 'NOZZLE' });
+          // 거셋 보강판 (Gussets)
+          const gL = Math.round((neckLen - flgThick * 2) * 0.45);
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev + rf * 0.85], b: [xBaseFlgOuter + gL, elev + r], layer: 'NOZZLE' });
+          secEnts.push({ t: 'line', a: [xBaseFlgOuter, elev - rf * 0.85], b: [xBaseFlgOuter + gL, elev - r], layer: 'NOZZLE' });
 
           return [xFlgOuter, elev];
         }
@@ -10231,26 +10229,40 @@
         const rf = spec.rf || 65;
         const dropLen = 120;
         const flgThick = spec.flgThick || 18;
+
+        // 드레인판넬 하부 외면(yTop)에 완전히 외부로만 장착 (내부 돌출 0)
+        // 1. Base Flange (판넬 바닥 밀착 플랜지)
+        const yBaseFlgBtm = yTop - flgThick;
+        secEnts.push({ t: 'line', a: [cx - rf, yTop], b: [cx + rf, yTop], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx + rf, yTop], b: [cx + rf, yBaseFlgBtm], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx + rf, yBaseFlgBtm], b: [cx - rf, yBaseFlgBtm], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx - rf, yBaseFlgBtm], b: [cx - rf, yTop], layer: 'NOZZLE' });
+        // 볼트 구멍 은선 & 중심선 (Base Flange)
+        secEnts.push({ t: 'line', a: [cx - rf * 0.75, yTop + 3], b: [cx - rf * 0.75, yBaseFlgBtm - 3], layer: 'CENTER', color: 4 });
+        secEnts.push({ t: 'line', a: [cx + rf * 0.75, yTop + 3], b: [cx + rf * 0.75, yBaseFlgBtm - 3], layer: 'CENTER', color: 4 });
+        secEnts.push({ t: 'line', a: [cx - rf * 0.75 - 5, yTop], b: [cx - rf * 0.75 - 5, yBaseFlgBtm], layer: 'HIDDEN', color: 4 });
+        secEnts.push({ t: 'line', a: [cx - rf * 0.75 + 5, yTop], b: [cx - rf * 0.75 + 5, yBaseFlgBtm], layer: 'HIDDEN', color: 4 });
+        secEnts.push({ t: 'line', a: [cx + rf * 0.75 - 5, yTop], b: [cx + rf * 0.75 - 5, yBaseFlgBtm], layer: 'HIDDEN', color: 4 });
+        secEnts.push({ t: 'line', a: [cx + rf * 0.75 + 5, yTop], b: [cx + rf * 0.75 + 5, yBaseFlgBtm], layer: 'HIDDEN', color: 4 });
+
+        // 2. Spool Pipe Neck (스풀 배관 목)
         const yFlgOuter = yTop - dropLen;
         const yFlgInner = yFlgOuter + flgThick;
+        secEnts.push({ t: 'line', a: [cx - r, yBaseFlgBtm], b: [cx - r, yFlgInner], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx + r, yBaseFlgBtm], b: [cx + r, yFlgInner], layer: 'NOZZLE' });
 
-        // 하부 외측 플랜지
-        secEnts.push({ t: 'line', a: [cx - r, yTop], b: [cx - r, yFlgInner], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx + r, yTop], b: [cx + r, yFlgInner], layer: 'NOZZLE' });
-
+        // 3. Outer Flange (외부 드레인 배관 접속 플랜지)
         secEnts.push({ t: 'line', a: [cx - rf, yFlgOuter], b: [cx + rf, yFlgOuter], layer: 'NOZZLE' });
         secEnts.push({ t: 'line', a: [cx + rf, yFlgOuter], b: [cx + rf, yFlgInner], layer: 'NOZZLE' });
         secEnts.push({ t: 'line', a: [cx + rf, yFlgInner], b: [cx - rf, yFlgInner], layer: 'NOZZLE' });
         secEnts.push({ t: 'line', a: [cx - rf, yFlgInner], b: [cx - rf, yFlgOuter], layer: 'NOZZLE' });
-
-        secEnts.push({ t: 'line', a: [cx - rf * 0.75, yFlgOuter - 4], b: [cx - rf * 0.75, yFlgInner + 4], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx + rf * 0.75, yFlgOuter - 4], b: [cx + rf * 0.75, yFlgInner + 4], layer: 'NOZZLE' });
-
-        // 피트 내측 플랜지 / 벨마우스
-        const inH = 20;
-        secEnts.push({ t: 'line', a: [cx - r, yTop], b: [cx - r, yTop + inH], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx + r, yTop], b: [cx + r, yTop + inH], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx - rf * 0.85, yTop + inH], b: [cx + rf * 0.85, yTop + inH], layer: 'NOZZLE' });
+        // 볼트 구멍 은선 & 중심선 (Outer Flange)
+        secEnts.push({ t: 'line', a: [cx - rf * 0.75, yFlgOuter - 4], b: [cx - rf * 0.75, yFlgInner + 4], layer: 'CENTER', color: 4 });
+        secEnts.push({ t: 'line', a: [cx + rf * 0.75, yFlgOuter - 4], b: [cx + rf * 0.75, yFlgInner + 4], layer: 'CENTER', color: 4 });
+        secEnts.push({ t: 'line', a: [cx - rf * 0.75 - 5, yFlgOuter], b: [cx - rf * 0.75 - 5, yFlgInner], layer: 'HIDDEN', color: 4 });
+        secEnts.push({ t: 'line', a: [cx - rf * 0.75 + 5, yFlgOuter], b: [cx - rf * 0.75 + 5, yFlgInner], layer: 'HIDDEN', color: 4 });
+        secEnts.push({ t: 'line', a: [cx + rf * 0.75 - 5, yFlgOuter], b: [cx + rf * 0.75 - 5, yFlgInner], layer: 'HIDDEN', color: 4 });
+        secEnts.push({ t: 'line', a: [cx + rf * 0.75 + 5, yFlgOuter], b: [cx + rf * 0.75 + 5, yFlgInner], layer: 'HIDDEN', color: 4 });
 
         return [cx, yFlgOuter];
       };
@@ -10269,33 +10281,44 @@
         const flgThick = spec.flgThick || 20;
         const yBase = H + 30;
 
-        // 상부 외측 플랜지
+        // 천정 판넬 상면(yBase) 기준 외부로만 돌출되는 양면플랜지 스풀 (내부 침범 0)
+        // 1. Base Flange (천정 판넬 밀착 플랜지)
+        const yBaseFlgTop = yBase + flgThick;
+        secEnts.push({ t: 'line', a: [cx - rf, yBase], b: [cx + rf, yBase], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx + rf, yBase], b: [cx + rf, yBaseFlgTop], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx + rf, yBaseFlgTop], b: [cx - rf, yBaseFlgTop], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx - rf, yBaseFlgTop], b: [cx - rf, yBase], layer: 'NOZZLE' });
+        // 볼트 구멍 은선 & 중심선 (Base Flange)
+        secEnts.push({ t: 'line', a: [cx - rf * 0.75, yBase - 3], b: [cx - rf * 0.75, yBaseFlgTop + 3], layer: 'CENTER', color: 4 });
+        secEnts.push({ t: 'line', a: [cx + rf * 0.75, yBase - 3], b: [cx + rf * 0.75, yBaseFlgTop + 3], layer: 'CENTER', color: 4 });
+        secEnts.push({ t: 'line', a: [cx - rf * 0.75 - 5, yBase], b: [cx - rf * 0.75 - 5, yBaseFlgTop], layer: 'HIDDEN', color: 4 });
+        secEnts.push({ t: 'line', a: [cx - rf * 0.75 + 5, yBase], b: [cx - rf * 0.75 + 5, yBaseFlgTop], layer: 'HIDDEN', color: 4 });
+        secEnts.push({ t: 'line', a: [cx + rf * 0.75 - 5, yBase], b: [cx + rf * 0.75 - 5, yBaseFlgTop], layer: 'HIDDEN', color: 4 });
+        secEnts.push({ t: 'line', a: [cx + rf * 0.75 + 5, yBase], b: [cx + rf * 0.75 + 5, yBaseFlgTop], layer: 'HIDDEN', color: 4 });
+
+        // 2. Spool Pipe Neck (스풀 배관 목)
         const yFlgOuter = yBase + neckH;
         const yFlgInner = yFlgOuter - flgThick;
-        secEnts.push({ t: 'line', a: [cx - r, yBase], b: [cx - r, yFlgInner], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx + r, yBase], b: [cx + r, yFlgInner], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx - r, yBaseFlgTop], b: [cx - r, yFlgInner], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx + r, yBaseFlgTop], b: [cx + r, yFlgInner], layer: 'NOZZLE' });
+
+        // 3. Outer Flange (외부 배관 접속 플랜지)
         secEnts.push({ t: 'line', a: [cx - rf, yFlgInner], b: [cx + rf, yFlgInner], layer: 'NOZZLE' });
         secEnts.push({ t: 'line', a: [cx + rf, yFlgInner], b: [cx + rf, yFlgOuter], layer: 'NOZZLE' });
         secEnts.push({ t: 'line', a: [cx + rf, yFlgOuter], b: [cx - rf, yFlgOuter], layer: 'NOZZLE' });
         secEnts.push({ t: 'line', a: [cx - rf, yFlgOuter], b: [cx - rf, yFlgInner], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx - rf * 0.75, yFlgInner - 4], b: [cx - rf * 0.75, yFlgOuter + 4], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx + rf * 0.75, yFlgInner - 4], b: [cx + rf * 0.75, yFlgOuter + 4], layer: 'NOZZLE' });
-        const gL = Math.round(r * 0.7);
-        secEnts.push({ t: 'line', a: [cx - r - gL, yBase], b: [cx - r, yBase + gL], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx + r + gL, yBase], b: [cx + r, yBase + gL], layer: 'NOZZLE' });
+        // 볼트 구멍 은선 & 중심선 (Outer Flange)
+        secEnts.push({ t: 'line', a: [cx - rf * 0.75, yFlgInner - 4], b: [cx - rf * 0.75, yFlgOuter + 4], layer: 'CENTER', color: 4 });
+        secEnts.push({ t: 'line', a: [cx + rf * 0.75, yFlgInner - 4], b: [cx + rf * 0.75, yFlgOuter + 4], layer: 'CENTER', color: 4 });
+        secEnts.push({ t: 'line', a: [cx - rf * 0.75 - 5, yFlgInner], b: [cx - rf * 0.75 - 5, yFlgOuter], layer: 'HIDDEN', color: 4 });
+        secEnts.push({ t: 'line', a: [cx - rf * 0.75 + 5, yFlgInner], b: [cx - rf * 0.75 + 5, yFlgOuter], layer: 'HIDDEN', color: 4 });
+        secEnts.push({ t: 'line', a: [cx + rf * 0.75 - 5, yFlgInner], b: [cx + rf * 0.75 - 5, yFlgOuter], layer: 'HIDDEN', color: 4 });
+        secEnts.push({ t: 'line', a: [cx + rf * 0.75 + 5, yFlgInner], b: [cx + rf * 0.75 + 5, yFlgOuter], layer: 'HIDDEN', color: 4 });
 
-        // 천정 하부 내측 플랜지 (양면 플랜지 구조)
-        const innerDrop = 80;
-        const yInFlgOuter = yBase - innerDrop;
-        const yInFlgInner = yInFlgOuter + flgThick;
-        secEnts.push({ t: 'line', a: [cx - r, yBase], b: [cx - r, yInFlgInner], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx + r, yBase], b: [cx + r, yInFlgInner], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx - rf, yInFlgOuter], b: [cx + rf, yInFlgOuter], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx + rf, yInFlgOuter], b: [cx + rf, yInFlgInner], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx + rf, yInFlgInner], b: [cx - rf, yInFlgInner], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx - rf, yInFlgInner], b: [cx - rf, yInFlgOuter], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx - rf * 0.75, yInFlgOuter - 4], b: [cx - rf * 0.75, yInFlgInner + 4], layer: 'NOZZLE' });
-        secEnts.push({ t: 'line', a: [cx + rf * 0.75, yInFlgOuter - 4], b: [cx + rf * 0.75, yInFlgInner + 4], layer: 'NOZZLE' });
+        // 거셋 보강판 (Gussets)
+        const gL = Math.round(r * 0.7);
+        secEnts.push({ t: 'line', a: [cx - r - gL, yBaseFlgTop], b: [cx - r, yBaseFlgTop + gL], layer: 'NOZZLE' });
+        secEnts.push({ t: 'line', a: [cx + r + gL, yBaseFlgTop], b: [cx + r, yBaseFlgTop + gL], layer: 'NOZZLE' });
 
         return [cx, yFlgOuter];
       };
@@ -10389,35 +10412,35 @@
         'NOZZLE'
       );
 
-      // 하부 스키드 및 저판 플랜지 수직 치수선 (좌측)
-      dimLinear(secEnts, [-FLG_W, skidBtm], [-FLG_W, skidTop], -Math.round(22 * N), true, `${frmVal} (스키드)`, Math.round(2.0 * N), 'DIM');
-      dimLinear(secEnts, [-FLG_W, skidTop], [-FLG_W, 0], -Math.round(22 * N), true, `${BTM_FLG_H} (플랜지)`, Math.round(2.0 * N), 'DIM');
+      // 하부 스키드 및 저판 플랜지 수직 치수선 (좌측: 1차 치수선 -Math.round(10 * N))
+      dimLinear(secEnts, [-FLG_W, skidBtm], [-FLG_W, skidTop], -Math.round(10 * N), true, `${frmVal} (스키드)`, Math.round(2.0 * N), 'DIM');
+      dimLinear(secEnts, [-FLG_W, skidTop], [-FLG_W, 0], -Math.round(10 * N), true, `${BTM_FLG_H} (플랜지)`, Math.round(2.0 * N), 'DIM');
 
-      // 6. 수직 및 수평 치수선 (Dimensions)
+      // 6. 수직 및 수평 치수선 (Dimensions: 1차선 10*N, 2차 전체선 18*N)
       if (hasFireWater && fireDepth > 0) {
-        dimLinear(secEnts, [-FLG_W, 0], [-FLG_W, lwlFireElev], -Math.round(22 * N), true, `${lwlFireElev} (사수)`, Math.round(2.3 * N), 'DIM');
-        dimLinear(secEnts, [-FLG_W, lwlFireElev], [-FLG_W, lwlDomElev], -Math.round(22 * N), true, `${fireDepth} (소방)`, Math.round(2.3 * N), 'DIM');
-        dimLinear(secEnts, [-FLG_W, lwlDomElev], [-FLG_W, hwlElev], -Math.round(22 * N), true, `${domDepth} (생활)`, Math.round(2.3 * N), 'DIM');
-        dimLinear(secEnts, [-FLG_W, hwlElev], [-FLG_W, H], -Math.round(22 * N), true, `${freeDepth} (여유)`, Math.round(2.3 * N), 'DIM');
-        dimLinear(secEnts, [-FLG_W, 0], [-FLG_W, H], -Math.round(35 * N), true, `${H} (총높이)`, Math.round(2.8 * N), 'DIM');
+        dimLinear(secEnts, [-FLG_W, 0], [-FLG_W, lwlFireElev], -Math.round(10 * N), true, `${lwlFireElev} (사수)`, Math.round(2.3 * N), 'DIM');
+        dimLinear(secEnts, [-FLG_W, lwlFireElev], [-FLG_W, lwlDomElev], -Math.round(10 * N), true, `${fireDepth} (소방)`, Math.round(2.3 * N), 'DIM');
+        dimLinear(secEnts, [-FLG_W, lwlDomElev], [-FLG_W, hwlElev], -Math.round(10 * N), true, `${domDepth} (생활)`, Math.round(2.3 * N), 'DIM');
+        dimLinear(secEnts, [-FLG_W, hwlElev], [-FLG_W, H], -Math.round(10 * N), true, `${freeDepth} (여유)`, Math.round(2.3 * N), 'DIM');
+        dimLinear(secEnts, [-FLG_W, 0], [-FLG_W, H], -Math.round(18 * N), true, `${H} (총높이)`, Math.round(2.8 * N), 'DIM');
       } else {
-        dimLinear(secEnts, [-FLG_W, 0], [-FLG_W, lwlElev], -Math.round(22 * N), true, String(lwlElev), Math.round(2.5 * N), 'DIM');
-        dimLinear(secEnts, [-FLG_W, lwlElev], [-FLG_W, hwlElev], -Math.round(22 * N), true, `${effDepth} (유효)`, Math.round(2.5 * N), 'DIM');
-        dimLinear(secEnts, [-FLG_W, hwlElev], [-FLG_W, H], -Math.round(22 * N), true, `${freeDepth} (여유)`, Math.round(2.5 * N), 'DIM');
-        dimLinear(secEnts, [-FLG_W, 0], [-FLG_W, H], -Math.round(34 * N), true, `${H} (총높이)`, Math.round(2.8 * N), 'DIM');
+        dimLinear(secEnts, [-FLG_W, 0], [-FLG_W, lwlElev], -Math.round(10 * N), true, String(lwlElev), Math.round(2.5 * N), 'DIM');
+        dimLinear(secEnts, [-FLG_W, lwlElev], [-FLG_W, hwlElev], -Math.round(10 * N), true, `${effDepth} (유효)`, Math.round(2.5 * N), 'DIM');
+        dimLinear(secEnts, [-FLG_W, hwlElev], [-FLG_W, H], -Math.round(10 * N), true, `${freeDepth} (여유)`, Math.round(2.5 * N), 'DIM');
+        dimLinear(secEnts, [-FLG_W, 0], [-FLG_W, H], -Math.round(18 * N), true, `${H} (총높이)`, Math.round(2.8 * N), 'DIM');
       }
 
       if (lenSecs.length > 1) {
         let cx0 = 0;
         lenSecs.forEach(cLen => {
-          dimLinear(secEnts, [cx0, skidBtm], [cx0 + cLen, skidBtm], -Math.round(18 * N), false, String(cLen), Math.round(2.5 * N), 'DIM');
+          dimLinear(secEnts, [cx0, skidBtm], [cx0 + cLen, skidBtm], -Math.round(10 * N), false, String(cLen), Math.round(2.5 * N), 'DIM');
           cx0 += cLen;
         });
       }
-      dimLinear(secEnts, [0, skidBtm], [totalL, skidBtm], -Math.round(lenSecs.length > 1 ? 28 * N : 20 * N), false, `${totalL} (전장 L)`, Math.round(2.8 * N), 'DIM');
+      dimLinear(secEnts, [0, skidBtm], [totalL, skidBtm], -Math.round(lenSecs.length > 1 ? 18 * N : 13 * N), false, `${totalL} (전장 L)`, Math.round(2.8 * N), 'DIM');
 
       translateEnts(secEnts, dx1, dy1);
-      const titleSecY = (dy1 + skidBtm - Math.round(lenSecs.length > 1 ? 38 * N : 30 * N)) / N;
+      const titleSecY = (dy1 + skidBtm - Math.round(lenSecs.length > 1 ? 26 * N : 20 * N)) / N;
       drawViewTitleBubble(cx1, titleSecY, 1, 1, lang === 'ko' ? '수위 및 수심 단면도 (WATER LEVEL ELEVATION)' : 'WATER LEVEL & DEPTH ELEVATION', N);
 
       // ==========================================
@@ -10460,145 +10483,12 @@
 
       // 3D 수위 지시선
       ents.push({ t: 'line', a: p1, b: [p1[0] + 15 * N * fitScale, p1[1] + 10 * N * fitScale], layer: 'NOZZLE' });
-      ents.push({ t: 'line', a: [p1[0] + 15 * N * fitScale, p1[1] + 10 * N * fitScale], b: [p1[0] + 45 * N * fitScale, p1[1] + 10 * N * fitScale], layer: 'NOZZLE' });
       ents.push({ t: 'text', p: [p1[0] + 16 * N * fitScale, p1[1] + 13 * N * fitScale], h: Math.round(2.6 * N * fitScale), s: `▽ HWL EL. +${hwlElev}`, align: 'left', valign: 'bottom', layer: 'SHEET' });
 
       const titleIsoY = y0 + areaH * 0.52 - 8;
-      // ==========================================
-      // VIEW 1-A: DETAIL "A" - 측판 및 저판 조립 상세도 (SIDE & BOTTOM PANEL JOINT DETAIL)
-      // ==========================================
-      const cxDet = x0 + areaW * 0.515;
-      const cyDet = y0 + areaH * 0.70;
-      const sDet = 0.52; // 확대 상세도 배율
+      drawViewTitleBubble(cx2, titleIsoY, 1, 2, lang === 'ko' ? '3D 등각 수위 조감도 (3D ISOMETRIC VIEW)' : '3D ISOMETRIC WATER LEVEL VIEW', 'N.T.S.');
 
-      const trD = p => [P(p[0] * sDet + cxDet), P(p[1] * sDet + cyDet)];
-      const lineD = (a, b, layer = 'PANEL', color) => {
-        const ent = { t: 'line', a: trD(a), b: trD(b), layer };
-        if (color !== undefined) ent.color = color;
-        ents.push(ent);
-      };
-      const polyD = (pts, fill, fillColor, layer = 'PANEL') => {
-        ents.push({ t: 'poly', pts: pts.map(trD), fill, fillColor, stroke: false, layer });
-      };
 
-      // 1. 담수 (Water) 영역: 저판부는 사수(Dead Water) 구역 색상(Amber/Yellow) 적용
-      polyD([[0, 0], [135, 0], [135, 65], [0, 65]], true, 'rgba(234, 179, 8, 0.24)', 'WATER');
-
-      // 2. 1단 측판 판넬 (Side Panel: t=10mm, 플랜지 폭 70mm, 하향 H=70mm)
-      // - 측판 수직 벽체 (내면 X=0, 외면 X=-10)
-      lineD([0, 0], [0, 95]);
-      lineD([-10, 0], [-10, 95]);
-      // 상부 지그재그 파단선 (Break Line)
-      lineD([-14, 95], [-6, 99]);
-      lineD([-6, 99], [-4, 91]);
-      lineD([-4, 91], [4, 95]);
-      // 외면 보강 리브
-      lineD([-10, 45], [-20, 32], 'PANEL_DETAIL');
-      lineD([-20, 32], [-10, 18], 'PANEL_DETAIL');
-
-      // - 측판 하부 외향/하향 플랜지 (외곽 X=-70, 하단 Y=-70)
-      lineD([-10, 0], [-70, 0]);
-      lineD([-70, 0], [-70, -70]);
-      lineD([-70, -70], [0, -70]);
-      // 측판 플랜지 내면 두께선 (t=10mm)
-      lineD([-60, -10], [-18, -10], 'PANEL_DETAIL');
-      lineD([-60, -10], [-60, -60], 'PANEL_DETAIL');
-      lineD([-60, -60], [-10, -60], 'PANEL_DETAIL');
-
-      // 3. SMC 저판 판넬 (Bottom Panel: 조립평면구간 76.92mm, 돔 곡선, 하향 플랜지 H=70mm)
-      // - 저판 하향 플랜지 (X=0, Y=0 ~ -70)
-      lineD([0, 0], [0, -70]);
-      lineD([0, -70], [12, -70]);
-      lineD([10, -70], [10, -10]);
-
-      // - 조립 평면구간 76.92mm (Flat Zone on Steel Skid)
-      lineD([0, 0], [76.92, 0]);
-      lineD([10, -10], [76.92, -10]);
-
-      // - 중앙 볼록 돔 곡선 시작부 (Upward Convex Parabolic Arch: 76.92mm에서 돔 시작)
-      const detDomePts = [
-        [76.92, 0], [88, 3.5], [102, 10], [118, 18.5], [135, 26]
-      ];
-      for (let s = 0; s < detDomePts.length - 1; s++) {
-        lineD(detDomePts[s], detDomePts[s + 1]);
-      }
-      // 저판 두께 이면선 (t=10mm)
-      const detDomeUnderside = [
-        [76.92, -10], [88, -6.5], [102, 0], [118, 8.5], [135, 16]
-      ];
-      for (let s = 0; s < detDomeUnderside.length - 1; s++) {
-        lineD(detDomeUnderside[s], detDomeUnderside[s + 1], 'PANEL_DETAIL');
-      }
-      // 우측 지그재그 파단선
-      lineD([135, 26], [137, 21]);
-      lineD([137, 21], [133, 11]);
-      lineD([133, 11], [135, 16]);
-
-      // 4. 특수 발포 EPDM 실링 테이프 (Watertight Gasket Sealing Tape t=5mm)
-      polyD([[-2.5, -62], [2.5, -62], [2.5, -8], [-2.5, -8]], true, 'rgba(59, 130, 246, 0.40)', 'PANEL_DETAIL');
-      lineD([-2.5, -62], [-2.5, -8], 'PANEL_DETAIL');
-      lineD([2.5, -62], [2.5, -8], 'PANEL_DETAIL');
-
-      // 5. SUS304 M10 볼트 & 너트 체결부 (Fastener Assembly at EL. -35mm)
-      // 볼트 중심선 (Centerline)
-      lineD([-86, -35], [34, -35], 'CENTER', 4);
-      // 볼트 구멍 (Phi 12mm 관통 은선 / Through Hidden Lines)
-      lineD([-70, -29], [10, -29], 'HIDDEN', 4);
-      lineD([-70, -41], [10, -41], 'HIDDEN', 4);
-      // 볼트 머리 (Hex Bolt Head)
-      lineD([-78, -43.5], [-70, -43.5], 'PANEL_DETAIL');
-      lineD([-78, -26.5], [-70, -26.5], 'PANEL_DETAIL');
-      lineD([-78, -43.5], [-78, -26.5], 'PANEL_DETAIL');
-      // 평와셔 + 스프링와셔 + 육각너트
-      lineD([10, -45], [10, -25], 'PANEL_DETAIL');
-      lineD([13, -45], [13, -25], 'PANEL_DETAIL');
-      lineD([10, -45], [13, -45], 'PANEL_DETAIL');
-      lineD([10, -25], [13, -25], 'PANEL_DETAIL');
-      lineD([13, -44], [16, -44], 'PANEL_DETAIL');
-      lineD([13, -26], [16, -26], 'PANEL_DETAIL');
-      lineD([16, -44], [16, -26], 'PANEL_DETAIL');
-      lineD([16, -43.5], [25, -43.5], 'PANEL_DETAIL');
-      lineD([16, -26.5], [25, -26.5], 'PANEL_DETAIL');
-      lineD([25, -43.5], [25, -26.5], 'PANEL_DETAIL');
-      // 볼트 나사부 돌출
-      lineD([25, -39], [30, -39], 'PANEL_DETAIL');
-      lineD([25, -31], [30, -31], 'PANEL_DETAIL');
-      lineD([30, -39], [30, -31], 'PANEL_DETAIL');
-
-      // 6. 하부 Steel Skid 지지 찬넬 빔 (Channel Frame 75x45x15x2.3t at EL. -70 ~ -145mm)
-      // 상부 안착면 (Y = -70mm)
-      lineD([-45, -70], [15, -70], 'FRAME');
-      lineD([-45, -72.3], [12.7, -72.3], 'FRAME');
-      // 찬넬 웨브 (X = -45)
-      lineD([-45, -70], [-45, -145], 'FRAME');
-      lineD([-42.7, -72.3], [-42.7, -142.7], 'FRAME');
-      // 찬넬 하부 플랜지 (Y = -145)
-      lineD([-45, -145], [0, -145], 'FRAME');
-      lineD([-42.7, -142.7], [-2.3, -142.7], 'FRAME');
-      // 립 (Lips: 15mm)
-      lineD([15, -70], [15, -85], 'FRAME');
-      lineD([12.7, -72.3], [12.7, -85], 'FRAME');
-      lineD([0, -145], [0, -130], 'FRAME');
-      lineD([-2.3, -142.7], [-2.3, -130], 'FRAME');
-
-      // 7. 상세 치수선 (Detail Dimensions)
-      dimLinear(ents, trD([0, 0]), trD([76.92, 0]), Math.round(14 * sDet * N), false, '76.92 (조립평면)', Math.round(2.0 * N), 'DIM');
-      dimLinear(ents, trD([0, 0]), trD([0, -70]), -Math.round(24 * sDet * N), true, '70 (플랜지)', Math.round(2.0 * N), 'DIM');
-      dimLinear(ents, trD([0, -70]), trD([0, -35]), -Math.round(13 * sDet * N), true, '35 (볼트선)', Math.round(1.9 * N), 'DIM');
-      dimLinear(ents, trD([-45, -145]), trD([-45, -70]), -Math.round(13 * sDet * N), true, `${frmVal} (스키드)`, Math.round(1.9 * N), 'DIM');
-
-      // 8. 8대 핵심 부품 상세 지시선 (Callout Leaders)
-      drawLeader(ents, trD([-5, 65]), trD([-25, 80]), trD([-48, 80]), [lang === 'ko' ? '① 1단 측판 판넬 (SMC Side Panel, t=10mm)' : '① 1st Tier Side Panel (t=10mm)'], Math.round(2.1 * N), 'right', 'PANEL_DETAIL');
-      drawLeader(ents, trD([40, 0]), trD([55, 30]), trD([85, 30]), [lang === 'ko' ? '② 저판 조립 평면구간 76.92mm (Skid 안착면)' : '② Assembly Flat Zone 76.92mm (Skid Resting)'], Math.round(2.1 * N), 'left', 'PANEL_DETAIL');
-      drawLeader(ents, trD([115, 17]), trD([128, 48]), trD([152, 48]), [lang === 'ko' ? '③ 중앙 볼록 엠보싱 돔 곡선 시작부' : '③ Convex Dome Arch Profile'], Math.round(2.1 * N), 'left', 'PANEL_DETAIL');
-      drawLeader(ents, trD([0, -18]), trD([-18, -12]), trD([-48, -12]), [lang === 'ko' ? '④ 특수 발포 EPDM 실링재 (Sealing Tape t=5mm)' : '④ Watertight EPDM Tape (t=5mm)'], Math.round(2.1 * N), 'right', 'PANEL_DETAIL');
-      drawLeader(ents, trD([-35, -35]), trD([-35, -52]), trD([-58, -52]), [lang === 'ko' ? '⑤ SUS304 M10 조립 볼트 & 너트 (EL.-35mm)' : '⑤ SUS304 M10 Bolt & Nut (EL.-35mm)'], Math.round(2.1 * N), 'right', 'PANEL_DETAIL');
-      drawLeader(ents, trD([10, -70]), trD([28, -55]), trD([58, -55]), [lang === 'ko' ? '⑥ 플랜지 안착 기준면 (EL.-70mm = Skid Top)' : '⑥ Flange Resting Datum (EL.-70mm = Skid Top)'], Math.round(2.1 * N), 'left', 'PANEL_DETAIL');
-      drawLeader(ents, trD([-45, -110]), trD([-62, -110]), trD([-88, -110]), [lang === 'ko' ? `⑦ Steel Skid 지지 찬넬 (${frmVal}×45×15×2.3t)` : `⑦ Steel Skid Channel (${frmVal}x45x15x2.3t)`], Math.round(2.1 * N), 'right', 'FRAME');
-
-      // 상세도 뷰 타이틀 버블
-      const titleDetY = cyDet - (145 * sDet) - 8;
-      drawViewTitleBubble(cxDet, titleDetY, 1, 'A', lang === 'ko' ? '상세 A : 측판·저판 조립 상세도 (CORNER DETAIL)' : 'DETAIL A : SIDE & BOTTOM PANEL JOINT', 'N.T.S.');
 
       // ==========================================
       // VIEW 3 (좌측 하단): 평면도 및 유효면적도 (PLAN VIEW & WATER SURFACE AREA)
@@ -10836,7 +10726,7 @@
         [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '총 공칭 용량 (V_gross)' : 'Total Gross Volume', `${grossTon.toFixed(2)} Ton (㎥)`, 'A × H (100%)'],
         [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '수조 구획 구분' : 'Compartment Type', lenSecs.length > 1 ? (lang === 'ko' ? `${lenSecs.length}구획 (${lenSecs.join('+')}mm)` : `${lenSecs.length}-Comp. (${lenSecs.join('+')}mm)`) : (lang === 'ko' ? '단일 구획 (Single)' : 'Single Comp.'), lang === 'ko' ? '격벽 설치' : 'Partition'],
 
-        [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '드레인판넬 및 저판' : 'Drain & Floor Panel', lang === 'ko' ? `드레인판넬(1000×1000, 형상 H=${DRAIN_SHAPE_H}mm MAX, 플랜지 H=${BTM_FLG_H}mm)` : `Drain Panel (1000×1000, Shape H=${DRAIN_SHAPE_H}mm MAX, Flg ${BTM_FLG_H}mm)`, lang === 'ko' ? '바닥 배수집수' : 'Drain Panel'],
+        [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '드레인판넬 및 저판 플랜지' : 'Drain & Floor Panel Flange', lang === 'ko' ? `드레인판넬(형상 H=${DRAIN_SHAPE_H}mm MAX), 저판 플랜지(H=${BTM_FLG_H}mm, Skid 상부 안착)` : `Drain Panel (Shape H=${DRAIN_SHAPE_H}mm MAX), Floor Flg (H=${BTM_FLG_H}mm, Skid Resting)`, lang === 'ko' ? '바닥 배수집수' : 'Drain Panel'],
         [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '천정 플랜지 및 판넬' : 'Roof Flange & Panels', `플랜지 H=${TOP_FLG_H}mm (볼트선 EL.+${(H + TOP_BOLT_H).toLocaleString()}mm)`, lang === 'ko' ? '천정-측판 조립' : 'Roof Joint'],
         [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '측면 피팅 취부 한계' : 'Side Fitting Limit', `EL. +${MIN_SIDE_FITTING_ELEV} mm 이상 (플랜지 상부)`, lang === 'ko' ? '피팅간섭 방지' : 'Fitting Clearance'],
 

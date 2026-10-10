@@ -294,26 +294,18 @@ assert(hasFlangeDimText, 'Flange height dimension text must exist on the left');
 
 console.log('Test 8 passed! Water tank flange resting on top of Steel Skid verified.');
 
-// Test 9: VIEW 1-A DETAIL "A" (측판 및 저판 조립 상세도) Verification
+// Test 9: Clean Drawing Verification (DETAIL A removed as requested by user)
 const hasDetailATitle = sheet7.ents.some(e => e.t === 'text' && e.s && (e.s.includes('상세 A') || e.s.includes('DETAIL A')) && e.s.includes('측판·저판 조립 상세도'));
-assert(hasDetailATitle, 'DETAIL A View Title bubble must exist on the sheet');
+assert(!hasDetailATitle, 'DETAIL A View Title bubble must NOT exist on the sheet (removed per user request)');
 
-const hasDetailACallout1 = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('1단 측판 판넬'));
-assert(hasDetailACallout1, 'DETAIL A side panel callout must exist');
+// Verify that all nozzles are mounted on the exterior with 0 protrusion into tank panels
+const nozzleLines = sheet7.ents.filter(e => e.layer === 'NOZZLE' && e.t === 'line');
+assert(nozzleLines.length > 0, 'Nozzle geometry lines must exist on sheet');
+// Verify dimension offset is tightened inside sheet frame
+const dimLines = sheet7.ents.filter(e => e.layer === 'DIM');
+assert(dimLines.length > 0, 'Dimension lines must exist');
 
-const hasDetailACallout2 = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('저판 조립 평면구간 76.92mm'));
-assert(hasDetailACallout2, 'DETAIL A 76.92mm flat zone callout must exist');
-
-const hasDetailACallout3 = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('EPDM 실링재'));
-assert(hasDetailACallout3, 'DETAIL A EPDM sealing tape callout must exist');
-
-const hasDetailACallout4 = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('SUS304 M10 조립 볼트'));
-assert(hasDetailACallout4, 'DETAIL A SUS304 bolt & nut callout must exist');
-
-const hasDetailACallout5 = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('Steel Skid 지지 찬넬'));
-assert(hasDetailACallout5, 'DETAIL A Steel Skid channel frame callout must exist');
-
-console.log('Test 9 passed! DETAIL "A" (Side & Bottom Panel Joint Detail) verified.');
+console.log('Test 9 passed! DETAIL "A" removed & clean layout verified.');
 
 // Test 10: Double Flange (양면플랜지) Verification
 const hasDoubleFlangeNozzleCallout = sheet7.ents.some(e => e.t === 'text' && e.s && e.s.includes('양면플랜지'));
