@@ -7973,16 +7973,21 @@
         ents.push({ t: 'line', a: [subX1 - 3.2, yBot], b: [subX1 - 3.2, yTop], layer: 'FRAME_SUB' });
       }
 
-      // 결합 탭 & 볼트 홀 M12 (서브빔 양단 안쪽 14mm 위치에 배치하여 찬넬 웨브와 간섭 방지)
-      ents.push({ t: 'line', a: [subX0 - 8, yBot + 14], b: [subX1 + 8, yBot + 14], layer: 'FRAME_SUB' });
-      drawBoltHole(ents, th / 2, yBot + 14, 6.0, 14, 'FRAME_SUB');
-
-      ents.push({ t: 'line', a: [subX0 - 8, yTop - 14], b: [subX1 + 8, yTop - 14], layer: 'FRAME_SUB' });
-      drawBoltHole(ents, th / 2, yTop - 14, 6.0, 14, 'FRAME_SUB');
-
-      // 부재 명칭 및 실 가공 규격
-      const subTextH = Math.max(34, Math.round(sub.len / 28));
-      ents.push({ t: 'text', p: [th / 2, yMid], h: subTextH, s: `${sub.code} (${sub.type}, L=${sub.len})`, rot: 90, align: 'center', layer: 'FRAME_SUB' });
+      // 부재 명칭 표기: 사용자 요청 ("홀은 없애주세요. 품명만 남겨주세요. 부품명은 부품안에 넣어주세요.")
+      // 1) 양단 볼트 홀 및 결합 탭 선 제거
+      // 2) 품명만 단독 표기 (타입 및 가공길이 제외)
+      // 3) 부재 단면 두께(subH) 내부 중앙에 정렬
+      const subTextH = Math.min(26, Math.round(subH * 0.35));
+      ents.push({
+        t: 'text',
+        p: [th / 2, yMid],
+        h: subTextH,
+        s: sub.code,
+        rot: 90,
+        align: 'center',
+        valign: 'middle',
+        layer: 'FRAME_SUB'
+      });
 
       // 서브빔 실제 가공 길이 치수선 (좌측)
       dimLinear(ents, [0, yBot], [0, yTop], -tH * 3.4, true, String(sub.len), tH, 'DIM');
