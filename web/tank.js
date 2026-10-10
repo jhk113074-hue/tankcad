@@ -7347,22 +7347,53 @@
         const bayH = yBayTop - yBayBot;
         if (bayH > 50) {
           // 실물 부품(WFF-0990AMZ / WFB-0956CMZ 등 기성 부재) 그대로 온전한 부품 형상 작도:
-          // 사용자 요청 ("아형탱크의 부재가 잘 안그려지는데 부품은 그대로 그려주세요")
-          // 1) 양단 엔드 플레이트: 이형탱크라도 부품 자체를 반쪽으로 자르지 않고 규격 그대로(160mm x 6t 대칭) 작도
+          // 사용자 요청: "안쪽으로 들어가도록 평면도가 그려져야 합니다. 두번째 그림에 근거해서 첫번째 그림을 그려주시고, 안보이는 부분은 Hidden처리해주세요."
+          // 1) 찬넬 플랜지가 열린 방향으로 서브빔 엔드플레이트와 본체가 찬넬 웨브 내측까지 진입
+          // 2) 찬넬 상부 플랜지에 의해 가려지는 진입 구간은 HIDDEN 선(숨은선)으로 작도
           const plW = 160, plTh = 6;
           const plX0 = colX - plW / 2;
-          const plX1 = colX + plW / 2;
+          const isSHS = (fNum === 50);
 
-          // 하단 연결 플레이트 (yBayBot ~ yBayBot + 6, 폭 160mm)
-          rectEnts(plX0, yBayBot, plW, plTh, 'FRAME_SUB', ents);
+          // 하단 찬넬 플랜지가 위(+Y)로 열려 서브빔이 찬넬 내부로 진입하는지 여부
+          const botInside = !isSHS && specBot.isUp;
+          // 상단 찬넬 플랜지가 아래(-Y)로 열려 서브빔이 찬넬 내부로 진입하는지 여부
+          const topInside = !isSHS && !specTop.isUp;
 
-          // 상단 연결 플레이트 (yBayTop - 6 ~ yBayTop, 폭 160mm)
-          rectEnts(plX0, yBayTop - plTh, plW, plTh, 'FRAME_SUB', ents);
+          // 1-A. 하단 연결부
+          let yVis0 = yBayBot;
+          if (botInside) {
+            // 찬넬 웨브 내측(yA + 6)까지 진입하여 6t 엔드플레이트 볼팅 (플랜지 아래 숨김 -> HIDDEN)
+            const yWebIn = specBot.yA + 6;
+            rectEnts(plX0, yWebIn, plW, plTh, 'HIDDEN', ents);
+            rectEnts(colX - subW / 2, yWebIn + plTh, subW, yBayBot - (yWebIn + plTh), 'HIDDEN', ents);
+            ents.push({ t: 'line', a: [colX - subW / 2 + 5, yWebIn + plTh], b: [colX - subW / 2 + 5, yBayBot], layer: 'HIDDEN' });
+            yVis0 = yBayBot;
+          } else {
+            // 찬넬 외측 평평한 웨브면에 엔드플레이트 밀착 (노출)
+            rectEnts(plX0, yBayBot, plW, plTh, 'FRAME_SUB', ents);
+            yVis0 = yBayBot + plTh;
+          }
 
-          // 2) 플레이트 사이의 서브빔 찬넬 본체 (C-75x40x5t)
-          const bY0 = yBayBot + plTh, bY1 = yBayTop - plTh;
-          rectEnts(colX - subW / 2, bY0, subW, bY1 - bY0, 'FRAME_SUB', ents);
-          ents.push({ t: 'line', a: [colX - subW / 2 + 5, bY0], b: [colX - subW / 2 + 5, bY1], layer: 'FRAME_SUB' });
+          // 1-B. 상단 연결부
+          let yVis1 = yBayTop;
+          if (topInside) {
+            // 찬넬 웨브 내측(yB - 6)까지 진입하여 6t 엔드플레이트 볼팅 (플랜지 아래 숨김 -> HIDDEN)
+            const yWebIn = specTop.yB - 6;
+            rectEnts(plX0, yWebIn - plTh, plW, plTh, 'HIDDEN', ents);
+            rectEnts(colX - subW / 2, yBayTop, subW, (yWebIn - plTh) - yBayTop, 'HIDDEN', ents);
+            ents.push({ t: 'line', a: [colX - subW / 2 + 5, yBayTop], b: [colX - subW / 2 + 5, yWebIn - plTh], layer: 'HIDDEN' });
+            yVis1 = yBayTop;
+          } else {
+            // 찬넬 외측 평평한 웨브면에 엔드플레이트 밀착 (노출)
+            rectEnts(plX0, yBayTop - plTh, plW, plTh, 'FRAME_SUB', ents);
+            yVis1 = yBayTop - plTh;
+          }
+
+          // 2. 찬넬 플랜지 사이 노출된 서브빔 찬넬 본체 (C-75x40x5t)
+          if (yVis1 > yVis0) {
+            rectEnts(colX - subW / 2, yVis0, subW, yVis1 - yVis0, 'FRAME_SUB', ents);
+            ents.push({ t: 'line', a: [colX - subW / 2 + 5, yVis0], b: [colX - subW / 2 + 5, yVis1], layer: 'FRAME_SUB' });
+          }
         }
       }
     }

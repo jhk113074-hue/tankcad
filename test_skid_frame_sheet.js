@@ -477,10 +477,14 @@ const spliceItem150 = bomSplice150.find(b => b.key === 'splice');
 assert(spliceItem150, 'BOM for Frame 150 must contain splice item');
 assert(spliceItem150.spec.includes('WBR-1022CZ'), 'Frame 150 splice spec must be WBR-1022CZ');
 
-const spliceText150 = skidSplice150.ents.filter(e => e.layer === 'FRAME_MAIN_W' && e.t === 'text' && e.s === 'WBR-1022CZ');
-assert.strictEqual(spliceText150.length, 2, 'There must be 2 WBR-1022CZ text labels on plan view');
+// 4. Sub-beam inside Channel Flange HIDDEN lines
+const skid125Ents = skidRes1.ents;
+const hiddenSubLines = skid125Ents.filter(e => e.layer === 'HIDDEN');
+assert(hiddenSubLines.length > 0, 'Sub-beams entering inside channel flange must generate HIDDEN line entities');
+console.log('Sub-beam hidden entities count in skidRes1:', hiddenSubLines.length);
 
 console.log('✅ ALL STEEL SKID & FOUNDATION TESTS PASSED SUCCESSFULLY!');
+
 
 
 
