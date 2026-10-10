@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.6.98</title>
+<title>YSACC TANK CAD v1.6.99</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -504,7 +504,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.98</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.6.99</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1597,7 +1597,7 @@ canvas.drag{cursor:grabbing}
           <h3 id="manualDialogTitle" style="margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">
             <span class="txt-ko">YSACC TANK CAD 사용자 가이드 &amp; 사용 매뉴얼</span>
             <span class="txt-en">YSACC TANK CAD User Guide &amp; Operation Manual</span>
-            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.6.98</span>
+            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.6.99</span>
           </h3>
           <span class="modeless-drag-hint">
             <span class="txt-ko">✥ 상단바를 잡고 자유롭게 이동 가능</span>
@@ -3550,7 +3550,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.98</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.6.99</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -3560,7 +3560,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.98</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.6.99</span></div>
     </div>
   </main>
 </div>
@@ -16564,35 +16564,23 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
         const yBayTop = specTop.yA;
         const bayH = yBayTop - yBayBot;
         if (bayH > 50) {
-          // 실물 부품도(WFF-0990AMZ 등)에 기반한 정밀 서브빔 연결부 작도:
-          // 1) 양단 엔드 플레이트 (160mm x 75mm x 6t, 2-Ø14 볼트 홀)
-          // 이형 수조 단차 경계에서는 비어있는 제거 셀 쪽으로 플레이트가 돌출되지 않도록 경계 제약
+          // 실물 부품(WFF-0990AMZ / WFB-0956CMZ 등 기성 부재) 그대로 온전한 부품 형상 작도:
+          // 사용자 요청 ("아형탱크의 부재가 잘 안그려지는데 부품은 그대로 그려주세요")
+          // 1) 양단 엔드 플레이트: 이형탱크라도 부품 자체를 반쪽으로 자르지 않고 규격 그대로(160mm x 6t 대칭) 작도
           const plW = 160, plTh = 6;
-          const hasLeft = !!rcL, hasRight = !!rcR;
-          const plX0 = hasLeft ? (colX - plW / 2) : (colX - subW / 2);
-          const plX1 = hasRight ? (colX + plW / 2) : (colX + subW / 2);
-          const plActualW = plX1 - plX0;
+          const plX0 = colX - plW / 2;
+          const plX1 = colX + plW / 2;
 
-          // 하단 연결 플레이트 (yBayBot ~ yBayBot + 6)
-          rectEnts(plX0, yBayBot, plActualW, plTh, 'FRAME_SUB', ents);
+          // 하단 연결 플레이트 (yBayBot ~ yBayBot + 6, 폭 160mm)
+          rectEnts(plX0, yBayBot, plW, plTh, 'FRAME_SUB', ents);
 
-          // 상단 연결 플레이트 (yBayTop - 6 ~ yBayTop)
-          rectEnts(plX0, yBayTop - plTh, plActualW, plTh, 'FRAME_SUB', ents);
+          // 상단 연결 플레이트 (yBayTop - 6 ~ yBayTop, 폭 160mm)
+          rectEnts(plX0, yBayTop - plTh, plW, plTh, 'FRAME_SUB', ents);
 
           // 2) 플레이트 사이의 서브빔 찬넬 본체 (C-75x40x5t)
           const bY0 = yBayBot + plTh, bY1 = yBayTop - plTh;
           rectEnts(colX - subW / 2, bY0, subW, bY1 - bY0, 'FRAME_SUB', ents);
           ents.push({ t: 'line', a: [colX - subW / 2 + 5, bY0], b: [colX - subW / 2 + 5, bY1], layer: 'FRAME_SUB' });
-
-          // 용접 접합 비드선 (엔드 플레이트 - 찬넬 연결부)
-          if (hasLeft) {
-            ents.push({ t: 'line', a: [colX - subW / 2, bY0], b: [colX - subW / 2 - 5, bY0 + 5], layer: 'FRAME_SUB' });
-            ents.push({ t: 'line', a: [colX - subW / 2, bY1], b: [colX - subW / 2 - 5, bY1 - 5], layer: 'FRAME_SUB' });
-          }
-          if (hasRight) {
-            ents.push({ t: 'line', a: [colX + subW / 2, bY0], b: [colX + subW / 2 + 5, bY0 + 5], layer: 'FRAME_SUB' });
-            ents.push({ t: 'line', a: [colX + subW / 2, bY1], b: [colX + subW / 2 + 5, bY1 - 5], layer: 'FRAME_SUB' });
-          }
         }
       }
     }
@@ -24210,7 +24198,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.98</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.6.99</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();

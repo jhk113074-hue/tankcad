@@ -7331,35 +7331,23 @@
         const yBayTop = specTop.yA;
         const bayH = yBayTop - yBayBot;
         if (bayH > 50) {
-          // 실물 부품도(WFF-0990AMZ 등)에 기반한 정밀 서브빔 연결부 작도:
-          // 1) 양단 엔드 플레이트 (160mm x 75mm x 6t, 2-Ø14 볼트 홀)
-          // 이형 수조 단차 경계에서는 비어있는 제거 셀 쪽으로 플레이트가 돌출되지 않도록 경계 제약
+          // 실물 부품(WFF-0990AMZ / WFB-0956CMZ 등 기성 부재) 그대로 온전한 부품 형상 작도:
+          // 사용자 요청 ("아형탱크의 부재가 잘 안그려지는데 부품은 그대로 그려주세요")
+          // 1) 양단 엔드 플레이트: 이형탱크라도 부품 자체를 반쪽으로 자르지 않고 규격 그대로(160mm x 6t 대칭) 작도
           const plW = 160, plTh = 6;
-          const hasLeft = !!rcL, hasRight = !!rcR;
-          const plX0 = hasLeft ? (colX - plW / 2) : (colX - subW / 2);
-          const plX1 = hasRight ? (colX + plW / 2) : (colX + subW / 2);
-          const plActualW = plX1 - plX0;
+          const plX0 = colX - plW / 2;
+          const plX1 = colX + plW / 2;
 
-          // 하단 연결 플레이트 (yBayBot ~ yBayBot + 6)
-          rectEnts(plX0, yBayBot, plActualW, plTh, 'FRAME_SUB', ents);
+          // 하단 연결 플레이트 (yBayBot ~ yBayBot + 6, 폭 160mm)
+          rectEnts(plX0, yBayBot, plW, plTh, 'FRAME_SUB', ents);
 
-          // 상단 연결 플레이트 (yBayTop - 6 ~ yBayTop)
-          rectEnts(plX0, yBayTop - plTh, plActualW, plTh, 'FRAME_SUB', ents);
+          // 상단 연결 플레이트 (yBayTop - 6 ~ yBayTop, 폭 160mm)
+          rectEnts(plX0, yBayTop - plTh, plW, plTh, 'FRAME_SUB', ents);
 
           // 2) 플레이트 사이의 서브빔 찬넬 본체 (C-75x40x5t)
           const bY0 = yBayBot + plTh, bY1 = yBayTop - plTh;
           rectEnts(colX - subW / 2, bY0, subW, bY1 - bY0, 'FRAME_SUB', ents);
           ents.push({ t: 'line', a: [colX - subW / 2 + 5, bY0], b: [colX - subW / 2 + 5, bY1], layer: 'FRAME_SUB' });
-
-          // 용접 접합 비드선 (엔드 플레이트 - 찬넬 연결부)
-          if (hasLeft) {
-            ents.push({ t: 'line', a: [colX - subW / 2, bY0], b: [colX - subW / 2 - 5, bY0 + 5], layer: 'FRAME_SUB' });
-            ents.push({ t: 'line', a: [colX - subW / 2, bY1], b: [colX - subW / 2 - 5, bY1 - 5], layer: 'FRAME_SUB' });
-          }
-          if (hasRight) {
-            ents.push({ t: 'line', a: [colX + subW / 2, bY0], b: [colX + subW / 2 + 5, bY0 + 5], layer: 'FRAME_SUB' });
-            ents.push({ t: 'line', a: [colX + subW / 2, bY1], b: [colX + subW / 2 + 5, bY1 - 5], layer: 'FRAME_SUB' });
-          }
         }
       }
     }

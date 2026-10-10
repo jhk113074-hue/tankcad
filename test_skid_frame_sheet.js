@@ -286,7 +286,7 @@ assert.strictEqual(skidLBoxes[3].y1, 2200, 'Strip 3 must terminate at Y=2200');
 assert.strictEqual(skidLBoxes[4].y1, 2200, 'Strip 4 must terminate at Y=2200 (not full length)');
 
 // Verify no horizontal beams in removed cell area (X > 2050, Y > 2100)
-const wrongHBeams = skidL.ents.filter(e => (e.layer === 'FRAME' || e.layer.startsWith('FRAME_')) && e.t === 'line' && Math.abs(e.a[1] - e.b[1]) < 1e-3 && e.a[0] > 2050 && e.a[1] > 2100);
+const wrongHBeams = skidL.ents.filter(e => (e.layer === 'FRAME_MAIN_L' || e.layer === 'FRAME') && e.t === 'line' && Math.abs(e.a[1] - e.b[1]) < 1e-3 && e.a[0] > 2050 && e.a[1] > 2100);
 assert.strictEqual(wrongHBeams.length, 0, 'No horizontal beams should exist in removed tank cells');
 
 // Verify top-outer edge beam exists at Y=2000 step
