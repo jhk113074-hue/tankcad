@@ -8693,7 +8693,7 @@
     // 바닥판넬-측면판넬 조립 기준: 바닥으로부터 30~35mm에서 볼트 조립, 저판플랜지 70mm 형성
     const BTM_FLG_H = 70;    // 저판 플랜지 높이 (70mm)
     const BTM_BOLT_H = 35;   // 볼트 체결선 (30~35mm)
-    const DRAIN_SHAPE_H = 125; // 드레인 판넬 형상 높이 (125mm)
+    const DRAIN_SHAPE_H = 70; // 드레인 판넬 형상 높이 (MAX 70mm)
     const MIN_SIDE_FITTING_ELEV = 100; // 측면 피팅 플랜지 취부 최소 표고 (저판 플랜지 상부)
 
     // 상부 천정판넬-측면판넬 조립 기준: 상부 플랜지 H=70mm, 볼트선 EL.+(H+35)mm
@@ -9725,14 +9725,14 @@
             t: 'text',
             p: [drainX, -DRAIN_SHAPE_H * 0.45],
             h: Math.round(1.8 * N),
-            s: `${cw}×1000 드레인 판넬 (H=${DRAIN_SHAPE_H}mm)`,
+            s: `${cw}×1000 드레인 판넬 (H=${DRAIN_SHAPE_H}mm MAX)`,
             align: 'center',
             valign: 'middle',
             layer: 'PANEL_DETAIL'
           });
 
-          // 형상 높이 125mm 수직 치수선
-          dimLinear(secEnts, [drainX - sumpHalfW, 0], [drainX - sumpHalfW, -DRAIN_SHAPE_H], -Math.round(10 * N), true, `${DRAIN_SHAPE_H} (형상높이)`, Math.round(2.0 * N), 'DIM');
+          // 형상 높이 70mm MAX 수직 치수선
+          dimLinear(secEnts, [drainX - sumpHalfW, 0], [drainX - sumpHalfW, -DRAIN_SHAPE_H], -Math.round(10 * N), true, `${DRAIN_SHAPE_H} (형상MAX)`, Math.round(2.0 * N), 'DIM');
         } else {
           // 표준 저판 판넬 (평판 + 배수 보강 엠보싱)
           secEnts.push({ t: 'line', a: [x0, 0], b: [x1, 0], layer: 'PANEL' });
@@ -9806,7 +9806,7 @@
         [drainX - Math.round(10 * N), -DRAIN_SHAPE_H - Math.round(14 * N)],
         [drainX - Math.round(32 * N), -DRAIN_SHAPE_H - Math.round(14 * N)],
         [
-          lang === 'ko' ? `드레인 판넬: ${drainPanelW}×1000mm (플랜지 H=${BTM_FLG_H}mm + 형상 H=${DRAIN_SHAPE_H}mm)` : `Drain Panel (Flange ${BTM_FLG_H}mm + Shape ${DRAIN_SHAPE_H}mm)`,
+          lang === 'ko' ? `드레인 판넬: ${drainPanelW}×1000mm (플랜지 H=${BTM_FLG_H}mm + 형상 H=${DRAIN_SHAPE_H}mm MAX)` : `Drain Panel (Flange ${BTM_FLG_H}mm + Shape ${DRAIN_SHAPE_H}mm MAX)`,
           lang === 'ko' ? `바닥 잔수 완전 배출 (역원추형 집수 피트)` : `Complete Drain via Shape Sump`
         ],
         Math.round(2.2 * N),
@@ -10639,7 +10639,7 @@
         [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '총 공칭 용량 (V_gross)' : 'Total Gross Volume', `${grossTon.toFixed(2)} Ton (㎥)`, 'A × H (100%)'],
         [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '수조 구획 구분' : 'Compartment Type', lenSecs.length > 1 ? (lang === 'ko' ? `${lenSecs.length}구획 (${lenSecs.join('+')}mm)` : `${lenSecs.length}-Comp. (${lenSecs.join('+')}mm)`) : (lang === 'ko' ? '단일 구획 (Single)' : 'Single Comp.'), lang === 'ko' ? '격벽 설치' : 'Partition'],
 
-        [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '드레인판넬 및 저판' : 'Drain & Floor Panel', lang === 'ko' ? `드레인판넬(1000×1000, 형상 H=${DRAIN_SHAPE_H}mm, 플랜지 H=${BTM_FLG_H}mm)` : `Drain Panel (1000×1000, Shape H=${DRAIN_SHAPE_H}mm, Flg ${BTM_FLG_H}mm)`, lang === 'ko' ? '바닥 배수집수' : 'Drain Panel'],
+        [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '드레인판넬 및 저판' : 'Drain & Floor Panel', lang === 'ko' ? `드레인판넬(1000×1000, 형상 H=${DRAIN_SHAPE_H}mm MAX, 플랜지 H=${BTM_FLG_H}mm)` : `Drain Panel (1000×1000, Shape H=${DRAIN_SHAPE_H}mm MAX, Flg ${BTM_FLG_H}mm)`, lang === 'ko' ? '바닥 배수집수' : 'Drain Panel'],
         [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '천정 플랜지 및 판넬' : 'Roof Flange & Panels', `플랜지 H=${TOP_FLG_H}mm (볼트선 EL.+${(H + TOP_BOLT_H).toLocaleString()}mm)`, lang === 'ko' ? '천정-측판 조립' : 'Roof Joint'],
         [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '측면 피팅 취부 한계' : 'Side Fitting Limit', `EL. +${MIN_SIDE_FITTING_ELEV} mm 이상 (플랜지 상부)`, lang === 'ko' ? '피팅간섭 방지' : 'Fitting Clearance'],
 

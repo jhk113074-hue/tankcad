@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.7.13</title>
+<title>YSACC TANK CAD v1.7.14</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -504,7 +504,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.7.13</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.7.14</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1634,7 +1634,7 @@ canvas.drag{cursor:grabbing}
           <h3 id="manualDialogTitle" style="margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">
             <span class="txt-ko">YSACC TANK CAD 사용자 가이드 &amp; 사용 매뉴얼</span>
             <span class="txt-en">YSACC TANK CAD User Guide &amp; Operation Manual</span>
-            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.7.13</span>
+            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.7.14</span>
           </h3>
           <span class="modeless-drag-hint">
             <span class="txt-ko">✥ 상단바를 잡고 자유롭게 이동 가능</span>
@@ -3587,7 +3587,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.7.13</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.7.14</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -3597,7 +3597,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.7.13</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.7.14</span></div>
     </div>
   </main>
 </div>
@@ -17963,7 +17963,7 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
     // 바닥판넬-측면판넬 조립 기준: 바닥으로부터 30~35mm에서 볼트 조립, 저판플랜지 70mm 형성
     const BTM_FLG_H = 70;    // 저판 플랜지 높이 (70mm)
     const BTM_BOLT_H = 35;   // 볼트 체결선 (30~35mm)
-    const DRAIN_SHAPE_H = 125; // 드레인 판넬 형상 높이 (125mm)
+    const DRAIN_SHAPE_H = 70; // 드레인 판넬 형상 높이 (MAX 70mm)
     const MIN_SIDE_FITTING_ELEV = 100; // 측면 피팅 플랜지 취부 최소 표고 (저판 플랜지 상부)
 
     // 상부 천정판넬-측면판넬 조립 기준: 상부 플랜지 H=70mm, 볼트선 EL.+(H+35)mm
@@ -18995,14 +18995,14 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
             t: 'text',
             p: [drainX, -DRAIN_SHAPE_H * 0.45],
             h: Math.round(1.8 * N),
-            s: `${cw}×1000 드레인 판넬 (H=${DRAIN_SHAPE_H}mm)`,
+            s: `${cw}×1000 드레인 판넬 (H=${DRAIN_SHAPE_H}mm MAX)`,
             align: 'center',
             valign: 'middle',
             layer: 'PANEL_DETAIL'
           });
 
-          // 형상 높이 125mm 수직 치수선
-          dimLinear(secEnts, [drainX - sumpHalfW, 0], [drainX - sumpHalfW, -DRAIN_SHAPE_H], -Math.round(10 * N), true, `${DRAIN_SHAPE_H} (형상높이)`, Math.round(2.0 * N), 'DIM');
+          // 형상 높이 70mm MAX 수직 치수선
+          dimLinear(secEnts, [drainX - sumpHalfW, 0], [drainX - sumpHalfW, -DRAIN_SHAPE_H], -Math.round(10 * N), true, `${DRAIN_SHAPE_H} (형상MAX)`, Math.round(2.0 * N), 'DIM');
         } else {
           // 표준 저판 판넬 (평판 + 배수 보강 엠보싱)
           secEnts.push({ t: 'line', a: [x0, 0], b: [x1, 0], layer: 'PANEL' });
@@ -19076,7 +19076,7 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
         [drainX - Math.round(10 * N), -DRAIN_SHAPE_H - Math.round(14 * N)],
         [drainX - Math.round(32 * N), -DRAIN_SHAPE_H - Math.round(14 * N)],
         [
-          lang === 'ko' ? `드레인 판넬: ${drainPanelW}×1000mm (플랜지 H=${BTM_FLG_H}mm + 형상 H=${DRAIN_SHAPE_H}mm)` : `Drain Panel (Flange ${BTM_FLG_H}mm + Shape ${DRAIN_SHAPE_H}mm)`,
+          lang === 'ko' ? `드레인 판넬: ${drainPanelW}×1000mm (플랜지 H=${BTM_FLG_H}mm + 형상 H=${DRAIN_SHAPE_H}mm MAX)` : `Drain Panel (Flange ${BTM_FLG_H}mm + Shape ${DRAIN_SHAPE_H}mm MAX)`,
           lang === 'ko' ? `바닥 잔수 완전 배출 (역원추형 집수 피트)` : `Complete Drain via Shape Sump`
         ],
         Math.round(2.2 * N),
@@ -19909,7 +19909,7 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
         [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '총 공칭 용량 (V_gross)' : 'Total Gross Volume', `${grossTon.toFixed(2)} Ton (㎥)`, 'A × H (100%)'],
         [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '수조 구획 구분' : 'Compartment Type', lenSecs.length > 1 ? (lang === 'ko' ? `${lenSecs.length}구획 (${lenSecs.join('+')}mm)` : `${lenSecs.length}-Comp. (${lenSecs.join('+')}mm)`) : (lang === 'ko' ? '단일 구획 (Single)' : 'Single Comp.'), lang === 'ko' ? '격벽 설치' : 'Partition'],
 
-        [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '드레인판넬 및 저판' : 'Drain & Floor Panel', lang === 'ko' ? `드레인판넬(1000×1000, 형상 H=${DRAIN_SHAPE_H}mm, 플랜지 H=${BTM_FLG_H}mm)` : `Drain Panel (1000×1000, Shape H=${DRAIN_SHAPE_H}mm, Flg ${BTM_FLG_H}mm)`, lang === 'ko' ? '바닥 배수집수' : 'Drain Panel'],
+        [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '드레인판넬 및 저판' : 'Drain & Floor Panel', lang === 'ko' ? `드레인판넬(1000×1000, 형상 H=${DRAIN_SHAPE_H}mm MAX, 플랜지 H=${BTM_FLG_H}mm)` : `Drain Panel (1000×1000, Shape H=${DRAIN_SHAPE_H}mm MAX, Flg ${BTM_FLG_H}mm)`, lang === 'ko' ? '바닥 배수집수' : 'Drain Panel'],
         [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '천정 플랜지 및 판넬' : 'Roof Flange & Panels', `플랜지 H=${TOP_FLG_H}mm (볼트선 EL.+${(H + TOP_BOLT_H).toLocaleString()}mm)`, lang === 'ko' ? '천정-측판 조립' : 'Roof Joint'],
         [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '측면 피팅 취부 한계' : 'Side Fitting Limit', `EL. +${MIN_SIDE_FITTING_ELEV} mm 이상 (플랜지 상부)`, lang === 'ko' ? '피팅간섭 방지' : 'Fitting Clearance'],
 
@@ -25101,7 +25101,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.7.13</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.7.14</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();
