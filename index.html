@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>YSACC TANK CAD v1.7.24</title>
+<title>YSACC TANK CAD v1.7.25</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -504,7 +504,7 @@ canvas.drag{cursor:grabbing}
   <div class="header-left">
     <div class="logo-icon">Y</div>
     <div class="header-titles">
-      <h1>YSACC TANK CAD <span class="ver-badge">v1.7.24</span></h1>
+      <h1>YSACC TANK CAD <span class="ver-badge">v1.7.25</span></h1>
       <p>물탱크 2D CAD 자동 도면 생성기 (A1 표준 조립도 &amp; DXF 내보내기)</p>
     </div>
   </div>
@@ -1634,7 +1634,7 @@ canvas.drag{cursor:grabbing}
           <h3 id="manualDialogTitle" style="margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">
             <span class="txt-ko">YSACC TANK CAD 사용자 가이드 &amp; 사용 매뉴얼</span>
             <span class="txt-en">YSACC TANK CAD User Guide &amp; Operation Manual</span>
-            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.7.24</span>
+            <span class="ver-badge" style="font-size:10px;padding:2px 6px">v1.7.25</span>
           </h3>
           <span class="modeless-drag-hint">
             <span class="txt-ko">✥ 상단바를 잡고 자유롭게 이동 가능</span>
@@ -3587,7 +3587,7 @@ canvas.drag{cursor:grabbing}
     <div class="cv-container" id="cv">
       <canvas id="c"></canvas>
       <div class="cv-hud-top">
-        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.7.24</span></div>
+        <div class="hud-badge" id="viewBadge">A1 DRAWING SHEET <span class="ver-badge">v1.7.25</span></div>
       </div>
       <div class="cv-hud-bottom">
         <div class="coord-badge" id="coord">X: 0  Y: 0</div>
@@ -3597,7 +3597,7 @@ canvas.drag{cursor:grabbing}
 
     <div class="status-bar">
       <div id="status">준비 완료</div>
-      <div>YSACC Tank Engineering System <span class="ver-badge">v1.7.24</span></div>
+      <div>YSACC Tank Engineering System <span class="ver-badge">v1.7.25</span></div>
     </div>
   </main>
 </div>
@@ -16170,8 +16170,8 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
           lBeamCounts[code] = (lBeamCounts[code] || 0) + 1;
         });
 
-        if (!hasTankLeft) bracketCount++;
-        if (!hasTankRight) bracketCount++;
+        if (cStart === 0 && !hasTankLeft) bracketCount++;
+        if (cEnd === G.nc - 1 && !hasTankRight) bracketCount++;
       }
     }
     Object.entries(wNCounts).forEach(([code, q]) => { lBeamCounts[code] = (lBeamCounts[code] || 0) + q; });
@@ -16794,8 +16794,9 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
         if (rec.length) { rec[rec.length - 1].extL = extL; rec[rec.length - 1].extR = extR; }
 
         // 4-B. W방향 외곽 주재(ASZ-FRAME / CSZ-FRAME)와 L방향 수평 주재 연결 브라켓 (L9090 / WBR-7575Z / WBR-0120CZE)
-        // 이형탱크 단차 코너를 포함하여 외곽 경계에 노출된 모든 코너에 브라켓 체결
-        if (!hasTankLeft) {
+        // W방향 주재가 실제로 존재하는 외곽 경계(cStart === 0 또는 cEnd === G.nc - 1)에만 체결
+        // 이형탱크의 내부 단차 코너에는 W방향 주재가 없어 브라켓을 고정할 수 없으므로 배치하지 않음
+        if (cStart === 0 && !hasTankLeft) {
           let bY = segY, dirY = 1;
           if (cat === 1) {
             bY = segY + flgW;
@@ -16810,7 +16811,7 @@ if (typeof module !== "undefined" && module.exports) { module.exports = SKID_PAR
           drawCornerBracket(ents, x0b, bY, 75, 6, 1, dirY, 'FRAME');
         }
 
-        if (!hasTankRight) {
+        if (cEnd === G.nc - 1 && !hasTankRight) {
           let bY = segY, dirY = 1;
           if (cat === 1) {
             bY = segY + flgW;
@@ -25137,7 +25138,7 @@ const _FACTORY_SIDE_T = JSON.parse(JSON.stringify(SIDE_T));
       const baseBadge = sheet
         ? `A1 ${kindText} (1/${plan.scale})`
         : (opt.sheetKind === 'iso' ? (isEn ? '3D Isometric Model View' : '3D 등각 모델 뷰') : (opt.sheetKind === 'pad' ? (isEn ? 'Foundation Pad Model View' : '기초 패드 모델 뷰') : (isEn ? 'Plan Model View' : '평면도 모델 뷰')));
-      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.7.24</span>`;
+      $('viewBadge').innerHTML = `${baseBadge} <span class="ver-badge" style="margin-left:6px;font-size:10px;vertical-align:middle">v1.7.25</span>`;
     } catch (e) { err.hidden = false; err.textContent = e.message; return; }
     summary(plan, L, W, H);
     if (fit) fitView(); else draw();

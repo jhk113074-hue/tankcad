@@ -382,6 +382,10 @@ const corner125Text = skidUser125.ents.find(e => e.layer === 'FRAME_MAIN_L' && e
 assert(corner125Text, 'Stepped corner bracket WFF-0150CCZ text must exist for Frame 125');
 assert.strictEqual(corner125Text.rot, 0, 'WFF-0150CCZ must be horizontal (rot: 0)');
 
+// Verify that 9090 corner brackets (layer FRAME) are NOT placed at internal step corners (e.g. X=3000) where no W-direction main beam exists
+const stepBrackets125 = skidUser125.ents.filter(e => e.layer === 'FRAME' && e.t === 'line' && e.a[0] >= 2900 && e.a[0] <= 3100);
+assert.strictEqual(stepBrackets125.length, 0, '9090 corner bracket must NOT be placed at irregular step corner where no W main beam exists');
+
 // Frame 150: WFF-0150HCCZ
 const optUser150 = { length: [4000], width: [4000], height: [3000], frame: 150, removed: [[3, 3]], sheetKind: 'frame' };
 const skidUser150 = TankCore.buildSkid(optUser150);
