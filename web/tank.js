@@ -5125,8 +5125,7 @@
             (i < map.rows.length && map.has(i, cEnd + 1))
           );
 
-          const extL = (isNv && cat !== 3 && !hasTankLeft && cStart === 0) ? flgW : 0;
-          const extR = (isNv && cat !== 3 && !hasTankRight && cEnd === map.cols.length - 1) ? flgW : 0;
+          const extL = 0, extR = 0; // N형도 L방향 주재 연장 없음 (코너는 브라켓 연결)
           const x0 = (hasTankLeft ? (xLeft - flgW / 2) : (xLeft + lapIn)) - extL;
           const x1 = (hasTankRight ? (xRight + flgW / 2) : (xRight - lapIn)) + extR;
 
@@ -6649,6 +6648,8 @@
     const R = (r, c) => G.map.has(r, c) ? { t: G.map.ys[r], h: G.map.rows[r] } : null;
 
     const isN = getFrameVariant(opt) === 'N';
+    // N형 W방향 주재(0990/1490/1990)는 L방향 주재와 동일 품번(공용 부품, W방향 체결용 추가 Hole 가공) → L방향 수량에 합산
+    const wNCounts = {};
     function countMainW(col, isRightSide) {
       let nHeight = 0, runRows = [];
       for (let i = sRow; i <= eRow; i++) {
@@ -6670,7 +6671,7 @@
         wSpliceCount += Math.max(0, segsN.length - 1);
         segsN.forEach(sg => {
           const code = 'WFF-' + pad4Code(sg.cut) + fSuf;
-          wBeamCounts[code] = (wBeamCounts[code] || 0) + 1;
+          wNCounts[code] = (wNCounts[code] || 0) + 1;
         });
         return;
       }
@@ -6718,21 +6719,9 @@
         const hasTankLeft = (cStart > 0) && ((i > 0 && G.map.has(i - 1, cStart - 1)) || (i < G.nr && G.map.has(i, cStart - 1)));
         const hasTankRight = (cEnd < G.nc - 1) && ((i > 0 && G.map.has(i - 1, cEnd + 1)) || (i < G.nr && G.map.has(i, cEnd + 1)));
 
-        // N형: 외곽 L방향 주재(하부/상부 외곽행)는 스키드 코너까지 플랜지폭만큼 연장
-        let isOuterRow = false;
-        if (isN) {
-          let anyBoth = false, allAboveOnly = true, allBelowOnly = true;
-          for (let col = cStart; col <= cEnd; col++) {
-            const b = (i > 0) && G.map.has(i - 1, col);
-            const a = (i < G.nr) && G.map.has(i, col);
-            if (b && a) anyBoth = true;
-            if (b) allAboveOnly = false;
-            if (a) allBelowOnly = false;
-          }
-          isOuterRow = !anyBoth && (allAboveOnly || allBelowOnly);
-        }
-        const extL = (isOuterRow && !hasTankLeft && cStart === 0) ? flgW : 0;
-        const extR = (isOuterRow && !hasTankRight && cEnd === G.nc - 1) ? flgW : 0;
+        // N형도 외곽 L방향 주재는 표준 부재 그대로 (연장/신규 품번 없음)
+        const extL = 0;
+        const extR = 0;
 
         segColSpans.forEach((nominalSpan, k) => {
           let cutLen = nominalSpan - 10;
@@ -6747,6 +6736,7 @@
         if (!hasTankRight && cEnd === G.nc - 1) bracketCount++;
       }
     }
+    Object.entries(wNCounts).forEach(([code, q]) => { lBeamCounts[code] = (lBeamCounts[code] || 0) + q; });
 
     // 3. 이형 단차 코너 단재 카운트
     const stepCornerCounts = {};
@@ -6827,7 +6817,7 @@
       boms.push({
         no: no++,
         key: 'main_l',
-        name: lang === 'en' ? 'Horizontal Main Beam L' : 'L방향 수평 주재',
+        name: isN ? (lang === 'en' ? 'Main Beam L/W (Common)' : 'L·W방향 공용 주재') : (lang === 'en' ? 'Horizontal Main Beam L' : 'L방향 수평 주재'),
         mat: 'SS41(HDG)',
         qty: `${qty} EA`,
         spec: `${code} [${dSkid.mainSpec}]`
@@ -7296,9 +7286,9 @@
           segLat = isUp ? 0 : 0x10000;
         }
 
-        // N형: 외곽 L방향 주재가 W방향 주재 외측(스키드 코너)까지 연장 (연장량 = overOut + lapIn = 플랜지폭)
-        const extL = (isN && cat !== 3 && !hasTankLeft && cStart === 0) ? (overOut + lapIn) : 0;
-        const extR = (isN && cat !== 3 && !hasTankRight && cEnd === G.nc - 1) ? (overOut + lapIn) : 0;
+        // N형: 신규 품번 방지를 위해 외곽 L방향 주재 연장 없음 (코너는 비워 두고 코너 브라켓으로만 연결)
+        const extL = 0;
+        const extR = 0;
         const x0 = x0b - extL;
         const x1 = x1b + extR;
         const segW = x1 - x0;
@@ -7526,7 +7516,9 @@
 
     // 1. W방향 주재
     const wItems = skidBOM.filter(b => b.key === 'main_w');
-    const wSummary = wItems.length > 0
+    const wSummary = isN
+      ? `(N) W방향 전용 주재 없음 - L방향 공용 0990/1490/1990${fSuf} 사용 (수량은 MAIN BEAM (L)에 합산)`
+      : wItems.length > 0
       ? wItems.map(b => `${b.spec.split(' ')[0]} (${b.qty})`).join(', ')
       : dSkid.mainSpec;
     ents.push({ t: 'text', p: [lx, ly0 - tH * 1.35], h: tH * 0.78, s: `MAIN BEAM (W) : ${wSummary} [${dSkid.mainSpec}, HDG]`, rot: 0, align: 'left', layer: 'FRAME_MAIN_W' });
@@ -7600,7 +7592,7 @@
     ents.push({ t: 'text', p: [noteX, noteY], h: tH * 0.72, s: `7. L방향 주재: 500 판넬 배치 시 1.5M(1490${fSuf}) 적용, 양끝단 5mm(총 10mm) 커팅 여유 확보 [2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}]`, rot: 0, align: 'left', layer: 'FRAME_MAIN_L' });
     noteY -= tH * 1.25;
     const wSpecSummary = isN
-      ? `${frameLabel(fNum, 'N', 'ko')}: W방향 주재를 판넬 모듈선 기준 2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}로 분할 (양끝단 5mm 여유, L방향 주재와 동일 부재), 끝단 돌출재(ASZL/R·CSZL/R) 미사용 — 스키드 코너는 외곽 L방향 주재를 플랜지폭(${flgW}mm)만큼 연장하여 마감`
+      ? `${frameLabel(fNum, 'N', 'ko')}: 자재 종류 축소를 위해 O형 W방향 전용 주재(ASZ/CSZ 계열) 미사용 — W방향도 L방향 표준 부재 2M=1990${fSuf}, 1.5M=1490${fSuf}, 1M=0990${fSuf}로 판넬 모듈선 기준 분할(양끝단 5mm 여유), 기존 부품에 W방향 체결용 Hole 추가 가공하여 L·W 공용 사용, 스키드 코너는 신규 부재 없이 코너 브라켓(${fNum === 150 ? 'WBR-0120CZE' : 'WBR-7575Z'})으로 연결`
       : (fNum === 75)
       ? '75Angle: 시작/끝단 1570ASZL/R (1.5M), 2070ASZL/R (2M), 신규 1070ASZL/R (1M, 70mm 돌출) 대칭배치(한쪽 ASZL+ASZR 시 반대쪽 ASZR+ASZL), 중간 2000ASZ (실제 1990mm, 양단 5mm 여유), 이형단차 코너용 WFF-0200ACZ (L=200, 4-Ø17H) / 단일재: 1140, 1640, 2140, 2640ASZ'
       : (fNum === 150)
