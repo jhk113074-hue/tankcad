@@ -429,13 +429,13 @@ const cross75 = TankCore.buildSkidCross({ width: [4000], length: [4000], height:
 const lines75 = cross75.ents.filter(e => e.layer === 'FRAME_MAIN_L' && e.t === 'line');
 assert.strictEqual(lines75.length, 30, '75 Angle must be drawn as L-shape (6 lines per member, not 8-line channel)');
 
-// 125 Channel Cross Section: Sub-beam top surface must be flush with Channel top flange at X=125 (Right Leveling for tank panel)
+// 125 Channel Cross Section: Sub-beam top surface must be flush with Channel top flange at X=0 (Left Leveling for tank panel)
 const cross125 = TankCore.buildSkidCross({ width: [4000], length: [4000], height: [2000], frame: 125 });
 const subLines125 = cross125.ents.filter(e => e.layer === 'FRAME_SUB' && e.t === 'line');
-const subTopLines = subLines125.filter(e => e.a[0] === 125 && e.b[0] === 125);
-assert(subTopLines.length > 0, 'Sub-beam top surface line must be at X=125 (flush with Channel top flange / right leveling)');
+const subTopLines = subLines125.filter(e => e.a[0] === 0 && e.b[0] === 0);
+assert(subTopLines.length > 0, 'Sub-beam top surface line must be at X=0 (flush with Channel top flange / left leveling)');
 const subTexts125 = cross125.ents.filter(e => e.layer === 'FRAME_SUB' && e.t === 'text');
-assert(subTexts125.every(t => t.p[0] === 87.5), 'Sub-beam part texts must be centered at X=87.5 (th - subH / 2)');
+assert(subTexts125.every(t => t.p[0] === 37.5), 'Sub-beam part texts must be centered at X=37.5 (subH / 2)');
 assert(subTexts125.every(t => t.rot === 270), 'Sub-beam part texts must be rotated 270 deg (flipped vertically)');
 
 console.log('--- Testing W-direction Main Beam Splice Connectors (WBR-02150ZE / WBR-9021CZ) ---');
