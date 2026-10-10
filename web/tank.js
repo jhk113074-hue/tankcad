@@ -8674,6 +8674,10 @@
     const BTM_BOLT_H = 35;   // 볼트 체결선 (30~35mm)
     const MIN_SIDE_FITTING_ELEV = 100; // 측면 피팅 플랜지 취부 최소 표고 (저판 플랜지 상부)
 
+    // 상부 천정판넬-측면판넬 조립 기준: 상부 플랜지 H=70mm, 볼트선 EL.+(H+35)mm
+    const TOP_FLG_H = 70;    // 상부 천정 플랜지 높이 (70mm)
+    const TOP_BOLT_H = 35;   // 상부 볼트 체결선 (35mm)
+
     let hwlElev = (overflowNoz && typeof overflowNoz.elev === 'number' && overflowNoz.elev > 0) ? overflowNoz.elev : (overflowNoz && overflowNoz.elev === 'TOP' ? Math.max(100, H - 200) : Math.max(100, H - 300));
     let lwlElev = (outletNoz && typeof outletNoz.elev === 'number' && outletNoz.elev > 0) ? outletNoz.elev : (outletNoz && (outletNoz.elev === 'BOTTOM' || outletNoz.face === 'bottom') ? 100 : 300);
     // 측면 피팅 노즐인 경우 저판 플랜지(70~80mm) 상단에 부착되도록 최소 100mm 보장
@@ -9486,10 +9490,112 @@
       secEnts.push({ t: 'line', a: [totalL, H], b: [0, H], layer: 'PANEL' });
       secEnts.push({ t: 'line', a: [0, H], b: [0, 0], layer: 'PANEL' });
 
-      secEnts.push({ t: 'line', a: [-35, H], b: [totalL + 35, H], layer: 'PANEL' });
-      secEnts.push({ t: 'line', a: [-35, H + 65], b: [totalL + 35, H + 65], layer: 'PANEL' });
-      secEnts.push({ t: 'line', a: [-35, H], b: [-35, H + 65], layer: 'PANEL' });
-      secEnts.push({ t: 'line', a: [totalL + 35, H], b: [totalL + 35, H + 65], layer: 'PANEL' });
+      // 2-0. 상부 천정판넬 및 측면-천정 조립부 상세 (물탱크 천정판넬 실물 형상 반영)
+      // 좌측 상부 직립 플랜지 (X = 0)
+      secEnts.push({ t: 'line', a: [-25, H], b: [-25, H + TOP_FLG_H], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [-25, H + TOP_FLG_H], b: [0, H + TOP_FLG_H], layer: 'PANEL' });
+      // 우측 상부 직립 플랜지 (X = totalL)
+      secEnts.push({ t: 'line', a: [totalL + 25, H], b: [totalL + 25, H + TOP_FLG_H], layer: 'PANEL' });
+      secEnts.push({ t: 'line', a: [totalL, H + TOP_FLG_H], b: [totalL + 25, H + TOP_FLG_H], layer: 'PANEL' });
+
+      // 상부 볼트 체결 중심선 (EL. +(H + 35)mm)
+      secEnts.push({ t: 'line', a: [-32, H + TOP_BOLT_H], b: [18, H + TOP_BOLT_H], layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'circle', c: [-12.5, H + TOP_BOLT_H], r: 3.5, layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'line', a: [-12.5, H + TOP_BOLT_H - 6], b: [-12.5, H + TOP_BOLT_H + 6], layer: 'PANEL_DETAIL' });
+
+      secEnts.push({ t: 'line', a: [totalL - 18, H + TOP_BOLT_H], b: [totalL + 32, H + TOP_BOLT_H], layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'circle', c: [totalL + 12.5, H + TOP_BOLT_H], r: 3.5, layer: 'PANEL_DETAIL' });
+      secEnts.push({ t: 'line', a: [totalL + 12.5, H + TOP_BOLT_H - 6], b: [totalL + 12.5, H + TOP_BOLT_H + 6], layer: 'PANEL_DETAIL' });
+
+      // 상부 천정판넬 및 플랜지 지시선 (Callout)
+      drawLeader(
+        secEnts,
+        [-12.5, H + TOP_BOLT_H],
+        [-Math.round(10 * N), Math.round(6 * N)],
+        [-Math.round(28 * N), Math.round(6 * N)],
+        [
+          lang === 'ko' ? `천정판넬 플랜지 H=${TOP_FLG_H}mm (볼트선 EL.+${(H + TOP_BOLT_H).toLocaleString()}mm)` : `Roof Flange H=${TOP_FLG_H}mm (Bolt EL.+${(H + TOP_BOLT_H).toLocaleString()}mm)`,
+          lang === 'ko' ? `물탱크 상부 천정판넬 (Roof Panels)` : `Tank Top Roof Panels`
+        ],
+        Math.round(2.3 * N),
+        'right',
+        'PANEL_DETAIL'
+      );
+
+      // 각 베이별 천정판넬 실물 형상 제도 (베이스 밴드 + 엠보싱 돔 + 판넬간 접합선 + 맨홀/환기구)
+      const T_ROOF = 30;
+      const cy_dome = 70;
+      mmap.cols.forEach((cw, j) => {
+        const x0 = mmap.xs[j], x1 = mmap.xs[j + 1];
+        const ms = cw / 2;
+
+        // 판넬 베이스 플랜지 띠
+        secEnts.push({ t: 'line', a: [x0, H + T_ROOF], b: [x1, H + T_ROOF], layer: 'PANEL' });
+        secEnts.push({ t: 'line', a: [x0, H + T_ROOF / 2], b: [x1, H + T_ROOF / 2], layer: 'PANEL_DETAIL' });
+
+        // 천정판넬 간 수직 접합 플랜지 및 볼트 (j > 0)
+        if (j > 0) {
+          secEnts.push({ t: 'line', a: [x0, H], b: [x0, H + TOP_FLG_H], layer: 'PANEL' });
+          secEnts.push({ t: 'line', a: [x0 - 15, H + TOP_BOLT_H], b: [x0 + 15, H + TOP_BOLT_H], layer: 'PANEL_DETAIL' });
+          secEnts.push({ t: 'circle', c: [x0, H + TOP_BOLT_H], r: 3.0, layer: 'PANEL_DETAIL' });
+        }
+
+        // 천정판넬 돔 프로파일 (피라미드/사다리꼴 엠보싱)
+        const UO = (MH.UP_OUT && MH.UP_OUT[cw]) || (cw === 500 ? 50 : 100);
+        const DO = (MH.DN_OUT && MH.DN_OUT[cw]) || (cw === 500 ? 206 : 456);
+        const UI = (MH.UP_IN && MH.UP_IN[cw]) || (cw === 500 ? 30 : 80);
+        const DI = (MH.DN_IN && MH.DN_IN[cw]) || (cw === 500 ? 100 : 350);
+
+        // 외곽 사다리꼴 (Outer Dome Silhouette)
+        secEnts.push({ t: 'line', a: [x0 + ms - DO, H + T_ROOF], b: [x0 + ms - UO, H + T_ROOF + cy_dome], layer: 'PANEL' });
+        secEnts.push({ t: 'line', a: [x0 + ms - UO, H + T_ROOF + cy_dome], b: [x0 + ms + UO, H + T_ROOF + cy_dome], layer: 'PANEL' });
+        secEnts.push({ t: 'line', a: [x0 + ms + UO, H + T_ROOF + cy_dome], b: [x0 + ms + DO, H + T_ROOF], layer: 'PANEL' });
+
+        // 내부 리브선 (Inner Embossing Creases)
+        secEnts.push({ t: 'line', a: [x0 + ms - DI, H + T_ROOF], b: [x0 + ms - UI, H + T_ROOF + cy_dome], layer: 'PANEL_DETAIL' });
+        secEnts.push({ t: 'line', a: [x0 + ms + DI, H + T_ROOF], b: [x0 + ms + UI, H + T_ROOF + cy_dome], layer: 'PANEL_DETAIL' });
+
+        // 해당 컬럼의 맨홀 또는 환기구 확인
+        let colHasMh = false, colHasVent = false;
+        const marks = opt.marks || {};
+        for (let r = 0; r < mmap.rows.length; r++) {
+          const mk = marks[r + ',' + j];
+          if (mk === 1) colHasMh = true;
+          else if (mk === 2) colHasVent = true;
+        }
+
+        const topY = H + T_ROOF + cy_dome;
+        if (colHasMh) {
+          // 기립형 점검구 맨홀 (Neck + Cover + Handle)
+          const mhW = 550, mhH = 60, covW = 580;
+          rectEnts(x0 + ms - mhW / 2, topY, mhW, mhH, 'PANEL', secEnts);
+          rectEnts(x0 + ms - covW / 2, topY + mhH, covW, 25, 'PANEL', secEnts);
+          rectEnts(x0 + ms - 30, topY + mhH + 25, 60, 20, 'PANEL', secEnts);
+          secEnts.push({
+            t: 'text',
+            p: [x0 + ms, topY + mhH + 55],
+            h: Math.round(2.2 * N),
+            s: lang === 'ko' ? '맨홀 (MANHOLE)' : 'MANHOLE D=600',
+            align: 'center',
+            valign: 'bottom',
+            layer: 'SHEET'
+          });
+        } else if (colHasVent) {
+          // 환기구 에어벤트 (Pipe + Hood)
+          const pW = 80, pH = 90, hW = 140, hH = 45;
+          rectEnts(x0 + ms - pW / 2, topY, pW, pH, 'PANEL', secEnts);
+          rectEnts(x0 + ms - hW / 2, topY + pH, hW, hH, 'PANEL', secEnts);
+          secEnts.push({
+            t: 'text',
+            p: [x0 + ms, topY + pH + hH + 15],
+            h: Math.round(2.0 * N),
+            s: lang === 'ko' ? '환기구 (AIR VENT)' : 'AIR VENT 100A',
+            align: 'center',
+            valign: 'bottom',
+            layer: 'SHEET'
+          });
+        }
+      });
 
       // 2-1. 바닥판넬-측면판넬 조립부 상세 (저판 플랜지 H=75mm, 볼트선 EL.+35mm)
       // 좌측 저판 직립 플랜지 (X = 0)
@@ -9857,6 +9963,7 @@
         [lang === 'ko' ? '기본제원' : 'TANK', lang === 'ko' ? '수조 구획 구분' : 'Compartment Type', lenSecs.length > 1 ? (lang === 'ko' ? `${lenSecs.length}구획 (${lenSecs.join('+')}mm)` : `${lenSecs.length}-Comp. (${lenSecs.join('+')}mm)`) : (lang === 'ko' ? '단일 구획 (Single)' : 'Single Comp.'), lang === 'ko' ? '격벽 설치' : 'Partition'],
 
         [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '저판 플랜지 및 볼트선' : 'Btm Flange & Bolt Line', `플랜지 H=${BTM_FLG_H}mm (볼트선 EL.+${BTM_BOLT_H}mm)`, lang === 'ko' ? '바닥-측판 조립' : 'Flange Joint'],
+        [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '천정 플랜지 및 판넬' : 'Roof Flange & Panels', `플랜지 H=${TOP_FLG_H}mm (볼트선 EL.+${(H + TOP_BOLT_H).toLocaleString()}mm)`, lang === 'ko' ? '천정-측판 조립' : 'Roof Joint'],
         [lang === 'ko' ? '플랜지구조' : 'FLANGE', lang === 'ko' ? '측면 피팅 취부 한계' : 'Side Fitting Limit', `EL. +${MIN_SIDE_FITTING_ELEV} mm 이상 (플랜지 상부)`, lang === 'ko' ? '피팅간섭 방지' : 'Fitting Clearance'],
 
         [lang === 'ko' ? '노즐표고' : 'NOZZLE', lang === 'ko' ? '급수 유입구 (INLET)' : 'Inlet Nozzle', `EL. +${inletElev} mm (${inletNoz ? inletNoz.size : '100A'})`, lang === 'ko' ? '급수 인입 표고' : 'Inlet Center'],

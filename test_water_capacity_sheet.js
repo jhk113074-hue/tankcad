@@ -57,6 +57,16 @@ assert(hasBtmFlangeText, 'Bottom flange callout must exist in entities');
 const hasSideFittingLimitText = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('EL.+100mm 이상'));
 assert(hasSideFittingLimitText, 'Side fitting elevation limit callout must exist in entities');
 
+// Verification of Top Roof Panel & Flange detail
+const hasTopFlangeText = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('천정판넬 플랜지 H=70mm'));
+assert(hasTopFlangeText, 'Top roof flange callout must exist in entities');
+
+const hasRoofPanelsText = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('물탱크 상부 천정판넬'));
+assert(hasRoofPanelsText, 'Roof panels callout must exist in entities');
+
+const hasRoofScheduleText = sheet1.ents.some(e => e.t === 'text' && e.s && e.s.includes('천정 플랜지 및 판넬'));
+assert(hasRoofScheduleText, 'Roof flange and panels row must exist in schedule table');
+
 // Verification of Monochrome CAD (NO color overrides in 2D capacity sheet)
 const coloredEnts = sheet1.ents.filter(e => e.color !== undefined);
 assert.strictEqual(coloredEnts.length, 0, `There must be NO color overrides in 2D capacity sheet! Found: ${coloredEnts.length}`);
